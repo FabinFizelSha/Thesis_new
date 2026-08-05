@@ -1,0 +1,40 @@
+---
+# Hydra ROS input fed by Phase 1 separate RGB-D-semantic topics.
+# Keep this file aligned with rsg_pipeline.yaml.
+# Expected TF chain:
+#   world -> odom -> camera_color_optical_frame
+# The RSG launch keeps the existing world-fixed RViz setup by publishing world -> odom as identity.
+
+input:
+  type: RosInput                                                                                     # Stock Hydra ROS input adapter.
+  tf_verbosity: 1                                                                                    # Concise top-level TF diagnostics.
+  clear_queue_on_fail: true                                                                          # Drop unusable frames instead of integrating them with an invalid pose.
+
+  tf_lookup:
+    wait_duration_s: 0.50                                                                            # Allow odom -> base TF to become available at each RGB timestamp.
+    buffer_size_s: 180.0                                                                             # Retain sufficient TF history during asynchronous Phase 1 processing.
+    max_tries: 20                                                                                    # Retry a bounded number of TF lookups before rejecting a frame.
+    verbosity: 3                                                                                     # Preserve detailed TF diagnostics during validation.
+
+  inputs:
+    left_cam:
+      receiver:
+        type: ClosedSetImageReceiver                                                                 # Hydra RGB-D plus semantic-label receiver.
+        ns: /rsg/hydra                                                                               # Phase 1 output namespace.
+        queue_size: 3                                                                                # Keep a small queue to prevent stale-frame accumulation at 5 FPS.
+        input_separation_s: 0.0                                                                      # Accept every Phase 1 output frame; preprocessing controls the input rate.
+
+      sensor:
+        type: camera_info                                                                            # Build the camera model from Phase 1 CameraInfo.
+        ns: /rsg/hydra/rgb                                                                           # Resolves to /rsg/hydra/rgb/camera_info.
+        min_range: 0.30                                                                              # Match the RSG depth-validity lower bound in metres.
+        max_range: 6.00                                                                              # Match the RSG depth-validity upper bound in metres.
+
+        extrinsics:
+          type: ros                                                                                  # Obtain the fixed camera mounting transform from TF.
+          robot_frame: camera_color_optical_frame                                            # Track the camera pose directly because the bag has odometry messages but no odom -> base TF stream.
+          sensor_frame: camera_color_optical_frame                                                   # Sensor and Hydra robot frames coincide, so the sensor extrinsic is identity.
+          wait_duration_s: 0.10                                                                      # Wait briefly for the dynamically published camera frame.
+          warning_timeout_s: 10.0                                                                    # Warn if the fixed sensor transform is still unavailable.
+          error_timeout_s: 0.0                                                                       # Do not terminate automatically; continue waiting for TF.
+          verbosity: 3                                                                               # Detailed extrinsics lookup diagnostics.

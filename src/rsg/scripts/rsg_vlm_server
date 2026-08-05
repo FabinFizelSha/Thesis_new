@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+"""Start the selected local Qwen VLM profile for the RSG stack.
+
+The profile is resolved from ``phase1.vlm.active_profile`` in the central
+pipeline YAML. Only one local VLM server is launched at a time because both
+profiles use the same OpenAI-compatible endpoint.
+"""
+
+from __future__ import annotations
+
+import argparse
+import copy
+import os
+import shlex
+import sys
+from pathlib import Path
+from typing import Any, Dict, List
+
+import yaml
+
+
+def _deep_update(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    """Recursively merge ``override`` into ``base`` and return ``base``."""
+    for key, value in (override or {}).items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            _deep_update(base[key], value)
+        else:
+            base[key] = value
+    return base
+
+
+def _read_memory_gib() -> float:
+    """Return total system memory in GiB using Linux procfs."""
+    try:
+        for line in Path("/proc/meminfo").read_text(encoding="utf-8").splitlines():
+            if line.startswith("MemTotal:"):
+                return float(line.split()[1]) / (1024.0 * 1024.0)
+    except OSError:
+        pass
+    return 0.0
+
+
+def _resolve_vlm(config_path: Path) -> Dict[str, Any]:
+    """Resolve the selected Phase 1 and nested VLM profile from YAML."""
+    raw = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    phase1 = copy.deepcopy(raw.get("phase1", {}) or {})
+
+    phase1_profile = str(phase1.get("profile", "")).strip()
+    phase1_profiles = phase1.get("profiles", {}) or {}
+    if phase1_profile and phase1_profile in phase1_profiles:
+        base_phase1 = {key: value for key, value in phase1.items() if key != "profiles"}
+        phase1 = _deep_update(base_phase1, dict(phase1_profiles[phase1_profile] or {}))
+        phase1["profile"] = phase1_profile
+
+    vlm = copy.deepcopy(phase1.get("vlm", {}) or {})
+    active_profile = str(vlm.get("active_profile", "")).strip()
+    profiles = vlm.get("profiles", {}) or {}
+    if not active_profile:
+        raise ValueError("phase1.vlm.active_profile must select one configured VLM profile.")
+    if active_profile not in profiles:
+        raise ValueError(
+            f"Unknown phase1.vlm.active_profile='{active_profile}'. "
+            f"Available profiles: {sorted(profiles)}"
+        )
+
+    base_vlm = {key: value for key, value in vlm.items() if key not in {"active_profile", "profiles"}}
+    resolved = _deep_update(base_vlm, dict(profiles[active_profile] or {}))
+    resolved["active_profile"] = active_profile
+    return resolved
+
+
+def _require_existing_file(value: str, name: str) -> str:
+    """Return an expanded local file path or raise a precise configuration error."""
+    path = Path(value).expanduser().resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"Configured {name} was not found: {path}")
+    return str(path)
+
+
+def _build_llama_command(server: Dict[str, Any]) -> List[str]:
+    """Create the llama.cpp command for the selected GGUF VLM profile."""
+    binary = _require_existing_file(str(server.get("binary", "")).strip(), "llama.cpp binary")
+    model_path = str(server.get("model_path", "")).strip()
+    mmproj_path = str(server.get("mmproj_path", "")).strip()
+    hf_model = str(server.get("hf_model", "")).strip()
+
+    command = [binary]
+    if model_path:
+        if not mmproj_path:
+            raise ValueError("server.mmproj_path is required when server.model_path selects a local VLM GGUF file.")
+        command.extend([
+            "-m", _require_existing_file(model_path, "VLM model file"),
+            "--mmproj", _require_existing_file(mmproj_path, "VLM vision projector"),
+        ])
+    else:
+        if not hf_model:
+            raise ValueError("llama_cpp profiles require server.hf_model or server.model_path plus server.mmproj_path.")
+        command.extend(["-hf", hf_model])
+
+    command.extend([
+        "--host", str(server.get("host", "0.0.0.0")),
+        "--port", str(int(server.get("port", 8000))),
+        "-ngl", str(int(server.get("gpu_layers", 99))),
+        "-c", str(int(server.get("context_size", 4096))),
+    ])
+    return command
+
+
+def main() -> int:
+    """Resolve the selected profile, validate resources, and exec llama.cpp."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", required=True, help="Path to rsg_pipeline.yaml")
+    parser.add_argument("--dry-run", action="store_true", help="Print the resolved command without starting llama.cpp.")
+    args = parser.parse_args()
+
+    config_path = Path(args.config).expanduser().resolve()
+    if not config_path.is_file():
+        parser.error(f"Configuration file not found: {config_path}")
+
+    try:
+        vlm = _resolve_vlm(config_path)
+        server = dict(vlm.get("server", {}) or {})
+        provider = str(server.get("provider", "")).strip().lower()
+        if provider != "llama_cpp":
+            raise ValueError(f"Unsupported VLM server provider: {provider or 'missing'}")
+
+        minimum_memory = float(server.get("min_system_memory_gib", 0) or 0)
+        installed_memory = _read_memory_gib()
+        if minimum_memory > 0 and installed_memory < minimum_memory:
+            raise RuntimeError(
+                f"Profile '{vlm['active_profile']}' requires at least {minimum_memory:.0f} GiB "
+                f"system memory, but this host reports {installed_memory:.1f} GiB. "
+                "Keep qwen3_vl_2b_q4 selected or use a higher-memory Jetson."
+            )
+
+        command = _build_llama_command(server)
+        print(
+            f"RSG VLM profile={vlm['active_profile']}, model={vlm.get('model', '')}, "
+            f"endpoint={vlm.get('endpoint', '')}",
+            flush=True,
+        )
+        print(f"RSG VLM command: {shlex.join(command)}", flush=True)
+        if args.dry_run:
+            return 0
+
+        os.execv(command[0], command)
+    except Exception as exc:
+        print(f"RSG VLM server configuration error: {exc}", file=sys.stderr, flush=True)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

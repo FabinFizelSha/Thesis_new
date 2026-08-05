@@ -1,0 +1,25 @@
+---
+# Hydra ROS input fed by Phase 1 separate RGB-D-semantic topics.                 # Keep this file aligned with rsg_pipeline.yaml.
+input:
+  type: RosInput                                                                                     # Stock Hydra ROS input adapter.
+  tf_verbosity: 1                                                                                    # Concise TF diagnostics.
+  clear_queue_on_fail: true                                                                          # Drop unusable frames rather than integrating them with a bad pose.
+  tf_lookup:
+    wait_duration_s: 0.50                                                                            # Allow rosbag world -> base_link_gt TF to be available at each RGB timestamp.
+    buffer_size_s: 180.0                                                                             # Retain rosbag TF history while Phase 1 asynchronously publishes semantic images.
+    max_tries: 20                                                                                    # Retry a bounded number of TF lookups before rejecting one frame.
+    verbosity: 3                                                                                     # Preserve useful TF diagnostics during validation.
+  inputs:
+    left_cam:
+      receiver:
+        type: ClosedSetImageReceiver                                                                 # Hydra RGB-D + semantic-label receiver.
+        ns: /rsg/hydra                                                                               # Phase 1 output namespace.
+        queue_size: 3                                                                                # Prevent stale frame accumulation at 1 Hz mapping input.
+        input_separation_s: 0.0                                                                      # Preprocessor already enforces the 1 Hz mapping rate.
+      sensor:
+        type: camera_info                                                                            # Build the camera model from Phase 1 CameraInfo.
+        ns: /rsg/hydra/rgb                                                                           # CameraInfo resolves to /rsg/hydra/rgb/camera_info.
+        min_range: 0.30                                                                              # Match preprocessor depth validity lower bound in metres.
+        max_range: 6.00                                                                              # Match preprocessor depth validity upper bound in metres.
+        extrinsics:
+          type: ros                                                                                  # Obtain base_link_gt -> left_cam from the rosbag TF tree.

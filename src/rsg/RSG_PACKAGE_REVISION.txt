@@ -1,0 +1,3 @@
+A2+B+E+A3 broader-mask takeover revision
+
+Global association quorum optimisation added; 27 tests pass.
