@@ -1,0 +1,662 @@
+diff --git a/src/rsg/config/rsg_pipeline.yaml b/src/rsg/config/rsg_pipeline.yaml
+index 90bf31c0e..0c6ec8c1f 100644
+--- a/src/rsg/config/rsg_pipeline.yaml
++++ b/src/rsg/config/rsg_pipeline.yaml
+@@ -257,12 +257,12 @@ phase1:
+     padding: 0.2                                                                                     # Retained for compatibility with non-NanoSAM modes.
+     points_per_side: 12                                                                               # Retained for compatibility with non-NanoSAM modes.
+     pred_iou_thresh: 0.88                                                                            # Retained for compatibility with non-NanoSAM modes.
+-    min_mask_pixels: 6000                                                                           # About 2% of a 640x480 frame; filters tiny fragments while retaining useful objects.
+-    max_masks: 15                                                                                    # Allow more valid masks per frame while keeping a bounded workload.
++    min_mask_pixels: 10                                                                           # About 2% of a 640x480 frame; filters tiny fragments while retaining useful objects.
++    max_masks: 8                                                                                  # Allow more valid masks per frame while keeping a bounded workload.
+     nanosam:
+       image_encoder_engine: ~/rsg_models/nanosam/resnet18_image_encoder.engine           # TensorRT image encoder engine.
+       mask_decoder_engine: ~/rsg_models/nanosam/mobile_sam_mask_decoder.engine           # TensorRT mask decoder engine.
+-      points_per_side: 4                                                                             # Use a 4x4 prompt grid to increase object coverage.
++      points_per_side: 3                                                                           # Use a 4x4 prompt grid to increase object coverage.
+       mask_threshold: 0.00                                                                           # Accept candidate masks; subsequent filters reject weak geometry.
+       nms_iou: 0.55                                                                                   # Remove highly overlapping duplicate masks.
+       point_margin_fraction: 0.08                                                                    # Do not place prompts directly on the image boundary.
+@@ -278,7 +278,7 @@ phase1:
+     queue_drop_policy: defer_track_id                                                                # Full FIFO defers a unique track ID instead of dropping its semantic job.
+     model_name: openai/clip-vit-base-patch32                                                         # CLIP embedding model used by RAP memory.
+     device: cuda                                                                                     # Use GPU acceleration for embeddings.
+-    storage_path: ~/rsg_rap_memory                                                       # Persistent Chroma/RAP memory directory.
++    storage_path: ~/rsg_rap_memory                                                                   # Generic RAP/Chroma memory location; clear explicitly before each test.
+     chroma_host: 127.0.0.1                                                                           # Local Chroma server.
+     chroma_port: 8001                                                                                # Local Chroma server port.
+     collection_name: visual_rag_orin_deploy_vlm                                                      # Persistent collection containing visual examples and labels.
+@@ -287,7 +287,7 @@ phase1:
+     distance_threshold: 0.15                                                                          # Maximum embedding-distance threshold for an accepted retrieval label.
+     update_memory_from_vlm: false                                                                    # Protect persistent RAP memory during the first 640x480 validation run.
+     update_min_confidence: 0.90                                                                      # Avoid storing weak VLM classifications.
+-    memory_update_path: ~/rsg_ros2_ws/debug/phase1_rap_memory.jsonl                      # Audit log of memory additions.
++    memory_update_path: ~/rsg_ros2_ws/debug/phase1_rap_memory.jsonl                                  # Generic RAP update audit log; updates remain disabled for the baseline.
+ 
+   semantic_labeling:
+     enabled: true                                                                                    # Publish stable semantic results for the Hydra-RAP fuser.
+@@ -478,11 +478,11 @@ phase1:
+     max_frames: 50                                                                                   # Used only if evidence buffering is enabled later.
+ 
+   performance:
+-    measure_timing: false                                                                             # Retain performance metrics for later inspection.
++    measure_timing: true                                                                              # Temporary Phase 1 optimisation baseline instrumentation.
+     publish_timing: false                                                                            # Avoid live timing-topic overhead.
+-    write_timing_excel: false                                                                         # Buffer timing samples and write the workbook during clean shutdown.
+-    timing_excel_path: ~/rsg_ros2_ws/debug/{node_name}_debug_{session_date}_{creation_time}.xlsx  # Used only if Excel timing is enabled.
+-    timing_sheet_name: phase1_timing                                                                 # Worksheet containing Phase 1 stage and end-to-end timing samples.
++    write_timing_csv: true                                                                            # Buffer samples in RAM and write CSV once during clean shutdown.
++    timing_csv_path: ~/rsg_ros2_ws/debug/optimisation/optimisation_part3/optimisation3_{session_date}_{creation_time}/phase1_timing.csv  # Unique lightweight session trace per launch.
++    timing_sheet_name: phase1_part3                                                                  # Legacy key retained for config compatibility; unused by CSV.
+     timing_excel_autosave_every: 0                                                                   # Disable periodic spreadsheet writes.
+ 
+   deployment:
+diff --git a/src/rsg/nodes/phase1.py b/src/rsg/nodes/phase1.py
+index f3cd0798f..8c277f200 100644
+--- a/src/rsg/nodes/phase1.py
++++ b/src/rsg/nodes/phase1.py
+@@ -218,8 +218,8 @@ class Phase1SemanticCoordinator(Node):
+             self.hydra_metadata_pub = self.create_publisher(String, self.config.hydra_metadata_topic, output_qos)
+ 
+         self.timing_recorder = Phase1TimingRecorder(
+-            enabled=self.config.timing_enabled and self.config.write_timing_excel,
+-            output_path=self.config.timing_excel_path,
++            enabled=self.config.timing_enabled and self.config.write_timing_csv,
++            output_path=self.config.timing_csv_path,
+             autosave_every=self.config.timing_excel_autosave_every,
+             logger=self.get_logger(),
+             sheet_name=self.config.timing_sheet_name,
+@@ -336,7 +336,6 @@ class Phase1SemanticCoordinator(Node):
+                     dropped_cached = self.frame_fifo.get_nowait()
+                     dropped_cached.status = "dropped_oldest"
+                     self.dropped_count += 1
+-                    self.record_frame_fifo_event("dropped_oldest", dropped_cached.msg, queue_wait_ms=0.0, reason="frame_fifo_full")
+                     self.record_frame_lifecycle_event(
+                         "dropped_oldest",
+                         dropped_cached,
+@@ -352,7 +351,6 @@ class Phase1SemanticCoordinator(Node):
+             else:
+                 cached.status = "dropped_newest"
+                 self.dropped_count += 1
+-                self.record_frame_fifo_event("dropped_newest", msg, queue_wait_ms=0.0, reason="frame_fifo_full")
+                 self.record_frame_lifecycle_event(
+                     "dropped_newest",
+                     cached,
+@@ -369,7 +367,10 @@ class Phase1SemanticCoordinator(Node):
+         try:
+             cached.status = "enqueued"
+             self.frame_fifo.put_nowait(cached)
+-            self.record_frame_fifo_event("enqueued", msg, queue_wait_ms=0.0, reason="preprocessed_frame_received")
++            cached.enqueued_monotonic = time.perf_counter()
++            cached.callback_enqueue_delay_ms = (
++                cached.enqueued_monotonic - cached.received_monotonic
++            ) * 1000.0
+             self.record_frame_lifecycle_event(
+                 "enqueued",
+                 cached,
+@@ -382,7 +383,6 @@ class Phase1SemanticCoordinator(Node):
+         except queue.Full:
+             cached.status = "dropped_newest"
+             self.dropped_count += 1
+-            self.record_frame_fifo_event("dropped_newest", msg, queue_wait_ms=0.0, reason="frame_fifo_full_race")
+             self.record_frame_lifecycle_event(
+                 "dropped_newest",
+                 cached,
+@@ -434,12 +434,14 @@ class Phase1SemanticCoordinator(Node):
+             frame = cached.msg
+             cached.sent_to_classifier_monotonic = dequeue_time
+             cached.sent_to_classifier_delay_ms = (dequeue_time - cached.received_monotonic) * 1000.0
++            cached.frame_queue_wait_ms = (
++                dequeue_time - (cached.enqueued_monotonic or cached.received_monotonic)
++            ) * 1000.0
+             cached.status = "dequeued_to_sam_rap"
+             fifo_wait_ms = cached.sent_to_classifier_delay_ms
+             # Refresh lookup cache as a convenience for external/debug code, but
+             # the queued CachedFrame is now the authoritative timing source.
+             self.frame_cache.put(cached)
+-            self.record_frame_fifo_event("dequeued_to_sam_rap", frame, queue_wait_ms=fifo_wait_ms, reason="worker_ready")
+             self.record_frame_lifecycle_event(
+                 "dequeued_to_sam_rap",
+                 cached,
+@@ -454,8 +456,12 @@ class Phase1SemanticCoordinator(Node):
+             try:
+                 result = self.process_frame(frame, input_age_ms=fifo_wait_ms)
+ 
++                # Per-frame diagnostics are written once, after Hydra publish,
++                # so measurement does not take the recorder lock repeatedly on
++                # the hot path. The optional live topic remains available.
+                 timing_start = time.perf_counter()
+-                self.publish_timing_event(result, safe_json_loads(result.metadata_json, default={}))
++                if self.timing_pub is not None:
++                    self.publish_timing_event(result)
+                 result.classifier_debug_record_delay_ms = (time.perf_counter() - timing_start) * 1000.0
+ 
+                 self._publish_hydra_from_result(frame, result, cached)
+@@ -487,7 +493,7 @@ class Phase1SemanticCoordinator(Node):
+         callback_start = time.perf_counter()
+ 
+         build_start = time.perf_counter()
+-        hydra_msg = self.build_hydra_frame(frame, result, build_start, cached)
++        hydra_msg, hydra_stage_ms = self.build_hydra_frame(frame, result, build_start, cached)
+         hydra_build_delay_ms = (time.perf_counter() - build_start) * 1000.0
+ 
+         publish_start = time.perf_counter()
+@@ -525,20 +531,31 @@ class Phase1SemanticCoordinator(Node):
+             - coordinator_delay_ms,
+         )
+         metadata = safe_json_loads(result.metadata_json, default={})
++        stage_ms = metadata.get("diagnostic_stage_ms", {}) or {}
++        classifier_known_ms = (
++            float(result.image_conversion_delay_ms)
++            + float(result.sam_delay_ms)
++            + float(result.rap_delay_ms)
++            + float(result.label_map_delay_ms)
++            + float(result.metadata_delay_ms)
++            + float(result.result_message_build_delay_ms)
++        )
++        classifier_other_ms = max(0.0, float(result.classifier_delay_ms) - classifier_known_ms)
++        hydra_build_other_ms = max(
++            0.0,
++            hydra_build_delay_ms
++            - float(hydra_stage_ms.get("hydra_depth_filter_ms", 0.0))
++            - float(hydra_stage_ms.get("hydra_metadata_build_ms", 0.0)),
++        )
++        coordinator_other_ms = max(
++            0.0,
++            coordinator_delay_ms - hydra_build_delay_ms - hydra_publish_delay_ms - unknown_publish_delay_ms,
++        )
+ 
+         if self.config.timing_enabled:
+-            self.record_frame_lifecycle_event(
+-                hydra_status,
+-                cached,
+-                frame=frame,
+-                status=hydra_status,
+-                timing_valid=bool(timing_valid),
+-                timing_source=timing_source,
+-                total_delay_ms=total_delay_ms,
+-                reason="ok",
+-            )
+             self.timing_recorder.add_sample(
+                 node="rsg_object_detection",
++                event="frame_trace",
+                 sequence=int(result.sequence),
+                 frame_id=result.rsg_frame_id,
+                 status=hydra_status,
+@@ -547,10 +564,35 @@ class Phase1SemanticCoordinator(Node):
+                 classifier_delay_ms=float(result.classifier_delay_ms),
+                 total_delay_ms=total_delay_ms,
+                 sent_to_classifier_delay_ms=sent_to_classifier_delay_ms,
++                callback_enqueue_delay_ms=float(cached.callback_enqueue_delay_ms) if timing_valid else 0.0,
++                frame_queue_wait_ms=float(cached.frame_queue_wait_ms) if timing_valid else 0.0,
+                 classifier_debug_record_delay_ms=classifier_debug_ms,
++                image_conversion_delay_ms=float(result.image_conversion_delay_ms),
++                sam_prepare_ms=float(stage_ms.get("sam_prepare_ms", 0.0)),
++                sam_inference_ms=float(stage_ms.get("sam_inference_ms", 0.0)),
++                sam_restore_ms=float(stage_ms.get("sam_restore_ms", 0.0)),
++                sam_other_ms=float(stage_ms.get("sam_other_ms", 0.0)),
++                sam_delay_ms=float(result.sam_delay_ms),
++                geometry_metadata_ms=float(stage_ms.get("geometry_metadata_ms", 0.0)),
++                frame_assignment_ms=float(stage_ms.get("frame_assignment_ms", 0.0)),
++                track_association_ms=float(stage_ms.get("track_association_ms", 0.0)),
++                crop_update_ms=float(stage_ms.get("crop_update_ms", 0.0)),
++                run_rap_other_ms=float(stage_ms.get("run_rap_other_ms", 0.0)),
++                active_segments_publish_ms=float(stage_ms.get("active_segments_publish_ms", 0.0)),
++                semantic_dispatch_ms=float(stage_ms.get("semantic_dispatch_ms", 0.0)),
++                quality_deferred_release_ms=float(stage_ms.get("quality_deferred_release_ms", 0.0)),
++                rap_delay_ms=float(result.rap_delay_ms),
++                label_map_delay_ms=float(result.label_map_delay_ms),
++                metadata_delay_ms=float(result.metadata_delay_ms),
++                result_message_build_delay_ms=float(result.result_message_build_delay_ms),
++                classifier_other_ms=classifier_other_ms,
+                 hydra_build_delay_ms=hydra_build_delay_ms,
++                hydra_depth_filter_ms=float(hydra_stage_ms.get("hydra_depth_filter_ms", 0.0)),
++                hydra_metadata_build_ms=float(hydra_stage_ms.get("hydra_metadata_build_ms", 0.0)),
++                hydra_build_other_ms=hydra_build_other_ms,
+                 hydra_publish_delay_ms=hydra_publish_delay_ms,
+                 unknown_publish_delay_ms=unknown_publish_delay_ms,
++                coordinator_other_ms=coordinator_other_ms,
+                 pipeline_wait_ms=pipeline_wait_ms,
+                 num_masks=int(result.num_masks),
+                 num_known=int(result.num_known),
+@@ -574,7 +616,7 @@ class Phase1SemanticCoordinator(Node):
+         # longer needed for result matching in the combined mode.
+         self.frame_cache.remove(frame.rsg_frame_id)
+ 
+-    def build_hydra_frame(self, frame: RsgFrame, result: Phase1ClassificationResult, callback_start: float, cached: Optional[CachedFrame]) -> RsgHydraFrame:
++    def build_hydra_frame(self, frame: RsgFrame, result: Phase1ClassificationResult, callback_start: float, cached: Optional[CachedFrame]) -> Tuple[RsgHydraFrame, Dict[str, float]]:
+         """Create the combined Hydra-ready frame message."""
+         hydra_msg = RsgHydraFrame()
+         hydra_msg.header = frame.header
+@@ -582,9 +624,11 @@ class Phase1SemanticCoordinator(Node):
+         hydra_msg.source = frame.source
+         hydra_msg.sequence = frame.sequence
+         hydra_msg.rgb = frame.rgb
++        depth_filter_start = time.perf_counter()
+         hydra_depth, hydra_semantic, hydra_instance = self.apply_hydra_depth_range_filter(
+             frame.depth_m, result.semantic_labels, result.instance_labels
+         )
++        hydra_depth_filter_ms = (time.perf_counter() - depth_filter_start) * 1000.0
+         hydra_msg.depth_m = hydra_depth
+         hydra_msg.camera_info = frame.camera_info
+         hydra_msg.camera_pose = frame.camera_pose
+@@ -596,6 +640,7 @@ class Phase1SemanticCoordinator(Node):
+         hydra_msg.object_metadata_json = result.object_metadata_json
+         hydra_msg.unknown_candidates_json = result.unknown_candidates_json
+         hydra_msg.perception_metadata_json = result.metadata_json
++        metadata_start = time.perf_counter()
+         metadata = {
+             "phase": "phase1_hydra_input",
+             "node": "rsg_object_detection",
+@@ -609,11 +654,15 @@ class Phase1SemanticCoordinator(Node):
+         if self.config.include_frame_relation_metadata:
+             metadata["source_preprocessor_metadata"] = safe_json_loads(frame.metadata_json, default={})
+         hydra_msg.metadata_json = safe_json_dumps(metadata)
++        hydra_metadata_build_ms = (time.perf_counter() - metadata_start) * 1000.0
+         hydra_msg.coordinator_delay_ms = (time.perf_counter() - callback_start) * 1000.0
+         hydra_msg.classifier_delay_ms = float(result.classifier_delay_ms)
+         timing_valid = cached is not None and float(getattr(cached, "received_monotonic", 0.0) or 0.0) > 0.0
+         hydra_msg.total_delay_ms = (time.perf_counter() - cached.received_monotonic) * 1000.0 if timing_valid else 0.0
+-        return hydra_msg
++        return hydra_msg, {
++            "hydra_depth_filter_ms": hydra_depth_filter_ms,
++            "hydra_metadata_build_ms": hydra_metadata_build_ms,
++        }
+ 
+ 
+     def apply_hydra_depth_range_filter(
+@@ -713,21 +762,6 @@ class Phase1SemanticCoordinator(Node):
+         }
+         self.evidence_buffer.add(record)
+ 
+-    def record_frame_fifo_event(self, event: str, frame: RsgFrame, queue_wait_ms: float = 0.0, reason: str = "") -> None:
+-        """Record FIFO latency events when timing diagnostics are enabled."""
+-        if not self.config.timing_enabled:
+-            return
+-        self.timing_recorder.add_sample(
+-            node="rsg_object_detection",
+-            event=event,
+-            sequence=int(frame.sequence),
+-            frame_id=frame.rsg_frame_id,
+-            queue_size=int(self.frame_fifo.qsize()),
+-            queue_max_size=int(self.config.request_queue_size),
+-            queue_wait_ms=float(queue_wait_ms),
+-            reason=reason,
+-        )
+-
+     def record_frame_lifecycle_event(
+         self,
+         event: str,
+@@ -742,7 +776,7 @@ class Phase1SemanticCoordinator(Node):
+         reason: str = "",
+     ) -> None:
+         """Record one frame lifecycle latency event."""
+-        if not self.config.timing_enabled:
++        if not self.config.timing_enabled or event not in {"failed", "dropped_oldest", "dropped_newest"}:
+             return
+         msg = frame if frame is not None else cached.msg if cached is not None else None
+         if msg is None:
+@@ -785,21 +819,48 @@ class Phase1SemanticCoordinator(Node):
+         image_conversion_delay_ms = (time.perf_counter() - conversion_start) * 1000.0
+ 
+         sam_start = time.perf_counter()
++        sam_prepare_start = sam_start
+         sam_rgb, sam_prep = self.prepare_sam_input(rgb, depth)
++        sam_prepare_delay_ms = (time.perf_counter() - sam_prepare_start) * 1000.0
++        sam_inference_start = time.perf_counter()
+         sam_masks_small = self.run_sam(sam_rgb, min_area_px=self.scaled_min_mask_pixels(sam_prep))
++        sam_inference_delay_ms = (time.perf_counter() - sam_inference_start) * 1000.0
++        sam_restore_start = time.perf_counter()
+         sam_masks = self.restore_sam_masks_to_original(sam_masks_small, sam_prep, rgb.shape[:2])
++        sam_restore_delay_ms = (time.perf_counter() - sam_restore_start) * 1000.0
+         sam_delay_ms = (time.perf_counter() - sam_start) * 1000.0
++        sam_other_ms = max(
++            0.0,
++            sam_delay_ms - sam_prepare_delay_ms - sam_inference_delay_ms - sam_restore_delay_ms,
++        )
+ 
+         rap_start = time.perf_counter()
+-        classified, track_records = self.run_rap_and_metadata(frame, rgb, depth, tx, rot_m, sam_masks)
++        rap_frame_start = time.perf_counter()
++        classified, track_records, frame_stage_ms = self.run_rap_and_metadata(frame, rgb, depth, tx, rot_m, sam_masks)
++        run_rap_and_metadata_ms = (time.perf_counter() - rap_frame_start) * 1000.0
++        measured_rap_frame_ms = sum(
++            float(frame_stage_ms.get(key, 0.0))
++            for key in (
++                "geometry_metadata_ms", "frame_assignment_ms",
++                "track_association_ms", "crop_update_ms",
++            )
++        )
++        frame_stage_ms["run_rap_other_ms"] = max(0.0, run_rap_and_metadata_ms - measured_rap_frame_ms)
+         semantic_label_dispatches: List[Dict[str, Any]] = []
+         current_timestamp_sec = float(stamp_to_float(frame.header.stamp))
+         self._latest_processed_timestamp_sec = current_timestamp_sec
++        stage_start = time.perf_counter()
+         if self.config.persistent_tracking_enabled:
+             self._publish_active_local_segments(frame, track_records, current_timestamp_sec)
++        frame_stage_ms["active_segments_publish_ms"] = (time.perf_counter() - stage_start) * 1000.0
++        stage_start = time.perf_counter()
+         if self.config.persistent_tracking_enabled and self.config.semantic_labeling_enabled:
+             semantic_label_dispatches = self._dispatch_tracks_after_settling(current_timestamp_sec)
++        frame_stage_ms["semantic_dispatch_ms"] = (time.perf_counter() - stage_start) * 1000.0
++        stage_start = time.perf_counter()
++        if self.config.persistent_tracking_enabled and self.config.semantic_labeling_enabled:
+             self._release_quality_deferred_vlm_if_expired(current_timestamp_sec)
++        frame_stage_ms["quality_deferred_release_ms"] = (time.perf_counter() - stage_start) * 1000.0
+         rap_delay_ms = (time.perf_counter() - rap_start) * 1000.0
+ 
+         label_start = time.perf_counter()
+@@ -813,6 +874,13 @@ class Phase1SemanticCoordinator(Node):
+         metadata = self.build_result_metadata(
+             frame, sam_masks, objects, unknowns, vlm_dispatch, track_records, semantic_label_dispatches
+         )
++        metadata["diagnostic_stage_ms"] = {
++            "sam_prepare_ms": sam_prepare_delay_ms,
++            "sam_inference_ms": sam_inference_delay_ms,
++            "sam_restore_ms": sam_restore_delay_ms,
++            "sam_other_ms": sam_other_ms,
++            **frame_stage_ms,
++        }
+         sam_prep_summary = {k: v for k, v in sam_prep.items() if k != "valid_depth_mask_sam"}
+         metadata["sam_input_processing"] = sam_prep_summary
+         metadata_delay_ms = (time.perf_counter() - metadata_start) * 1000.0
+@@ -1060,7 +1128,7 @@ class Phase1SemanticCoordinator(Node):
+         tx: np.ndarray,
+         rot_m: np.ndarray,
+         sam_masks: List[SamMask],
+-    ) -> Tuple[List[ClassifiedMask], List[Dict[str, Any]]]:
++    ) -> Tuple[List[ClassifiedMask], List[Dict[str, Any]], Dict[str, float]]:
+         """Build one stable Hydra object slot per physical object.
+ 
+         Each physical object receives a persistent slot immediately. The
+@@ -1072,6 +1140,11 @@ class Phase1SemanticCoordinator(Node):
+         track_records: List[Dict[str, Any]] = []
+         next_instance_id = 1
+         timestamp_sec = stamp_to_float(frame.header.stamp)
++        timing_enabled = self.config.timing_enabled
++        geometry_ms = 0.0
++        assignment_ms = 0.0
++        association_ms = 0.0
++        crop_update_ms = 0.0
+         if self.config.persistent_tracking_enabled:
+             self.persistent_tracker.begin_frame()
+ 
+@@ -1080,6 +1153,7 @@ class Phase1SemanticCoordinator(Node):
+         # frame-level assignment (E), eliminating SAM-output-order bias.
+         prepared: List[Dict[str, Any]] = []
+         for idx, mask in enumerate(sam_masks):
++            stage_start = time.perf_counter() if timing_enabled else 0.0
+             candidate_id = self.make_candidate_id(frame, mask.mask_id, idx, False)
+             metadata = self.build_object_metadata(
+                 frame=frame, mask=mask, depth=depth, tx=tx, rot_m=rot_m,
+@@ -1091,8 +1165,13 @@ class Phase1SemanticCoordinator(Node):
+                 "metadata": metadata, "mask": mask.mask,
+                 "timestamp_sec": timestamp_sec, "desired_hydra_label_id": 0,
+             })
++            if timing_enabled:
++                geometry_ms += (time.perf_counter() - stage_start) * 1000.0
++        stage_start = time.perf_counter() if timing_enabled else 0.0
+         keep_mask = (self.persistent_tracker.prepare_frame_assignments(prepared)
+                      if self.config.persistent_tracking_enabled else [True] * len(sam_masks))
++        if timing_enabled:
++            assignment_ms = (time.perf_counter() - stage_start) * 1000.0
+ 
+         for idx, mask in enumerate(sam_masks):
+             if not keep_mask[idx]:
+@@ -1120,6 +1199,7 @@ class Phase1SemanticCoordinator(Node):
+             track_record: Dict[str, Any] = {}
+ 
+             if self.config.persistent_tracking_enabled:
++                stage_start = time.perf_counter() if timing_enabled else 0.0
+                 # ``new_track_use_hydra_slot`` applies only when there is no
+                 # geometry match.  Matching slot 24 always remains slot 24,
+                 # even if RAP now returns "chair".
+@@ -1148,11 +1228,16 @@ class Phase1SemanticCoordinator(Node):
+                 semantic_label_id = int(metadata.get("hydra_label_id", semantic_label_id) or 0)
+                 semantic_label_name = str(metadata.get("hydra_label_name", semantic_label_name))
+                 instance_id = int(metadata.get("persistent_instance_id", instance_id) or 0)
++                if timing_enabled:
++                    association_ms += (time.perf_counter() - stage_start) * 1000.0
+ 
+             external_track_id = str(metadata.get("persistent_track_id", "")) or None
+             # Keep updating the shared best crop. RAP/VLM receive only this
+             # track ID and retrieve the latest crop when each worker dequeues it.
++            stage_start = time.perf_counter() if timing_enabled else 0.0
+             self._remember_track_crop(external_track_id, rgb, metadata, frame, mask.mask)
++            if timing_enabled:
++                crop_update_ms += (time.perf_counter() - stage_start) * 1000.0
+ 
+             # VLM remains a one-shot fallback only when the asynchronous RAP
+             # lookup cannot identify this slot.
+@@ -1188,7 +1273,12 @@ class Phase1SemanticCoordinator(Node):
+ 
+             metadata["rap_dispatch_status"] = "track_id_pending_rap" if self.config.rap_enabled else "rap_disabled"
+             next_instance_id += 1
+-        return classified, track_records
++        return classified, track_records, {
++            "geometry_metadata_ms": geometry_ms,
++            "frame_assignment_ms": assignment_ms,
++            "track_association_ms": association_ms,
++            "crop_update_ms": crop_update_ms,
++        }
+ 
+     def _classify_rap_synchronously(self, rgb: np.ndarray, mask: SamMask, mask_index: int) -> Dict[str, Any]:
+         """Return one RAP decision before Hydra publication in reuse mode."""
+@@ -2731,6 +2821,7 @@ class Phase1SemanticCoordinator(Node):
+         if not self.config.timing_enabled:
+             return
+         metadata = metadata or {}
++        stage_ms = metadata.get("diagnostic_stage_ms", {}) or {}
+         if self.timing_pub is not None:
+             msg = Float64MultiArray()
+             msg.data = [
+@@ -2751,7 +2842,14 @@ class Phase1SemanticCoordinator(Node):
+             input_age_ms=float(result.input_age_ms),
+             classifier_delay_ms=float(result.classifier_delay_ms),
+             sam_delay_ms=float(result.sam_delay_ms),
++            sam_prepare_ms=float(stage_ms.get("sam_prepare_ms", 0.0)),
++            sam_inference_ms=float(stage_ms.get("sam_inference_ms", 0.0)),
++            sam_restore_ms=float(stage_ms.get("sam_restore_ms", 0.0)),
+             rap_delay_ms=float(result.rap_delay_ms),
++            geometry_metadata_ms=float(stage_ms.get("geometry_metadata_ms", 0.0)),
++            frame_assignment_ms=float(stage_ms.get("frame_assignment_ms", 0.0)),
++            track_association_ms=float(stage_ms.get("track_association_ms", 0.0)),
++            crop_update_ms=float(stage_ms.get("crop_update_ms", 0.0)),
+             label_map_delay_ms=float(result.label_map_delay_ms),
+             metadata_delay_ms=float(result.metadata_delay_ms),
+             image_conversion_delay_ms=float(getattr(result, "image_conversion_delay_ms", 0.0)),
+@@ -2832,7 +2930,7 @@ class Phase1SemanticCoordinator(Node):
+         try:
+             self.timing_recorder.save()
+         except Exception as exc:
+-            print(f"Failed to save Phase 1 timing workbook: {exc}", flush=True)
++            print(f"Failed to save Phase 1 timing CSV: {exc}", flush=True)
+ 
+         # Do not wait for a long HTTP timeout. Threads are daemon threads and
+         # will terminate with the process after a brief cooperative join.
+diff --git a/src/rsg/nodes/support/phase1/frame_cache.py b/src/rsg/nodes/support/phase1/frame_cache.py
+index 2979d56f3..a1663a2cf 100644
+--- a/src/rsg/nodes/support/phase1/frame_cache.py
++++ b/src/rsg/nodes/support/phase1/frame_cache.py
+@@ -17,6 +17,11 @@ class CachedFrame:
+     received_stamp_sec: float
+     msg: Any
+     status: str = "received"
++    # Timestamp immediately after successful insertion into the Phase 1 FIFO.
++    # This separates lightweight callback/enqueue work from worker queue wait.
++    enqueued_monotonic: float = 0.0
++    callback_enqueue_delay_ms: float = 0.0
++    frame_queue_wait_ms: float = 0.0
+     # Monotonic timestamp when the coordinator dequeued this frame and
+     # published it to the classifier. 0.0 means not sent yet.
+     sent_to_classifier_monotonic: float = 0.0
+diff --git a/src/rsg/nodes/support/phase1/phase1_config.py b/src/rsg/nodes/support/phase1/phase1_config.py
+index f1a153330..7d37f95d5 100644
+--- a/src/rsg/nodes/support/phase1/phase1_config.py
++++ b/src/rsg/nodes/support/phase1/phase1_config.py
+@@ -73,8 +73,8 @@ class Phase1Config:
+     # Debug / timing.
+     timing_measurement_enabled: bool
+     publish_timing_topic: bool
+-    write_timing_excel: bool
+-    timing_excel_path: str
++    write_timing_csv: bool
++    timing_csv_path: str
+     timing_sheet_name: str
+     timing_excel_autosave_every: int
+     publish_status: bool
+@@ -458,10 +458,13 @@ class Phase1Config:
+ 
+         creation_time = datetime.now().strftime("%H%M%S")
+         session_date = datetime.now().strftime("%Y%m%d")
+-        timing_excel_path = str(
++        timing_csv_path = str(
+             performance.get(
+-                "timing_excel_path",
+-                f"~/rsg_ros2_ws/debug/{node_key}_debug_{{session_date}}_{{creation_time}}.xlsx",
++                "timing_csv_path",
++                performance.get(
++                    "timing_excel_path",
++                    f"~/rsg_ros2_ws/debug/{node_key}_debug_{{session_date}}_{{creation_time}}.csv",
++                ),
+             )
+         ).format(session_date=session_date, creation_time=creation_time, node_name=node_key)
+         preproc_topics = preprocessing.get("topics", {}) or {}
+@@ -503,8 +506,8 @@ class Phase1Config:
+             drop_oldest_when_full=bool(coordinator.get("drop_oldest_when_full", True)),
+             timing_measurement_enabled=bool(performance.get("measure_timing", True)),
+             publish_timing_topic=bool(performance.get("publish_timing", True)),
+-            write_timing_excel=bool(performance.get("write_timing_excel", True)),
+-            timing_excel_path=timing_excel_path,
++            write_timing_csv=bool(performance.get("write_timing_csv", performance.get("write_timing_excel", True))),
++            timing_csv_path=timing_csv_path,
+             timing_sheet_name=str(performance.get("timing_sheet_name", node_key[:31])),
+             timing_excel_autosave_every=int(performance.get("timing_excel_autosave_every", 0)),
+             publish_status=bool(coordinator.get("publish_status", True)),
+diff --git a/src/rsg/nodes/support/phase1/phase1_timing_recorder.py b/src/rsg/nodes/support/phase1/phase1_timing_recorder.py
+index 69d4ff1c3..38425800d 100644
+--- a/src/rsg/nodes/support/phase1/phase1_timing_recorder.py
++++ b/src/rsg/nodes/support/phase1/phase1_timing_recorder.py
+@@ -1,21 +1,23 @@
+-"""Async Excel timing/debug recorder for Phase 1 nodes."""
++"""Buffered CSV timing/debug recorder for Phase 1 nodes."""
+ 
+ from __future__ import annotations
+ 
++import csv
+ from pathlib import Path
+ from threading import Lock, Thread
+ from typing import Any, Dict, List, Optional, Tuple
+ 
+ 
+ class Phase1TimingRecorder:
+-    """Store Phase 1 timing events and write them to Excel outside the hot path."""
++    """Buffer Phase 1 timing events and write plain CSV outside the hot path."""
+ 
+     def __init__(self, enabled: bool, output_path: str, autosave_every: int, logger: Any, sheet_name: str) -> None:
+         self.enabled = enabled
+         self.output_path = Path(output_path).expanduser().resolve()
+         self.autosave_every = max(0, int(autosave_every))
+         self.logger = logger
+-        self.sheet_name = self._sanitize_sheet_name(sheet_name)
++        # Kept in the signature for configuration compatibility. CSV has no sheets.
++        self.sheet_name = sheet_name
+         self.samples: List[Dict[str, Any]] = []
+         self._lock = Lock()
+         self._save_thread: Optional[Thread] = None
+@@ -23,15 +25,9 @@ class Phase1TimingRecorder:
+         self._last_saved_count = 0
+ 
+         if self.enabled:
+-            self.logger.info(f"Phase 1 timing Excel recorder enabled. Output: {self.output_path}")
++            self.logger.info(f"Phase 1 buffered CSV timing enabled. Output: {self.output_path}")
+         else:
+-            self.logger.info("Phase 1 timing Excel recorder disabled.")
+-
+-    @staticmethod
+-    def _sanitize_sheet_name(name: str) -> str:
+-        invalid_chars = "[]:*?/\\"
+-        cleaned = "".join("_" if char in invalid_chars else char for char in name)
+-        return (cleaned.strip() or "phase1_timing")[:31]
++            self.logger.info("Phase 1 buffered CSV timing disabled.")
+ 
+     def add_sample(self, **sample: Any) -> None:
+         """Add one event. Accepts arbitrary columns to support both Phase 1 nodes."""
+@@ -60,7 +56,7 @@ class Phase1TimingRecorder:
+             snapshot = self._snapshot_for_save()
+             if snapshot is not None:
+                 samples, count = snapshot
+-                self._write_workbook(samples, count)
++                self._write_csv(samples, count)
+             with self._lock:
+                 if self._save_pending:
+                     self._save_pending = False
+@@ -87,19 +83,11 @@ class Phase1TimingRecorder:
+         if snapshot is None:
+             return
+         samples, count = snapshot
+-        self._write_workbook(samples, count)
++        self._write_csv(samples, count)
+ 
+-    def _write_workbook(self, samples: List[Dict[str, Any]], count: int) -> None:
++    def _write_csv(self, samples: List[Dict[str, Any]], count: int) -> None:
+         if not self.enabled or not samples:
+             return
+-        try:
+-            from openpyxl import Workbook
+-            from openpyxl.styles import Alignment, Font, PatternFill
+-        except ImportError as exc:
+-            self.logger.error("openpyxl is missing; cannot write Phase 1 timing workbook.")
+-            self.logger.error(str(exc))
+-            return
+-
+         self.output_path.parent.mkdir(parents=True, exist_ok=True)
+         headers: List[str] = []
+         for sample in samples:
+@@ -107,38 +95,11 @@ class Phase1TimingRecorder:
+                 if key not in headers:
+                     headers.append(key)
+ 
+-        wb = Workbook()
+-        sheet = wb.active
+-        sheet.title = self.sheet_name
+-        sheet.append(headers)
+-        for sample in samples:
+-            sheet.append([sample.get(header) for header in headers])
+-
+-        header_fill = PatternFill("solid", fgColor="D9EAF7")
+-        fail_fill = PatternFill("solid", fgColor="F4CCCC")
+-        ok_fill = PatternFill("solid", fgColor="D9EAD3")
+-        for cell in sheet[1]:
+-            cell.font = Font(bold=True)
+-            cell.fill = header_fill
+-            cell.alignment = Alignment(horizontal="center")
+-
+-        status_col = headers.index("status") + 1 if "status" in headers else None
+-        if status_col is not None:
+-            for row in sheet.iter_rows(min_row=2, max_row=len(samples) + 1):
+-                status = str(row[status_col - 1].value).lower() if row[status_col - 1].value is not None else ""
+-                if status in {"failed", "dropped", "stale", "error"}:
+-                    for cell in row:
+-                        cell.fill = fail_fill
+-                elif status in {"ok", "published", "sent_to_hydra", "vlm_done"}:
+-                    row[status_col - 1].fill = ok_fill
+-
+-        sheet.freeze_panes = "A2"
+-        sheet.auto_filter.ref = sheet.dimensions
+-        for col in sheet.columns:
+-            letter = col[0].column_letter
+-            max_len = max(len(str(cell.value)) if cell.value is not None else 0 for cell in col)
+-            sheet.column_dimensions[letter].width = min(max(12, max_len + 2), 50)
+-
+-        wb.save(self.output_path)
++        temporary_path = self.output_path.with_suffix(self.output_path.suffix + ".tmp")
++        with temporary_path.open("w", encoding="utf-8", newline="") as stream:
++            writer = csv.DictWriter(stream, fieldnames=headers, extrasaction="ignore")
++            writer.writeheader()
++            writer.writerows(samples)
++        temporary_path.replace(self.output_path)
+         self._last_saved_count = count
+-        self.logger.info(f"Saved Phase 1 timing workbook with {count} rows: {self.output_path}")
++        self.logger.info(f"Saved Phase 1 timing CSV with {count} rows: {self.output_path}")

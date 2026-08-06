@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+bag_path="${RSG_UHUMANS2_BAG:-/home/student/datasets/uhumans2/uHumans2_office_s1_00h_ros2}"
+
+if [[ ! -f "${bag_path}/metadata.yaml" ]]; then
+  echo "ROS 2 bag is not ready at: ${bag_path}" >&2
+  echo "Wait for conversion to finish or set RSG_UHUMANS2_BAG." >&2
+  exit 1
+fi
+
+exec ros2 bag play "${bag_path}" --clock "$@"

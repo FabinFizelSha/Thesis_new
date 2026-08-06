@@ -1,0 +1,75 @@
+\documentclass[ a4paper,
+                oneside,
+                toc=bibliography,
+                toc=listof
+                ]{scrbook}
+
+\input{settings}
+
+% Path to .bib file for BibLatex
+\addbibresource{bibliography.bib}
+% \addbibresource{someOtherBibFile}
+
+% Select your type and language of thesis in the settings.tex document
+\author{Fabin Fizel Sha}
+\major{Electrical Engineering}
+\title{Risk-Annotated Spatial Scene Graph for Dynamic Risk Assessment in Autonomous Systems}
+
+\thesisno{TBD}
+\date{30 October 2026}
+\supervisor{Joachim Grimstad, M.Sc.}
+\professor{Prof. Dr.-Ing. Andrey Morozov}
+
+\extsupervisor{}
+\extcompany{}
+
+
+\begin{document}
+    \frontmatter
+    \makeIAStitle
+    %\setcounter{page}{1} % start at page (i) after title page
+
+    \cleardoublepage
+    \currentpdfbookmark{\contentsname}{Inhalt}
+        % Kurzfassung/Abstract
+    \input{chapters/Abstract}
+    \acresetall
+    \cleardoublepage
+
+    \tableofcontents
+    \cleardoublepage
+    \listoffigures
+    \cleardoublepage
+    \listoftables
+     \cleardoublepage
+    \cleardoublepage
+
+
+
+
+    \mainmatter
+    % ********************************************************************
+    % Write your own contents here:
+    % ********************************************************************
+
+    \input{chapters/Introduction}
+    \input{chapters/Theory}
+    \input{chapters/Methodology}
+    \input{chapters/Experiments}
+
+    \chapter{Conclusions}
+
+    % ********************************************************************
+    % End of contents
+    % ********************************************************************
+
+    \cleardoublepage
+    \printbibliography
+
+    % Appendix, if needed:
+    \appendix
+    \chapter{Example appendix chapter}
+
+    \declarationOfOriginality
+
+\end{document}

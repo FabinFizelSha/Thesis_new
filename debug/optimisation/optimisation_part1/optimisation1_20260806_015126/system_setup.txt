@@ -1,0 +1,38 @@
+Phase 1 optimisation Part 3 — Iteration 1 system snapshot
+Session: optimisation3_20260806_015126
+Captured: 2026-08-06, Europe/Paris
+
+Host: student-desktop
+Hardware: NVIDIA Jetson AGX Orin Developer Kit
+Architecture: aarch64
+CPU: 12 x ARM Cortex-A78AE, maximum reported frequency 2201.6001 MHz
+Memory at evidence capture: 61 GiB total, 15 GiB used, 45 GiB available
+Swap at evidence capture: 30 GiB total, 1.6 GiB used
+Kernel: Linux 5.15.185-tegra, NVIDIA build dated 2026-01-15
+Jetson Linux package: nvidia-l4t-core 36.5.0-20260115194252
+NVIDIA power mode: MODE_50W (mode ID 3)
+Jetson clocks: not captured because jetson_clocks --show requires root
+
+ROS distribution: Humble
+ROS base package: ros-humble-ros-base 0.10.0-1jammy.20260607.150006
+Default middleware reported by ros2 doctor: rmw_fastrtps_cpp
+Python: 3.10.12
+
+Repository workspace: /home/student/rsg_ros2_ws
+Git branch: latex-edit
+Git HEAD: 8064cf9db84a5fb2c4eefe140ae27a1b8b742d36
+Repository had uncommitted diagnostic/configuration changes and unrelated
+user-owned dirty-worktree entries. See git_status.txt and working_tree.patch.
+
+Pipeline launch: ros2 launch rsg rsg_all.launch.py
+Active configuration: src/rsg/config/rsg_pipeline.yaml
+Bag: ~/datasets/uhumans2/office_s1_00h_v2
+Bag rate: 1
+Bag playback window: 180 seconds
+TF QoS overrides: ~/.tf_overrides.yaml
+Phase 1 queue size/drop policy: 1 / drop oldest
+RAP storage: generic ~/rsg_rap_memory, cleared before the run
+RAP audit file: ~/rsg_ros2_ws/debug/phase1_rap_memory.jsonl, cleared before run
+Timing output: RAM-buffered CSV written once during clean shutdown
+Timing folder: debug/optimisation/optimisation_part3/optimisation3_20260806_015126/
+NanoSAM and object-geometry settings are preserved in rsg_pipeline_snapshot.yaml.

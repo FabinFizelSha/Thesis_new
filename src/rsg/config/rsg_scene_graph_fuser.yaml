@@ -1,0 +1,116 @@
+/**:
+  ros__parameters:
+    use_sim_time: true                                                                                         # Decay uses ROS/bag time; set false only for a live robot without /clock.
+    input_dsg_topic: /hydra/backend/dsg
+    semantic_label_topic: /rsg/objects/semantic_label_result
+    fused_dsg_topic: /rsg/hydra/fused_dsg
+    markers_topic: /rsg/scene_graph/markers
+    status_topic: /rsg/hydra/rap_fuser/status
+    fallback_frame_id: odom                                                                                     # Hydra visualization messages use odom; the Hydra launch supplies a world-to-odom bridge.
+
+    # Final semantic messages are buffered while the fuser batches expensive
+    # full-graph redraws.
+    semantic_label_qos_depth: 4096
+    semantic_refresh_rate_hz: 1.0                                                                   # Capped full-graph render rate. Semantic labels are cached immediately in a separate callback group.
+
+    publish_fused_dsg: false                                                                                    # Keep disabled; MarkerArray is the active visualization path.
+    drop_local_mesh: false                                                                                      # Retain a local Hydra mesh only for conservative object-place wall validation; never republish or render it.
+    marker_publish_rate_hz: 1.0                                                                                 # Match the bounded 1 Hz graph renderer to protect semantic-result ingestion.
+
+    # Layered RViz projection only. Hydra's DSG node geometry and topology remain unchanged.
+    show_objects: true                                                                                          # Object layer at its physical Hydra height.
+    show_rooms: true                                                                                            # Top graph layer at source Z + 20 m.
+    show_places: true                                                                                           # Middle graph layer at source Z + 10 m.
+    show_buildings: false                                                                                       # Disabled so rooms remain the visible highest hierarchy layer.
+    show_segments: false
+    show_agents: false
+    show_edges: true
+
+    # Typed graph relations shown by the layered projection.
+    show_room_place_edges: true                                                                                 # Native Hydra room-place edges plus derived visible-neighbour room completion edges.
+    show_place_object_edges: true                                                                               # Native object-place edges plus bounded fallback when absent.
+    show_place_connectivity_edges: true                                                                         # Native Hydra place graph connectivity, including cross-room links.
+    show_native_object_object_edges: true                                                                       # Show direct native Hydra object-object topology in the fused graph; rendered black.
+    show_native_room_room_edges: true                                                                           # Show direct native Hydra room-room topology in the fused graph; rendered black.
+
+    # Node text visibility.
+    show_object_labels: true
+    show_room_labels: true                                                                                      # RViz-only labels use stable Room1, Room2, ... numbering.
+    show_place_labels: false                                                                                    # Enable only for small maps; place labels can become dense.
+    show_building_labels: true
+    show_slot_ids: false
+    show_label_confidence: true                                                                                # Put label confidence on its own short line.
+    show_mobility_metadata: true                                                                               # Put static/dynamic/unknown and confidence on a separate line.
+
+    # Display-layer offsets. XY stays at Hydra's original spatial position.
+    object_z_offset_m: 0.0                                                                                      # Object display height relative to Hydra source geometry.
+    place_z_offset_m: 10.0                                                                                      # Place display height; preserves original XY.
+    room_z_offset_m: 20.0                                                                                       # Room display height; preserves original XY.
+    room_node_size_m: 1.10                                                                                      # Sphere diameter for room graph nodes.
+    place_node_size_m: 0.45                                                                                     # Sphere diameter for place graph nodes.
+    place_text_height_m: 0.18
+    room_alpha: 0.95                                                                                            # Room node opacity; each room uses a deterministic distinct colour.
+    place_alpha: 0.90                                                                                           # Place node opacity; hue inherits parent room.
+
+    # Complete every place with no direct Hydra room edge. Native room-place edges are
+    # shown immediately, but derived neighbour-majority links wait until the local map,
+    # room centres, and mesh have had time to settle. The timer follows incoming Hydra
+    # message time during rosbag replay, rather than depending on playback speed.
+    room_place_completion_enabled: true
+    room_place_completion_grace_period_sec: 30.0                                                           # Set 0.0 only for immediate completion; 30 s is the default map-settling interval.
+    room_place_completion_neighbours: 7
+    room_place_completion_max_distance_m: 0.0                                                      # 0 = no range cap; select the actual nearest visible places.
+    room_place_completion_max_height_difference_m: 0.50
+    room_place_completion_require_mesh_validation: true
+    room_place_completion_min_majority_votes: 1
+
+    # Membership policy: native Hydra object-place edges always win. A missing native edge can receive
+    # a display-only association only after local 3D candidate retrieval and reconstructed-mesh wall validation.
+    # The fallback fails closed: if no mesh is present in the incoming DSG, it creates no inferred edge.
+    object_place_use_local_validated_fallback: true                                                            # Enable bounded local 3D fallback only where a native object-place edge is absent.
+    object_place_max_distance_m: 3.0                                                                            # Maximum full 3D source-space distance from object centre to a candidate place.
+    object_place_index_voxel_size_m: 2.0                                                                        # 3D spatial-hash cell size; limits candidate retrieval independently of building size.
+    object_place_index_search_radius_cells: 2                                                                  # Search local cell neighbourhood only; 2 cells covers up to 4 m in each axis.
+    object_place_max_candidates: 6                                                                              # Validate at most six closest local places for each uncoupled object.
+    object_place_require_mesh_validation: true                                                                 # Require a clear mesh segment; no mesh means no derived object-place edge.
+    object_place_mesh_voxel_size_m: 0.50                                                                       # Acceleration-grid cell size for reconstructed mesh triangles.
+    object_place_mesh_max_triangle_tests: 2048                                                                 # Fail closed if a segment would require more mesh-triangle tests.
+    object_place_mesh_max_cells_per_triangle: 256                                                              # Keep exceptionally large triangles out of the regular mesh hash grid.
+    object_place_anchor_outset_m: 0.12                                                                          # Start validation just outside the object bounding box, toward the candidate place.
+    object_place_cache_recompute_translation_m: 0.25                                                           # Reuse a validated association until the object moves by this distance.
+
+    # RAP/VLM slot-label association. Slot equality is primary: every Hydra
+    # object node with a resolved semantic slot receives that slot's label.
+    # Centroids are consulted only when different semantic labels arrive for
+    # the same slot ID; then each Hydra node receives the closest-centroid label.
+    centroid_association_enabled: true
+    require_centroid_frame_match: true
+    allow_unframed_centroid: false
+    max_label_candidates_per_slot: 8          # Retain up to eight distinct class candidates per slot for conflict resolution.
+    unlabeled_object_display_label: unknown object  # Display-only fallback when Phase 1 has not produced a result yet.
+
+    # Marker geometry and presentation. Static/unknown nodes remain spheres;
+    # validated dynamic-capable objects can use cubes as a visual cue.
+    # Set object_use_fixed_sphere_size=true to render every object node with
+    # the same diameter. Set it false to restore bbox-volume-scaled spheres.
+    object_sphere_size_mode: fixed                 # fixed | volume_scaled
+    object_use_fixed_sphere_size: true             # true => all object nodes use object_fixed_sphere_size_m.
+    object_fixed_sphere_size_m: 0.28               # Uniform object-node sphere diameter in metres.
+    object_min_size_m: 0.12                        # Used only when object_use_fixed_sphere_size=false.
+    object_max_size_m: 0.60                        # Used only when object_use_fixed_sphere_size=false.
+    object_sphere_volume_scale: 0.60               # Used only when object_use_fixed_sphere_size=false.
+    object_text_height_m: 0.14                                                                                 # Smaller multi-line text reduces overlap; zoom in to inspect details.
+    object_label_vertical_offset_m: 0.10                                                                       # Compact vertical gap between node and first text line.
+    dynamic_object_use_cube: true                                                                              # Dynamic-capable objects use the same fixed size but a cube marker.
+    room_text_height_m: 0.35
+    building_text_height_m: 0.42
+    building_alpha: 0.10
+    edge_width_m: 0.025                                                                                         # Line width for all fused edges; every edge category is rendered black.
+    # Local-segment presence overlay. These are additional to the working reference visualisation path.
+    active_segments_topic: /rsg/objects/active_local_segments
+    show_presence_confidence: true
+    static_presence_half_life_sec: 600.0                                                                       # Ten-minute half-life for static and unknown-mobility objects.
+    dynamic_presence_half_life_sec: 120.0                                                                      # Two-minute half-life for humans, animals, and mobile robots.
+    presence_observed_epsilon_sec: 1.5
+    minimum_object_alpha: 0.03                                                                                 # Never delete nodes; stale objects remain almost transparent.
+    presence_decay_continuous_refresh: true                                                                    # Re-render with ROS/bag time so fading continues even when no new object observation arrives.
