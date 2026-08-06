@@ -25,6 +25,14 @@ time (one "part"), each with a controlled before/after measurement and full
 evidence retention, so the sequence of changes and their measured effect form
 a defensible thesis record.
 
+Starting at Part 4, a second axis joins this one: throughput (the fraction
+of received frames that reach Hydra in a fixed window), targeted by
+concurrency changes rather than reducing any stage's own compute cost. A
+part on this axis is measured by processing ratio, not mean `total_delay_ms`
+— see `optimisation_part4/PART4_REPORT.md` for why. Parts on either axis
+still follow the same one-major-change-at-a-time and permanent-evidence
+discipline.
+
 ## Non-negotiable constraints (apply to every part)
 
 1. **NanoSAM is completely frozen.** No change to inference, resolution,
@@ -204,6 +212,7 @@ state), `system_setup.txt` (hardware/software snapshot).
 | 1 | Representative-crop maintenance | **Closed — accepted** | `011841` (baseline), `015126` (iter. 1) | 743.077 | 602.392 | -140.685 ms | -18.93% | [PART1_REPORT.md](optimisation_part1/PART1_REPORT.md) |
 | 2 | Geometry metadata estimation | **Closed — no accepted change (net zero)** | `022259` (profiling), `192701` (Step 2, reverted), `202114` (revert verified) | 602.392 | 602.392 (605.903 measured, within noise) | 0.000 ms | 0.00% | [PART2_REPORT.md](optimisation_part2/PART2_REPORT.md) |
 | 3 | Frame assignment (persistent-track association) | **Open — one improvement accepted; tail-spike cause identified (`_candidate_track_ids` full-track scan), lock contention ruled out** | `204104`, `205816` (profiling), `220604` (accepted fix), `222959` (Path B, conclusive) | 602.392 | 589.961 (part not closed) | -12.431 ms | -2.06% | [PART3_REPORT.md](optimisation_part3/PART3_REPORT.md) |
+| 4 | SAM/tracking-publish thread split (throughput, not per-stage cost — see report) | **Closed — accepted** | `004013` (invalidated, deleted — bag starvation), `004917` (Run 1, accepted) | 11.02% ratio (302 frames) | 13.53% ratio (373 frames, **+23.51%**) | +137.445 ms mean latency (accepted trade-off — throughput was the actual goal, not latency itself) | +23.30% mean latency / +22.78% ratio | [PART4_REPORT.md](optimisation_part4/PART4_REPORT.md) |
 
 ## Next candidates after Part 3 (not yet started, tracked for planning only)
 
@@ -215,6 +224,39 @@ state), `system_setup.txt` (hardware/software snapshot).
   round-trips ROS image messages back to arrays after label-message
   construction.
 
+## Part 4 — a different optimization axis, opened alongside Part 3
+
+Part 4 does not continue Part 3's specific investigation
+(`_candidate_track_ids`'s full-track scan remains open and unresolved — see
+`optimisation_part3/PART3_REPORT.md` "Step 5"). It targets a different
+question entirely: Parts 1-3 each reduce one stage's mean synchronous cost
+inside a single serial per-frame pass; Part 4 overlaps SAM (GPU-bound) with
+tracking/publish (CPU-bound) across *adjacent* frames on two threads, so it
+is measured by throughput (processing ratio) rather than mean
+`total_delay_ms`. See `optimisation_part4/PART4_REPORT.md` for the full
+reasoning. Both Part 3 and Part 4 remain open in parallel; neither blocks
+the other.
+
+**Run 1 result (session `optimisation4_20260807_004917`) — ACCEPTED:**
+processing ratio rose 11.02% → 13.53% (+23.51% more frames processed,
+302 → 373), with mean masks/processed frame unchanged (no accuracy
+regression) — but mean `total_delay_ms` rose 589.961 → 727.406 ms (+23.30%)
+and max rose +39.61%, because the two threads measurably contend for
+CPU/GPU resources more than the change's original hypothesis predicted
+(`sam_inference_ms` alone rose 37.94% when run concurrently with
+tracking/publish).
+
+**Decision (user-confirmed 2026-08-07): accepted as a successful concept
+change.** The per-frame latency reduction pursued in Parts 1-3 was always
+instrumental toward one goal — more frames reaching Hydra in a fixed
+window — not an end in itself. Part 4 reaches that same goal by a different
+mechanism (thread overlap instead of a cheaper per-stage computation), and
+the measured throughput gain is accepted on that basis; the higher
+per-frame latency this mechanism costs is recorded, not hidden, but is not
+treated as a regression given what the campaign is actually optimizing
+for. Full numbers in `optimisation_part4/PART4_REPORT.md` "Run 1 —
+ACCEPTED".
+
 ## Document map
 
 - [optimisation_part1/PART1_REPORT.md](optimisation_part1/PART1_REPORT.md) —
@@ -223,7 +265,11 @@ state), `system_setup.txt` (hardware/software snapshot).
   closed, geometry-metadata section, no accepted change (net zero;
   instrumentation kept, one fix tried and correctly reverted).
 - [optimisation_part3/PART3_REPORT.md](optimisation_part3/PART3_REPORT.md) —
-  open, frame-assignment section, profiling step in progress.
+  open, frame-assignment section, tail-spike investigation redirected to
+  `_candidate_track_ids`'s full-track scan (unresolved).
+- [optimisation_part4/PART4_REPORT.md](optimisation_part4/PART4_REPORT.md) —
+  closed, SAM/tracking-publish thread split, throughput axis, accepted
+  (+23.51% more frames processed, accepted latency trade-off).
 - Each part folder's session subfolders (e.g.
   `optimisation_part1/optimisation1_20260806_011841/`) hold that run's raw
   evidence and `SESSION_REPORT.md`.

@@ -481,8 +481,8 @@ phase1:                                                                         
     measure_timing: true                                                                              # Temporary Phase 1 optimisation baseline instrumentation.
     publish_timing: false                                                                            # Avoid live timing-topic overhead.
     write_timing_csv: true                                                                            # Buffer samples in RAM and write CSV once during clean shutdown.
-    timing_csv_path: ~/rsg_ros2_ws/debug/optimisation/optimisation_part3/optimisation3_{session_date}_{creation_time}/phase1_timing.csv  # Unique lightweight session trace per launch.
-    timing_sheet_name: phase1_part3                                                                  # Legacy key retained for config compatibility; unused by CSV.
+    timing_csv_path: ~/rsg_ros2_ws/debug/optimisation/optimisation_part4/optimisation4_{session_date}_{creation_time}/phase1_timing.csv  # Unique lightweight session trace per launch.
+    timing_sheet_name: phase1_part4                                                                  # Legacy key retained for config compatibility; unused by CSV.
     timing_excel_autosave_every: 0                                                                   # Disable periodic spreadsheet writes.
 
   deployment:

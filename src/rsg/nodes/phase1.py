@@ -114,9 +114,16 @@ class Phase1SemanticCoordinator(Node):
         self._semantic_label_lock = threading.Lock()
         self._latest_processed_timestamp_sec = 0.0
 
-        # One application-level frame FIFO before SAM/RAP. This is the only
-        # frame-side processing queue in the combined design.
+        # One application-level frame FIFO before SAM. A second one-slot FIFO
+        # sits between SAM and tracking/publish so the two run as a pipeline:
+        # the segmentation thread can start the next frame's SAM inference
+        # while the tracking/publish thread is still finishing geometry,
+        # slot assignment, and the Hydra publish for the previous frame. Both
+        # queues keep the same drop-oldest bias so the pipeline always
+        # prefers the newest available observation over completeness.
         self.frame_fifo: "queue.Queue[CachedFrame]" = queue.Queue(maxsize=self.config.request_queue_size)
+        self.sam_output_fifo: "queue.Queue[Tuple[Dict[str, Any], CachedFrame]]" = queue.Queue(maxsize=1)
+        self.sam_output_dropped_count = 0
         self.frame_cache = BoundedFrameCache(self.config.frame_cache_size)
         self.evidence_buffer = EvidenceBuffer(self.config.evidence_buffer_size)
 
@@ -154,7 +161,12 @@ class Phase1SemanticCoordinator(Node):
         self._vlm_quality_deferred_lock = threading.Lock()
 
         self._stop_event = threading.Event()
-        self._classification_thread = threading.Thread(target=self._classification_loop, daemon=True)
+        # Segmentation (GPU-bound SAM) and tracking/publish (CPU-bound) run on
+        # separate threads so they can overlap: SAM backends release the GIL
+        # for most of their wall time while waiting on the GPU, the same
+        # property the RAP/VLM worker threads below already rely on.
+        self._segmentation_thread = threading.Thread(target=self._segmentation_loop, daemon=True)
+        self._tracking_publish_thread = threading.Thread(target=self._tracking_publish_loop, daemon=True)
         self._rap_thread = threading.Thread(target=self._rap_loop, daemon=True)
         self._vlm_thread = threading.Thread(target=self._vlm_loop, daemon=True)
 
@@ -233,7 +245,8 @@ class Phase1SemanticCoordinator(Node):
         self.hydra_published_count = 0
         self.unknown_vlm_count = 0
 
-        self._classification_thread.start()
+        self._segmentation_thread.start()
+        self._tracking_publish_thread.start()
         if self.rap_runs_async:
             self._rap_thread.start()
         if self.config.vlm_enabled:
@@ -423,8 +436,16 @@ class Phase1SemanticCoordinator(Node):
         except Exception:
             return False
 
-    def _classification_loop(self) -> None:
-        """Consume the coordinator-owned FIFO and run SAM/RAP sequentially."""
+    def _segmentation_loop(self) -> None:
+        """Consume the pre-SAM FIFO and run image conversion + SAM only.
+
+        This runs on its own thread from ``_tracking_publish_loop``. SAM
+        backends spend most of their wall time blocked on the GPU, which
+        releases the interpreter's GIL, so this thread's next-frame SAM call
+        can genuinely overlap with the other thread's CPU-bound geometry,
+        tracking, and Hydra-publish work for the frame ahead of it -- the
+        same overlap the RAP/VLM worker threads below already exploit.
+        """
         while not self._stop_event.is_set():
             try:
                 cached = self.frame_fifo.get(timeout=0.1)
@@ -438,13 +459,13 @@ class Phase1SemanticCoordinator(Node):
             cached.frame_queue_wait_ms = (
                 dequeue_time - (cached.enqueued_monotonic or cached.received_monotonic)
             ) * 1000.0
-            cached.status = "dequeued_to_sam_rap"
+            cached.status = "dequeued_to_sam"
             fifo_wait_ms = cached.sent_to_classifier_delay_ms
             # Refresh lookup cache as a convenience for external/debug code, but
             # the queued CachedFrame is now the authoritative timing source.
             self.frame_cache.put(cached)
             self.record_frame_lifecycle_event(
-                "dequeued_to_sam_rap",
+                "dequeued_to_sam",
                 cached,
                 status="processing",
                 timing_valid=True,
@@ -455,7 +476,72 @@ class Phase1SemanticCoordinator(Node):
             )
 
             try:
-                result = self.process_frame(frame, input_age_ms=fifo_wait_ms)
+                stage = self.run_segmentation_stage(frame, input_age_ms=fifo_wait_ms)
+            except Exception as exc:
+                self.failed_count += 1
+                if rclpy.ok() and not self._stop_event.is_set():
+                    self.get_logger().error(f"SAM stage failed for frame {frame.rsg_frame_id}: {exc}")
+                self.record_frame_lifecycle_event(
+                    "failed",
+                    cached,
+                    status="failed",
+                    timing_valid=True,
+                    timing_source="fifo_cached_frame",
+                    total_delay_ms=(time.perf_counter() - cached.received_monotonic) * 1000.0,
+                    reason=str(exc),
+                )
+                self.publish_status("failed", frame.rsg_frame_id, str(exc))
+                continue
+
+            self._enqueue_sam_output(stage, cached)
+
+    def _enqueue_sam_output(self, stage: Dict[str, Any], cached: CachedFrame) -> None:
+        """Hand a completed SAM stage to the tracking/publish thread.
+
+        Mirrors ``frame_fifo``'s drop-oldest bias: a slow tracking/publish
+        stage should not make Hydra fall further and further behind real
+        time, so a not-yet-consumed handoff is replaced by a newer one
+        rather than queued behind it.
+        """
+        if self.sam_output_fifo.full():
+            if not self.config.drop_oldest_when_full:
+                self.sam_output_dropped_count += 1
+                return
+            try:
+                self.sam_output_fifo.get_nowait()
+                self.sam_output_dropped_count += 1
+            except queue.Empty:
+                pass
+        try:
+            self.sam_output_fifo.put_nowait((stage, cached))
+        except queue.Full:
+            self.sam_output_dropped_count += 1
+
+    def _tracking_publish_loop(self) -> None:
+        """Consume completed SAM stages; run tracking, label maps, and Hydra publish.
+
+        Runs on its own thread so a slow geometry/tracking pass or the ROS
+        publish call never blocks ``_segmentation_loop`` from starting the
+        next frame's SAM inference.
+        """
+        while not self._stop_event.is_set():
+            try:
+                stage, cached = self.sam_output_fifo.get(timeout=0.1)
+            except queue.Empty:
+                continue
+
+            dequeue_time = time.perf_counter()
+            sam_output_queue_wait_ms = max(
+                0.0, (dequeue_time - stage["stage_a_complete_monotonic"]) * 1000.0
+            )
+            frame = stage["frame"]
+            cached.status = "dequeued_to_tracking"
+            self.frame_cache.put(cached)
+
+            try:
+                result = self.run_tracking_publish_stage(
+                    stage, sam_output_queue_wait_ms=sam_output_queue_wait_ms
+                )
 
                 # Per-frame diagnostics are written once, after Hydra publish,
                 # so measurement does not take the recorder lock repeatedly on
@@ -472,7 +558,6 @@ class Phase1SemanticCoordinator(Node):
                 self.failed_count += 1
                 if rclpy.ok() and not self._stop_event.is_set():
                     self.get_logger().error(f"Failed to process frame {frame.rsg_frame_id}: {exc}")
-                failed = self.build_failed_result(frame, str(exc))
                 self.record_frame_lifecycle_event(
                     "failed",
                     cached,
@@ -523,16 +608,19 @@ class Phase1SemanticCoordinator(Node):
         sent_to_classifier_delay_ms = float(cached.sent_to_classifier_delay_ms) if timing_valid else 0.0
         classifier_debug_ms = float(getattr(result, "classifier_debug_record_delay_ms", 0.0))
 
+        metadata = safe_json_loads(result.metadata_json, default={})
+        stage_ms = metadata.get("diagnostic_stage_ms", {}) or {}
+        sam_output_queue_wait_ms = float(stage_ms.get("sam_output_queue_wait_ms", 0.0))
+
         pipeline_wait_ms = max(
             0.0,
             total_delay_ms
             - sent_to_classifier_delay_ms
+            - sam_output_queue_wait_ms
             - float(result.classifier_delay_ms)
             - classifier_debug_ms
             - coordinator_delay_ms,
         )
-        metadata = safe_json_loads(result.metadata_json, default={})
-        stage_ms = metadata.get("diagnostic_stage_ms", {}) or {}
         classifier_known_ms = (
             float(result.image_conversion_delay_ms)
             + float(result.sam_delay_ms)
@@ -567,6 +655,7 @@ class Phase1SemanticCoordinator(Node):
                 sent_to_classifier_delay_ms=sent_to_classifier_delay_ms,
                 callback_enqueue_delay_ms=float(cached.callback_enqueue_delay_ms) if timing_valid else 0.0,
                 frame_queue_wait_ms=float(cached.frame_queue_wait_ms) if timing_valid else 0.0,
+                sam_output_queue_wait_ms=sam_output_queue_wait_ms,
                 classifier_debug_record_delay_ms=classifier_debug_ms,
                 image_conversion_delay_ms=float(result.image_conversion_delay_ms),
                 sam_prepare_ms=float(stage_ms.get("sam_prepare_ms", 0.0)),
@@ -818,12 +907,13 @@ class Phase1SemanticCoordinator(Node):
             reason=reason,
         )
 
-    def process_frame(self, frame: RsgFrame, input_age_ms: float = 0.0) -> Phase1ClassificationResult:
-        """Run SAM, slot assignment, label-map construction, and async-RAP dispatch for one frame.
+    def run_segmentation_stage(self, frame: RsgFrame, input_age_ms: float = 0.0) -> Dict[str, Any]:
+        """Run image conversion and SAM only. Executes on the segmentation thread.
 
-        The classifier timing is now split into named sub-phases. This avoids
-        hiding expensive operations, such as image conversion or result-message
-        construction, inside an unexplained delay column.
+        Everything downstream (geometry, tracking, label maps, Hydra publish)
+        runs later on a separate thread via ``run_tracking_publish_stage``, so
+        this stage's own timing is recorded here and carried through
+        unchanged rather than folded into one combined measurement.
         """
         start = time.perf_counter()
         input_age_ms = float(input_age_ms)
@@ -850,6 +940,49 @@ class Phase1SemanticCoordinator(Node):
             0.0,
             sam_delay_ms - sam_prepare_delay_ms - sam_inference_delay_ms - sam_restore_delay_ms,
         )
+        sam_prep_summary = {k: v for k, v in sam_prep.items() if k != "valid_depth_mask_sam"}
+
+        return {
+            "frame": frame,
+            "rgb": rgb,
+            "depth": depth,
+            "tx": tx,
+            "rot_m": rot_m,
+            "sam_masks": sam_masks,
+            "input_age_ms": input_age_ms,
+            "sam_prep_summary": sam_prep_summary,
+            "timing": {
+                "image_conversion_delay_ms": image_conversion_delay_ms,
+                "sam_prepare_ms": sam_prepare_delay_ms,
+                "sam_inference_ms": sam_inference_delay_ms,
+                "sam_restore_ms": sam_restore_delay_ms,
+                "sam_other_ms": sam_other_ms,
+                "sam_delay_ms": sam_delay_ms,
+                "segmentation_stage_elapsed_ms": (time.perf_counter() - start) * 1000.0,
+            },
+            # Marks the handoff point to the tracking/publish thread so that
+            # thread can measure how long its own FIFO wait was.
+            "stage_a_complete_monotonic": time.perf_counter(),
+        }
+
+    def run_tracking_publish_stage(
+        self, stage: Dict[str, Any], sam_output_queue_wait_ms: float = 0.0
+    ) -> Phase1ClassificationResult:
+        """Run slot assignment, label-map construction, and result assembly.
+
+        Consumes the output of ``run_segmentation_stage``, executing on the
+        tracking/publish thread while the segmentation thread is free to
+        already be running SAM on the next frame.
+        """
+        start = time.perf_counter()
+        frame = stage["frame"]
+        rgb = stage["rgb"]
+        depth = stage["depth"]
+        tx = stage["tx"]
+        rot_m = stage["rot_m"]
+        sam_masks = stage["sam_masks"]
+        input_age_ms = float(stage["input_age_ms"])
+        timing = stage["timing"]
 
         rap_start = time.perf_counter()
         rap_frame_start = time.perf_counter()
@@ -892,14 +1025,14 @@ class Phase1SemanticCoordinator(Node):
             frame, sam_masks, objects, unknowns, vlm_dispatch, track_records, semantic_label_dispatches
         )
         metadata["diagnostic_stage_ms"] = {
-            "sam_prepare_ms": sam_prepare_delay_ms,
-            "sam_inference_ms": sam_inference_delay_ms,
-            "sam_restore_ms": sam_restore_delay_ms,
-            "sam_other_ms": sam_other_ms,
+            "sam_prepare_ms": timing["sam_prepare_ms"],
+            "sam_inference_ms": timing["sam_inference_ms"],
+            "sam_restore_ms": timing["sam_restore_ms"],
+            "sam_other_ms": timing["sam_other_ms"],
+            "sam_output_queue_wait_ms": float(sam_output_queue_wait_ms),
             **frame_stage_ms,
         }
-        sam_prep_summary = {k: v for k, v in sam_prep.items() if k != "valid_depth_mask_sam"}
-        metadata["sam_input_processing"] = sam_prep_summary
+        metadata["sam_input_processing"] = stage["sam_prep_summary"]
         metadata_delay_ms = (time.perf_counter() - metadata_start) * 1000.0
 
         # Building ROS Image messages and JSON strings is a real cost and can be
@@ -925,17 +1058,22 @@ class Phase1SemanticCoordinator(Node):
         result.vlm_dispatch_json = safe_json_dumps(vlm_dispatch)
         result.metadata_json = safe_json_dumps(metadata)
         result.input_age_ms = float(input_age_ms)
-        result.sam_delay_ms = float(sam_delay_ms)
+        result.sam_delay_ms = float(timing["sam_delay_ms"])
         result.rap_delay_ms = float(rap_delay_ms)
         result.label_map_delay_ms = float(label_map_delay_ms)
         result.metadata_delay_ms = float(metadata_delay_ms)
-        result.image_conversion_delay_ms = float(image_conversion_delay_ms)
+        result.image_conversion_delay_ms = float(timing["image_conversion_delay_ms"])
         result.result_message_build_delay_ms = (time.perf_counter() - result_msg_start) * 1000.0
         result.classifier_debug_record_delay_ms = 0.0
         result.num_masks = int(len(sam_masks))
         result.num_known = int(len([obj for obj in objects if not str(obj.get("status", "")).startswith("unknown")]))
         result.num_unknown = int(len(unknowns))
-        result.classifier_delay_ms = (time.perf_counter() - start) * 1000.0
+        # Total processing time across both stages, excluding the inter-stage
+        # queue wait -- that wait is measured separately as
+        # sam_output_queue_wait_ms so it is never silently absorbed here.
+        result.classifier_delay_ms = (
+            float(timing["segmentation_stage_elapsed_ms"]) + (time.perf_counter() - start) * 1000.0
+        )
         return result
 
     def run_sam(self, rgb: np.ndarray, min_area_px: Optional[int] = None) -> List[SamMask]:
@@ -3018,6 +3156,9 @@ class Phase1SemanticCoordinator(Node):
             "hydra_published": self.hydra_published_count,
             "frame_fifo_size": self.frame_fifo.qsize(),
             "frame_fifo_max_size": self.config.request_queue_size,
+            "sam_output_fifo_size": self.sam_output_fifo.qsize(),
+            "sam_output_fifo_max_size": 1,
+            "sam_output_dropped": self.sam_output_dropped_count,
             "rap_queue_dropped": self.rap_queue_dropped_count,
             "rap_queue_deferred_total": self.rap_queue_deferred_count,
             "rap_deferred_pending": len(self._rap_deferred_track_id_set),
@@ -3048,7 +3189,8 @@ class Phase1SemanticCoordinator(Node):
         # Do not wait for a long HTTP timeout. Threads are daemon threads and
         # will terminate with the process after a brief cooperative join.
         for thread in (
-            self._classification_thread,
+            self._segmentation_thread,
+            self._tracking_publish_thread,
             self._rap_thread,
             self._vlm_thread,
         ):
