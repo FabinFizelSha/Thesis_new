@@ -213,6 +213,7 @@ state), `system_setup.txt` (hardware/software snapshot).
 | 2 | Geometry metadata estimation | **Closed — no accepted change (net zero)** | `022259` (profiling), `192701` (Step 2, reverted), `202114` (revert verified) | 602.392 | 602.392 (605.903 measured, within noise) | 0.000 ms | 0.00% | [PART2_REPORT.md](optimisation_part2/PART2_REPORT.md) |
 | 3 | Frame assignment (persistent-track association) | **Open — one improvement accepted; tail-spike cause identified (`_candidate_track_ids` full-track scan), lock contention ruled out** | `204104`, `205816` (profiling), `220604` (accepted fix), `222959` (Path B, conclusive) | 602.392 | 589.961 (part not closed) | -12.431 ms | -2.06% | [PART3_REPORT.md](optimisation_part3/PART3_REPORT.md) |
 | 4 | SAM/tracking-publish thread split (throughput, not per-stage cost — see report) | **Closed — accepted** | `004013` (invalidated, deleted — bag starvation), `004917` (Run 1, accepted) | 11.02% ratio (302 frames) | 13.53% ratio (373 frames, **+23.51%**) | +137.445 ms mean latency (accepted trade-off — throughput was the actual goal, not latency itself) | +23.30% mean latency / +22.78% ratio | [PART4_REPORT.md](optimisation_part4/PART4_REPORT.md) |
+| 5 | Part 4 contention root cause (two steps: CPU affinity, then `jetson_clocks`/power mode) | **Closed — both steps tested, root cause undetermined; CPU-affinity code removed for Thor portability** | `012626`/`013627` (Step 1), `015857` (Step 2) | 13.53% ratio, `sam_inference_ms` 436.291 ms | 13.91% ratio, `sam_inference_ms` 422.487 ms (Step 2, inconclusive) | Step 1: no effect (within noise); Step 2: +4% ratio / -2.4% `sam_inference_ms` (within noise, one run) | all deltas within established noise band | [PART5_REPORT.md](optimisation_part5/PART5_REPORT.md) |
 
 ## Next candidates after Part 3 (not yet started, tracked for planning only)
 
@@ -270,6 +271,16 @@ ACCEPTED".
 - [optimisation_part4/PART4_REPORT.md](optimisation_part4/PART4_REPORT.md) —
   closed, SAM/tracking-publish thread split, throughput axis, accepted
   (+23.51% more frames processed, accepted latency trade-off).
+- [optimisation_part5/PART5_REPORT.md](optimisation_part5/PART5_REPORT.md) —
+  closed, Part 4 contention root-cause investigation in two steps (Path
+  A/Path B style, per Part 3's precedent). Step 1 (CPU core affinity):
+  confirmed null result (pinning verified active via `/proc`, no measurable
+  effect across two runs); code subsequently **removed** (not kept) to
+  avoid Orin-specific tuning ahead of a planned Jetson Thor port. Step 2
+  (`jetson_clocks`/power mode, no code change): one run, small
+  directionally-positive but inconclusive effect; closed without a
+  confirmatory run. Root cause of Part 4's contention remains
+  undetermined; Part 4's acceptance is unaffected.
 - Each part folder's session subfolders (e.g.
   `optimisation_part1/optimisation1_20260806_011841/`) hold that run's raw
   evidence and `SESSION_REPORT.md`.
