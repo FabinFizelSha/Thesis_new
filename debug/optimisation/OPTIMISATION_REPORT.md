@@ -284,3 +284,27 @@ ACCEPTED".
 - Each part folder's session subfolders (e.g.
   `optimisation_part1/optimisation1_20260806_011841/`) hold that run's raw
   evidence and `SESSION_REPORT.md`.
+
+## Campaign closed (user-confirmed 2026-08-07)
+
+The throughput optimisation campaign is closed at this point — Parts 1, 3,
+4, and 5's CPU-affinity step are closed and accepted/rejected as recorded
+above; Part 2 and Part 5's `jetson_clocks` step are closed with no accepted
+change; Part 3's tail-latency lead
+(`_candidate_track_ids`'s full-track scan) remains open but unpursued.
+Cumulative result: **8.51% → 13.53% processing ratio (239 → 373 frames
+processed in the standard 180 s window, a 1.56× improvement)**, achieved
+through three accepted code changes (crop-rendering deferral, candidate
+row-init dead-weight removal, segmentation/tracking-publish thread split)
+and two ruled-out or inconclusive investigations (CPU affinity, clock
+locking), all under a fixed NanoSAM cost and with zero measured accuracy or
+coverage regression at any accepted step.
+
+A full narrative writeup, with before/after findings for every part, is
+archived at `../../experiments/Phase1_Pipeline_Optimisation_Draft_Chapter.md`
+(draft Experiments-chapter material) alongside a zip of this entire
+`debug/optimisation/` evidence tree, for reference when writing the thesis.
+
+Next planned work is hardware migration validation on Jetson Thor, not a
+continuation of this campaign's remaining open threads on Orin — those stay
+recorded here, unresolved, rather than closed as if answered.
