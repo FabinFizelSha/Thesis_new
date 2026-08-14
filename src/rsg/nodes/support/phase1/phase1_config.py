@@ -113,14 +113,14 @@ class Phase1Config:
     sam_min_mask_pixels: int
     sam_max_masks: int
     sam_dummy_num_masks: int
-    sam_model_type: str = "vit_h"
+    sam_model_type: str = "vit_b"
     sam_checkpoint_path: str = ""
     sam_checkpoint_cache_dir: str = "~/.cache/sam"
     sam_device: str = ""
-    sam_mask_threshold: float = 0.88
+    sam_mask_threshold: float = 0.0
     sam_padding: float = 0.1
-    sam_points_per_side: int = 16
-    sam_pred_iou_thresh: float = 0.96
+    sam_points_per_side: int = 8
+    sam_pred_iou_thresh: float = 0.0
     sam_auto_download: bool = False
     sam_input_scale_ratio: float = 1.0
     sam_resize_interpolation: str = "area"
@@ -133,10 +133,10 @@ class Phase1Config:
     sam_depth_filter_background_value: Tuple[int, int, int] = (0, 0, 0)
     sam_nanosam_image_encoder_engine: str = ""
     sam_nanosam_mask_decoder_engine: str = ""
-    sam_nanosam_points_per_side: int = 3
+    sam_nanosam_points_per_side: int = 8
     sam_nanosam_mask_threshold: float = 0.0
-    sam_nanosam_nms_iou: float = 0.70
-    sam_nanosam_point_margin_fraction: float = 0.08
+    sam_nanosam_nms_iou: float = 0.0
+    sam_nanosam_point_margin_fraction: float = 0.167
     sam_nanosam_skip_black_points: bool = True
     sam_nanosam_min_prompt_luma: int = 4
 
