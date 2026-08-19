@@ -1,0 +1,40 @@
+# NanoSAM configuration - MEDIUM level
+# Goal: Balanced precision/recall
+# Use case: Reasonable quality with good recall, some false positives acceptable
+
+backend: nanosam
+
+# TensorRT engine paths for NanoSAM
+image_encoder_engine: /home/student/rsg_models/nanosam/resnet18_image_encoder.engine
+mask_decoder_engine: /home/student/rsg_models/nanosam/mobile_sam_mask_decoder.engine
+
+device: cuda
+
+# Grid-based prompting: points_per_side × points_per_side points
+points_per_side: 6
+
+# Confidence threshold for mask acceptance
+mask_threshold: 0.70
+
+# Prediction IoU threshold (internal SAM filtering)
+pred_iou_thresh: 0.0
+
+# Minimum mask size (pixels) to accept
+min_mask_pixels: 8000
+
+# Maximum number of masks to return
+max_masks: 12
+
+# NMS IoU threshold (suppress overlapping masks)
+# Lower = more aggressive NMS (remove more overlapping masks)
+nms_iou: 0.3
+
+# Point margin (fraction of image dimension to avoid edge points)
+point_margin_fraction: 0.1
+
+# NanoSAM-specific parameters
+quantization_bit_width: 8
+batch_size: 4
+
+# Description for logging
+description: "MEDIUM level: Balanced confidence (50%), 8×8 point grid, moderate NMS (NanoSAM)"
