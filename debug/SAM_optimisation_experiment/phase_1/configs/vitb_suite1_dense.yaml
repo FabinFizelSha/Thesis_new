@@ -1,0 +1,11 @@
+backend: vitb
+checkpoint: ~/rsg_models/sam/sam_vit_b_01ec64.pth
+device: cuda
+points_per_side: 6
+mask_threshold: 0.80
+pred_iou_thresh: 0.0
+min_mask_pixels: 3500
+max_masks: 24
+nms_iou: 0.2
+point_margin_fraction: 0.1
+description: "Suite 1: ViT-B dense (6×6 PPS, 3.5k min, NMS=0.2)"
