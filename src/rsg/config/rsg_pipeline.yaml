@@ -236,7 +236,7 @@ phase1:                                                                         
     include_frame_relation_metadata: false                                                           # Avoid redundant per-frame relation metadata.
 
   sam:
-    enabled: true                                                                                    # Run NanoSAM instance segmentation.
+    enabled: true                                                                                    # Run SAM instance segmentation (comparable configuration for ViT-B vs NanoSAM).
     backend: nanosam                                                                              # Use TensorRT-accelerated NanoSAM on Jetson.
     input_scale_ratio: 1                                                                          # Segment at the full recorded 640x480 resolution.
     resize_interpolation: area                                                                       # Use area interpolation for downscaling.
@@ -253,19 +253,19 @@ phase1:                                                                         
     checkpoint_cache_dir: ~/.cache/sam                                                   # Cache location for SAM assets.
     device: cuda
     auto_download: false
-    mask_threshold: 0.86                                                                              # Retained for compatibility with non-NanoSAM modes.
+    mask_threshold: 0.0                                                                               # Disabled: let models return natural masks at 50% confidence threshold.
     padding: 0.2                                                                                     # Retained for compatibility with non-NanoSAM modes.
-    points_per_side: 12                                                                               # Retained for compatibility with non-NanoSAM modes.
-    pred_iou_thresh: 0.88                                                                            # Retained for compatibility with non-NanoSAM modes.
+    points_per_side: 8                                                                                # Uniform grid: 64 candidate points for both backends (balanced sampling).
+    pred_iou_thresh: 0.0                                                                             # Disabled: let max_masks be the only filter instead of per-model scores.
     min_mask_pixels: 10                                                                           # About 2% of a 640x480 frame; filters tiny fragments while retaining useful objects.
     max_masks: 8                                                                                  # Allow more valid masks per frame while keeping a bounded workload.
     nanosam:
       image_encoder_engine: ~/rsg_models/nanosam/resnet18_image_encoder.engine           # TensorRT image encoder engine.
       mask_decoder_engine: ~/rsg_models/nanosam/mobile_sam_mask_decoder.engine           # TensorRT mask decoder engine.
-      points_per_side: 3                                                                           # Use a 4x4 prompt grid to increase object coverage.
-      mask_threshold: 0.00                                                                           # Accept candidate masks; subsequent filters reject weak geometry.
-      nms_iou: 0.55                                                                                   # Remove highly overlapping duplicate masks.
-      point_margin_fraction: 0.08                                                                    # Do not place prompts directly on the image boundary.
+      points_per_side: 8                                                                            # Uniform grid: 64 candidate points to match ViT-B (8x8).
+      mask_threshold: 0.0                                                                            # Disabled: accept candidate masks at their natural 50% confidence level.
+      nms_iou: 0.0                                                                                   # Disabled: let max_masks be the only deduplication gate instead of IoU-based filtering.
+      point_margin_fraction: 0.167                                                                   # Fixed: match SAM's built-in grid margins (~16.7% from edges).
       skip_black_points: true                                                                        # Ignore black/invalid-depth regions.
       min_prompt_luma: 4                                                                             # Reject near-black prompt locations.
 

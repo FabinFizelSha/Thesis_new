@@ -1,0 +1,13 @@
+backend: nanosam
+batch_size: 4
+device: cuda
+image_encoder_engine: /home/student/rsg_models/nanosam/resnet18_image_encoder.engine
+mask_decoder_engine: /home/student/rsg_models/nanosam/mobile_sam_mask_decoder.engine
+mask_threshold: 0.6
+max_masks: 8
+min_mask_pixels: 10000
+nms_iou: 0.3
+point_margin_fraction: 0.05
+points_per_side: 4
+pred_iou_thresh: 0.0
+quantization_bit_width: 8
