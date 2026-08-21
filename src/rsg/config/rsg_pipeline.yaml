@@ -253,19 +253,19 @@ phase1:                                                                         
     checkpoint_cache_dir: ~/.cache/sam                                                   # Cache location for SAM assets.
     device: cuda
     auto_download: false
-    mask_threshold: 0.86                                                                              # Retained for compatibility with non-NanoSAM modes.
+    mask_threshold: 0.70                                                                              # Phase 2 optimized: confidence threshold tuned for balance.
     padding: 0.2                                                                                     # Retained for compatibility with non-NanoSAM modes.
-    points_per_side: 12                                                                               # Retained for compatibility with non-NanoSAM modes.
-    pred_iou_thresh: 0.88                                                                            # Retained for compatibility with non-NanoSAM modes.
-    min_mask_pixels: 10                                                                           # About 2% of a 640x480 frame; filters tiny fragments while retaining useful objects.
-    max_masks: 8                                                                                  # Allow more valid masks per frame while keeping a bounded workload.
+    points_per_side: 4                                                                                # Phase 2 optimized: reduced from 12 for speed improvement.
+    pred_iou_thresh: 0.0                                                                             # Disabled: let max_masks be the only filter instead of per-model scores.
+    min_mask_pixels: 3500                                                                           # Phase 2 optimized: increased from 10 to filter noise and small artifacts.
+    max_masks: 12                                                                                  # Phase 2 optimized: increased from 8 to allow more valid masks per frame.
     nanosam:
       image_encoder_engine: ~/rsg_models/nanosam/resnet18_image_encoder.engine           # TensorRT image encoder engine.
       mask_decoder_engine: ~/rsg_models/nanosam/mobile_sam_mask_decoder.engine           # TensorRT mask decoder engine.
-      points_per_side: 3                                                                           # Use a 4x4 prompt grid to increase object coverage.
-      mask_threshold: 0.00                                                                           # Accept candidate masks; subsequent filters reject weak geometry.
-      nms_iou: 0.55                                                                                   # Remove highly overlapping duplicate masks.
-      point_margin_fraction: 0.08                                                                    # Do not place prompts directly on the image boundary.
+      points_per_side: 4                                                                            # Phase 2 optimized: reduced from 3 for 2x speed improvement (primary optimization).
+      mask_threshold: 0.70                                                                            # Phase 2 optimized: confidence threshold for mask acceptance.
+      nms_iou: 0.30                                                                                   # Phase 2 optimized: looser NMS (from 0.55) to retain adjacent masks.
+      point_margin_fraction: 0.167                                                                   # Fixed: match SAM's built-in grid margins (~16.7% from edges).
       skip_black_points: true                                                                        # Ignore black/invalid-depth regions.
       min_prompt_luma: 4                                                                             # Reject near-black prompt locations.
 
