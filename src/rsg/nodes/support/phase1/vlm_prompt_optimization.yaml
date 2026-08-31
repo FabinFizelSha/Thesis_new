@@ -1,0 +1,67 @@
+# VLM Prompt Optimization Experiment Config
+
+experiment:
+  name: "VLM Prompt Optimization Phase 1"
+  duration_sec: 300  # 5 minutes wall time
+  description: "Test VLM prompts with RAP disabled, all crops to VLM"
+
+rap_vlm:
+  rap_enabled: false        # Disable RAP, send all to VLM only
+  vlm_enabled: true
+  max_tracks: 1000          # Safety limit
+
+prompts:
+  v1_production:
+    name: "Production Prompt (Current)"
+    template: |
+      You are an object classifier for robotic perception.
+      Analyze this image and identify the object.
+      Provide: class_name, confidence (0-1), reasoning.
+      Format: {"class": "NAME", "confidence": 0.X, "reasoning": "brief explanation"}
+    version: 1
+    notes: "Current production prompt"
+    active: true
+
+  v2_simple:
+    name: "Simple Prompt"
+    template: |
+      What is this object? Answer in JSON: {"class": "NAME", "confidence": 0.0-1.0}
+    version: 2
+    notes: "Minimal prompt for baseline"
+    active: false
+
+  v3_detailed:
+    name: "Detailed with Context"
+    template: |
+      Identify the object in this image. Consider: size, shape, color, texture, and context.
+      Provide: class, confidence, key visual features.
+      Format: {"class": "NAME", "confidence": 0.X, "features": ["feature1", "feature2"], "reasoning": "brief explanation"}
+    version: 3
+    notes: "Add visual feature analysis"
+    active: false
+
+  v4_complex:
+    name: "Complex with Scene Understanding"
+    template: |
+      Analyze this robot perception crop. Identify:
+      1. Primary object class
+      2. Confidence in classification
+      3. Key distinguishing features
+      4. Potential ambiguities or similar objects
+      5. Recommended action for robot
+      Format: {"class": "NAME", "confidence": 0.X, "features": [...], "ambiguities": [...], "robot_action": "..."}
+    version: 4
+    notes: "Full context for robot decision making"
+    active: false
+
+logging:
+  output_dir: "VLM-Prompt-Optimization"
+  session_timestamp: true
+  crop_save: true
+  vlm_output_format: "json"  # Fixed format
+  track_processing_time: true
+
+verification:
+  sample_size: 50
+  manual_verify_ui: true
+  csv_export: true

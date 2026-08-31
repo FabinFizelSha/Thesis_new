@@ -1,0 +1,2 @@
+object_id,crop_filename,timestamp,label,label_confidence,mobility_class,mobility_confidence,vlm_processing_time_ms,success,validation_status,raw_response,manual_label,manual_is_correct,manual_notes
+000001,obj_000001_crop.jpg,14.204879999,unknown_object,0.000,unknown,0.000,7331.28,False,rejected,,,,

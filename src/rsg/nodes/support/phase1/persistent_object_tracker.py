@@ -144,6 +144,83 @@ def _aabb_overlap_fraction_xy(
     )
 
 
+def _aabb_overlap_fraction_3d(
+    observation_min: np.ndarray,
+    observation_max: np.ndarray,
+    track_min: np.ndarray,
+    track_max: np.ndarray,
+) -> Tuple[float, float, float, float]:
+    """Return observation-normalised 3D volume overlap (XYZ) with per-axis fractions.
+
+    With 30cm depth padding, Z-ranges are normalized and 3D overlap is stable.
+    Returns: (volume_fraction, x_fraction, y_fraction, z_fraction)
+    """
+    obs_dx = max(0.0, float(observation_max[0] - observation_min[0]))
+    obs_dy = max(0.0, float(observation_max[1] - observation_min[1]))
+    obs_dz = max(0.0, float(observation_max[2] - observation_min[2]))
+    obs_volume = max(obs_dx * obs_dy * obs_dz, 1e-9)
+
+    overlap_x = max(
+        0.0,
+        min(float(observation_max[0]), float(track_max[0]))
+        - max(float(observation_min[0]), float(track_min[0])),
+    )
+    overlap_y = max(
+        0.0,
+        min(float(observation_max[1]), float(track_max[1]))
+        - max(float(observation_min[1]), float(track_min[1])),
+    )
+    overlap_z = max(
+        0.0,
+        min(float(observation_max[2]), float(track_max[2]))
+        - max(float(observation_min[2]), float(track_min[2])),
+    )
+    overlap_volume = overlap_x * overlap_y * overlap_z
+
+    fraction_x = overlap_x / max(obs_dx, 1e-9)
+    fraction_y = overlap_y / max(obs_dy, 1e-9)
+    fraction_z = overlap_z / max(obs_dz, 1e-9)
+    volume_fraction = overlap_volume / obs_volume
+
+    return (
+        max(0.0, min(1.0, float(volume_fraction))),
+        max(0.0, min(1.0, float(fraction_x))),
+        max(0.0, min(1.0, float(fraction_y))),
+        max(0.0, min(1.0, float(fraction_z))),
+    )
+
+
+def _aabb_3d_containment(
+    observation_min: np.ndarray,
+    observation_max: np.ndarray,
+    track_min: np.ndarray,
+    track_max: np.ndarray,
+) -> float:
+    """Return fraction of observation bbox contained within track bbox (0.0 to 1.0)."""
+    obs_dx = max(0.0, float(observation_max[0] - observation_min[0]))
+    obs_dy = max(0.0, float(observation_max[1] - observation_min[1]))
+    obs_dz = max(0.0, float(observation_max[2] - observation_min[2]))
+    obs_volume = max(1e-9, obs_dx * obs_dy * obs_dz)
+
+    contained_x = max(
+        0.0,
+        min(float(observation_max[0]), float(track_max[0]))
+        - max(float(observation_min[0]), float(track_min[0])),
+    )
+    contained_y = max(
+        0.0,
+        min(float(observation_max[1]), float(track_max[1]))
+        - max(float(observation_min[1]), float(track_min[1])),
+    )
+    contained_z = max(
+        0.0,
+        min(float(observation_max[2]), float(track_max[2]))
+        - max(float(observation_min[2]), float(track_min[2])),
+    )
+    contained_volume = contained_x * contained_y * contained_z
+    return max(0.0, min(1.0, float(contained_volume / obs_volume)))
+
+
 def _gaussian_compatibility(value: float, sigma: float) -> float:
     """Map a non-negative residual to [0, 1], where one is ideal."""
     sigma = max(float(sigma), 1e-9)
@@ -279,9 +356,10 @@ class PersistentObjectTracker:
     geometric match reuses the same physical-object slot.
     """
 
-    def __init__(self, config: Any, logger: Any) -> None:
+    def __init__(self, config: Any, logger: Any, coordinator: Any = None) -> None:
         self.config = config
         self.logger = logger
+        self.coordinator = coordinator
         self._tracks: Dict[str, PersistentObjectTrack] = {}
         self._next_track_index = 1
         self._next_slot_index = 1
@@ -342,7 +420,20 @@ class PersistentObjectTracker:
         bbox_2d = metadata.get("bbox_2d")
         bbox_3d_min = _as_xyz(metadata.get("bbox_3d_min"))
         bbox_3d_max = _as_xyz(metadata.get("bbox_3d_max"))
+
+
         normalised_raw_label = self._canonicalise_label(raw_label)
+
+        # Filter out masks with invalid/zero volume (ghost tracks from invalid depth)
+        if volume is not None and volume < 0.001:
+            self.logger.debug(f"Skipping mask with invalid volume: {volume} m³ (frame {frame_id})")
+            return metadata, {
+                "persistent_track_id": "",
+                "internal_object_id": "",
+                "persistent_instance_id": 0,
+                "persistent_track_event": "skipped_invalid_volume",
+                "reason": "bbox_volume_below_threshold",
+            }
 
         # try/finally below is exactly what `with self._lock:` expands to;
         # this is a behavior-identical substitution, not a locking change.
@@ -365,6 +456,44 @@ class PersistentObjectTracker:
                 desired_hydra_label_id=int(desired_hydra_label_id),
                 )
 
+            # Log association decision for tracking quality evaluation
+            if self.coordinator and hasattr(self.coordinator, 'tracking_quality_recorder'):
+                prev_track_age = None
+                prev_centroid_3d = None
+                prev_bbox_volume = None
+                prev_observations = None
+                if match_id is not None and match_id in self._tracks:
+                    track = self._tracks[match_id]
+                    prev_track_age = len(track._timestamps) if hasattr(track, '_timestamps') else track.seen_count
+                    prev_centroid_3d = list(track.centroid_3d) if track.centroid_3d is not None else None
+                    prev_bbox_volume = track.bbox_volume_m3
+                    prev_observations = track.seen_count
+
+                # Extract mask_id from candidate_id (handle both int and string formats)
+                candidate_id = metadata.get("candidate_id", -1)
+                try:
+                    mask_id = int(candidate_id) if isinstance(candidate_id, int) else -1
+                except (ValueError, TypeError):
+                    mask_id = -1
+
+                self.coordinator.tracking_quality_recorder.log_association_decision(
+                    frame_id=frame_id,
+                    sequence=sequence,
+                    mask_id=mask_id,
+                    mask_area_px=float(metadata.get("mask_area_px", 0.0)),
+                    mask_centroid_3d=list(centroid) if centroid is not None else [0, 0, 0],
+                    matched_track_id=match_id,
+                    match_type=match_reason,
+                    match_iou_3d=float(metadata.get("mask_iou_3d", 0.0)) if metadata.get("mask_iou_3d") else None,
+                    match_score=match_score,
+                    prev_track_age_frames=prev_track_age,
+                    prev_track_observations=prev_observations,
+                    prev_centroid_3d=prev_centroid_3d,
+                    prev_bbox_volume_m3=prev_bbox_volume,
+                    reason=match_reason or "association_applied"
+                )
+
+            # Only create new track if still no match found
             if match_id is None:
                 if bool(new_track_use_hydra_slot) and not int(forced_hydra_slot_id or 0) and not self._has_slot_capacity():
                     metadata.update(
@@ -440,6 +569,30 @@ class PersistentObjectTracker:
                 track.metadata = dict(metadata)
                 self._update_semantics(track, normalised_raw_label, str(label_source), float(label_confidence))
                 track_event = "reactivated_track" if was_semantic_resolved else "matched_track"
+
+                # Log track observation for tracking quality evaluation
+                if self.coordinator and hasattr(self.coordinator, 'tracking_quality_recorder'):
+                    assoc_components = None
+                    if candidate_evaluations:
+                        for row in candidate_evaluations:
+                            if row.get("candidate_track_id") == track.track_id and row.get("selected"):
+                                assoc_components = row.get("global_association_components")
+                                break
+
+                    self.coordinator.tracking_quality_recorder.log_track_observation(
+                        track_id=track.track_id,
+                        frame_id=frame_id,
+                        sequence=sequence,
+                        centroid_3d=list(centroid) if centroid is not None else [0, 0, 0],
+                        centroid_2d=list(bbox_2d[:2]) if bbox_2d is not None else [0, 0],
+                        bbox_volume_m3=float(volume) if volume is not None else 0.0,
+                        mask_area_px=int(metadata.get("mask_area_px", 0)) if metadata else 0,
+                        depth_mean_m=float(metadata.get("depth_mean_m", 0.0)) if metadata else 0.0,
+                        mask_iou_3d=float(metadata.get("mask_iou_3d", 0.0)) if metadata and metadata.get("mask_iou_3d") else None,
+                        quality_score=1.0,
+                        global_association_components=assoc_components,
+                        match_reason=match_reason
+                    )
 
             self._frame_used_track_ids.add(track.track_id)
             track.last_segment_event = segment_event
@@ -609,6 +762,75 @@ class PersistentObjectTracker:
             if p[j] > 0:
                 assignment[p[j] - 1] = j - 1
         return assignment
+
+    @staticmethod
+    def _greedy_maximize(
+        weights: List[List[float]],
+        threshold: float = 0.0,
+        return_diagnostics: bool = False
+    ) -> tuple:
+        """Greedy independent matching: each row picks best column independently.
+
+        Unlike Hungarian (1-to-1), this allows multiple rows to pick the same column.
+        Each row is assigned to its highest-scoring column if score >= threshold,
+        otherwise assigned to its private dummy column (new track).
+
+        Args:
+            weights: List[row_idx][col_idx] where cols 0..len(track_ids)-1 are tracks
+                    and cols len(track_ids)..end are private dummy columns (one per row)
+            threshold: Minimum score to accept a match (scores below create new track)
+            return_diagnostics: If True, return (assignment, diagnostics) tuple
+
+        Returns:
+            assignment[row] = selected column index (track or dummy)
+            diagnostics (if return_diagnostics=True): List of {best_col, best_score, passed_threshold, second_best_col, second_best_score}
+        """
+        if not weights:
+            return ([], []) if return_diagnostics else []
+
+        n = len(weights)
+        m = len(weights[0])
+        assignment = [-1] * n
+        diagnostics = []
+
+        for row_idx in range(n):
+            row_weights = weights[row_idx]
+            best_col = -1
+            best_score = float('-inf')
+            second_best_col = -1
+            second_best_score = float('-inf')
+
+            # Find highest and second-highest scoring columns for this row
+            for col_idx in range(m):
+                if row_weights[col_idx] > best_score:
+                    second_best_score = best_score
+                    second_best_col = best_col
+                    best_score = row_weights[col_idx]
+                    best_col = col_idx
+                elif row_weights[col_idx] > second_best_score:
+                    second_best_score = row_weights[col_idx]
+                    second_best_col = col_idx
+
+            # Assign to best column if above threshold, else to private dummy
+            passed_threshold = best_score >= threshold
+            if passed_threshold:
+                assignment[row_idx] = best_col
+            else:
+                # Assign to this row's private dummy column (one per row after track cols)
+                num_track_cols = m - n
+                assignment[row_idx] = num_track_cols + row_idx
+
+            if return_diagnostics:
+                diagnostics.append({
+                    'best_col': best_col,
+                    'best_score': best_score,
+                    'second_best_col': second_best_col,
+                    'second_best_score': second_best_score,
+                    'passed_threshold': passed_threshold,
+                    'threshold': threshold,
+                })
+
+        return (assignment, diagnostics) if return_diagnostics else assignment
 
     def prepare_frame_assignments(
         self,
@@ -849,15 +1071,70 @@ class PersistentObjectTracker:
                     row_weights[col] = utility
                     route_lookup[(row_pos, col)] = (track_id, route[1], route[2], evaluation)
                 weights.append(row_weights)
-            assignment = self._hungarian_maximize(weights)
+            # Use greedy independent matching: each crop picks best track independently
+            # This allows multiple crops to match same track (handles wall segmentation)
+            # Threshold=-0.2: allows negative-score matches (e.g., ceiling revisits from different angle)
+            # that are still better than creating a completely new track (which has score=0.0)
+            assignment, diag = self._greedy_maximize(weights, threshold=-0.2, return_diagnostics=True)
+
+            # Apply temporal tie-breaking for spatially overlapping objects (e.g., rug on floor)
+            # When two tracks have very similar scores, prefer the one that was recently active
+            for row_pos, obs_idx in enumerate(retained):
+                col = assignment[row_pos]
+                diag_info = diag[row_pos] if row_pos < len(diag) else {}
+                best_score = diag_info.get('best_score', float('-inf'))
+                second_best_score = diag_info.get('second_best_score', float('-inf'))
+                best_col = diag_info.get('best_col', -1)
+                second_best_col = diag_info.get('second_best_col', -1)
+
+                # If scores are tied (within 0.05), prefer more recently active track
+                # This keeps semantically different overlapping objects separate (e.g., rug vs floor)
+                score_difference = best_score - second_best_score
+                tie_threshold = 0.05
+
+                if (0 <= best_col < len(track_ids) and 0 <= second_best_col < len(track_ids)
+                    and score_difference >= 0 and score_difference <= tie_threshold):
+                    # Scores are close; apply temporal consistency
+                    best_track = self._tracks.get(track_ids[best_col])
+                    second_best_track = self._tracks.get(track_ids[second_best_col])
+
+                    if best_track and second_best_track:
+                        # Prefer the track that was more recently observed
+                        if second_best_track.last_seen_timestamp_sec > best_track.last_seen_timestamp_sec:
+                            assignment[row_pos] = second_best_col
+                            # Update diagnostics to reflect tie-break decision
+                            diag_info['temporal_tie_break_applied'] = True
+                            diag_info['tie_winner'] = track_ids[second_best_col]
+                            diag_info['tie_loser'] = track_ids[best_col]
+
             for row_pos, obs_idx in enumerate(retained):
                 col = assignment[row_pos]
                 candidate_evals = previews[obs_idx][3]
                 selected_track: Optional[str] = None
                 selected_reason = "new_track"
                 selected_score: Optional[float] = None
+
+                # Log matching diagnostics
+                diag_info = diag[row_pos] if row_pos < len(diag) else {}
+                best_score = diag_info.get('best_score', float('-inf'))
+                passed_threshold = diag_info.get('passed_threshold', False)
+
                 if 0 <= col < len(track_ids) and (row_pos, col) in route_lookup:
-                    selected_track, selected_score, selected_reason, _ = route_lookup[(row_pos, col)]
+                    selected_track, selected_score, selected_reason, eval_info = route_lookup[(row_pos, col)]
+                    # Log accepted match with score details
+                    mode = "revisit" if selected_track and selected_track in self._tracks and self._tracks[selected_track].seen_count > 1 else "recent"
+                    self.logger.debug(
+                        f"Match accepted: obs={obs_idx} → track={selected_track} | "
+                        f"score={best_score:.4f} | mode={mode} | reason={selected_reason}"
+                    )
+                else:
+                    # Log rejected match (new track)
+                    best_track = track_ids[col] if 0 <= col < len(track_ids) else "none"
+                    self.logger.debug(
+                        f"New track: obs={obs_idx} | best_score={best_score:.4f} | "
+                        f"best_track={best_track} | threshold=0.0"
+                    )
+
                 for evaluation in candidate_evals:
                     selected = str(evaluation.get("candidate_track_id", "")) == selected_track
                     evaluation["selected"] = bool(selected)
@@ -1156,6 +1433,30 @@ class PersistentObjectTracker:
         track.segments[int(segment.hydra_label_id)] = segment
         self._activate_segment(track, segment)
         self._add_evidence(track, raw_label, label_source, label_confidence)
+
+        # Log track birth for tracking quality evaluation
+        if self.coordinator and hasattr(self.coordinator, 'tracking_quality_recorder'):
+            self.coordinator.tracking_quality_recorder.log_track_birth(
+                frame_id=frame_id,
+                sequence=sequence,
+                track_id=track.track_id
+            )
+
+            # Also log initial observation
+            self.coordinator.tracking_quality_recorder.log_track_observation(
+                track_id=track.track_id,
+                frame_id=frame_id,
+                sequence=sequence,
+                centroid_3d=list(centroid) if centroid is not None else [0, 0, 0],
+                centroid_2d=list(bbox_2d[:2]) if bbox_2d is not None else [0, 0],
+                bbox_volume_m3=float(volume) if volume is not None else 0.0,
+                mask_area_px=int(metadata.get("mask_area_px", 0)) if metadata else 0,
+                depth_mean_m=float(metadata.get("depth_mean_m", 0.0)) if metadata else 0.0,
+                mask_iou_3d=float(metadata.get("mask_iou_3d", 0.0)) if metadata and metadata.get("mask_iou_3d") else None,
+                quality_score=1.0,
+                match_reason="new_track"
+            )
+
         return track
 
     def _allocate_slot_for_segment(self) -> Tuple[int, str, int]:
@@ -1604,7 +1905,8 @@ class PersistentObjectTracker:
                 vertical_center_delta = _aabb_center_delta_z(bbox_3d_min, bbox_3d_max, track.bbox_3d_min, track.bbox_3d_max)
                 accumulated_gap_xy = _aabb_gap_xy(bbox_3d_min, bbox_3d_max, track.bbox_3d_min, track.bbox_3d_max)
                 accumulated_center_xy = _aabb_center_distance_xy(bbox_3d_min, bbox_3d_max, track.bbox_3d_min, track.bbox_3d_max)
-                overlap_area, overlap_x, overlap_y = _aabb_overlap_fraction_xy(
+                # Use 3D overlap (with padding, Z-ranges are now consistent)
+                overlap_volume, overlap_x, overlap_y, overlap_z = _aabb_overlap_fraction_3d(
                     bbox_3d_min, bbox_3d_max, track.bbox_3d_min, track.bbox_3d_max
                 )
                 row.update({
@@ -1612,18 +1914,11 @@ class PersistentObjectTracker:
                     "accumulated_vertical_gap_m": vertical_gap,
                     "accumulated_vertical_center_delta_m": vertical_center_delta,
                     "accumulated_center_distance_xy_m": accumulated_center_xy,
-                    "historical_overlap_fraction_xy": overlap_area,
+                    "historical_overlap_fraction_3d": overlap_volume,
                     "historical_overlap_fraction_x": overlap_x,
                     "historical_overlap_fraction_y": overlap_y,
+                    "historical_overlap_fraction_z": overlap_z,
                 })
-                vertical_score = _gaussian_compatibility(
-                    vertical_center_delta,
-                    float(getattr(self.config, "persistent_global_vertical_sigma_m", 0.15)),
-                )
-                if vertical_gap > self.config.persistent_max_vertical_gap_m:
-                    row["rejection_reasons"].append("accumulated_vertical_gap_exceeded")
-                if vertical_center_delta > self.config.persistent_max_vertical_center_delta_m:
-                    row["rejection_reasons"].append("accumulated_vertical_center_delta_exceeded")
                 if accumulated_gap_xy > self.config.persistent_revisit_overlap_gap_m:
                     row["rejection_reasons"].append("accumulated_xy_gap_exceeded")
 
@@ -1631,60 +1926,22 @@ class PersistentObjectTracker:
                     accumulated_gap_xy,
                     max(float(self.config.persistent_revisit_overlap_gap_m), 1e-3),
                 )
-                historical_score = max(overlap_area, 0.50 * gap_score if accumulated_gap_xy > 0.0 else overlap_area)
+                # Historical now includes Z (3D volume overlap)
+                # For touching/overlapping: use volume. For separated: use distance score (no 0.50 damper)
+                historical_score = max(overlap_volume, gap_score if accumulated_gap_xy > 0.0 else overlap_volume)
                 min_hist = float(getattr(self.config, "persistent_global_historical_overlap_pass", 0.30))
                 min_axis = float(getattr(self.config, "persistent_global_min_axis_overlap", 0.20))
+                # Removed vertical checks from historical_pass; 3D overlap handles height separation
                 historical_pass = bool(
-                    vertical_gap <= self.config.persistent_max_vertical_gap_m
-                    and vertical_center_delta <= self.config.persistent_max_vertical_center_delta_m
-                    and (
-                        (overlap_area >= min_hist and overlap_x >= min_axis and overlap_y >= min_axis)
-                        or accumulated_gap_xy <= float(getattr(self.config, "persistent_global_touch_gap_pass_m", 0.02))
-                    )
+                    (overlap_volume >= min_hist and overlap_x >= min_axis and overlap_y >= min_axis)
+                    or accumulated_gap_xy <= float(getattr(self.config, "persistent_global_touch_gap_pass_m", 0.02))
                 )
-                vertical_pass = bool(
-                    vertical_gap <= self.config.persistent_max_vertical_gap_m
-                    and vertical_score >= float(getattr(self.config, "persistent_global_vertical_score_pass", 0.60))
-                )
+                # Vertical score removed (now in 3D overlap); keep vertical_pass=False for quorum
+                vertical_pass = False
 
-            if has_3d_footprint and track_has_last_3d:
-                vertical_gap_recent = _aabb_gap_z(bbox_3d_min, bbox_3d_max, track.last_bbox_3d_min, track.last_bbox_3d_max)
-                vertical_center_recent = _aabb_center_delta_z(bbox_3d_min, bbox_3d_max, track.last_bbox_3d_min, track.last_bbox_3d_max)
-                continuation_gap_xy = _aabb_gap_xy(bbox_3d_min, bbox_3d_max, track.last_bbox_3d_min, track.last_bbox_3d_max)
-                continuation_center_xy = _aabb_center_distance_xy(bbox_3d_min, bbox_3d_max, track.last_bbox_3d_min, track.last_bbox_3d_max)
-                recent_overlap, recent_overlap_x, recent_overlap_y = _aabb_overlap_fraction_xy(
-                    bbox_3d_min, bbox_3d_max, track.last_bbox_3d_min, track.last_bbox_3d_max
-                )
-                row.update({
-                    "continuation_gap_xy_m": continuation_gap_xy,
-                    "continuation_vertical_gap_m": vertical_gap_recent,
-                    "continuation_vertical_center_delta_m": vertical_center_recent,
-                    "continuation_center_distance_xy_m": continuation_center_xy,
-                    "recent_overlap_fraction_xy": recent_overlap,
-                    "recent_overlap_fraction_x": recent_overlap_x,
-                    "recent_overlap_fraction_y": recent_overlap_y,
-                })
-                if age_sec > self.config.persistent_continuation_max_age_sec:
-                    row["rejection_reasons"].append("continuation_age_exceeded")
-                if continuation_gap_xy > self.config.persistent_continuation_gap_m:
-                    row["rejection_reasons"].append("continuation_xy_gap_exceeded")
-                if vertical_gap_recent > self.config.persistent_max_vertical_gap_m:
-                    row["rejection_reasons"].append("continuation_vertical_gap_exceeded")
-                if vertical_center_recent > self.config.persistent_max_vertical_center_delta_m:
-                    row["rejection_reasons"].append("continuation_vertical_center_delta_exceeded")
-                recent_gap_score = _gaussian_compatibility(
-                    continuation_gap_xy, max(float(self.config.persistent_continuation_gap_m), 1e-3)
-                )
-                recent_score = max(recent_overlap, 0.50 * recent_gap_score if continuation_gap_xy > 0.0 else recent_overlap)
-                recent_pass = bool(
-                    recent_mode
-                    and vertical_gap_recent <= self.config.persistent_max_vertical_gap_m
-                    and vertical_center_recent <= self.config.persistent_max_vertical_center_delta_m
-                    and (
-                        recent_overlap >= float(getattr(self.config, "persistent_global_recent_overlap_pass", 0.25))
-                        or continuation_gap_xy <= float(getattr(self.config, "persistent_global_touch_gap_pass_m", 0.02))
-                    )
-                )
+            # Recent Continuation removed as redundant (3D Historical now handles continuity)
+            recent_score = 0.0
+            recent_pass = False
 
             if stage_ms is not None:
                 geometry_3d_ms += (time.perf_counter() - _t0) * 1000.0
@@ -1692,29 +1949,50 @@ class PersistentObjectTracker:
             ratio = _volume_ratio(volume, track.bbox_volume_m3)
             row["volume_ratio"] = float(ratio)
 
-            if centroid is not None and track.centroid_3d is not None:
-                distance = float(np.linalg.norm(centroid - track.centroid_3d))
-                row["centroid_distance_m"] = distance
-                centroid_score = _gaussian_compatibility(
-                    distance, float(getattr(self.config, "persistent_global_centroid_sigma_m", 0.50))
+            containment_score = 0.0
+            containment_pass = False
+            if has_3d_footprint and track_has_3d:
+                containment = _aabb_3d_containment(
+                    bbox_3d_min, bbox_3d_max, track.bbox_3d_min, track.bbox_3d_max
                 )
+                containment_score = float(containment)
+                containment_pass = bool(
+                    containment >= float(getattr(self.config, "persistent_global_containment_threshold", 0.90))
+                )
+                row["bbox_3d_containment"] = float(containment)
+
+            if centroid is not None and track.centroid_3d is not None:
+                if recent_mode:
+                    distance = float(np.linalg.norm(centroid - track.centroid_3d))
+                else:
+                    distance = float(np.linalg.norm(centroid[:2] - track.centroid_3d[:2]))
+                row["centroid_distance_m"] = distance
+                base_sigma = float(getattr(self.config, "persistent_global_centroid_sigma_m", 0.50))
+                track_size = float(track.bbox_volume_m3) if track.bbox_volume_m3 and track.bbox_volume_m3 > 0 else 1.0
+                # Discrete sigma scaling by size to handle fragmentation without over-merging
+                if track_size < 5.0:
+                    sigma = base_sigma  # small objects: tight matching
+                elif track_size < 20.0:
+                    sigma = 0.70  # medium objects: moderate tolerance
+                else:
+                    sigma = 0.90  # large accumulated: loose but capped
+                centroid_score = _gaussian_compatibility(distance, sigma)
+                row["centroid_sigma_m"] = float(sigma)
+                row["centroid_track_size_m3"] = float(track_size)
+                row["centroid_distance_mode"] = "3d_recent" if recent_mode else "2d_revisit"
+                row["centroid_sigma_category"] = "small" if track_size < 5 else ("medium" if track_size < 20 else "large")
                 centroid_pass = distance <= float(getattr(
                     self.config, "persistent_global_centroid_pass_m", self.config.persistent_max_match_distance_m
                 ))
-                if not centroid_pass:
-                    row["rejection_reasons"].append("centroid_distance_exceeded")
 
             iou = _bbox_iou(bbox_2d, track.bbox_2d)
             row["bbox_2d_iou"] = float(iou)
             iou_score = float(iou)
-            image_pass = bool(
-                age_sec <= self.config.persistent_max_2d_iou_age_sec
-                and iou >= self.config.persistent_min_2d_iou
-            )
-            if age_sec > self.config.persistent_max_2d_iou_age_sec:
-                row["rejection_reasons"].append("bbox_2d_age_exceeded")
-            if iou < self.config.persistent_min_2d_iou:
-                row["rejection_reasons"].append("bbox_2d_iou_below_threshold")
+            if recent_mode:
+                image_pass = bool(iou >= self.config.persistent_min_2d_iou)
+            else:
+                revisit_iou_threshold = float(getattr(self.config, "persistent_revisit_min_2d_iou", 0.75))
+                image_pass = bool(iou >= revisit_iou_threshold)
 
             if stage_ms is not None:
                 centroid_iou_ms += (time.perf_counter() - _t0) * 1000.0
@@ -1745,6 +2023,7 @@ class PersistentObjectTracker:
                 "centroid": bool(centroid_pass),
                 "vertical": bool(vertical_pass),
                 "image": bool(image_pass),
+                "containment": bool(containment_pass),
             }
             # When depth is unavailable, temporal freshness is an independent
             # fallback cue paired with image overlap. It is never counted when
@@ -1763,6 +2042,7 @@ class PersistentObjectTracker:
                     "centroid": float(getattr(self.config, "persistent_global_recent_weight_centroid", 0.25)),
                     "vertical": float(getattr(self.config, "persistent_global_recent_weight_vertical", 0.15)),
                     "image": float(getattr(self.config, "persistent_global_recent_weight_image", 0.10)),
+                    "containment": float(getattr(self.config, "persistent_global_recent_weight_containment", 0.00)),
                 }
                 min_score = float(getattr(self.config, "persistent_global_recent_min_score", 0.55))
             else:
@@ -1772,6 +2052,7 @@ class PersistentObjectTracker:
                     "centroid": float(getattr(self.config, "persistent_global_revisit_weight_centroid", 0.30)),
                     "vertical": float(getattr(self.config, "persistent_global_revisit_weight_vertical", 0.20)),
                     "image": float(getattr(self.config, "persistent_global_revisit_weight_image", 0.05)),
+                    "containment": float(getattr(self.config, "persistent_global_revisit_weight_containment", 0.00)),
                 }
                 min_score = float(getattr(self.config, "persistent_global_revisit_min_score", 0.70))
 
@@ -1788,6 +2069,7 @@ class PersistentObjectTracker:
                     + weights["centroid"] * centroid_score
                     + weights["vertical"] * vertical_score
                     + weights["image"] * iou_score
+                    + weights["containment"] * containment_score
                 ) / total_weight
             row["global_association_components"] = {
                 "historical_overlap": float(historical_score),
@@ -1795,6 +2077,7 @@ class PersistentObjectTracker:
                 "centroid_3d": float(centroid_score),
                 "vertical_compatibility": float(vertical_score),
                 "bbox_2d_iou": float(iou_score),
+                "bbox_3d_containment": float(containment_score),
             }
             row["global_association_weights"] = weights
             row["global_association_score"] = float(score)
@@ -1856,6 +2139,86 @@ class PersistentObjectTracker:
             track.bbox_3d_max = bbox_3d_max.copy() if track.bbox_3d_max is None else np.maximum(track.bbox_3d_max, bbox_3d_max)
             track.last_bbox_3d_min = bbox_3d_min.copy()
             track.last_bbox_3d_max = bbox_3d_max.copy()
+
+    def analyze_bbox_overlaps(self) -> Dict[str, Any]:
+        """Analyze overlapping bboxes in current tracks for fragmentation diagnosis.
+
+        Returns dict with overlap statistics for threshold optimization.
+        """
+        overlaps = []
+        track_list = list(self._tracks.items())
+
+        for i in range(len(track_list)):
+            for j in range(i + 1, len(track_list)):
+                tid_i, track_i = track_list[i]
+                tid_j, track_j = track_list[j]
+
+                # Skip if either track has no valid bbox
+                if (track_i.bbox_3d_min is None or track_i.bbox_3d_max is None or
+                    track_j.bbox_3d_min is None or track_j.bbox_3d_max is None):
+                    continue
+
+                # Calculate 3D bbox overlap fraction
+                min_i = track_i.bbox_3d_min
+                max_i = track_i.bbox_3d_max
+                min_j = track_j.bbox_3d_min
+                max_j = track_j.bbox_3d_max
+
+                # Overlap bounds
+                overlap_min = np.maximum(min_i, min_j)
+                overlap_max = np.minimum(max_i, max_j)
+
+                # Check if there's overlap in all 3 dimensions
+                overlap = np.all(overlap_min < overlap_max)
+                if not overlap:
+                    continue
+
+                # Calculate overlap volume
+                overlap_dims = overlap_max - overlap_min
+                overlap_volume = float(np.prod(overlap_dims))
+
+                # Calculate original volumes
+                vol_i = float(np.prod(max_i - min_i))
+                vol_j = float(np.prod(max_j - min_j))
+
+                # Overlap as percentage of smaller track
+                overlap_pct = 100.0 * overlap_volume / min(vol_i, vol_j)
+
+                # XY distance between centroids
+                cent_i = track_i.centroid_3d or ((min_i + max_i) / 2.0)
+                cent_j = track_j.centroid_3d or ((min_j + max_j) / 2.0)
+                xy_dist = float(np.linalg.norm(cent_i[:2] - cent_j[:2]))
+
+                if overlap_pct > 0:
+                    overlaps.append({
+                        'track_i': tid_i,
+                        'track_j': tid_j,
+                        'overlap_pct': overlap_pct,
+                        'xy_distance_m': xy_dist,
+                        'vol_i': vol_i,
+                        'vol_j': vol_j,
+                        'overlap_volume': overlap_volume,
+                        'age_i': track_i.seen_count,
+                        'age_j': track_j.seen_count,
+                    })
+
+        # Summary statistics
+        stats = {
+            'total_track_pairs': len(track_list) * (len(track_list) - 1) // 2,
+            'overlapping_pairs': len(overlaps),
+            'overlap_pct_min': min([o['overlap_pct'] for o in overlaps], default=0),
+            'overlap_pct_max': max([o['overlap_pct'] for o in overlaps], default=0),
+            'overlap_pct_mean': np.mean([o['overlap_pct'] for o in overlaps]) if overlaps else 0,
+            'xy_distance_min': min([o['xy_distance_m'] for o in overlaps], default=0),
+            'detailed_overlaps': overlaps,
+        }
+
+        self.logger.info(
+            f"BBox overlap analysis: {stats['overlapping_pairs']} overlapping pairs "
+            f"(max overlap: {stats['overlap_pct_max']:.1f}%, mean: {stats['overlap_pct_mean']:.1f}%)"
+        )
+
+        return stats
 
     @staticmethod
     def _source_rank(source: str) -> int:

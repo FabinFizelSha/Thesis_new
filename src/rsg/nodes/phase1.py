@@ -17,6 +17,7 @@ The node still keeps the same logical separation:
 
 from __future__ import annotations
 
+import os
 import queue
 import threading
 import time
@@ -36,13 +37,18 @@ from tf2_ros import TransformBroadcaster
 from rsg.msg import Phase1ClassificationResult, Phase1VlmResult, RsgFrame, RsgHydraFrame
 
 from nodes.support.phase1.backends import SamMask, make_rap_backend, make_sam_backend, make_vlm_backend
+from nodes.support.phase1.bbox_diagnostics import BboxDiagnosticsLogger
+from nodes.support.phase1.crop_evolution_tracker import CropEvolutionTracker
 from nodes.support.phase1.frame_cache import BoundedFrameCache, CachedFrame, EvidenceBuffer
+from nodes.support.phase1.tracking_quality_recorder import TrackingQualityRecorder
+from nodes.support.phase1.tracking_crop_manager import TrackingCropManager
 from nodes.support.phase1.json_utils import safe_json_dumps, safe_json_loads
 from nodes.support.phase1.label_map_builder import ClassifiedMask, LabelMapBuilder
 from nodes.support.phase1.object_geometry import ObjectGeometryEstimator, filter_metadata
 from nodes.support.phase1.phase1_config import Phase1Config
 from nodes.support.phase1.phase1_timing_recorder import Phase1TimingRecorder
 from nodes.support.phase1.persistent_object_tracker import PersistentObjectTracker
+from nodes.support.phase1.vlm_test_diagnostics import VLMTestDiagnostics
 from nodes.support.phase1.rap_memory import RapMemoryUpdater
 from nodes.support.phase1.semantic_crop import (
     build_rap_target_only_crop,
@@ -53,6 +59,7 @@ from nodes.support.phase1.semantic_crop import (
 from nodes.support.phase1.time_utils import stamp_to_float
 from nodes.support.phase1.unknown_tracker import UnknownObjectTracker
 from nodes.support.phase1.vlm_result import infer_mobility_from_label
+from nodes.phase1_pipeline import SegmentationStage, TrackingStage, SemanticsStage, PublishingStage
 
 
 class Phase1SemanticCoordinator(Node):
@@ -67,6 +74,16 @@ class Phase1SemanticCoordinator(Node):
 
     def __init__(self) -> None:
         super().__init__("rsg_phase1_semantic_coordinator")
+
+        # Clear Hydra cache on startup for fresh session (no pre-existing maps)
+        try:
+            import shutil
+            hydra_cache = "/home/student/.hydra/uhumans2"
+            if os.path.exists(hydra_cache):
+                shutil.rmtree(hydra_cache)
+                self.get_logger().info(f"Cleared Hydra cache at startup: {hydra_cache}")
+        except Exception as exc:
+            self.get_logger().warn(f"Failed to clear Hydra cache at startup: {exc}")
 
         self.declare_parameter("config_file", "")
         config_file = self.get_parameter("config_file").get_parameter_value().string_value
@@ -91,8 +108,20 @@ class Phase1SemanticCoordinator(Node):
         self.geometry_estimator = ObjectGeometryEstimator(self.config)
         self.label_map_builder = LabelMapBuilder(self.config)
         self.unknown_tracker = UnknownObjectTracker(self.config, self.get_logger())
-        self.persistent_tracker = PersistentObjectTracker(self.config, self.get_logger())
+        self.persistent_tracker = PersistentObjectTracker(self.config, self.get_logger(), coordinator=self)
         self.tf_broadcaster = TransformBroadcaster(self) if self.config.publish_hydra_tf else None
+
+        # Initialize bounding box diagnostics logger for post-run analysis
+        self.bbox_diagnostics_logger = BboxDiagnosticsLogger(
+            enabled=getattr(self.config, 'bbox_logging_enabled', True),
+            output_dir=os.path.expanduser(getattr(self.config, 'bbox_log_dir', '~/rsg_ros2_ws/debug/bbox_diagnostics'))
+        )
+
+        # Initialize modular pipeline stages
+        self.seg_stage = SegmentationStage(self.sam_backend, self.config, self.get_logger())
+        self.track_stage = TrackingStage(self.persistent_tracker, self.config, self.get_logger(), geometry_estimator=self.geometry_estimator)
+        self.sem_stage = SemanticsStage(self.config, self.get_logger())
+        self.pub_stage = PublishingStage(self.config, self.get_logger(), bridge=self.bridge, tf_broadcaster=self.tf_broadcaster)
 
         # Hydra receives one fixed slot ID per physical object.  Semantic names
         # are applied by the downstream scene-graph fuser, therefore Phase 1 does not rewrite or
@@ -236,6 +265,35 @@ class Phase1SemanticCoordinator(Node):
             autosave_every=self.config.timing_excel_autosave_every,
             logger=self.get_logger(),
             sheet_name=self.config.timing_sheet_name,
+        )
+
+        # Comprehensive crop evolution diagnostics for debugging overlaps and tracking issues
+        from pathlib import Path
+        crop_evolution_dir = Path(self.config.timing_csv_path).parent / "crop_evolution"
+        self.crop_evolution_tracker = CropEvolutionTracker(
+            enabled=True,  # Always enabled for diagnostic branch
+            output_dir=str(crop_evolution_dir),
+            logger=self.get_logger(),
+        )
+
+        # Tracking quality evaluation diagnostics
+        tracking_quality_dir = Path(self.config.timing_csv_path).parent / "tracking_quality"
+        self.tracking_quality_recorder = TrackingQualityRecorder(
+            enabled=True,  # Always enabled for diagnostic branch
+            output_dir=str(tracking_quality_dir),
+            logger=self.get_logger(),
+        )
+
+        # RAP-VLM diagnostic crops (best updates, RAP dequeues, VLM dequeues)
+        # Use absolute path to avoid symlink resolution issues
+        rap_vlm_crops_dir = Path("/home/student/rsg_ros2_ws/RAP-VLM crops")
+        self.tracking_crop_manager = TrackingCropManager(
+            output_dir=rap_vlm_crops_dir
+        )
+
+        # VLM testing diagnostics (crops + outputs for manual verification)
+        self.vlm_test_diagnostics = VLMTestDiagnostics(
+            output_dir=Path("/home/student/rsg_ros2_ws/VLM-Test-Session")
         )
 
         self.received_count = 0
@@ -554,6 +612,18 @@ class Phase1SemanticCoordinator(Node):
                 self._publish_hydra_from_result(frame, result, cached)
                 self.processed_count += 1
                 self.publish_status("processed", frame.rsg_frame_id, "ok")
+
+                # Log bounding boxes for post-run diagnostic analysis
+                try:
+                    if self.bbox_diagnostics_logger.enabled and result.success:
+                        objects = safe_json_loads(result.object_metadata_json, default=[])
+                        if objects:
+                            tracks_by_id = {obj.get("persistent_track_id"): obj for obj in objects if obj.get("persistent_track_id")}
+                            if tracks_by_id:
+                                self.bbox_diagnostics_logger.log_frame_tracks(frame.sequence, tracks_by_id)
+                except Exception as exc:
+                    if rclpy.ok() and not self._stop_event.is_set():
+                        self.get_logger().debug(f"Failed to log bbox diagnostics: {exc}")
             except Exception as exc:
                 self.failed_count += 1
                 if rclpy.ok() and not self._stop_event.is_set():
@@ -579,7 +649,7 @@ class Phase1SemanticCoordinator(Node):
         callback_start = time.perf_counter()
 
         build_start = time.perf_counter()
-        hydra_msg, hydra_stage_ms = self.build_hydra_frame(frame, result, build_start, cached)
+        hydra_msg, hydra_stage_ms = self.pub_stage.build_hydra_frame(frame, result, build_start, cached)
         hydra_build_delay_ms = (time.perf_counter() - build_start) * 1000.0
 
         publish_start = time.perf_counter()
@@ -587,7 +657,16 @@ class Phase1SemanticCoordinator(Node):
         if self.config.publish_hydra_combined:
             publish_success = self._safe_publish(self.hydra_frame_pub, hydra_msg) and publish_success
         if self.config.publish_hydra_separate_topics:
-            publish_success = self.publish_separate_hydra_topics(hydra_msg) and publish_success
+            publishers = {
+                "hydra_rgb_pub": self.hydra_rgb_pub,
+                "hydra_depth_pub": self.hydra_depth_pub,
+                "hydra_camera_info_pub": self.hydra_camera_info_pub,
+                "hydra_pose_pub": self.hydra_pose_pub,
+                "hydra_semantic_pub": self.hydra_semantic_pub,
+                "hydra_instance_pub": self.hydra_instance_pub,
+                "hydra_metadata_pub": self.hydra_metadata_pub,
+            }
+            publish_success = self.pub_stage.publish_separate_hydra_topics(hydra_msg, publishers) and publish_success
         hydra_publish_delay_ms = (time.perf_counter() - publish_start) * 1000.0
 
         unknown_publish_start = time.perf_counter()
@@ -708,7 +787,7 @@ class Phase1SemanticCoordinator(Node):
             )
 
         evidence_start = time.perf_counter()
-        self.add_evidence_record(hydra_msg, result)
+        self.pub_stage.add_evidence_record(hydra_msg, result, self.evidence_buffer)
         evidence_record_delay_ms = (time.perf_counter() - evidence_start) * 1000.0
         # Evidence is post-Hydra-publish work. It is not added to
         # total_delay_ms, but measuring it prevents confusion if it later causes
@@ -722,151 +801,6 @@ class Phase1SemanticCoordinator(Node):
         # longer needed for result matching in the combined mode.
         self.frame_cache.remove(frame.rsg_frame_id)
 
-    def build_hydra_frame(self, frame: RsgFrame, result: Phase1ClassificationResult, callback_start: float, cached: Optional[CachedFrame]) -> Tuple[RsgHydraFrame, Dict[str, float]]:
-        """Create the combined Hydra-ready frame message."""
-        hydra_msg = RsgHydraFrame()
-        hydra_msg.header = frame.header
-        hydra_msg.rsg_frame_id = frame.rsg_frame_id
-        hydra_msg.source = frame.source
-        hydra_msg.sequence = frame.sequence
-        hydra_msg.rgb = frame.rgb
-        depth_filter_start = time.perf_counter()
-        hydra_depth, hydra_semantic, hydra_instance = self.apply_hydra_depth_range_filter(
-            frame.depth_m, result.semantic_labels, result.instance_labels
-        )
-        hydra_depth_filter_ms = (time.perf_counter() - depth_filter_start) * 1000.0
-        hydra_msg.depth_m = hydra_depth
-        hydra_msg.camera_info = frame.camera_info
-        hydra_msg.camera_pose = frame.camera_pose
-        hydra_msg.tx = frame.tx
-        hydra_msg.rot_m = frame.rot_m
-        hydra_msg.semantic_labels = hydra_semantic
-        hydra_msg.instance_labels = hydra_instance
-        hydra_msg.label_table_json = result.label_table_json
-        hydra_msg.object_metadata_json = result.object_metadata_json
-        hydra_msg.unknown_candidates_json = result.unknown_candidates_json
-        hydra_msg.perception_metadata_json = result.metadata_json
-        metadata_start = time.perf_counter()
-        metadata = {
-            "phase": "phase1_hydra_input",
-            "node": "rsg_object_detection",
-            "classifier_success": bool(result.success),
-            "classifier_status": result.status,
-            "classifier_reason": result.reason,
-            "num_masks": int(result.num_masks),
-            "num_known": int(result.num_known),
-            "num_unknown": int(result.num_unknown),
-        }
-        if self.config.include_frame_relation_metadata:
-            metadata["source_preprocessor_metadata"] = safe_json_loads(frame.metadata_json, default={})
-        hydra_msg.metadata_json = safe_json_dumps(metadata)
-        hydra_metadata_build_ms = (time.perf_counter() - metadata_start) * 1000.0
-        hydra_msg.coordinator_delay_ms = (time.perf_counter() - callback_start) * 1000.0
-        hydra_msg.classifier_delay_ms = float(result.classifier_delay_ms)
-        timing_valid = cached is not None and float(getattr(cached, "received_monotonic", 0.0) or 0.0) > 0.0
-        hydra_msg.total_delay_ms = (time.perf_counter() - cached.received_monotonic) * 1000.0 if timing_valid else 0.0
-        return hydra_msg, {
-            "hydra_depth_filter_ms": hydra_depth_filter_ms,
-            "hydra_metadata_build_ms": hydra_metadata_build_ms,
-        }
-
-
-    def apply_hydra_depth_range_filter(
-        self, depth_msg: Image, semantic_msg: Image, instance_msg: Image
-    ) -> Tuple[Image, Image, Image]:
-        """Make out-of-range pixels invalid before publishing Hydra inputs.
-
-        This is deliberately a depth gate. ID 0 in the semantic and instance
-        maps denotes no usable observation but is not the reason the mesh is
-        excluded; the zero depth value is.
-        """
-        if not self.config.hydra_depth_range_filter_enabled:
-            return depth_msg, semantic_msg, instance_msg
-        try:
-            depth = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding="passthrough").astype(np.float32, copy=False)
-            valid = (
-                np.isfinite(depth)
-                & (depth >= float(self.config.hydra_depth_min_range_m))
-                & (depth <= float(self.config.hydra_depth_max_range_m))
-            )
-            if bool(np.all(valid)):
-                return depth_msg, semantic_msg, instance_msg
-            depth_filtered = np.where(valid, depth, 0.0).astype(np.float32, copy=False)
-            semantic = self.bridge.imgmsg_to_cv2(semantic_msg, desired_encoding="passthrough")
-            instance = self.bridge.imgmsg_to_cv2(instance_msg, desired_encoding="passthrough")
-            semantic_filtered = np.where(valid, semantic, 0).astype(semantic.dtype, copy=False)
-            instance_filtered = np.where(valid, instance, 0).astype(instance.dtype, copy=False)
-            depth_out = self.bridge.cv2_to_imgmsg(depth_filtered, encoding="32FC1")
-            semantic_out = self.bridge.cv2_to_imgmsg(semantic_filtered, encoding=self.config.semantic_label_encoding)
-            instance_out = self.bridge.cv2_to_imgmsg(instance_filtered, encoding=self.config.instance_label_encoding)
-            depth_out.header = depth_msg.header
-            semantic_out.header = semantic_msg.header
-            instance_out.header = instance_msg.header
-            return depth_out, semantic_out, instance_out
-        except Exception as exc:
-            self.get_logger().warn(f"Hydra depth range filter failed; publishing original frame: {exc}")
-            return depth_msg, semantic_msg, instance_msg
-
-
-    def publish_hydra_camera_tf(self, hydra_msg: RsgHydraFrame) -> None:
-        """Publish a synthetic camera TF only for deployments without an authoritative TF tree.
-
-        The calibrated Tesse configuration disables this path. Hydra instead
-        resolves world -> base_link_gt and base_link_gt -> left_cam directly
-        from the rosbag TF stream at each image timestamp.
-        """
-        if self.tf_broadcaster is None:
-            return
-        pose = hydra_msg.camera_pose
-        if not pose.header.frame_id or not hydra_msg.rgb.header.frame_id:
-            return
-        tf_msg = TransformStamped()
-        tf_msg.header.stamp = hydra_msg.rgb.header.stamp
-        tf_msg.header.frame_id = pose.header.frame_id
-        tf_msg.child_frame_id = hydra_msg.rgb.header.frame_id
-        tf_msg.transform.translation.x = pose.pose.position.x
-        tf_msg.transform.translation.y = pose.pose.position.y
-        tf_msg.transform.translation.z = pose.pose.position.z
-        tf_msg.transform.rotation = pose.pose.orientation
-        try:
-            self.tf_broadcaster.sendTransform(tf_msg)
-        except Exception as exc:
-            self.get_logger().warn(f"Failed to publish Hydra camera TF: {exc}")
-
-    def publish_separate_hydra_topics(self, hydra_msg: RsgHydraFrame) -> bool:
-        """Republish the combined Hydra frame fields as separate topics."""
-        self.publish_hydra_camera_tf(hydra_msg)
-        ok = True
-        if self.hydra_rgb_pub is not None:
-            ok = self._safe_publish(self.hydra_rgb_pub, hydra_msg.rgb) and ok
-        if self.hydra_depth_pub is not None:
-            ok = self._safe_publish(self.hydra_depth_pub, hydra_msg.depth_m) and ok
-        if self.hydra_camera_info_pub is not None:
-            ok = self._safe_publish(self.hydra_camera_info_pub, hydra_msg.camera_info) and ok
-        if self.hydra_pose_pub is not None:
-            ok = self._safe_publish(self.hydra_pose_pub, hydra_msg.camera_pose) and ok
-        if self.hydra_semantic_pub is not None:
-            ok = self._safe_publish(self.hydra_semantic_pub, hydra_msg.semantic_labels) and ok
-        if self.hydra_instance_pub is not None:
-            ok = self._safe_publish(self.hydra_instance_pub, hydra_msg.instance_labels) and ok
-        if self.hydra_metadata_pub is not None:
-            ok = self._safe_publish(self.hydra_metadata_pub, String(data=hydra_msg.metadata_json)) and ok
-        return ok
-
-    def add_evidence_record(self, hydra_msg: RsgHydraFrame, result: Phase1ClassificationResult) -> None:
-        """Store compact frame metadata for future risk-annotation retrieval."""
-        if not self.config.store_evidence_frames:
-            return
-        objects = safe_json_loads(result.object_metadata_json, default=[])
-        record = {
-            "frame_id": hydra_msg.rsg_frame_id,
-            "sequence": int(hydra_msg.sequence),
-            "timestamp_sec": stamp_to_float(hydra_msg.header.stamp),
-            "num_objects": len(objects) if isinstance(objects, list) else 0,
-            "object_ids": [obj.get("candidate_id", "") for obj in objects] if isinstance(objects, list) else [],
-            "total_delay_ms": float(hydra_msg.total_delay_ms),
-        }
-        self.evidence_buffer.add(record)
 
     def record_frame_lifecycle_event(
         self,
@@ -926,16 +860,12 @@ class Phase1SemanticCoordinator(Node):
         image_conversion_delay_ms = (time.perf_counter() - conversion_start) * 1000.0
 
         sam_start = time.perf_counter()
-        sam_prepare_start = sam_start
-        sam_rgb, sam_prep = self.prepare_sam_input(rgb, depth)
-        sam_prepare_delay_ms = (time.perf_counter() - sam_prepare_start) * 1000.0
-        sam_inference_start = time.perf_counter()
-        sam_masks_small = self.run_sam(sam_rgb, min_area_px=self.scaled_min_mask_pixels(sam_prep))
-        sam_inference_delay_ms = (time.perf_counter() - sam_inference_start) * 1000.0
-        sam_restore_start = time.perf_counter()
-        sam_masks = self.restore_sam_masks_to_original(sam_masks_small, sam_prep, rgb.shape[:2])
-        sam_restore_delay_ms = (time.perf_counter() - sam_restore_start) * 1000.0
+        sam_masks, sam_prep, seg_timing = self.seg_stage.run(rgb, depth)
         sam_delay_ms = (time.perf_counter() - sam_start) * 1000.0
+        # Timing metrics from segmentation stage
+        sam_prepare_delay_ms = float(seg_timing.get("sam_prepare_ms", 0.0))
+        sam_inference_delay_ms = float(seg_timing.get("sam_inference_ms", 0.0))
+        sam_restore_delay_ms = float(seg_timing.get("sam_restore_ms", 0.0))
         sam_other_ms = max(
             0.0,
             sam_delay_ms - sam_prepare_delay_ms - sam_inference_delay_ms - sam_restore_delay_ms,
@@ -983,6 +913,13 @@ class Phase1SemanticCoordinator(Node):
         sam_masks = stage["sam_masks"]
         input_age_ms = float(stage["input_age_ms"])
         timing = stage["timing"]
+
+        # Log frame start for tracking quality evaluation
+        self.tracking_quality_recorder.log_frame_start(
+            frame_id=frame.rsg_frame_id,
+            sequence=frame.sequence,
+            sam_mask_count=len(sam_masks)
+        )
 
         rap_start = time.perf_counter()
         rap_frame_start = time.perf_counter()
@@ -1075,205 +1012,6 @@ class Phase1SemanticCoordinator(Node):
             float(timing["segmentation_stage_elapsed_ms"]) + (time.perf_counter() - start) * 1000.0
         )
         return result
-
-    def run_sam(self, rgb: np.ndarray, min_area_px: Optional[int] = None) -> List[SamMask]:
-        """Run configured SAM backend and filter tiny masks at the SAM input scale."""
-        if not self.config.sam_enabled:
-            return []
-        min_area = max(1, int(min_area_px if min_area_px is not None else self.config.sam_min_mask_pixels))
-        masks = self.sam_backend.segment(rgb)
-        filtered: List[SamMask] = []
-        for mask in masks[: self.config.sam_max_masks]:
-            if int(mask.area_px) >= min_area:
-                filtered.append(mask)
-        return filtered
-
-    def prepare_sam_input(self, rgb: np.ndarray, depth: np.ndarray) -> Tuple[np.ndarray, Dict[str, Any]]:
-        """Return the image sent to SAM and metadata needed to restore masks.
-
-        The processing order is intentionally simple and deterministic:
-
-        1. resize RGB/depth by ``phase1.sam.input_scale_ratio``;
-        2. optionally compute a valid-depth mask using the configured distance
-           interval;
-        3. optionally crop SAM input to the valid-depth bounding ROI;
-        4. replace invalid-depth pixels with a constant background colour so
-           SAM is not asked to segment pixels outside the distance gate.
-        """
-        orig_h, orig_w = rgb.shape[:2]
-        scale = float(self.config.sam_input_scale_ratio)
-        scale = max(0.05, min(1.0, scale))
-        proc_h = max(1, int(round(orig_h * scale)))
-        proc_w = max(1, int(round(orig_w * scale)))
-
-        if proc_h != orig_h or proc_w != orig_w:
-            try:
-                import cv2  # type: ignore
-                interp = self.cv_resize_interpolation(self.config.sam_resize_interpolation)
-                rgb_proc = cv2.resize(rgb, (proc_w, proc_h), interpolation=interp)
-                depth_proc = cv2.resize(depth, (proc_w, proc_h), interpolation=cv2.INTER_NEAREST)
-            except Exception:
-                # Fallback for environments without OpenCV. This is less exact
-                # but keeps dummy/unit tests functional.
-                y_idx = np.linspace(0, orig_h - 1, proc_h).astype(np.int64)
-                x_idx = np.linspace(0, orig_w - 1, proc_w).astype(np.int64)
-                rgb_proc = rgb[np.ix_(y_idx, x_idx)]
-                depth_proc = depth[np.ix_(y_idx, x_idx)]
-        else:
-            rgb_proc = rgb.copy()
-            depth_proc = depth
-
-        meta: Dict[str, Any] = {
-            "scale_ratio": float(scale),
-            "original_shape_hw": [int(orig_h), int(orig_w)],
-            "processed_shape_hw": [int(proc_h), int(proc_w)],
-            "sam_shape_hw": [int(proc_h), int(proc_w)],
-            "roi_xyxy": None,
-            "depth_filter_enabled": bool(self.config.sam_depth_filter_enabled),
-            "depth_filter_valid_ratio": None,
-            "depth_filter_effective_range_m": [
-                float(self.config.sam_depth_filter_min_m),
-                float(self.config.sam_depth_filter_max_m),
-            ],
-        }
-
-        if not self.config.sam_depth_filter_enabled:
-            meta["valid_depth_mask_sam"] = None
-            return rgb_proc, meta
-
-        valid = (
-            np.isfinite(depth_proc)
-            & (depth_proc >= float(self.config.sam_depth_filter_min_m))
-            & (depth_proc <= float(self.config.sam_depth_filter_max_m))
-        )
-        valid_ratio = float(np.count_nonzero(valid)) / float(valid.size) if valid.size else 0.0
-        meta["depth_filter_valid_ratio"] = valid_ratio
-
-        background = np.array(self.config.sam_depth_filter_background_value, dtype=rgb_proc.dtype).reshape(1, 1, 3)
-
-        if valid_ratio < float(self.config.sam_depth_filter_min_valid_ratio):
-            # Too little valid depth: give SAM a blank image and restore no masks.
-            rgb_blank = np.zeros_like(rgb_proc)
-            if rgb_blank.ndim == 3 and rgb_blank.shape[2] == 3:
-                rgb_blank[:] = background
-            meta["valid_depth_mask_sam"] = np.zeros(rgb_blank.shape[:2], dtype=bool)
-            meta["depth_filter_rejected_by_valid_ratio"] = True
-            return rgb_blank, meta
-
-        if bool(self.config.sam_depth_filter_crop_to_roi) and np.any(valid):
-            ys, xs = np.where(valid)
-            margin = int(self.config.sam_depth_filter_roi_margin_px)
-            x0 = max(0, int(xs.min()) - margin)
-            y0 = max(0, int(ys.min()) - margin)
-            x1 = min(proc_w, int(xs.max()) + margin + 1)
-            y1 = min(proc_h, int(ys.max()) + margin + 1)
-            rgb_sam = rgb_proc[y0:y1, x0:x1].copy()
-            valid_sam = valid[y0:y1, x0:x1]
-            meta["roi_xyxy"] = [int(x0), int(y0), int(x1), int(y1)]
-            meta["sam_shape_hw"] = [int(rgb_sam.shape[0]), int(rgb_sam.shape[1])]
-        else:
-            rgb_sam = rgb_proc.copy()
-            valid_sam = valid
-
-        if rgb_sam.ndim == 3 and rgb_sam.shape[2] == 3:
-            rgb_sam[~valid_sam] = background
-        meta["valid_depth_mask_sam"] = valid_sam
-        return rgb_sam, meta
-
-    @staticmethod
-    def cv_resize_interpolation(name: str) -> int:
-        """Map a YAML interpolation name to an OpenCV constant."""
-        import cv2  # type: ignore
-        key = str(name).strip().lower()
-        if key in {"nearest", "nearest_neighbor"}:
-            return cv2.INTER_NEAREST
-        if key in {"linear", "bilinear"}:
-            return cv2.INTER_LINEAR
-        if key in {"cubic", "bicubic"}:
-            return cv2.INTER_CUBIC
-        return cv2.INTER_AREA
-
-    def scaled_min_mask_pixels(self, sam_prep: Dict[str, Any]) -> int:
-        """Return the mask-area threshold at the SAM input scale."""
-        orig_h, orig_w = [int(v) for v in sam_prep.get("original_shape_hw", [1, 1])]
-        proc_h, proc_w = [int(v) for v in sam_prep.get("processed_shape_hw", [orig_h, orig_w])]
-        area_scale = (float(proc_h * proc_w) / float(max(1, orig_h * orig_w)))
-        return max(1, int(round(float(self.config.sam_min_mask_pixels) * area_scale)))
-
-    def restore_sam_masks_to_original(
-        self,
-        masks: List[SamMask],
-        sam_prep: Dict[str, Any],
-        original_shape: Tuple[int, int],
-    ) -> List[SamMask]:
-        """Map masks from SAM input coordinates back to original RGB coordinates."""
-        if not masks:
-            return []
-        try:
-            import cv2  # type: ignore
-        except Exception as exc:
-            raise RuntimeError("OpenCV is required to restore scaled SAM masks to original image size") from exc
-
-        orig_h, orig_w = int(original_shape[0]), int(original_shape[1])
-        proc_h, proc_w = [int(v) for v in sam_prep.get("processed_shape_hw", [orig_h, orig_w])]
-        roi = sam_prep.get("roi_xyxy")
-        valid_sam = sam_prep.get("valid_depth_mask_sam")
-
-        restored: List[SamMask] = []
-        for idx, mask in enumerate(masks):
-            sam_mask = np.asarray(mask.mask, dtype=bool)
-            if valid_sam is not None and sam_mask.shape == np.asarray(valid_sam).shape:
-                sam_mask = sam_mask & np.asarray(valid_sam, dtype=bool)
-
-            proc_mask = np.zeros((proc_h, proc_w), dtype=np.uint8)
-            if roi is not None:
-                x0, y0, x1, y1 = [int(v) for v in roi]
-                roi_h = max(0, y1 - y0)
-                roi_w = max(0, x1 - x0)
-                if sam_mask.shape[:2] != (roi_h, roi_w):
-                    sam_mask_u8 = cv2.resize(sam_mask.astype(np.uint8), (roi_w, roi_h), interpolation=cv2.INTER_NEAREST)
-                else:
-                    sam_mask_u8 = sam_mask.astype(np.uint8)
-                proc_mask[y0:y1, x0:x1] = sam_mask_u8[:roi_h, :roi_w]
-            else:
-                if sam_mask.shape[:2] != (proc_h, proc_w):
-                    proc_mask = cv2.resize(sam_mask.astype(np.uint8), (proc_w, proc_h), interpolation=cv2.INTER_NEAREST)
-                else:
-                    proc_mask = sam_mask.astype(np.uint8)
-
-            full_mask = cv2.resize(proc_mask, (orig_w, orig_h), interpolation=cv2.INTER_NEAREST).astype(bool)
-            area = int(np.count_nonzero(full_mask))
-            if area < int(self.config.sam_min_mask_pixels):
-                continue
-            ys, xs = np.where(full_mask)
-            if xs.size == 0 or ys.size == 0:
-                continue
-            x_min = int(xs.min())
-            y_min = int(ys.min())
-            x_max = int(xs.max()) + 1
-            y_max = int(ys.max()) + 1
-            metadata = dict(mask.metadata or {})
-            metadata.update({
-                "restored_from_scaled_sam": True,
-                "sam_input_scale_ratio": float(sam_prep.get("scale_ratio", 1.0)),
-                "sam_depth_filter_enabled": bool(sam_prep.get("depth_filter_enabled", False)),
-                "sam_depth_filter_valid_ratio": sam_prep.get("depth_filter_valid_ratio"),
-                "sam_roi_xyxy": sam_prep.get("roi_xyxy"),
-            })
-            restored.append(
-                SamMask(
-                    mask_id=str(mask.mask_id or f"mask_{idx:03d}"),
-                    mask=full_mask,
-                    bbox_2d=[x_min, y_min, max(0, x_max - x_min), max(0, y_max - y_min)],
-                    area_px=area,
-                    crop=mask.crop,
-                    score=float(mask.score),
-                    metadata=metadata,
-                )
-            )
-            if len(restored) >= int(self.config.sam_max_masks):
-                break
-        return restored
 
     def run_rap_and_metadata(
         self,
@@ -1411,6 +1149,20 @@ class Phase1SemanticCoordinator(Node):
             if timing_enabled:
                 crop_update_ms += (time.perf_counter() - stage_start) * 1000.0
 
+            # Extract crop for diagnostic inspection
+            try:
+                # bbox_2d should be in metadata from object_geometry
+                bbox_2d = metadata.get("bbox_2d")  # (x_min, y_min, x_max, y_max)
+                if external_track_id and bbox_2d:
+                    # Check if this is a new track (first observation)
+                    is_new_track = track_record.get("persistent_match_reason") == "new_track"
+                    # Crop saving disabled (diagnostic feature for Phase 2 optimization)
+            except Exception as exc:
+                if hasattr(self, '_crop_extraction_errors'):
+                    self._crop_extraction_errors += 1
+                else:
+                    self._crop_extraction_errors = 1
+
             # VLM remains a one-shot fallback only when the asynchronous RAP
             # lookup cannot identify this slot.
             unresolved_for_vlm = False
@@ -1445,6 +1197,7 @@ class Phase1SemanticCoordinator(Node):
 
             metadata["rap_dispatch_status"] = "track_id_pending_rap" if self.config.rap_enabled else "rap_disabled"
             next_instance_id += 1
+
         result_stage_ms = {
             "geometry_metadata_ms": geometry_ms,
             "frame_assignment_ms": assignment_ms,
@@ -1465,9 +1218,10 @@ class Phase1SemanticCoordinator(Node):
             return {"label": "unknown_object", "confidence": 0.0, "is_known": False, "metadata": {}, "status": "disabled", "delay_ms": 0.0}
         start = time.perf_counter()
         try:
-            rap_crop = self._build_rap_semantic_crop(rgb, mask.mask, mask.bbox_2d)
+            rap_crop = self.sem_stage.build_rap_crop(rgb, mask.mask, mask.bbox_2d)
             if rap_crop is None or rap_crop.size == 0:
                 raise RuntimeError("Synchronous RAP target-only crop is empty")
+
             height, width = rap_crop.shape[:2]
             synthetic_mask = SamMask(
                 mask_id=str(mask.mask_id),
@@ -1493,122 +1247,6 @@ class Phase1SemanticCoordinator(Node):
             self.get_logger().warn(f"Synchronous RAP lookup failed: {exc}")
             return {"label": "unknown_object", "confidence": 0.0, "is_known": False, "metadata": {"error": str(exc)}, "status": "error", "delay_ms": (time.perf_counter() - start) * 1000.0}
 
-    def _score_track_crop(
-        self,
-        metadata: Dict[str, Any],
-        image_shape: Tuple[int, int],
-        bbox_2d: Any,
-    ) -> Dict[str, Any]:
-        """Score one candidate crop for semantic usefulness rather than depth alone.
-
-        A thin NanoSAM fragment can have a high valid-depth ratio while still
-        being unusable for visual recognition. The score therefore combines the
-        raw object-box size, mask support, depth support, mask fill, and image
-        border truncation. Long objects are not penalised for aspect ratio.
-        """
-        image_height, image_width = [max(1, int(value)) for value in image_shape]
-        if not bbox_2d or len(bbox_2d) != 4:
-            return {
-                "vlm_crop_quality_score": 0.0,
-                "vlm_crop_quality_eligible": False,
-                "vlm_crop_quality_reasons": ["invalid_bbox"],
-                "vlm_crop_border_edges": 0,
-            }
-
-        x, y, width, height = [int(value) for value in bbox_2d]
-        width = max(0, min(width, image_width))
-        height = max(0, min(height, image_height))
-        bbox_area = int(width * height)
-        short_side = int(min(width, height))
-        mask_area = max(0.0, float(metadata.get("mask_area_px", 0) or 0.0))
-        depth_valid_ratio = max(0.0, min(1.0, float(metadata.get("depth_valid_ratio", 0.0) or 0.0)))
-        fill_ratio = max(0.0, min(1.0, mask_area / float(max(1, bbox_area))))
-
-        border_edges = int(x <= 0) + int(y <= 0) + int(x + width >= image_width) + int(y + height >= image_height)
-        area_score = min(1.0, bbox_area / float(max(1, self.config.vlm_crop_target_area_px)))
-        mask_score = min(1.0, mask_area / float(max(1, self.config.vlm_crop_target_area_px)))
-        short_side_score = min(1.0, short_side / float(max(1, self.config.vlm_crop_target_short_side_px)))
-        border_factor = max(0.35, 1.0 - float(self.config.vlm_crop_border_penalty) * border_edges)
-
-        score = (
-            0.28 * area_score
-            + 0.24 * mask_score
-            + 0.22 * short_side_score
-            + 0.16 * depth_valid_ratio
-            + 0.10 * fill_ratio
-        ) * border_factor
-        score = max(0.0, min(1.0, float(score)))
-
-        reasons: List[str] = []
-        if bbox_area < int(self.config.vlm_crop_min_area_px):
-            reasons.append("crop_area_below_minimum")
-        if short_side < int(self.config.vlm_crop_min_short_side_px):
-            reasons.append("crop_short_side_below_minimum")
-        if score < float(self.config.vlm_crop_min_quality_score):
-            reasons.append("crop_quality_below_minimum")
-        if border_edges >= 2:
-            reasons.append("object_box_heavily_border_clipped")
-
-        return {
-            "vlm_crop_quality_score": score,
-            "vlm_crop_quality_eligible": not reasons,
-            "vlm_crop_quality_reasons": reasons,
-            "vlm_crop_border_edges": border_edges,
-            "vlm_crop_object_bbox_area_px": bbox_area,
-            "vlm_crop_object_short_side_px": short_side,
-            "vlm_crop_mask_fill_ratio": fill_ratio,
-            "vlm_crop_depth_valid_ratio": depth_valid_ratio,
-        }
-
-    def _build_rap_semantic_crop(
-        self,
-        rgb: np.ndarray,
-        mask: Optional[np.ndarray],
-        object_bbox_2d: Any,
-        prepared_mask: Optional[np.ndarray] = None,
-    ) -> Optional[np.ndarray]:
-        """Return the exact target-only image supplied to RAP."""
-        if not bool(self.config.semantic_crop_rap_target_only_enabled):
-            return self.extract_crop(rgb, object_bbox_2d)
-        return build_rap_target_only_crop(
-            rgb,
-            mask,
-            object_bbox_2d,
-            background_rgb=self.config.semantic_crop_rap_background_rgb,
-            cleanup_mask=self.config.semantic_crop_mask_cleanup_enabled,
-            cleanup_min_component_area_ratio=self.config.semantic_crop_mask_cleanup_min_component_area_ratio,
-            cleanup_component_max_gap_px=self.config.semantic_crop_mask_cleanup_component_max_gap_px,
-            prepared_mask=prepared_mask,
-        )
-
-    def _build_vlm_semantic_crop(
-        self,
-        rgb: np.ndarray,
-        mask: Optional[np.ndarray],
-        context_bbox_2d: Any,
-        prepared_mask: Optional[np.ndarray] = None,
-    ) -> Optional[np.ndarray]:
-        """Return the exact target-focused image supplied to the VLM."""
-        if not bool(self.config.semantic_crop_vlm_target_focus_enabled):
-            return self.extract_crop(rgb, context_bbox_2d)
-        return build_vlm_target_focus_crop(
-            rgb,
-            mask,
-            context_bbox_2d,
-            context_alpha=self.config.semantic_crop_vlm_context_alpha,
-            grayscale_context=self.config.semantic_crop_vlm_context_grayscale,
-            near_context_enabled=self.config.semantic_crop_vlm_near_context_enabled,
-            near_context_alpha=self.config.semantic_crop_vlm_near_context_alpha,
-            near_context_dilation_px=self.config.semantic_crop_vlm_near_context_dilation_px,
-            near_context_grayscale=self.config.semantic_crop_vlm_near_context_grayscale,
-            cleanup_mask=self.config.semantic_crop_mask_cleanup_enabled,
-            cleanup_min_component_area_ratio=self.config.semantic_crop_mask_cleanup_min_component_area_ratio,
-            cleanup_component_max_gap_px=self.config.semantic_crop_mask_cleanup_component_max_gap_px,
-            draw_target_contour=self.config.semantic_crop_draw_target_contour,
-            contour_rgb=self.config.semantic_crop_target_contour_rgb,
-            contour_thickness_px=self.config.semantic_crop_target_contour_thickness_px,
-            prepared_mask=prepared_mask,
-        )
 
     def _remember_track_crop(
         self,
@@ -1640,7 +1278,7 @@ class Phase1SemanticCoordinator(Node):
         if not context_bbox_2d:
             return
         timestamp_sec = float(stamp_to_float(frame.header.stamp))
-        crop_quality = self._score_track_crop(metadata, rgb.shape[:2], bbox_2d)
+        crop_quality = self.sem_stage.score_track_crop(metadata, rgb.shape[:2], bbox_2d)
         score = float(crop_quality["vlm_crop_quality_score"])
 
         # Score before mask cleanup or rendering. A lower-scoring observation
@@ -1700,6 +1338,18 @@ class Phase1SemanticCoordinator(Node):
             )
             if source_mask.shape != source_rgb.shape[:2]:
                 return
+
+        # Apply boundary marking when crop becomes the best (once-off, not every frame)
+        # This happens before making it read-only, so RAP/VLM receive marked version
+        if source_mask is not None:
+            try:
+                source_rgb = self.tracking_crop_manager._highlight_contours(
+                    source_rgb, source_mask,
+                    color=(0, 255, 255),  # Cyan
+                    thickness=1
+                )
+            except Exception:
+                pass  # If marking fails, use unmarked version
 
         # Revisions are immutable after publication to the registry. Workers
         # can safely retain these references after releasing the registry lock.
@@ -1781,6 +1431,20 @@ class Phase1SemanticCoordinator(Node):
                     updated = True
 
         if updated:
+            # Save the best crop when it's accepted (already marked with boundaries)
+            try:
+                best_crop_path = self.tracking_crop_manager.save_best_crop(
+                    track_id=key,
+                    source_rgb=source_rgb,
+                    crop_revision=revision,
+                    crop_score=score,
+                    sequence=int(frame.sequence),
+                )
+                if best_crop_path:
+                    self.get_logger().debug(f"Saved best crop for {key}: {best_crop_path}")
+            except Exception as e:
+                self.get_logger().warn(f"Failed to save best crop for {key}: {e}")
+
             self._resume_quality_deferred_vlm_if_ready(key)
 
     def _describe_track_crop(self, track_id: str) -> Optional[Dict[str, Any]]:
@@ -1855,7 +1519,7 @@ class Phase1SemanticCoordinator(Node):
             if prepared_mask is None:
                 return None
 
-        object_crop = self._build_rap_semantic_crop(
+        object_crop = self.sem_stage.build_rap_crop(
             source_rgb,
             source_mask,
             target_bbox_in_roi,
@@ -1866,13 +1530,9 @@ class Phase1SemanticCoordinator(Node):
 
         vlm_crop = None
         if str(stage).startswith("vlm"):
-            roi_height, roi_width = source_rgb.shape[:2]
-            vlm_crop = self._build_vlm_semantic_crop(
-                source_rgb,
-                source_mask,
-                [0, 0, int(roi_width), int(roi_height)],
-                prepared_mask=prepared_mask,
-            )
+            # Reuse source_rgb which already has boundary marked
+            # (no additional rendering to avoid double-marking)
+            vlm_crop = source_rgb
             if vlm_crop is None or vlm_crop.size == 0:
                 return None
 
@@ -1909,6 +1569,9 @@ class Phase1SemanticCoordinator(Node):
             "mask_id": str(metadata.get("mask_id", candidate_id)),
             "rgb_crop": object_crop,
             "vlm_rgb_crop": vlm_crop,
+            "source_rgb": source_rgb,
+            "source_mask": source_mask,
+            "target_bbox_in_roi": target_bbox_in_roi,
             "object_metadata": metadata,
             "centroid_frame_id": centroid_frame_id,
             "created_monotonic": float(queued_time if queued_time is not None else time.perf_counter()),
@@ -1950,7 +1613,9 @@ class Phase1SemanticCoordinator(Node):
         geometry_stage_ms: Optional[Dict[str, float]] = None,
     ) -> Dict[str, Any]:
         """Create configurable object metadata used by Hydra/fusion/risk nodes."""
-        geometry = self.geometry_estimator.estimate(mask.mask, depth, frame.camera_info, tx, rot_m, stage_ms=geometry_stage_ms)
+        # Use filtered mask for geometry (only largest contour, no islands)
+        filtered_mask = self.tracking_crop_manager.get_filtered_mask(mask.mask)
+        geometry = self.geometry_estimator.estimate(filtered_mask, depth, frame.camera_info, tx, rot_m, stage_ms=geometry_stage_ms)
         metadata = {
             "source_frame_id": frame.rsg_frame_id,
             "timestamp_sec": stamp_to_float(frame.header.stamp),
@@ -1964,9 +1629,6 @@ class Phase1SemanticCoordinator(Node):
             "rap": rap_metadata,
             **geometry,
         }
-        # Persistent association needs the raw 3D geometry even when JSON
-        # metadata publication is disabled for performance. The LabelMapBuilder
-        # still honours metadata.include_* flags when serialising outputs.
         if self.config.persistent_tracking_enabled:
             return metadata
         return filter_metadata(metadata, self.config)
@@ -2475,6 +2137,19 @@ class Phase1SemanticCoordinator(Node):
             task = self._snapshot_track_task(str(track_id), "rap_dequeue")
             if task is not None:
                 self.persistent_tracker.set_labeling_status(str(track_id), "rap_dequeued")
+                # Save diagnostic crop for RAP
+                try:
+                    rap_crop_result = self.tracking_crop_manager.save_rap_dequeue_crop(
+                        track_id=str(track_id),
+                        rap_crop=task.get("rgb_crop"),
+                        crop_revision=int(task.get("crop_revision", 0)),
+                        crop_score=float(task.get("crop_score", 0.0)),
+                        sequence=int(task.get("sequence", 0)),
+                    )
+                    if rap_crop_result:
+                        self.get_logger().debug(f"Saved RAP crop for {track_id}: {rap_crop_result}")
+                except Exception as e:
+                    self.get_logger().warn(f"Failed to save RAP crop for {track_id}: {e}")
             if task is None:
                 fallback = {
                     "persistent_track_id": str(track_id),
@@ -2716,11 +2391,22 @@ class Phase1SemanticCoordinator(Node):
                 bbox_2d,
                 context_ratio=float(self.config.vlm_crop_context_ratio),
             )
-            rgb_crop = self._build_vlm_semantic_crop(
+            rgb_crop = self.sem_stage.build_vlm_crop(
                 rgb,
                 None if classified_mask is None else classified_mask.mask,
                 context_bbox_2d,
             )
+
+            # Store VLM crop for later analysis (will be saved after tracking assigns track_id)
+            if rgb_crop is not None and rgb_crop.size > 0:
+                if not hasattr(self, '_current_frame_vlm_crops'):
+                    self._current_frame_vlm_crops = {}
+                unknown_track_id = str(unknown.get("unknown_track_id", ""))
+                if unknown_track_id:
+                    self._current_frame_vlm_crops[unknown_track_id] = {
+                        "crop": rgb_crop.copy(),
+                        "quality_score": float(dispatch_info.get("vlm_crop_quality_score", 0) if hasattr(self, '_current_frame_vlm_crops') else 0),
+                    }
 
             if not self.config.vlm_enabled:
                 dispatch_info = {"vlm_dispatch_status": "vlm_disabled", "best_frame_score": 0.0}
@@ -2808,6 +2494,19 @@ class Phase1SemanticCoordinator(Node):
                 task = self._snapshot_track_task(track_id, "vlm_dequeue")
                 if task is not None:
                     self.persistent_tracker.set_labeling_status(track_id, "vlm_dequeued")
+                    # Save diagnostic crop for VLM
+                    try:
+                        vlm_crop_result = self.tracking_crop_manager.save_vlm_dequeue_crop(
+                            track_id=track_id,
+                            vlm_crop=task.get("vlm_rgb_crop", task.get("rgb_crop")),
+                            crop_revision=int(task.get("crop_revision", 0)),
+                            crop_score=float(task.get("crop_score", 0.0)),
+                            sequence=int(task.get("sequence", 0)),
+                        )
+                        if vlm_crop_result:
+                            self.get_logger().debug(f"Saved VLM crop for {track_id}: {vlm_crop_result}")
+                    except Exception as e:
+                        self.get_logger().warn(f"Failed to save VLM crop for {track_id}: {e}")
                 if task is None:
                     fallback = {
                         "persistent_track_id": track_id,
@@ -2866,6 +2565,20 @@ class Phase1SemanticCoordinator(Node):
                 }
                 if rclpy.ok() and not self._stop_event.is_set():
                     self.get_logger().error(f"VLM failed for track={track_id}: {exc}")
+
+            # Log VLM result for testing diagnostics
+            vlm_processing_time_ms = (time.perf_counter() - start) * 1000.0
+            try:
+                crop_rgb = task.get("vlm_rgb_crop", task.get("rgb_crop"))
+                self.vlm_test_diagnostics.log_vlm_result(
+                    crop_rgb=crop_rgb,
+                    vlm_output=result,
+                    processing_time_ms=vlm_processing_time_ms,
+                    timestamp=float(task.get("timestamp_sec", 0.0)),
+                    track_id=track_id,
+                )
+            except Exception as e:
+                self.get_logger().warn(f"Failed to log VLM test result: {e}")
 
             # The VLM label must be paired with the exact immutable crop that
             # was supplied at VLM dequeue.  Do not replace it with a later crop
@@ -3186,6 +2899,28 @@ class Phase1SemanticCoordinator(Node):
         except Exception as exc:
             print(f"Failed to save Phase 1 timing CSV: {exc}", flush=True)
 
+        try:
+            self.crop_evolution_tracker.save_snapshot(suffix="_final")
+            self.crop_evolution_tracker.save_analysis()
+        except Exception as exc:
+            print(f"Failed to save crop evolution diagnostics: {exc}", flush=True)
+
+        try:
+            self.tracking_quality_recorder.save_snapshots(suffix="_final")
+            self.tracking_quality_recorder.generate_report(suffix="_final")
+        except Exception as exc:
+            print(f"Failed to save tracking quality diagnostics: {exc}", flush=True)
+
+        # Crop saving disabled (diagnostic feature for Phase 2 optimization)
+
+        try:
+            self.bbox_diagnostics_logger.save()
+        except Exception as exc:
+            print(f"Failed to save bbox diagnostics: {exc}", flush=True)
+
+        # Only RAP-VLM diagnostic crops are saved (best_update, rap, vlm)
+        # No summary files or additional diagnostics
+
         # Do not wait for a long HTTP timeout. Threads are daemon threads and
         # will terminate with the process after a brief cooperative join.
         for thread in (
@@ -3199,6 +2934,16 @@ class Phase1SemanticCoordinator(Node):
                     thread.join(timeout=0.20)
             except Exception:
                 pass
+
+        # Clear Hydra cache on shutdown for fresh start on next launch
+        try:
+            import shutil
+            hydra_cache = "/home/student/.hydra/uhumans2"
+            if os.path.exists(hydra_cache):
+                shutil.rmtree(hydra_cache)
+                print(f"Cleared Hydra cache: {hydra_cache}", flush=True)
+        except Exception as exc:
+            print(f"Failed to clear Hydra cache: {exc}", flush=True)
 
         return super().destroy_node()
 

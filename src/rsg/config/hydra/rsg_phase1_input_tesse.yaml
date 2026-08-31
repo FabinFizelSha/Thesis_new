@@ -20,6 +20,6 @@ input:
         type: camera_info                                                                            # Build the camera model from Phase 1 CameraInfo.
         ns: /rsg/hydra/rgb                                                                           # CameraInfo resolves to /rsg/hydra/rgb/camera_info.
         min_range: 0.30                                                                              # Match preprocessor depth validity lower bound in metres.
-        max_range: 6.00                                                                              # Match preprocessor depth validity upper bound in metres.
+        max_range: 5.00                                                                              # Updated to 5.00m for better object detection range.
         extrinsics:
           type: ros                                                                                  # Obtain base_link_gt -> left_cam from the rosbag TF tree.

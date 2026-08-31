@@ -8,7 +8,7 @@ The helper defaults to the external dataset at ``/home/student/datasets``.
 """
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
@@ -19,6 +19,21 @@ def generate_launch_description() -> LaunchDescription:
     """Create the complete RSG + Hydra launch description."""
     share = FindPackageShare("rsg")
     start_hydra = LaunchConfiguration("start_hydra")
+
+    # Clear Hydra cache before launch so maps don't load from previous session
+    # This must complete before Hydra initializes, so we explicitly wait
+    clear_hydra_cache = ExecuteProcess(
+        cmd=['bash', '-c', '''
+set -e
+echo "Clearing all Hydra persistent state..."
+rm -rf /home/student/.hydra/* 2>/dev/null || true
+rm -rf /tmp/hydra_* 2>/dev/null || true
+rm -rf ~/.local/share/hydra* 2>/dev/null || true
+echo "✓ All Hydra persistent state cleared"
+sleep 1
+'''],
+        output='screen',
+    )
 
     rsg_stack = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -79,6 +94,7 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("hydra_extra_yaml", default_value="{show_run_settings: false, config_verbosity: 0}"),
         DeclareLaunchArgument("glog_level", default_value="0"),
         DeclareLaunchArgument("glog_verbosity", default_value="0"),
+        clear_hydra_cache,
         rsg_stack,
         hydra_stack,
     ])

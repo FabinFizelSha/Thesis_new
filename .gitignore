@@ -1,0 +1,34 @@
+# --- colcon build artifacts -------------------------------------------------
+# Per-package build/ and install/ trees are generated; only the top-level
+# colcon stubs are tracked (kept via the negations below).
+/build/*
+!/build/.built_by
+!/build/COLCON_IGNORE
+/install/*
+!/install/COLCON_IGNORE
+!/install/.colcon_install_layout
+!/install/local_setup.bash
+!/install/local_setup.ps1
+!/install/local_setup.sh
+!/install/local_setup.zsh
+!/install/setup.bash
+!/install/setup.ps1
+!/install/setup.sh
+!/install/setup.zsh
+!/install/_local_setup_util_ps1.py
+!/install/_local_setup_util_sh.py
+/log/*
+!/log/COLCON_IGNORE
+!/log/latest
+!/log/latest_build
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# --- editors / OS --------------------------------------------------------
+# (.idea/ is already tracked in this repo, so it is intentionally not ignored)
+*.swp
+.DS_Store

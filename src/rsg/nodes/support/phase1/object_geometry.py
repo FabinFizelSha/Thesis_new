@@ -104,13 +104,57 @@ class ObjectGeometryEstimator:
         min_xyz = np.min(points_world, axis=0)
         max_xyz = np.max(points_world, axis=0)
         size_xyz = np.maximum(max_xyz - min_xyz, 0.0)
-        volume = float(size_xyz[0] * size_xyz[1] * size_xyz[2])
+
+        # Apply minimum assumed depth padding for thin objects (ceiling/floor).
+        # For sheet-like objects with very small thickness, expand that dimension
+        # to improve volume-ratio comparisons during track deduplication.
+        min_assumed_depth = float(getattr(self.config, 'min_assumed_depth_m', 0.30))
+        size_xyz_padded = np.array(size_xyz)
+        for i in range(3):
+            if size_xyz[i] < min_assumed_depth:
+                size_xyz_padded[i] = min_assumed_depth
+
+        volume = float(size_xyz_padded[0] * size_xyz_padded[1] * size_xyz_padded[2])
+
+        # Apply hybrid two-pass directional padding to bbox coordinates
+        # PASS 1: Z-axis (vertical) padding for floors/ceilings
+        bbox_min_padded = np.array(min_xyz, dtype=np.float64)
+        bbox_max_padded = np.array(max_xyz, dtype=np.float64)
+
+        depth_z = float(bbox_max_padded[2] - bbox_min_padded[2])
+        if depth_z < min_assumed_depth:
+            deficit_z = min_assumed_depth - depth_z
+            z_center = (bbox_min_padded[2] + bbox_max_padded[2]) / 2.0
+            # Floor (low Z): extend downward
+            if z_center < 1.0:
+                bbox_min_padded[2] -= deficit_z
+            # Ceiling (high Z): extend upward
+            else:
+                bbox_max_padded[2] += deficit_z
+
+        # PASS 2: X/Y-axes (horizontal) padding for thin walls
+        min_depth_xy = 0.15  # More conservative for horizontal
+        for axis in [0, 1]:
+            depth = float(bbox_max_padded[axis] - bbox_min_padded[axis])
+            if depth < min_depth_xy:
+                deficit = min_depth_xy - depth
+                axis_center = (bbox_min_padded[axis] + bbox_max_padded[axis]) / 2.0
+                scene_center = 2.5  # Typical room half-width
+                # Pad toward edge
+                if axis_center < scene_center:
+                    bbox_min_padded[axis] -= deficit
+                else:
+                    bbox_max_padded[axis] += deficit
+
+        # Recalculate centroid from padded bbox
+        centroid_padded = (bbox_min_padded + bbox_max_padded) / 2.0
 
         geometry["valid_geometry"] = True
-        geometry["centroid_3d"] = [float(v) for v in centroid]
-        geometry["bbox_3d_min"] = [float(v) for v in min_xyz]
-        geometry["bbox_3d_max"] = [float(v) for v in max_xyz]
-        geometry["bbox_3d_size"] = [float(v) for v in size_xyz]
+        geometry["centroid_3d"] = [float(v) for v in centroid_padded]
+        geometry["bbox_3d_min"] = [float(v) for v in bbox_min_padded]
+        geometry["bbox_3d_max"] = [float(v) for v in bbox_max_padded]
+        geometry["bbox_3d_size"] = [float(v) for v in size_xyz]  # Keep original for diagnostics
+        geometry["bbox_3d_size_padded"] = [float(v) for v in size_xyz_padded]  # Used for volume calc
         geometry["bbox_volume_m3"] = volume
         geometry["depth_min_m"] = float(np.min(z_valid))
         geometry["depth_max_m"] = float(np.max(z_valid))

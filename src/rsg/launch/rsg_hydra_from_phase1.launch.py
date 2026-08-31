@@ -1,4 +1,5 @@
 """Launch Hydra mapping and visualization for the official TESSE uHumans2 bag."""
+from datetime import datetime
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
@@ -16,6 +17,11 @@ def generate_launch_description() -> LaunchDescription:
         [rsg_share, "config", "hydra", "rsg_phase1_input_tesse.yaml"]
     )
     rviz_config = PathJoinSubstitution([rsg_share, "config", "rviz", "rsg_hydra_rap_fused_scene_graph.rviz"])
+
+    # Use fresh log path with timestamp to prevent loading old persistent state
+    # This ensures each launch gets a completely clean Hydra instance
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+    fresh_log_path = f"/tmp/hydra_uhumans2_{timestamp}"
 
     visualization_odom_bridge = Node(
         package="tf2_ros",
@@ -65,6 +71,7 @@ def generate_launch_description() -> LaunchDescription:
                 "glog_level": LaunchConfiguration("glog_level"),
                 "glog_verbosity": LaunchConfiguration("glog_verbosity"),
                 "extra_yaml": LaunchConfiguration("hydra_extra_yaml"),
+                "log_path": fresh_log_path,
             }.items(),
         ),
 

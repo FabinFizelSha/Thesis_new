@@ -217,7 +217,7 @@ class Phase1Config:
     # VLM crop selection is kept separate from the semantic settling interval:
     # a track becomes eligible after settling, but a weak crop may wait for a
     # later observation rather than consuming one irreversible VLM request.
-    vlm_crop_context_ratio: float = 0.25
+    vlm_crop_context_ratio: float = 0.15
     vlm_crop_min_area_px: int = 12000
     vlm_crop_min_short_side_px: int = 64
     vlm_crop_min_quality_score: float = 0.34
@@ -316,6 +316,8 @@ class Phase1Config:
     persistent_global_revisit_weight_centroid: float = 0.30
     persistent_global_revisit_weight_vertical: float = 0.20
     persistent_global_revisit_weight_image: float = 0.05
+    persistent_global_min_depth_z: float = 0.30
+    persistent_global_min_depth_xy: float = 0.15
     persistent_local_segments_enabled: bool = True
     persistent_local_segment_max_xy_span_m: float = 4.0
     persistent_local_segment_revisit_distance_m: float = 1.5
@@ -631,7 +633,7 @@ class Phase1Config:
             vlm_result_min_mobility_confidence=max(0.0, min(1.0, float((vlm.get("result_validation", {}) or {}).get("min_mobility_confidence", 0.50)))),
             vlm_dynamic_label_hints=list((vlm.get("result_validation", {}) or {}).get("dynamic_label_hints", [])),
             vlm_static_label_hints=list((vlm.get("result_validation", {}) or {}).get("static_label_hints", [])),
-            vlm_crop_context_ratio=max(0.0, min(0.50, float(vlm.get("crop_context_ratio", 0.25)))),
+            vlm_crop_context_ratio=max(0.0, min(0.50, float(vlm.get("crop_context_ratio", 0.15)))),
             vlm_crop_min_area_px=max(1, int(vlm.get("min_crop_area_px", 12000))),
             vlm_crop_min_short_side_px=max(1, int(vlm.get("min_crop_short_side_px", 64))),
             vlm_crop_min_quality_score=max(0.0, min(1.0, float(vlm.get("min_crop_quality_score", 0.34)))),
@@ -714,6 +716,8 @@ class Phase1Config:
             persistent_global_revisit_weight_centroid=max(0.0, float(persistent_tracking.get("global_revisit_weight_centroid", 0.30))),
             persistent_global_revisit_weight_vertical=max(0.0, float(persistent_tracking.get("global_revisit_weight_vertical", 0.20))),
             persistent_global_revisit_weight_image=max(0.0, float(persistent_tracking.get("global_revisit_weight_image", 0.05))),
+            persistent_global_min_depth_z=max(0.05, float(persistent_tracking.get("global_min_depth_z", 0.30))),
+            persistent_global_min_depth_xy=max(0.05, float(persistent_tracking.get("global_min_depth_xy", 0.15))),
             persistent_local_segments_enabled=bool(persistent_tracking.get("local_segments_enabled", True)),
             persistent_local_segment_max_xy_span_m=max(0.25, float(persistent_tracking.get("local_segment_max_xy_span_m", 4.0))),
             persistent_local_segment_revisit_distance_m=max(0.05, float(persistent_tracking.get("local_segment_revisit_distance_m", 1.5))),
