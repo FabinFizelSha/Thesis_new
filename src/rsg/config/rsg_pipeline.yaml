@@ -299,7 +299,7 @@ phase1:                                                                         
       min_prompt_luma: 4                                                                             # Reject near-black prompt locations.
 
   rap:
-    enabled: true                                                                                    # Query Chroma/CLIP memory before invoking the VLM.
+    enabled: false                                                                                   # VLM prompt-optimisation experiment §5: RAP disabled, every crop goes to the VLM. Restore to true for normal runs.
     backend: real                                                                                    # Use the real RAP implementation rather than a test stub.
     execution_mode: async                                                                            # Keep retrieval off the critical RGB-D-to-Hydra path.
     async: true                                                                                      # Enable asynchronous RAP work.
@@ -383,7 +383,13 @@ phase1:                                                                         
       {"label": "<label>", "label_confidence": <0-1>, "mobility_class": "<static|dynamic|unknown>", "mobility_confidence": <0-1>}
 
       Return only the JSON object. No markdown, explanations, or extra text.
-       
+
+    prompt_optimisation:                                                                             # VLM prompt-optimisation experiment (debug/prompt_optimisation_experiment/). Set enabled: false for normal runs.
+      enabled: true                                                                                  # Route VLM crop + per-call CSV into the experiment run folder.
+      run_id: R1__qwen3vl8b__v1_simplified                                                            # Experiment matrix row; folder name under output_root.
+      prompt_version: P1_v1_simplified                                                                # Which prompt from prompts_under_test.yaml is active above.
+      output_root: /home/student/Thesis_new/debug/prompt_optimisation_experiment/runs                # <output_root>/<run_id>/session_<timestamp>/{crops,vlm_results.csv}
+
     result_validation:
       min_label_confidence: 0.80                                                                    # Reject weak labels before they enter  memory or the fused graph.
       min_mobility_confidence: 0.70                                                                  # Preserve the label but convert weak mobility decisions to unknown.

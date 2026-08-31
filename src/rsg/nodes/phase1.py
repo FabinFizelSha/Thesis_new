@@ -291,9 +291,24 @@ class Phase1SemanticCoordinator(Node):
             output_dir=rap_vlm_crops_dir
         )
 
-        # VLM testing diagnostics (crops + outputs for manual verification)
+        # VLM testing diagnostics (crops + per-call CSV for manual verification).
+        # During the prompt-optimisation experiment, write under
+        # <output_root>/<run_id>/session_<timestamp>/ so repeated runs of the
+        # same matrix row never overwrite each other.
+        if self.config.vlm_prompt_opt_enabled and self.config.vlm_prompt_opt_output_root:
+            _vlm_diag_dir = Path(self.config.vlm_prompt_opt_output_root) / (
+                self.config.vlm_prompt_opt_run_id or "unnamed_run"
+            )
+        else:
+            _vlm_diag_dir = Path("/home/student/rsg_ros2_ws/VLM-Test-Session")
         self.vlm_test_diagnostics = VLMTestDiagnostics(
-            output_dir=Path("/home/student/rsg_ros2_ws/VLM-Test-Session")
+            output_dir=_vlm_diag_dir,
+            run_id=self.config.vlm_prompt_opt_run_id,
+            model_profile=self.config.vlm_active_profile,
+            prompt_version=self.config.vlm_prompt_opt_prompt_version,
+        )
+        self.get_logger().info(
+            f"VLM crop diagnostics -> {self.vlm_test_diagnostics.get_session_dir()}"
         )
 
         self.received_count = 0
@@ -954,10 +969,12 @@ class Phase1SemanticCoordinator(Node):
         semantic, instance, label_table, objects, unknowns = self.label_map_builder.build(rgb.shape[:2], classified)
         label_map_delay_ms = (time.perf_counter() - label_start) * 1000.0
         metadata_start = time.perf_counter()
-        # With asynchronous RAP, unknown-vs-known is decided by the RAP worker.
-        # The worker queues VLM only for unresolved slots, so no RAP/VLM work
-        # blocks this frame before it is published to Hydra.
-        vlm_dispatch = [] if self.config.rap_enabled else self.dispatch_unknowns_to_vlm(frame, rgb, depth, unknowns, classified)
+        # VLM dispatch is driven entirely by _dispatch_tracks_after_settling
+        # (above), for both RAP-enabled and RAP-disabled operation.  When RAP is
+        # off, settled tracks are routed straight to the VLM FIFO by ID there.
+        # The old per-frame dispatch_unknowns_to_vlm path is inert on this branch
+        # (legacy unknown_tracker._tracks is never populated) so it is not called.
+        vlm_dispatch: List[Dict[str, Any]] = []
         metadata = self.build_result_metadata(
             frame, sam_masks, objects, unknowns, vlm_dispatch, track_records, semantic_label_dispatches
         )
@@ -1717,19 +1734,33 @@ class Phase1SemanticCoordinator(Node):
                     self.persistent_tracker.release_labeling_request(track_id, "missing_representative_crop")
                 continue
 
-            # The RAP FIFO contains only the persistent track ID.  Do not copy
-            # or freeze the crop here: later observations remain eligible until
-            # the RAP worker actually dequeues this ID.
-            status = self.enqueue_rap_task(track_id)
-            if status in {"queued_for_rap", "deferred_for_rap"}:
-                self.persistent_tracker.set_labeling_status(
-                    track_id,
-                    "rap_queued" if status == "queued_for_rap" else "rap_deferred",
-                )
-                with self._semantic_label_lock:
-                    self._semantic_label_pending_track_ids.add(track_id)
+            if self.config.rap_enabled:
+                # The RAP FIFO contains only the persistent track ID.  Do not copy
+                # or freeze the crop here: later observations remain eligible until
+                # the RAP worker actually dequeues this ID.
+                status = self.enqueue_rap_task(track_id)
+                if status in {"queued_for_rap", "deferred_for_rap"}:
+                    self.persistent_tracker.set_labeling_status(
+                        track_id,
+                        "rap_queued" if status == "queued_for_rap" else "rap_deferred",
+                    )
+                    with self._semantic_label_lock:
+                        self._semantic_label_pending_track_ids.add(track_id)
+                else:
+                    self.persistent_tracker.release_labeling_request(track_id, status)
             else:
-                self.persistent_tracker.release_labeling_request(track_id, status)
+                # RAP disabled: there is no retrieval short-circuit, so every
+                # settled track goes straight to the VLM by ID.  This reuses the
+                # exact same crop registry, quality gate, hysteresis and worker
+                # diagnostics as the post-RAP VLM path.  The legacy
+                # ``unknown_tracker`` dispatch is inert on this branch (its
+                # ``_tracks`` map is never populated) and must not be relied on.
+                status = self._enqueue_vlm_after_rap(track_id)
+                if self._vlm_schedule_accepted(status):
+                    with self._semantic_label_lock:
+                        self._semantic_label_pending_track_ids.add(track_id)
+                else:
+                    self.persistent_tracker.release_labeling_request(track_id, status)
             records.append({
                 "persistent_track_id": track_id,
                 "hydra_slot_id": int(event.get("hydra_slot_id", 0) or 0),
@@ -2455,17 +2486,6 @@ class Phase1SemanticCoordinator(Node):
                 context_bbox_2d,
             )
 
-            # Store VLM crop for later analysis (will be saved after tracking assigns track_id)
-            if rgb_crop is not None and rgb_crop.size > 0:
-                if not hasattr(self, '_current_frame_vlm_crops'):
-                    self._current_frame_vlm_crops = {}
-                unknown_track_id = str(unknown.get("unknown_track_id", ""))
-                if unknown_track_id:
-                    self._current_frame_vlm_crops[unknown_track_id] = {
-                        "crop": rgb_crop.copy(),
-                        "quality_score": float(dispatch_info.get("vlm_crop_quality_score", 0) if hasattr(self, '_current_frame_vlm_crops') else 0),
-                    }
-
             if not self.config.vlm_enabled:
                 dispatch_info = {"vlm_dispatch_status": "vlm_disabled", "best_frame_score": 0.0}
                 task = None
@@ -2478,6 +2498,17 @@ class Phase1SemanticCoordinator(Node):
                     sequence=int(frame.sequence),
                     image_area_px=image_area_px,
                 )
+
+            # Store VLM crop for later analysis (saved once tracking assigns track_id)
+            if rgb_crop is not None and rgb_crop.size > 0:
+                if not hasattr(self, '_current_frame_vlm_crops'):
+                    self._current_frame_vlm_crops = {}
+                unknown_track_id = str(unknown.get("unknown_track_id", ""))
+                if unknown_track_id:
+                    self._current_frame_vlm_crops[unknown_track_id] = {
+                        "crop": rgb_crop.copy(),
+                        "quality_score": float(dispatch_info.get("vlm_crop_quality_score", 0.0) or 0.0),
+                    }
 
             dispatch_status = str(dispatch_info.get("vlm_dispatch_status", "not_queued"))
             if task is not None:
@@ -2631,7 +2662,8 @@ class Phase1SemanticCoordinator(Node):
                 self.vlm_test_diagnostics.log_vlm_result(
                     crop_rgb=crop_rgb,
                     vlm_output=result,
-                    processing_time_ms=vlm_processing_time_ms,
+                    end_to_end_ms=vlm_processing_time_ms,
+                    inference_ms=float(result.get("vlm_inference_ms", 0.0) or 0.0),
                     timestamp=float(task.get("timestamp_sec", 0.0)),
                     track_id=track_id,
                 )

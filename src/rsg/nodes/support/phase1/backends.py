@@ -818,6 +818,9 @@ class OpenAICompatibleVlmBackend:
                 body = response.read().decode("utf-8")
             result = json.loads(body)
             text = result.get("choices", [{}])[0].get("message", {}).get("content", "unknown_object")
+            # llama.cpp reports model compute time in `timings` (prompt + generation).
+            _t = result.get("timings") or {}
+            _inference_ms = float(_t.get("prompt_ms", 0.0) or 0.0) + float(_t.get("predicted_ms", 0.0) or 0.0)
             validated = validate_vlm_response(
                 text,
                 min_label_confidence=float(self.config.vlm_result_min_label_confidence),
@@ -830,6 +833,7 @@ class OpenAICompatibleVlmBackend:
                 "backend": self.config.vlm_mode,
                 "model": self.model,
                 "raw_response": text,
+                "vlm_inference_ms": _inference_ms,
                 "failure_reason": "" if validated.success else validated.validation_reason,
             })
             return output

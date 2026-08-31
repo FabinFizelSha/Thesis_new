@@ -32,3 +32,9 @@ __pycache__/
 # (.idea/ is already tracked in this repo, so it is intentionally not ignored)
 *.swp
 .DS_Store
+.~lock.*#
+
+# --- VLM prompt-optimisation run outputs --------------------------------
+# Keep the per-run scaffold (crops/.gitkeep + placeholder vlm_results.csv);
+# ignore the session_<timestamp>/ folders that each pipeline run writes.
+debug/prompt_optimisation_experiment/runs/*/session_*/

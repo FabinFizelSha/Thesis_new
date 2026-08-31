@@ -210,6 +210,10 @@ class Phase1Config:
     vlm_temperature: float = 0.0
     vlm_jpeg_quality: int = 85
     vlm_prompt: str = "Identify the main object. Reply with one lowercase noun only. If unclear, reply unknown_object."
+    vlm_prompt_opt_enabled: bool = False
+    vlm_prompt_opt_run_id: str = ""
+    vlm_prompt_opt_prompt_version: str = ""
+    vlm_prompt_opt_output_root: str = ""
     vlm_result_min_label_confidence: float = 0.35
     vlm_result_min_mobility_confidence: float = 0.50
     vlm_dynamic_label_hints: List[str] = field(default_factory=list)
@@ -629,6 +633,10 @@ class Phase1Config:
             vlm_temperature=float(vlm.get("temperature", 0.0)),
             vlm_jpeg_quality=max(1, min(100, int(vlm.get("jpeg_quality", 85)))),
             vlm_prompt=str(vlm.get("prompt", "Identify the main object. Reply with one lowercase noun only. If unclear, reply unknown_object.")),
+            vlm_prompt_opt_enabled=bool((vlm.get("prompt_optimisation", {}) or {}).get("enabled", False)),
+            vlm_prompt_opt_run_id=str((vlm.get("prompt_optimisation", {}) or {}).get("run_id", "")),
+            vlm_prompt_opt_prompt_version=str((vlm.get("prompt_optimisation", {}) or {}).get("prompt_version", "")),
+            vlm_prompt_opt_output_root=str((vlm.get("prompt_optimisation", {}) or {}).get("output_root", "")),
             vlm_result_min_label_confidence=max(0.0, min(1.0, float((vlm.get("result_validation", {}) or {}).get("min_label_confidence", 0.35)))),
             vlm_result_min_mobility_confidence=max(0.0, min(1.0, float((vlm.get("result_validation", {}) or {}).get("min_mobility_confidence", 0.50)))),
             vlm_dynamic_label_hints=list((vlm.get("result_validation", {}) or {}).get("dynamic_label_hints", [])),
