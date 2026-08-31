@@ -1,0 +1,295 @@
+# Rebuilt VLM prompt set (v1-v6) from the 2026-08-30 Qwen3-VL-8B campaign.
+# Loadable form of VLM-PROMPTS-REBUILT.md - same schema as
+# src/rsg/nodes/support/phase1/vlm_prompt_optimization.yaml (prompts.<id>.template).
+#
+# Provenance:  v1, v4, v6 = VERBATIM.  v2, v3, v5 = RECONSTRUCTED from descriptions
+# (originals not archived in this repo) - not byte-identical to the 8B run.
+#
+# Boundary-colour caveat: v1-v5 text says "cyan boundary"; the live pipeline now
+# draws a WHITE 2px contour. Pick one contour colour and keep it identical across
+# all six prompts before the Qwen 3.5 re-run.
+#
+# Usage: set exactly one `active: true`, run the 300s VLM-only experiment, verify
+# ~50 samples, repeat per prompt, then swap `phase1.vlm.active_profile` between
+# qwen3_5_4b_q4 and qwen3_5_9b_q4 and repeat the whole ladder.
+
+prompts:
+
+  v1_simplified:
+    name: "v1 simplified (VERBATIM)"
+    version: 1
+    provenance: verbatim
+    tested_accuracy_qwen3vl8b: 0.469
+    notes: "Baseline. Short and direct. Over-uses unknown_object."
+    active: true
+    template: |
+      Classify the single SAM-segmented target in this indoor crop.
+
+      The object to be classified is identified as surrounded by the cyan coloured boundary. Identify only this object.
+      The surrounding area can be used to deduce the context which can help in identifying the main object.
+
+      The general context of the object is that it will be indoor.
+
+      Return exactly one JSON object with these keys:
+
+      {"label":"lowercase_object_name","label_confidence":0.0,"mobility_class":"static|dynamic|unknown","mobility_confidence":0.0}
+
+      Rules:
+      - Use concise, singular, lowercase snake_case labels
+      - Prefer specific labels (office_chair, computer_monitor, desk, cabinet, potted_plant, rug, cup)
+      - Do not describe colour, material, position, condition or activity
+      - Ignore objects in darkened context, shadows, reflections, screen content
+      - If unclear/truncated: return VLM_unknown with 0.0 confidence
+      - Use confidence >0.90 only for unmistakable targets
+
+      Mobility:
+      - "dynamic": human, animal, self-propelled robot only
+      - "static": all other objects (doors, furniture, tools, etc.)
+      - "unknown": when label is unknown or mobility cannot be determined
+
+  v2_refined:
+    name: "v2 refined (RECONSTRUCTED)"
+    version: 2
+    provenance: reconstructed
+    tested_accuracy_qwen3vl8b: 0.475
+    notes: "v1 base + explicit surface-vs-fixture distinction + boundary respect + examples."
+    active: false
+    template: |
+      Classify the single SAM-segmented target in this indoor crop.
+
+      The object to be classified is the one surrounded by the cyan coloured boundary. Identify ONLY this object.
+      IGNORE any object that lies OUTSIDE the cyan boundary, even if it is large or prominent.
+      The surrounding area may be used only as context to help identify the target.
+
+      The general context of the object is that it will be indoor.
+
+      SURFACE vs FIXTURE:
+      - Classify the SURFACE, not the fixtures mounted on or embedded in it.
+      - A ceiling that contains recessed lights, vents or fixtures is still "ceiling", not "ceiling_light".
+      - A wall that carries a whiteboard, sign, screen or air conditioner is still "wall", not "whiteboard" / "sign".
+      - A floor that has a rug or carpet on it is still "floor", not "rug".
+      - Only classify the fixture itself when the fixture is the sole object inside the boundary and no host surface is visible.
+
+      Return exactly one JSON object with these keys:
+
+      {"label":"lowercase_object_name","label_confidence":0.0,"mobility_class":"static|dynamic|unknown","mobility_confidence":0.0}
+
+      Rules:
+      - Use concise, singular, lowercase snake_case labels
+      - Prefer specific labels (office_chair, computer_monitor, desk, cabinet, potted_plant, rug, cup)
+      - Do not describe colour, material, position, condition or activity
+      - Ignore shadows, reflections and screen content
+      - Commit to a label whenever the target is identifiable; use VLM_unknown only when the crop is genuinely unclear or truncated
+      - Use confidence >0.90 only for unmistakable targets
+
+      Mobility:
+      - "dynamic": human, animal, self-propelled robot only
+      - "static": all other objects (doors, furniture, tools, surfaces, etc.)
+      - "unknown": when label is unknown or mobility cannot be determined
+
+      Examples:
+      - Ceiling panel with embedded lights, target box covers the ceiling -> {"label":"ceiling","label_confidence":0.92,"mobility_class":"static","mobility_confidence":0.99}
+      - Wall with a whiteboard mounted on it, boundary around the wall -> {"label":"wall","label_confidence":0.90,"mobility_class":"static","mobility_confidence":0.99}
+      - Office chair filling the boundary -> {"label":"office_chair","label_confidence":0.91,"mobility_class":"static","mobility_confidence":0.99}
+      - Prominent lamp OUTSIDE the cyan boundary, plain wall inside it -> {"label":"wall","label_confidence":0.85,"mobility_class":"static","mobility_confidence":0.99}
+      - Blurry or truncated crop -> {"label":"VLM_unknown","label_confidence":0.0,"mobility_class":"unknown","mobility_confidence":0.0}
+
+      Return only the JSON object. No markdown or explanations.
+
+  v3_hierarchical:
+    name: "v3 hierarchical (RECONSTRUCTED)"
+    version: 3
+    provenance: reconstructed
+    tested_accuracy_qwen3vl8b: 0.382
+    notes: "Three-tier hierarchy + anti-examples. Regressed -9.3%. Kept for completeness."
+    active: false
+    template: |
+      Classify the single SAM-segmented target inside the cyan boundary in this indoor crop.
+      Identify ONLY the object inside the cyan boundary. Ignore everything outside it.
+
+      CRITICAL RULE: Use hierarchical classification. Always choose the FIRST tier that applies.
+
+      HIERARCHY (pick from the FIRST tier that matches what is inside the boundary):
+
+        Tier 1 - STRUCTURAL SURFACES (highest priority):
+          ceiling, wall, floor, door, window, partition, pillar
+
+        Tier 2 - FURNITURE / STRUCTURAL OBJECTS:
+          office_chair, desk, sofa, cabinet, wardrobe, dresser
+
+        Tier 3 - FIXTURES / DETAILS (only if nothing in Tier 1 or Tier 2 applies):
+          whiteboard, monitor, lamp, air_vent, pipe, plant
+
+      ANTI-EXAMPLES (what NOT to do):
+        Ceiling with lights           -> do NOT return "ceiling_light" -> return "ceiling"
+        Wall with sign or whiteboard  -> do NOT return "sign"          -> return "wall"
+        Floor with rug                -> do NOT return "rug"           -> return "floor"
+        Only a rug visible, no floor   -> return "rug"   (correct: no higher tier is present)
+
+      Return exactly one JSON object:
+
+      {"label":"lowercase_object_name","label_confidence":0.0,"mobility_class":"static|dynamic|unknown","mobility_confidence":0.0}
+
+      Confidence:
+      - >0.90 only for unmistakable targets
+      - lower values when the tier choice is uncertain
+      - 0.0 with label VLM_unknown when the crop is unclear or truncated
+
+      Mobility:
+      - "dynamic": human, animal, self-propelled robot only
+      - "static": all other objects
+      - "unknown": when the label is unknown
+
+      Return only the JSON object. No markdown, no explanation.
+
+  v4_filtering:
+    name: "v4 filtering (VERBATIM)"
+    version: 4
+    provenance: verbatim
+    tested_accuracy_qwen3vl8b: null   # 96.7% was on 30/58 verified only - artefact
+    notes: "Simple base + post-hoc if-X-return-Y filters. Filters were read but not applied by the 8B model."
+    active: false
+    template: |
+      Classify the main object within the cyan boundary.
+
+      CRITICAL RULES (in order):
+      1. Objects OUTSIDE the cyan boundary -> IGNORE them completely
+      2. Apply these filters:
+         - If you see "ceiling_light" or "lights in ceiling" -> return "ceiling" instead
+         - If you see "wall_sign" or "sign on wall" -> return "wall" instead
+         - If you see "floor_rug" or "rug on floor" -> return "floor" instead
+      3. Classify the BROADEST/PRIMARY category you can identify
+
+      Object categories (use preferentially):
+      ceiling, wall, floor, door, window, partition, pillar,
+      office_chair, desk, sofa, cabinet, wardrobe, dresser,
+      whiteboard, monitor, pipe, air_vent, plant
+
+      Return exactly one JSON:
+      {"label":"lowercase_object_name","label_confidence":0.0,"mobility_class":"static|dynamic|unknown","mobility_confidence":0.0}
+
+      Confidence:
+      - 0.90+: Unmistakable primary object
+      - 0.70-0.90: Clear but less obvious
+      - <0.70: Only if genuinely uncertain
+      - 0.0: Only for unknown_object
+
+      Mobility:
+      - "dynamic": human, animal, self-propelled robot only
+      - "static": everything else
+      - "unknown": when label is unknown
+
+      Examples:
+      - Ceiling with lights -> {"label":"ceiling","label_confidence":0.92,"mobility_class":"static","mobility_confidence":0.99}
+      - Wall surface -> {"label":"wall","label_confidence":0.94,"mobility_class":"static","mobility_confidence":0.99}
+      - Office chair -> {"label":"office_chair","label_confidence":0.91,"mobility_class":"static","mobility_confidence":0.99}
+      - Ambiguous -> {"label":"unknown_object","label_confidence":0.0,"mobility_class":"unknown","mobility_confidence":0.0}
+
+      Return only JSON. No markdown or explanations.
+
+  v5_examples_based:
+    name: "v5 examples-based (RECONSTRUCTED)"
+    version: 5
+    provenance: reconstructed
+    tested_accuracy_qwen3vl8b: 0.518
+    notes: "Few-shot only: pattern carried by repeated examples, no 'never return X' language."
+    active: false
+    template: |
+      Classify the main object inside the cyan boundary in this indoor crop.
+
+      Rules:
+      - Identify only the object inside the cyan boundary. Ignore anything outside it.
+      - Return the broadest / largest object that the boundary covers.
+      - Use confidence >0.90 only when the target is unmistakable.
+      - Use label VLM_unknown with confidence 0.0 only when the crop is unclear or truncated.
+
+      Labels to choose from (use the closest match; you may use a more specific indoor label if clearly warranted):
+      ceiling, wall, floor, door, window, partition, pillar,
+      office_chair, desk, sofa, cabinet, bookshelf, shelf, table,
+      whiteboard, monitor, lamp, air_vent, pipe, plant, rug, cup
+
+      Output exactly one JSON object:
+      {"label":"lowercase_object_name","label_confidence":0.0,"mobility_class":"static|dynamic|unknown","mobility_confidence":0.0}
+
+      Mobility:
+      - "dynamic": human, animal, self-propelled robot only
+      - "static": everything else
+      - "unknown": when label is unknown
+
+      Examples:
+      - Crop with recessed ceiling lights -> {"label":"ceiling","label_confidence":0.92,"mobility_class":"static","mobility_confidence":0.99}
+      - Crop with embedded ceiling fixtures -> {"label":"ceiling","label_confidence":0.91,"mobility_class":"static","mobility_confidence":0.99}
+      - Crop with ceiling and ventilation ducts -> {"label":"ceiling","label_confidence":0.90,"mobility_class":"static","mobility_confidence":0.99}
+      - Crop showing ceiling panel with lights -> {"label":"ceiling","label_confidence":0.92,"mobility_class":"static","mobility_confidence":0.99}
+      - Crop with wall and whiteboard -> {"label":"wall","label_confidence":0.91,"mobility_class":"static","mobility_confidence":0.99}
+      - Crop with wall and mounted sign -> {"label":"wall","label_confidence":0.90,"mobility_class":"static","mobility_confidence":0.99}
+      - Crop showing wall with air conditioner -> {"label":"wall","label_confidence":0.89,"mobility_class":"static","mobility_confidence":0.99}
+      - Crop showing floor with a rug on it -> {"label":"floor","label_confidence":0.90,"mobility_class":"static","mobility_confidence":0.99}
+      - Office chair filling the frame -> {"label":"office_chair","label_confidence":0.91,"mobility_class":"static","mobility_confidence":0.99}
+      - Desk clearly visible -> {"label":"desk","label_confidence":0.92,"mobility_class":"static","mobility_confidence":0.99}
+      - Blurry or truncated crop -> {"label":"VLM_unknown","label_confidence":0.0,"mobility_class":"unknown","mobility_confidence":0.0}
+
+      Return only the JSON object. No markdown, explanations, or extra text.
+
+  v6_structural_priority:
+    name: "v6 structural priority (VERBATIM - current live prompt)"
+    version: 6
+    provenance: verbatim
+    tested_accuracy_qwen3vl8b: 0.500
+    notes: "Frozen final prompt. Copy of src/rsg/config/rsg_pipeline.yaml phase1.vlm.prompt."
+    active: false
+    template: |
+      This is an INDOOR object classification task. Classify the main object within the cyan boundary.
+
+      PRIORITY: Look for common INDOOR STRUCTURAL FEATURES first
+      These large, primary structures are always present in indoor spaces:
+      - ceiling (large horizontal surface at top)
+      - wall (large vertical surface)
+      - floor (large horizontal surface at bottom)
+      - door (opening in wall)
+      - window (opening in wall/structure)
+      - pillar/column (vertical structural support)
+      - partition/divider (structural divider)
+
+      Classification Strategy:
+      1. Identify ONLY objects clearly inside the cyan boundary
+      2. Ignore objects OUTSIDE the cyan boundary completely
+      3. Classify the BROADEST/PRIMARY/LARGEST object visible
+         - Structural features (ceiling, wall, floor) take priority over details/fixtures
+         - Furniture takes priority over mounted objects/attachments
+         - When a surface contains details/fixtures/attachments, classify the SURFACE not the details
+         - When multiple objects compete, choose the larger/more dominant one
+
+      Output Format (required):
+      {"label":"lowercase_object_name","label_confidence":0.0-1.0,"mobility_class":"static|dynamic|unknown","mobility_confidence":0.0-1.0}
+
+      Confidence Calibration:
+      - 0.90+: Unmistakable, high visual salience, no ambiguity
+      - 0.70-0.90: Clear classification, minor uncertainty
+      - 0.50-0.70: Plausible but uncertain, competing interpretations
+      - <0.50: Very uncertain or ambiguous
+      - 0.0: Unknown or incomprehensible crop
+
+      Mobility Classification:
+      - "dynamic": Only for human, animal, self-propelled moving objects
+      - "static": All stationary objects (surfaces, furniture, fixtures, structures)
+      - "unknown": When label is unknown
+
+      EXAMPLES (demonstrating the strategy - prioritize structural features):
+
+      STRUCTURAL FEATURES (high priority):
+      - Crop showing recessed lights embedded in ceiling surface -> {"label":"ceiling","label_confidence":0.92,"mobility_class":"static","mobility_confidence":0.99}
+      - Crop showing wall with mounted whiteboard or sign -> {"label":"wall","label_confidence":0.89,"mobility_class":"static","mobility_confidence":0.99}
+      - Crop showing floor with rug or carpet -> {"label":"floor","label_confidence":0.90,"mobility_class":"static","mobility_confidence":0.99}
+      - Crop showing ceiling panel with embedded fixtures and vents -> {"label":"ceiling","label_confidence":0.91,"mobility_class":"static","mobility_confidence":0.99}
+      - Crop showing door frame and opening -> {"label":"door","label_confidence":0.93,"mobility_class":"static","mobility_confidence":0.99}
+
+      FURNITURE (secondary priority):
+      - Office chair occupying most of frame -> {"label":"office_chair","label_confidence":0.91,"mobility_class":"static","mobility_confidence":0.99}
+      - Desk clearly visible -> {"label":"desk","label_confidence":0.92,"mobility_class":"static","mobility_confidence":0.99}
+      - Sofa or couch -> {"label":"sofa","label_confidence":0.90,"mobility_class":"static","mobility_confidence":0.99}
+
+      AMBIGUOUS OR UNCLEAR:
+      - Blurry, truncated, or unidentifiable crop -> {"label":"VLM_unknown","label_confidence":0.0,"mobility_class":"unknown","mobility_confidence":0.0}
+
+      Return only the JSON object. No markdown, explanations, or additional text.

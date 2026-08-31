@@ -1248,6 +1248,40 @@ class Phase1SemanticCoordinator(Node):
             return {"label": "unknown_object", "confidence": 0.0, "is_known": False, "metadata": {"error": str(exc)}, "status": "error", "delay_ms": (time.perf_counter() - start) * 1000.0}
 
 
+    def _experiment_crop_score(
+        self, rgb: np.ndarray, mask: Optional[np.ndarray], bbox_2d: Any
+    ) -> Optional[float]:
+        """Crop-quality score from the finalized crop-scoring experiment.
+
+        CROP_SCORING_DOCUMENTATION (finalized 2026-08-30): the 2:2:1 weighted
+        additive scorer (log pixel count : Laplacian sharpness : 3px edge
+        margin) in ``TrackingCropManager._score_crop``, evaluated on the tight
+        mask bounding-box crop exactly as ``extract_crop`` does. Returns
+        ``None`` when the crop cannot be scored (no mask / degenerate box), so
+        the caller can fall back to the geometry score.
+        """
+        if mask is None or not bbox_2d or len(bbox_2d) < 4:
+            return None
+        h, w = rgb.shape[:2]
+        x, y, bw, bh = [int(v) for v in bbox_2d[:4]]
+        x0 = max(0, min(w, x))
+        y0 = max(0, min(h, y))
+        x1 = max(0, min(w, x + bw))
+        y1 = max(0, min(h, y + bh))
+        if x1 <= x0 or y1 <= y0:
+            return None
+        mask_array = np.asarray(mask)
+        if mask_array.shape != (h, w):
+            return None
+        crop_rgb = np.ascontiguousarray(rgb[y0:y1, x0:x1])
+        crop_mask = np.ascontiguousarray(mask_array[y0:y1, x0:x1])
+        if crop_rgb.size == 0 or crop_mask.size == 0:
+            return None
+        composite, _pixel, _sharpness, _margin = self.tracking_crop_manager._score_crop(
+            crop_rgb, crop_mask
+        )
+        return float(composite)
+
     def _remember_track_crop(
         self,
         track_id: Optional[str],
@@ -1259,9 +1293,12 @@ class Phase1SemanticCoordinator(Node):
         """Keep one immutable source ROI for the best observation of a track.
 
         Semantic rendering is intentionally deferred to the RAP/VLM worker
-        that dequeues the track.  The frame-critical path therefore performs
-        only one bounded RGB/mask ROI copy and never renders two crops that may
-        be replaced before either worker consumes them.
+        that dequeues the track.  The frame-critical path copies the tight
+        mask crop once to score it (finalized crop-scoring experiment,
+        ``_experiment_crop_score``) and, only when that score beats the stored
+        best by more than ``HYSTERESIS_MARGIN``, copies the bounded context
+        ROI once more to store it; it never renders two crops that may be
+        replaced before either worker consumes them.
         """
         if not track_id:
             return
@@ -1278,14 +1315,35 @@ class Phase1SemanticCoordinator(Node):
         if not context_bbox_2d:
             return
         timestamp_sec = float(stamp_to_float(frame.header.stamp))
+        # Geometry-based eligibility (min area / short side / border clip) is
+        # kept from score_track_crop; the *selection* score is the finalized
+        # crop-scoring experiment's 2:2:1 composite on the tight mask crop.
         crop_quality = self.sem_stage.score_track_crop(metadata, rgb.shape[:2], bbox_2d)
-        score = float(crop_quality["vlm_crop_quality_score"])
+        experiment_score = self._experiment_crop_score(rgb, mask, bbox_2d)
+        score = float(
+            experiment_score
+            if experiment_score is not None
+            else crop_quality.get("vlm_crop_quality_score", 0.0) or 0.0
+        )
+        crop_quality["vlm_crop_quality_score"] = score
+        _reasons = [
+            r for r in (crop_quality.get("vlm_crop_quality_reasons") or [])
+            if r != "crop_quality_below_minimum"
+        ]
+        if score < float(self.config.vlm_crop_min_quality_score):
+            _reasons.append("crop_quality_below_minimum")
+        crop_quality["vlm_crop_quality_reasons"] = _reasons
+        crop_quality["vlm_crop_quality_eligible"] = not _reasons
 
-        # Score before mask cleanup or rendering. A lower-scoring observation
+        # Experiment acceptance rule: a new observation replaces the stored
+        # best only when it beats it by more than HYSTERESIS_MARGIN.
+        hysteresis = 1.0 + float(self.tracking_crop_manager.HYSTERESIS_MARGIN)
+
+        # Score before mask cleanup or rendering. A non-improving observation
         # cannot replace the current crop, so only refresh track recency.
         with self._track_crop_lock:
             current = self._track_best_crops.get(key)
-            if current is not None and score < float(current.get("score", -1.0)):
+            if current is not None and score <= float(current.get("score", -1.0)) * hysteresis:
                 current["last_observed_timestamp_sec"] = timestamp_sec
                 return
 
@@ -1408,9 +1466,9 @@ class Phase1SemanticCoordinator(Node):
                 previous_score = float(current.get("score", -1.0))
                 current["last_observed_timestamp_sec"] = timestamp_sec
                 revision = int(current.get("crop_revision", 0) or 0)
-                if score >= previous_score:
+                if score > previous_score * hysteresis:
                     revision += 1
-                    selection_reason = "score_not_lower_than_current_best"
+                    selection_reason = "score_above_hysteresis_over_current_best"
                     self._track_best_crops[key] = {
                         "score": score,
                         "source_rgb": source_rgb,

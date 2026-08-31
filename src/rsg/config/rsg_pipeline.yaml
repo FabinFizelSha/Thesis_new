@@ -44,7 +44,7 @@ preprocessing:                                                                  
     output_depth_encoding: 32FC1                                                                     # Required passthrough depth encoding when optional processing is disabled.
     depth_scale_to_meter: 0.001                                                                      # Used only by optional single-pass conversion of 16UC1 depth.
     min_depth_m: 0.30                                                                                # Used by Phase 1 and optional sampled invalid-depth analysis.
-    max_depth_m: 6.0                                                                                 # Used by Phase 1 and optional sampled invalid-depth analysis.
+    max_depth_m: 5.0                                                                                 # Used by Phase 1 and optional sampled invalid-depth analysis.
     max_invalid_depth_ratio: 0.90                                                                    # Used only when optional invalid-depth checking is enabled.
     reject_resolution_mismatch: true                                                                 # Enforce identical RGB and depth dimensions for correct projection.
 
@@ -154,11 +154,11 @@ phase1:                                                                         
     publish_separate_topics: true                                                                    # Required by the configured Hydra ROS receiver.
     semantic_label_encoding: 16UC1                                                                   # Supports up to 10,000 stable semantic slot IDs.
     instance_label_encoding: 16UC1                                                                   # Supports stable object instance IDs.
-    publish_camera_tf: true                                                                         # Rosbag TF is authoritative; Phase 1 never broadcasts a delayed duplicate TF.
+    publish_camera_tf: false                                                                        # Rosbag TF is authoritative; Phase 1 never broadcasts a delayed duplicate TF.
     depth_range_filter:
       enabled: true                                                                                  # Apply the same valid depth range to Hydra integration.
       min_range_m: 0.30                                                                              # Lower valid range sent to Hydra.
-      max_range_m: 6.0                                                                               # Upper valid range sent to Hydra.
+      max_range_m: 5.0                                                                               # Upper valid range sent to Hydra.
       semantic_label_id: 0                                                                           # Mark invalid-depth pixels as the unknown semantic class.
 
   hydra_semantic:
@@ -179,26 +179,63 @@ phase1:                                                                         
     mode: hydra_slots                                                                                # Allocate semantic slot IDs compatible with Hydra's fixed label space.
     track_prefix: rsg_obj_                                                                           # Prefix for internal persistent track identifiers.
     max_tracks: 10000                                                                                # Match the fixed Hydra slot capacity.
-    max_match_distance_m: 0.3
-    max_volume_ratio: 3.0                                                                            # Reject implausibly different 3D boxes only when footprint data is unavailable.
-    continuation_max_age_sec: 2.5                                                                    # Permit a recent partial view to extend a large object track.
-    continuation_gap_m: 0.18                                                                         # Maximum horizontal gap between consecutive partial 3D footprints.
-    revisit_overlap_gap_m: 0.05                                                                      # Maximum gap for a later view to re-enter an accumulated 3D footprint.
-    max_vertical_gap_m: 0.12                                                                         # Reject footprint matches separated vertically from the tracked object.
-    max_vertical_center_delta_m: 0.12                                                                # Reject overlapping floor-level projections at a different object height.
-    max_2d_iou_age_sec: 2.0                                                                          # Use 2D IoU fallback only for recent tracks.
-    min_2d_iou: 0.3                                                                                  # Minimum 2D overlap for fallback association.
-    centroid_update_alpha: 0.7                                                                       # Smooth centroid updates while prioritizing the newest observation.
-    track_aware_redundancy_enabled: true                                                             # Suppress redundant masks that explain union of smaller masks.
-    redundancy_union_coverage_threshold: 0.90                                                         # Union of children must cover ≥90% of parent.
-    redundancy_min_children: 2                                                                       # Minimum 2 child masks needed for A2 redundancy suppression.
-    redundancy_child_containment_threshold: 0.85                                                      # Child must be ≥85% contained in parent for A2.
-    same_track_nested_suppression_enabled: true                                                      # Suppress weaker nested masks when both match same track.
-    same_track_nested_containment_threshold: 0.60                                                    # Lower to 60% to catch overlapping masks like Objects 3&14.
-    local_segments_enabled: true                                                                     # Split long internal objects into local Hydra semantic slots for confidence.
-    local_segment_max_xy_span_m: 4.0                                                                 # Maximum horizontal span of one local semantic slot/section.
+    max_match_distance_m: 0.6                                                                        # IMPROVED: Increased from 0.5 to allow centroid shifts in overlapping mask fragments.
+    max_volume_ratio: 5.0                                                                            # IMPROVED: Increased from 4.0 to allow volume variation in overlapping 3D geometries.
+    continuation_max_age_sec: 8                                                                    # Permit a recent partial view to extend a large object track.
+    continuation_gap_m: 0.50                                                                         # Maximum horizontal gap between consecutive partial 3D footprints.
+    revisit_overlap_gap_m: 0.4                                                                      # Maximum gap for a later view to re-enter an accumulated 3D footprint.
+    max_vertical_gap_m: 0.15                                                                         # Reject footprint matches separated vertically from the tracked object.
+    max_vertical_center_delta_m: 0.15                                                                # Reject overlapping floor-level projections at a different object height.
+    max_2d_iou_age_sec: 3.0                                                                          # Use 2D IoU fallback only for recent tracks.
+    min_2d_iou: 0.30                                                                                  # Minimum 2D overlap for fallback association.
+    centroid_update_alpha: 0.5                                                                       # Smooth centroid updates while prioritizing the newest observation.
+    track_aware_redundancy_enabled: true                                                       # A2: reject an enclosing mask when smaller masks explain it and map to distinct established tracks.
+    redundancy_union_coverage_threshold: 0.80                                                   # IMPROVED: Reduced from 0.90 to allow more mask merging (child union only needs 80% coverage).
+    redundancy_child_containment_threshold: 0.75                                                # IMPROVED: Reduced from 0.85 to catch more overlapping fragments (75% vs 90% containment).
+    redundancy_min_children: 2                                                                  # Require at least two separately tracked child masks before suppressing an enclosing mask.
+    same_track_nested_suppression_enabled: true                                                  # A3: resolve nested masks that independently prefer the same established track.
+    same_track_nested_containment_threshold: 0.80                                                # IMPROVED: Reduced from 0.90 to recognize 80% overlaps as same-track duplicates (vs 90%).
+    same_track_max_parent_child_area_ratio: 3.0                                                  # Permit a coherent broader mask to inherit the track only when it is at most 3x the nested mask area.
+    same_track_min_added_area_fraction: 0.05                                                     # Broader mask must add at least 5% genuinely new area before takeover is preferred.
+    same_track_broader_max_route_priority: 2                                                     # Require accumulated, continuation, or centroid 3D support; 2D-IoU-only matches cannot take over.
+    same_track_broader_max_volume_ratio: 6.0                                                     # Reject broader-mask takeover when its 3D AABB volume is excessively inconsistent with the track.
+    global_association_enabled: true                                                           # Combine all association cues into one score instead of accepting one route independently.
+    global_min_independent_groups: 2                                                       # Require at least two independent evidence groups before a track may continue.
+    global_recent_min_score: 0.30                                                         # LOWERED: Match revisit threshold to allow marginal matches in recent mode.
+    global_revisit_min_score: 0.30                                                         # LOWERED: Accept weak matches for same-object-different-angle consolidation.
+    global_historical_overlap_pass: 0.30                                                  # Observation-normalised accumulated XY overlap required for a footprint vote.
+    global_recent_overlap_pass: 0.25                                                      # Observation-normalised recent XY overlap required for recent continuation.
+    global_min_axis_overlap: 0.20                                                         # Require meaningful overlap along both horizontal axes.
+    global_touch_gap_pass_m: 0.02                                                         # Near-contact may vote, but cannot preserve an ID without another cue.
+    global_centroid_pass_m: 0.75                                                          # Centroid distance that contributes an independent position vote.
+    global_centroid_sigma_m: 0.50                                                         # Gaussian scale used to normalise centroid compatibility.
+    global_vertical_score_pass: 0.60                                                      # Minimum normalised vertical-compatibility vote.
+    global_vertical_sigma_m: 0.15                                                         # Gaussian scale for vertical-centre compatibility.
+    global_block_2d_on_3d_contradiction: true                                             # Prevent 2D overlap from overriding reliable contradictory 3D evidence.
+    global_recent_weight_historical: 0.70
+    global_recent_weight_recent: 0.00
+    global_recent_weight_centroid: 0.15
+    global_recent_weight_vertical: 0.00
+    global_recent_weight_image: 0.45
+    global_revisit_weight_historical: 0.60
+    global_revisit_weight_recent: 0.00
+    global_revisit_weight_centroid: 0.25
+    global_revisit_weight_vertical: 0.00
+    global_revisit_weight_image: 0.35
+    global_recent_weight_containment: 0.00
+    global_revisit_weight_containment: 0.00
+    continuation_max_age_sec: 8.0
+    global_containment_threshold: 0.90
+    global_min_depth_z: 0.30                                                                  # Z-axis (vertical) padding threshold for thin floors/ceilings (meters).
+    global_min_depth_xy: 0.15                                                                 # X/Y-axis (horizontal) padding threshold for thin walls/railings (meters).
+    revisit_min_2d_iou: 0.75
+    local_segments_enabled: false                                                                     # Split long internal objects into local Hydra semantic slots for confidence.
+    local_segment_max_xy_span_m: 6.0                                                                 # Maximum horizontal span of one local semantic slot/section.
     local_segment_revisit_distance_m: 1.5                                                            # Re-associate a revisited local section by centroid distance.
     local_segment_gap_m: 0.20                                                                        # Local 3D-box gap allowed when updating the same segment.
+    local_segment_2d_fallback_enabled: true                                                          # Reuse a recent local slot by 2D IoU when either side lacks usable 3D geometry.
+    local_segment_max_2d_iou_age_sec: 2.0                                                            # Keep local 2D fallback short-term so stale image positions are not reused.
+    local_segment_min_2d_iou: 0.30                                                                   # Minimum local-segment 2D overlap; matches the physical-track fallback threshold.
     active_segments_topic: /rsg/objects/active_local_segments                                        # Per-frame slot observation heartbeat used by the fuser.
     require_known_label_match: false                                                                 # Permit tracking before a semantic label has been assigned.
     rap_evidence_weight: 0.7                                                                         # Give RAP evidence substantial, but not absolute, influence.
@@ -235,7 +272,7 @@ phase1:                                                                         
     depth_filter:
       enabled: false                                                                                  # Avoid generating object masks where depth is invalid.
       min_depth_m: 0.30                                                                              # Match preprocessor and Hydra lower depth bound.
-      max_depth_m: 6.0                                                                               # Match preprocessor and Hydra upper depth bound.
+      max_depth_m: 5.0                                                                               # Match preprocessor and Hydra upper depth bound.
       min_valid_ratio: 0.05                                                                          # Require at least 5% valid depth inside a candidate region.
       crop_to_valid_roi: true                                                                        # Focus SAMs on the valid depth region.
       roi_margin_px: 12                                                                              # Preserve a small margin around valid depth.
@@ -245,19 +282,19 @@ phase1:                                                                         
     checkpoint_cache_dir: /home/student/.cache/sam                                                   # Cache location for SAM assets.
     device: cuda                                                                                     # Run segmentation on the GPU.
     auto_download: false                                                                             # Do not download models at runtime.
-    mask_threshold: 0.9                                                                              # Retained for compatibility with non-NanoSAM modes.
+    mask_threshold: 0.70                                                                             # SAM optimisation experiment Phase 2.3.
     padding: 0.2                                                                                     # Retained for compatibility with non-NanoSAM modes.
-    points_per_side: 8                                                                               # Retained for compatibility with non-NanoSAM modes.
-    pred_iou_thresh: 0.97                                                                            # Retained for compatibility with non-NanoSAM modes.
-    min_mask_pixels: 900                                                                            # Retain smaller masks such as monitors, paintings, plants and chair parts.
-    max_masks: 10                                                                                    # Allow more valid masks per frame while keeping a bounded workload.
+    points_per_side: 3                                                                               # Manual override (was 4, experiment Phase 2.1).
+    pred_iou_thresh: 0.0                                                                             # SAM optimisation experiment: disabled.
+    min_mask_pixels: 3500                                                                           # SAM optimisation experiment Phase 2.6: confirmed optimal.
+    max_masks: 8                                                                                     # Manual override (was 12, experiment Phase 2.2).
     nanosam:
       image_encoder_engine: /home/student/rsg_models/nanosam/resnet18_image_encoder.engine           # TensorRT image encoder engine.
       mask_decoder_engine: /home/student/rsg_models/nanosam/mobile_sam_mask_decoder.engine           # TensorRT mask decoder engine.
-      points_per_side: 4                                                                             # Phase 2 optimized: 2x speed improvement over original.
-      mask_threshold: 0.70                                                                           # Phase 2 optimized: confidence threshold for mask acceptance.
-      nms_iou: 0.30                                                                                  # Phase 2 optimized: looser NMS to retain adjacent masks.
-      point_margin_fraction: 0.167                                                                   # Phase 2 optimized: match SAM's built-in grid margins (~16.7% from edges).
+      points_per_side: 3                                                                             # Manual override (was 4, experiment Phase 2.1). NanoSAM backend reads this value.
+      mask_threshold: 0.70                                                                           # SAM optimisation experiment Phase 2.3 (predicted-IoU confidence gate; mask binarised at logit 0.0 in code).
+      nms_iou: 0.30                                                                                  # SAM optimisation experiment Phase 2.5.
+      point_margin_fraction: 0.167                                                                   # SAM optimisation experiment integration spec.
       skip_black_points: true                                                                        # Ignore black/invalid-depth regions.
       min_prompt_luma: 4                                                                             # Reject near-black prompt locations.
 
@@ -312,14 +349,14 @@ phase1:                                                                         
     vlm_target_focus: true                                                                          # VLM sees the full-colour target with suppressed context.
     vlm_context_alpha: 0.12                                                                         # Retain only 12% intensity in non-target context.
     vlm_context_grayscale: true                                                                     # Remove context colour cues that could dominate target classification.
-    draw_target_contour: true                                                                       # Draw a thin white boundary around the exact SAM target.
-    target_contour_rgb: [255, 255, 255]                                                            # RGB contour colour.
+    draw_target_contour: true                                                                       # Draw a thin cyan boundary around the exact SAM target.
+    target_contour_rgb: [0, 255, 255]                                                              # RGB contour colour (cyan); matches the "cyan boundary" wording in the VLM prompt.
     target_contour_thickness_px: 2                                                                  # Thin contour; target pixels remain the primary evidence.
 
   vlm:
     enabled: true                                                                                    # Use Qwen for objects not confidently resolved by RAP.
     mode: qwen_http                                                                                  # Query the selected local Qwen OpenAI-compatible HTTP endpoint.
-    active_profile: qwen3_5_4b_q4
+    active_profile: qwen3_vl_8b_f16
     async: true                                                                                      # Keep VLM calls off the Hydra mapping path.
     queue_size: 300                                                                                  # Store only track IDs; VLM snapshots the current best crop at dequeue time.
     queue_drop_policy: defer_track_id                                                                # Full FIFO defers a unique track ID instead of dropping it.
@@ -329,60 +366,23 @@ phase1:                                                                         
     temperature: 0.0                                                                                 # Deterministic labels for consistent RAP memory entries.
     jpeg_quality: 100                                                                                 # Good visual quality with manageable request size.
     prompt: |
-      This is an INDOOR object classification task. Classify the main object within the cyan boundary.
+      Classify the single SAM-segmented target in this indoor crop.
 
-      PRIORITY: Look for common INDOOR STRUCTURAL FEATURES first
-      These large, primary structures are always present in indoor spaces:
-      - ceiling (large horizontal surface at top)
-      - wall (large vertical surface)
-      - floor (large horizontal surface at bottom)
-      - door (opening in wall)
-      - window (opening in wall/structure)
-      - pillar/column (vertical structural support)
-      - partition/divider (structural divider)
+      The target object is the one outlined by the cyan boundary. Identify only this object. The surrounding area may be used as context to help identify it.
 
-      Classification Strategy:
-      1. Identify ONLY objects clearly inside the cyan boundary
-      2. Ignore objects OUTSIDE the cyan boundary completely
-      3. Classify the BROADEST/PRIMARY/LARGEST object visible
-         - Structural features (ceiling, wall, floor) take priority over details/fixtures
-         - Furniture takes priority over mounted objects/attachments
-         - When a surface contains details/fixtures/attachments, classify the SURFACE not the details
-         - When multiple objects compete, choose the larger/more dominant one
+      Assume an indoor setting.
 
-      Output Format (required):
-      {"label":"lowercase_object_name","label_confidence":0.0-1.0,"mobility_class":"static|dynamic|unknown","mobility_confidence":0.0-1.0}
+      Name the object with a concise, singular, lowercase snake_case label that best describes what it actually is. There is no fixed list of labels. Do not describe colour, material, position, condition or activity. Use a confidence above 0.90 only when the identification is unmistakable. If the target is unclear, truncated or unidentifiable, use the label VLM_unknown with confidence 0.0.
 
-      Confidence Calibration:
-      - 0.90+: Unmistakable, high visual salience, no ambiguity
-      - 0.70-0.90: Clear classification, minor uncertainty
-      - 0.50-0.70: Plausible but uncertain, competing interpretations
-      - <0.50: Very uncertain or ambiguous
-      - 0.0: Unknown or incomprehensible crop
+      Mobility:
+      - "dynamic": a human, an animal, or a self-propelled robot only
+      - "static": everything else
+      - "unknown": when the label is unknown or mobility cannot be determined
 
-      Mobility Classification:
-      - "dynamic": Only for human, animal, self-propelled moving objects
-      - "static": All stationary objects (surfaces, furniture, fixtures, structures)
-      - "unknown": When label is unknown
+      Output exactly one JSON object:
+      {"label": "<label>", "label_confidence": <0-1>, "mobility_class": "<static|dynamic|unknown>", "mobility_confidence": <0-1>}
 
-      EXAMPLES (demonstrating the strategy - prioritize structural features):
-
-      STRUCTURAL FEATURES (high priority):
-      • Crop showing recessed lights embedded in ceiling surface → {"label":"ceiling","label_confidence":0.92,"mobility_class":"static","mobility_confidence":0.99}
-      • Crop showing wall with mounted whiteboard or sign → {"label":"wall","label_confidence":0.89,"mobility_class":"static","mobility_confidence":0.99}
-      • Crop showing floor with rug or carpet → {"label":"floor","label_confidence":0.90,"mobility_class":"static","mobility_confidence":0.99}
-      • Crop showing ceiling panel with embedded fixtures and vents → {"label":"ceiling","label_confidence":0.91,"mobility_class":"static","mobility_confidence":0.99}
-      • Crop showing door frame and opening → {"label":"door","label_confidence":0.93,"mobility_class":"static","mobility_confidence":0.99}
-
-      FURNITURE (secondary priority):
-      • Office chair occupying most of frame → {"label":"office_chair","label_confidence":0.91,"mobility_class":"static","mobility_confidence":0.99}
-      • Desk clearly visible → {"label":"desk","label_confidence":0.92,"mobility_class":"static","mobility_confidence":0.99}
-      • Sofa or couch → {"label":"sofa","label_confidence":0.90,"mobility_class":"static","mobility_confidence":0.99}
-
-      AMBIGUOUS OR UNCLEAR:
-      • Blurry, truncated, or unidentifiable crop → {"label":"VLM_unknown","label_confidence":0.0,"mobility_class":"unknown","mobility_confidence":0.0}
-
-      Return only the JSON object. No markdown, explanations, or additional text.
+      Return only the JSON object. No markdown, explanations, or extra text.
        
     result_validation:
       min_label_confidence: 0.80                                                                    # Reject weak labels before they enter  memory or the fused graph.
@@ -468,7 +468,7 @@ phase1:                                                                         
     projection_stride: 4                                                                             # Restore the baseline depth-projection stride for a controlled SAM-only test.
     min_valid_depth_points: 20                                                                       # Require enough depth support for a reliable 3D centroid.
     min_depth_m: 0.30                                                                                # Match all other pipeline depth bounds.
-    max_depth_m: 6.0                                                                                 # Match all other pipeline depth bounds.
+    max_depth_m: 5.0                                                                                 # Match all other pipeline depth bounds.
     centroid_method: median                                                                          # Robust against foreground/background depth outliers.
 
   evidence_buffer:
