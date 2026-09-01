@@ -84,7 +84,7 @@ One local llama.cpp OpenAI-compatible server on `http://127.0.0.1:8000/v1/chat/c
 | **qwen35_9b** | `qwen3_5_9b_q4` | Qwen3.5-VL-9B-Instruct | Q4_K_M | `~/rsg_models/qwen3_5_9b/Qwen3.5-9B-Q4_K_M.gguf` + `mmproj-BF16.gguf` |
 
 Shared VLM request settings (do not change between runs): `temperature: 0.0`,
-`max_tokens: 96`, `jpeg_quality: 100`, `timeout_sec: 60`.
+`max_tokens: 96` (**raised to `256` from R6** — see §14), `jpeg_quality: 100`, `timeout_sec: 60`.
 
 ---
 
@@ -309,7 +309,7 @@ Identical for all 9 runs. If any of these changes mid-experiment, record it in
 | Context suppression | greyscale + `vlm_context_alpha: 0.12` | `phase1.semantic_crop` |
 | Target contour | **cyan `[0,255,255]`**, 2 px (change from live `[255,255,255]` — see §4) | `phase1.semantic_crop` |
 | Temperature | `0.0` | `phase1.vlm` |
-| max_tokens | `96` | `phase1.vlm` |
+| max_tokens | `96` for R1–R5; **`256` from R6 onward** (see §14 — the 4B narrates P3's reasoning strategy and overran 96 before the JSON). 96 sufficed for every R1–R5 response, so the change adds headroom only. | `phase1.vlm` |
 | result_validation | unchanged from live (`min_label_confidence: 0.80`, `min_mobility_confidence: 0.70`) | `phase1.vlm.result_validation` |
 | RAP memory / visual store | **cleared before every run** | see §6 step 2 |
 
@@ -588,6 +588,7 @@ tree; a **completed, annotated** session is committed deliberately with
   - **No boundary violations, no hallucinated furniture on plain surfaces** — P2's boundary discipline + example grounding fixed the two things the 4B was worst at on P1 (R4 had 1 + 11).
 
 ### R6 — qwen35_4b × P3 v6_structural_priority
+- **First attempt `session_20260901_233159` VOID** — 24/51 rejected, 21 of them because the 4B wrote a numbered analysis ("Based on the visual evidence… 1. Analysis… 2. Check for furniture cues…") mirroring P3's step-by-step APPROACH and never reached the JSON inside `max_tokens: 96`. The 27 that parsed all came back as clean (mostly ```` ```json ````-fenced) objects. Fix: `phase1.vlm.max_tokens` 96 → 256 (§14). Session discarded, re-run pending.
 - Run date / wall time: —
 - Objects classified: — | Verified: — | Excluded: —
 - **Accuracy: —**
@@ -711,6 +712,16 @@ tree; a **completed, annotated** session is committed deliberately with
   both, `max_tokens: 96` is consumed by `<think>` and every response is empty
   (see the void R4 attempt, §15). Verify the first crop of any 3.5 run returns
   non-empty `raw_response` before trusting the session.
+- **`max_tokens` raised 96 → 256 from R6.** The first R6 attempt
+  (`session_20260901_233159`) had 21/51 rejected because the 4B, given P3's
+  step-by-step "APPROACH" framing and no `<think>` channel (`--reasoning off`),
+  narrates the analysis in the visible content ("Based on the visual evidence…
+  1. Analysis… 2. Check for furniture cues…") and overran 96 tokens before
+  emitting the JSON. P1/P2 (directive/example-based) had 0 format rejections on
+  the same 4B, and every R1–R5 response was complete JSON well inside 96, so 256
+  is pure headroom — R1–R5 are **not** re-run. Capping P3 at 96 would have
+  artificially handicapped the most verbose prompt; 256 makes the comparison
+  fair. Held fixed for R6–R9. That first R6 session is discarded.
 
 ---
 
@@ -735,3 +746,4 @@ tree; a **completed, annotated** session is committed deliberately with
 | 2026-09-01 | **Wired R5** — `phase1.vlm.prompt` = P2 template (verified byte-identical), `run_id = R5__qwen35_4b__v5_examples_based`, `prompt_version = P2_v5_examples_based`; `active` P1 → P2. Profile stays `qwen3_5_4b_q4` (VLM server already loaded). Needs a phase1 restart only. |
 | 2026-09-01 | **R5 complete** (session `session_20260901_221739`, 57 crops, 50 in CSV, all annotated). Accuracy **80 % (40/50)** — best run so far (8B/P2 72 %, 4B/P1 64 %). 0 rejected, latency median 2959 ms. **`ceiling` over-used: predicted 14×, wrong 6× (pipe, ceiling light, air vent, door-part ×2, partition) = 6/10 of all errors.** Traced to P2 itself — the "surface over fixture" rule literally says "a ceiling holding a light or diffuser → name the surface", lists "vent" as a thing to generalise past, has 2 ceiling→`ceiling` examples and 8 `ceiling` mentions; the 4B follows examples harder than the 8B did so it over-applies. Deliberate spec vs annotation conflict (that rule is what took the 8B 48→72 %); P2 frozen, not changed. Also: glass ×2 → `wall` (P2 has no glass concept), 2 misc wrong_class. No boundary violations, no plain-surface hallucination (both were the 4B's P1 weaknesses). §7 / §11 / §12.1–12.4 (qwen35_4b P2) updated. Next: R6 (4B × P3). |
 | 2026-09-01 | **Wired R6** — `phase1.vlm.prompt` = P3 template (verified byte-identical), `run_id = R6__qwen35_4b__v6_structural_priority`, `prompt_version = P3_v6_structural_priority`; `active` P2 → P3. Profile stays `qwen3_5_4b_q4` (4B server loaded, `--reasoning off`). Phase1 restart only. |
+| 2026-09-01 | **First R6 attempt (`session_20260901_233159`) VOID — format non-compliance.** 24/51 rejected; 21 because the 4B narrates P3's step-by-step APPROACH in the visible content ("Based on the visual evidence… 1. Analysis…") and runs out of `max_tokens: 96` before the JSON. P1/P2 on the same 4B had 0 format rejections. **Fix: `phase1.vlm.max_tokens` 96 → 256, held fixed R6–R9.** R1–R5 all produced complete JSON inside 96 → not re-run (headroom only; capping P3 at 96 would have handicapped the most verbose prompt). §5 / §14 / §11 R6 updated. Session discarded. Re-run R6. |
