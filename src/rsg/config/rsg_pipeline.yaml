@@ -366,56 +366,81 @@ phase1:                                                                         
     temperature: 0.0                                                                                 # Deterministic labels for consistent RAP memory entries.
     jpeg_quality: 100                                                                                 # Good visual quality with manageable request size.
     prompt: |
-      Identify the object that the cyan boundary encloses in this indoor crop.
+      This is an indoor object-classification task. Identify the object that the cyan boundary encloses.
 
-      WHICH OBJECT TO NAME
-      - The cyan boundary marks one region of the image. Name only what lies inside that boundary.
-      - Everything outside the boundary is background. A large, obvious object outside the boundary - a chair, a shelf, a bookcase, a whiteboard, a plant - is NOT the answer. Use the surroundings only to understand what the enclosed region is, never as the label itself.
-      - First decide what the enclosed region mainly shows, then name that.
+      APPROACH
+      1. Look only inside the cyan boundary. Everything outside it is background - never name it, however large or obvious. Use the surroundings only to work out what the enclosed region is.
+      2. Decide what the enclosed region mainly shows.
+      3. Choose the label using the priority order below.
 
-      HOW TO CHOOSE THE LABEL
-      - Name the largest, most complete thing the boundary covers. If the boundary encloses only part of a bigger structure, name the bigger structure.
-      - If the boundary spans many repeated units of one surface - several ceiling tiles or panels, a run of floor, a stretch of wall - name the surface itself ("ceiling", "floor", "wall"), not a single unit ("ceiling_tile").
-      - If the boundary covers a surface that carries a smaller mounted or attached item - a wall bearing a whiteboard, sign, monitor or vent; a ceiling holding a light or diffuser; a floor with a rug on it - name the surface, not the attached item. Name the attached item only when it clearly fills the boundary on its own.
-      - When you are torn between a specific object and the surface or structure behind it, choose the surface or structure.
-      - Use a concise, singular, lowercase label that best fits what you actually see. There is no fixed list of labels - name whatever it is.
+      PRIORITY ORDER
+      a. Room-defining structure over incidental detail. The large planes that form the room - overhead, underfoot, the vertical sides - and the openings and supports in them take priority over small things mounted on, set into, or resting against them. If the boundary spans many repeated units of one surface (several ceiling tiles or panels, a run of floor, a stretch of wall), name the surface itself ("ceiling", "wall", "floor"), not one unit ("ceiling_tile").
+      b. BUT distinctive infrastructure that fills the boundary is named, not generalised. If exposed pipes, ductwork, a large air vent or diffuser, a fire hose reel, a sprinkler main or a big fixture dominates the enclosed region, name that thing. Collapsing to "ceiling" or "wall" is only right when the fixture is small or incidental and the surface is what the boundary mostly shows.
+      c. Furniture over the objects on it - but only with a furniture cue. A freestanding piece of furniture outranks the smaller things on it. A large flat vertical surface with no handle, seam, gap, toe-kick or visible depth is a wall or a pillar, not a cabinet - do not upgrade a plain surface to furniture without a cue.
+      d. When two readings compete, choose the larger, more dominant, more structural one.
 
-      CONFIDENCE ("label_confidence") - be honest, do not default to 0.95
+      MATERIAL AND AMBIGUITY CUES
+      - A transparent or translucent panel, a framed glass screen, a glazed partition or a glass-panelled door -> name it as glass (for example "glass_wall", "glass_partition", "glass_door"). Offices often divide space with glass rather than solid wall.
+      - Judge transparency directly: if the room, objects, people or light behind the panel are visible through it - even dimly, even with a frame, mullions or a faint surface reflection - it is glass; a panel you cannot see through at all is solid (wall, door, cabinet).
+      - A rectangular panel that reflects the room or shows a mirror image -> mirror. A plain matte white or lightly-marked panel -> whiteboard. If you cannot tell, name the wall it sits on at low confidence.
+      - Low detail, deep shadow, motion blur or heavy truncation -> do not commit to a specific object; give the structural reading (wall / floor / ceiling) at low confidence, or VLM_no_result if nothing is identifiable.
+
+      LABEL FORM
+      - A concise, singular, lowercase label that best describes what it actually is. There is no fixed list of labels - name whatever it is. Do not describe colour, condition or activity.
+
+      CONFIDENCE CALIBRATION for "label_confidence" - report it honestly
       - 0.90-1.00: unmistakable; the enclosed region can only be this.
-      - 0.60-0.85: probable, but a competing reading exists.
-      - 0.30-0.55: genuinely ambiguous, low detail, or a guess.
-      - 0.0 with label VLM_no_result: too blurred, dark, or truncated to identify at all.
-      Do not report 0.90+ on a crop you would not bet on.
+      - 0.70-0.90: clear, minor uncertainty.
+      - 0.45-0.70: plausible, but a competing reading exists - the right band for cabinet-vs-wall and mirror-vs-whiteboard.
+      - 0.20-0.45: genuinely ambiguous, or a guess.
+      - 0.0 with label VLM_no_result: incomprehensible crop.
+      A low confidence on a hard crop is better than a confident wrong answer. Do not default to 0.90+.
 
       Mobility:
-      - "dynamic": a human, an animal, or a self-propelled robot only
-      - "static": everything else
-      - "unknown": when the label is unknown or mobility cannot be determined
+      - "dynamic": only a human, an animal, or a self-propelled moving object
+      - "static": any stationary object, including all surfaces, structures, furniture, glass and fixtures
+      - "unknown": when the label is unknown
 
-      Output exactly one JSON object:
+      Output format (required) - exactly one JSON object:
       {"label": "<label>", "label_confidence": <0-1>, "mobility_class": "<static|dynamic|unknown>", "mobility_confidence": <0-1>}
 
-      WORKED EXAMPLES (these show the reasoning, not a list of allowed labels):
-      - Boundary is on a wall plane; an armchair sits in front of it, outside the boundary -> {"label": "wall", "label_confidence": 0.86, "mobility_class": "static", "mobility_confidence": 0.99}
-      - Boundary is on the floor; a shelf unit stands beyond it, outside the boundary -> {"label": "floor", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
-      - Boundary spans a panelled ceiling covering many tiles and a light fixture -> {"label": "ceiling", "label_confidence": 0.92, "mobility_class": "static", "mobility_confidence": 0.99}
-      - Boundary covers a wall area that has a whiteboard mounted on part of it -> {"label": "wall", "label_confidence": 0.85, "mobility_class": "static", "mobility_confidence": 0.99}
-      - Boundary covers a single whiteboard that fills almost the whole region -> {"label": "whiteboard", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
-      - Boundary is on a flat vertical surface with little detail - could be a cabinet front, a pillar or a wall -> {"label": "wall", "label_confidence": 0.4, "mobility_class": "static", "mobility_confidence": 0.9}
-      - Boundary shows a reflective rectangular panel on a wall - could be a mirror or a whiteboard -> {"label": "wall", "label_confidence": 0.4, "mobility_class": "static", "mobility_confidence": 0.9}
-      - Boundary encloses a recessed light set into a ceiling panel -> {"label": "ceiling", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
-      - Boundary encloses a floor with a rug lying on it -> {"label": "floor", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
-      - Boundary encloses a potted plant that fills the region -> {"label": "potted_plant", "label_confidence": 0.88, "mobility_class": "static", "mobility_confidence": 0.95}
-      - Boundary encloses a door and its frame -> {"label": "door", "label_confidence": 0.92, "mobility_class": "static", "mobility_confidence": 0.99}
-      - Boundary encloses a person standing in the space -> {"label": "person", "label_confidence": 0.93, "mobility_class": "dynamic", "mobility_confidence": 0.98}
-      - Boundary region is blurred, dark or cut off with no identifiable object -> {"label": "VLM_no_result", "label_confidence": 0.0, "mobility_class": "unknown", "mobility_confidence": 0.0}
+      WORKED EXAMPLES (illustrating the approach, not a list of allowed labels):
 
-      Return only the JSON object. No markdown, explanations, or extra text.
+      Room-defining structure over incidental detail:
+      - Boundary spans a panelled ceiling covering many tiles and a recessed light -> {"label": "ceiling", "label_confidence": 0.92, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary covers a wall area with a whiteboard mounted on part of it -> {"label": "wall", "label_confidence": 0.85, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary on a wall plane; an armchair sits in front of it, outside the boundary -> {"label": "wall", "label_confidence": 0.86, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary on a floor area with a rug on it -> {"label": "floor", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
+
+      Distinctive infrastructure that fills the boundary - name it:
+      - Exposed pipes or ductwork running across the ceiling, filling the boundary -> {"label": "pipes", "label_confidence": 0.8, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A large air vent or diffuser that dominates the enclosed region -> {"label": "air_vent", "label_confidence": 0.82, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A fire hose reel on the wall, filling the boundary -> {"label": "fire_hose_reel", "label_confidence": 0.85, "mobility_class": "static", "mobility_confidence": 0.99}
+
+      Glass and reflective surfaces:
+      - A framed glass partition dividing two areas -> {"label": "glass_wall", "label_confidence": 0.8, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A glass-panelled door in a frame -> {"label": "glass_door", "label_confidence": 0.82, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A reflective rectangular panel showing a mirror image of the room -> {"label": "mirror", "label_confidence": 0.75, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A plain white rectangular panel on a wall, no reflection -> {"label": "whiteboard", "label_confidence": 0.7, "mobility_class": "static", "mobility_confidence": 0.99}
+
+      Furniture vs plain surface:
+      - An office chair filling most of the frame -> {"label": "office_chair", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A desk seen clearly, with items on top -> {"label": "desk", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A flat vertical surface with a visible handle, seam and toe-kick -> {"label": "cabinet", "label_confidence": 0.8, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A flat vertical surface with no handles, seams or depth cues -> {"label": "wall", "label_confidence": 0.5, "mobility_class": "static", "mobility_confidence": 0.95}
+
+      Moving agents:
+      - A person in the space -> {"label": "person", "label_confidence": 0.93, "mobility_class": "dynamic", "mobility_confidence": 0.98}
+
+      Unclear:
+      - A blurred, dark or truncated region with no identifiable object -> {"label": "VLM_no_result", "label_confidence": 0.0, "mobility_class": "unknown", "mobility_confidence": 0.0}
+
+      Return only the JSON object. No markdown, explanations, or additional text.
 
     prompt_optimisation:                                                                             # VLM prompt-optimisation experiment (debug/prompt_optimisation_experiment/). Set enabled: false for normal runs.
       enabled: true                                                                                  # Route VLM crop + per-call CSV into the experiment run folder.
-      run_id: R2__qwen3vl8b__v5_examples_based                                                        # Experiment matrix row; folder name under output_root.
-      prompt_version: P2_v5_examples_based                                                            # Which prompt from prompts_under_test.yaml is active above.
+      run_id: R3__qwen3vl8b__v6_structural_priority                                                        # Experiment matrix row; folder name under output_root.
+      prompt_version: P3_v6_structural_priority                                                            # Which prompt from prompts_under_test.yaml is active above.
       output_root: /home/student/Thesis_new/debug/prompt_optimisation_experiment/runs                # <output_root>/<run_id>/session_<timestamp>/{crops,vlm_results.csv}
 
     result_validation:
