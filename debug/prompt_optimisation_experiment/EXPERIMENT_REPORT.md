@@ -353,7 +353,7 @@ rebuilds / model reloads).
 | Run | Model | Prompt | Folder | Status | Verified N | Accuracy | `ceiling_light` errs | median inference ms |
 |-----|-------|--------|--------|--------|-----------|----------|----------------------|---------------------|
 | R1 | qwen3vl8b | P1 v1_simplified | `runs/R1__qwen3vl8b__v1_simplified/session_20260901_195516/` | ☑ **complete** | 50 | **48 %** | 6 (+2 as `ceiling`) | 6250 |
-| R2 | qwen3vl8b | P2 v5_examples_based (reworked) | `runs/R2__qwen3vl8b__v5_examples_based/` | ◐ prompt ready, run pending | — | — | — | — |
+| R2 | qwen3vl8b | P2 v5_examples_based (reworked) | `runs/R2__qwen3vl8b__v5_examples_based/session_20260901_204248/` | ☑ **complete** | 50 | **72 %** | 2 | 4826 |
 | R3 | qwen3vl8b | P3 v6_structural_priority | `runs/R3__qwen3vl8b__v6_structural_priority/` | ☐ not started | — | — | — | — |
 | R4 | qwen35_4b | P1 v1_simplified | `runs/R4__qwen35_4b__v1_simplified/` | ☐ not started | — | — | — | — |
 | R5 | qwen35_4b | P2 v5_examples_based | `runs/R5__qwen35_4b__v5_examples_based/` | ☐ not started | — | — | — | — |
@@ -472,15 +472,27 @@ tree; a **completed, annotated** session is committed deliberately with
   - **Mobility is a non-issue** for this scene — everything static, all correct.
   - Latency is tight and predictable (~6.1–6.3 s inference, low variance) — not a differentiator to worry about for the 8B FP16 profile.
 
-### R2 — qwen3vl8b × P2 v5_examples_based
-- Run date / wall time: —
-- Objects classified: — | Verified: — | Excluded: —
-- **Accuracy: —**
-- Latency (`vlm_inference_ms`): median — | p90 — | p95 — | max — | mean —
-- Latency (`end_to_end_ms`): median — | p90 — | max —
-- Error tally: `ceiling_light` — | `surface_vs_fixture` — | `boundary_violation` — | `unknown_overuse` — | `wrong_class` — | `mobility_wrong` — | `other` —
+### R2 — qwen3vl8b × P2 v5_examples_based (reworked)  ✅ COMPLETE
+- Run date / wall time: 2026-09-01 · ~700 s wall @ `--rate 0.1` · session `session_20260901_204248`
+- Data: `runs/R2__qwen3vl8b__v5_examples_based/session_20260901_204248/` (53 crops + `vlm_results.csv`)
+- Objects classified: 53 | Verified: 50 (rows 51–53 not annotated) | Excluded (`crop_quality`): 0
+- **Accuracy: 36/50 = 72 %** (strict). Label-only identical — all `static`, every mobility call correct.
+- **vs R1 (P1): 48 % → 72 %, +24 pp** — larger than the ±14 pp CI, so a real prompt effect, not noise.
+- Rejection rate: **0/53**. Confidence now spreads — 0.85 ×9, 0.92 ×17, 0.95 ×27 (R1 was a flat 0.95/0.99) — but still nothing below the 0.80 gate, so rejection still contributes no signal. The 0.85 rows are a mix of right and wrong, so the spread is not yet a usable reliability signal.
+- Latency (`vlm_inference_ms`): median 4826 | p90 5624 | p95 5882 | max 8099 (cold first call) | mean 4997 (min 4438)
+- Latency (`end_to_end_ms`): median 5450 | p90 5921 | max 8159 | mean 5522
+- **Faster than R1** (median 4826 vs 6250 ms) despite the longer prompt — the more directive instructions yield shorter completions.
+- Error tally (of 14 wrong): `ceiling_light`* 2 | `surface_vs_fixture` 0 | `boundary_violation` **0** | `unknown_overuse` 0 | `wrong_class` 12 | `mobility_wrong` 0 | `other` 0
+  - *\*ceiling-related: rows 23, 37 — a `rug`/`wall` returned where the ground truth was `ceiling_tile` (orientation confusion). The R1 failure mode (panelled ceiling → `ceiling_tile`) is **gone** — R2 says `ceiling` and is correct on those crops.*
 - Observations:
-  - —
+  - **Boundary violations eliminated (5 → 0).** The elaborated "name only what the cyan boundary encloses; a salient object outside it is background, never the answer" section did its job — no armchair/shelf/bookshelf-behind-the-plane mistakes this run.
+  - **Panelled-ceiling fixed.** R1: `ceiling_tile` ×6, all wrong. R2: `ceiling` on the same class of crop, marked correct (rows 1, 2, 6, 9, 14, 25, 28, 29, 42, 49 …). ceiling→sub-part rate fell from 8/9 to ~2/13.
+  - **Surface-with-fixture fixed.** whiteboard-on-a-wall now returns `wall` (R1 rows 26, 48 were wrong); standalone whiteboards still correctly `whiteboard` (rows 36, 43).
+  - **New dominant error — glass partitions (5): rows 20, 21, 32, 44, 46.** The scene has glass partition walls / glass-panelled doors; the model has no example for them and falls back to `wall` / `door` / `shelf` / `ceiling`. The annotator flagged this exact gap in R1 (row 49). Needs a `glass_wall` / `glass_partition` exemplar.
+  - **Flat-vertical-surface ambiguity persists (3): rows 22 (`cabinet`, truth wall/pillar), 34 (`curtain`, truth cabinet), 40 (`wall`, truth cabinet).** P2's low-confidence "cabinet/pillar/wall → wall @ 0.4" example did not move the model — it still answered 0.85–0.95 here.
+  - **Generalisation rule over-fired on distinctive infrastructure (4): rows 10, 30 (exposed pipes → `ceiling`), 17 (air vent → `ceiling`), 20 (→ `ceiling`).** "Name the surface, not the fixture" is right for a light in a panel but wrong when exposed ductwork/pipes/vents fill the boundary and the annotator wants them named. P3 must thread this: generalise repeated *surface units*, still name distinctive attached infrastructure that dominates the crop.
+  - **mirror ↔ whiteboard** still misfires once (row 50) — down from 2 in R1.
+  - Mobility remains a non-issue for this scene.
 
 ### R3 — qwen3vl8b × P3 v6_structural_priority
 - Run date / wall time: —
@@ -560,7 +572,7 @@ tree; a **completed, annotated** session is committed deliberately with
 
 | Accuracy | P1 v1_simplified | P2 v5_examples_based | P3 v6_structural_priority | best prompt |
 |---|---|---|---|---|
-| qwen3vl8b | 48 % (24/50) | — | — | — |
+| qwen3vl8b | 48 % (24/50) | **72 % (36/50)** | — | P2 so far (+24 pp) |
 | qwen35_4b | — | — | — | — |
 | qwen35_9b | — | — | — | — |
 | best model | — | — | — | — |
@@ -569,7 +581,7 @@ tree; a **completed, annotated** session is committed deliberately with
 
 | ceiling→sub-part rate | P1 | P2 | P3 |
 |---|---|---|---|
-| qwen3vl8b | 8/9 (89 %) — 6×`ceiling_tile`, +`keyboard`, +`shelf`; 1×`ceiling` correct | — | — |
+| qwen3vl8b | 8/9 (89 %) — 6×`ceiling_tile`, +`keyboard`, +`shelf`; 1×`ceiling` correct | ~2/13 (15 %) — `ceiling` now the default; misses are `rug`/`wall` for `ceiling_tile` crops. But 4 *new* over-generalisations: exposed pipes/vents → `ceiling` | — |
 | qwen35_4b | — | — | — |
 | qwen35_9b | — | — | — |
 
@@ -577,7 +589,7 @@ tree; a **completed, annotated** session is committed deliberately with
 
 | median inf. ms | P1 | P2 | P3 |
 |---|---|---|---|
-| qwen3vl8b | 6250 (mean 6119, p95 6650) | — | — |
+| qwen3vl8b | 6250 (mean 6119, p95 6650) | 4826 (mean 4997, p95 5882) | — |
 | qwen35_4b | — | — | — |
 | qwen35_9b | — | — | — |
 
@@ -640,3 +652,4 @@ tree; a **completed, annotated** session is committed deliberately with
 | 2026-09-01 | Model-abstention label renamed `VLM_unknown` → **`VLM_no_result`** across all three prompts, `rsg_pipeline.yaml` `phase1.vlm.prompt`, and this report. `vlm_result.py` now recognises `vlm_no_result`/`vlm_unknown` as abstention sentinels and records the rejected result as `label="VLM_no_result"` (distinct from `unknown_object`, which stays reserved for parse failures, HTTP/worker errors, and sub-threshold real guesses). Lets CSV review separate "model looked and could not identify" from "no VLM result at all". |
 | 2026-09-01 | **R1 complete** (session `session_20260901_195516`, 59 crops, 50 annotated). Accuracy **48 %** (24/50). Dominant failures: `wrong_class` 13 (hallucination on ambiguous crops), `ceiling`→sub-part 6+ (panelled-ceiling failure reproduced), `boundary_violation` 5, `surface_vs_fixture` 2. Confidence is a constant 0.95/0.99 — zero rejection signal. Latency median 6.25 s. §11 R1 + §12.1/12.2/12.3 (qwen3vl8b row) filled. |
 | 2026-09-01 | **P2 reworked** against R1 findings: elaborated boundary-focus section (name only what the contour encloses; salient context objects are *not* the target), explicit "multiple instances / surface-with-fixture → name the general enclosing surface" rule, calibrated-confidence table so ambiguous crops stop returning 0.95, and worked examples drawn from real R1 misses (armchair-behind-wall, `ceiling_tile`→`ceiling`, whiteboard-on-wall→`wall`, mirror↔whiteboard, wall/pillar↔cabinet). Still open-vocabulary — no label list. `active: true` moved P1 → P2; `rsg_pipeline.yaml` `phase1.vlm.prompt` + `prompt_optimisation.{run_id,prompt_version}` switched to R2. |
+| 2026-09-01 | **R2 complete** (session `session_20260901_204248`, 53 crops, 50 annotated). Accuracy **72 %** (36/50) — **+24 pp over R1**. `boundary_violation` 5 → 0; panelled-ceiling and whiteboard-on-wall fixed. Remaining errors (14): glass partitions 5 (new — no exemplar), flat-surface cabinet↔wall/pillar 3, generalisation over-firing on exposed pipes/vents → `ceiling` 4, `ceiling_tile` inversions 2, mirror↔whiteboard 1. Latency median 4826 ms (faster than R1's 6250). Confidence now spreads 0.85/0.92/0.95 but still no <0.80. §7 / §11 / §12.1–12.3 filled. |
