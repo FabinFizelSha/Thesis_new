@@ -50,6 +50,7 @@ prompts:
     name: "P2 - example-driven (boundary-focus + generalisation rules + worked examples from R1, general)"
     provenance: "reworked from v5_examples_based after R1 (P1 @ 48%): elaborated boundary-only rule, added 'multiple instances / surface-with-fixture -> name the enclosing surface' rule, added confidence calibration to stop 0.95-on-everything, examples taken from real R1 misses. Still open-vocabulary - no label list."
     prior_qwen3vl8b_accuracy: 0.518
+    r2_accuracy: 0.72   # session_20260901_204248, 36/50 (+24 pp over R1)
     active: true
     template: |
       Identify the object that the cyan boundary encloses in this indoor crop.
@@ -99,56 +100,78 @@ prompts:
       Return only the JSON object. No markdown, explanations, or extra text.
 
   P3_v6_structural_priority:
-    name: "P3 - detailed (reasoning strategy + confidence calibration + grouped examples, general)"
-    provenance: "adapted from live v6_structural_priority - structural-label enumeration generalised, dynamic example added"
+    name: "P3 - detailed (structural priority + calibration + grouped examples, tuned on R1+R2, general)"
+    provenance: "built on P2 @ R2 72%. Keeps P2's wins (boundary discipline, generalise repeated surface units, surface-over-mounted-fixture). Adds fixes for the 3 R2 failure clusters: (1) distinctive infrastructure that fills the boundary is NAMED, not generalised to the surface (pipes/vents/ducts -> ceiling was wrong); (2) glass partitions / glass-panelled doors get a glass label (were called wall/door); (3) discriminative cue for flat-surface cabinet-vs-wall/pillar + wider honest confidence band for it. Still open-vocabulary - no label list."
     prior_qwen3vl8b_accuracy: 0.500
+    r2_baseline_accuracy: 0.72   # P2 @ session_20260901_204248
     active: false
     template: |
-      This is an indoor object-classification task. Identify the main object outlined by the cyan boundary.
+      This is an indoor object-classification task. Identify the object that the cyan boundary encloses.
 
-      Approach:
-      1. Look only inside the cyan boundary. Ignore anything outside it completely.
-      2. Decide what the largest, most dominant thing inside the boundary is.
-      3. Prefer the broadest structure over the details on it:
-         - The surfaces and structures that form the room itself - the large planes overhead, underfoot and to the sides, together with the openings and supports in them - take priority over anything mounted on, set into, or resting against them.
-         - A freestanding piece of furniture takes priority over the smaller objects attached to or placed on it.
-         - When two objects compete, choose the larger and more dominant one.
-         - When a surface carries fixtures, attachments or markings, name the surface, not the fixture.
-      4. Give the object a concise, singular, lowercase label that best describes what it actually is. There is no fixed list of labels.
+      APPROACH
+      1. Look only inside the cyan boundary. Everything outside it is background - never name it, however large or obvious. Use the surroundings only to work out what the enclosed region is.
+      2. Decide what the enclosed region mainly shows.
+      3. Choose the label using the priority order below.
 
-      Confidence calibration for "label_confidence":
-      - 0.90-1.00: unmistakable, no ambiguity
-      - 0.70-0.90: clear, minor uncertainty
-      - 0.50-0.70: plausible but competing interpretations
-      - below 0.50: very uncertain
-      - 0.0: incomprehensible crop (use label VLM_no_result)
+      PRIORITY ORDER
+      a. Room-defining structure over incidental detail. The large planes that form the room - overhead, underfoot, the vertical sides - and the openings and supports in them take priority over small things mounted on, set into, or resting against them. If the boundary spans many repeated units of one surface (several ceiling tiles or panels, a run of floor, a stretch of wall), name the surface itself ("ceiling", "wall", "floor"), not one unit ("ceiling_tile").
+      b. BUT distinctive infrastructure that fills the boundary is named, not generalised. If exposed pipes, ductwork, a large air vent or diffuser, a fire hose reel, a sprinkler main or a big fixture dominates the enclosed region, name that thing. Collapsing to "ceiling" or "wall" is only right when the fixture is small or incidental and the surface is what the boundary mostly shows.
+      c. Furniture over the objects on it - but only with a furniture cue. A freestanding piece of furniture outranks the smaller things on it. A large flat vertical surface with no handle, seam, gap, toe-kick or visible depth is a wall or a pillar, not a cabinet - do not upgrade a plain surface to furniture without a cue.
+      d. When two readings compete, choose the larger, more dominant, more structural one.
+
+      MATERIAL AND AMBIGUITY CUES
+      - A transparent or translucent panel, a framed glass screen, a glazed partition or a glass-panelled door -> name it as glass (for example "glass_wall", "glass_partition", "glass_door"). Offices often divide space with glass rather than solid wall.
+      - A rectangular panel that reflects the room or shows a mirror image -> mirror. A plain matte white or lightly-marked panel -> whiteboard. If you cannot tell, name the wall it sits on at low confidence.
+      - Low detail, deep shadow, motion blur or heavy truncation -> do not commit to a specific object; give the structural reading (wall / floor / ceiling) at low confidence, or VLM_no_result if nothing is identifiable.
+
+      LABEL FORM
+      - A concise, singular, lowercase label that best describes what it actually is. There is no fixed list of labels - name whatever it is. Do not describe colour, condition or activity.
+
+      CONFIDENCE CALIBRATION for "label_confidence" - report it honestly
+      - 0.90-1.00: unmistakable; the enclosed region can only be this.
+      - 0.70-0.90: clear, minor uncertainty.
+      - 0.45-0.70: plausible, but a competing reading exists - the right band for cabinet-vs-wall and mirror-vs-whiteboard.
+      - 0.20-0.45: genuinely ambiguous, or a guess.
+      - 0.0 with label VLM_no_result: incomprehensible crop.
+      A low confidence on a hard crop is better than a confident wrong answer. Do not default to 0.90+.
 
       Mobility:
       - "dynamic": only a human, an animal, or a self-propelled moving object
-      - "static": any stationary object, including all surfaces, structures, furniture and fixtures
+      - "static": any stationary object, including all surfaces, structures, furniture, glass and fixtures
       - "unknown": when the label is unknown
 
       Output format (required) - exactly one JSON object:
       {"label": "<label>", "label_confidence": <0-1>, "mobility_class": "<static|dynamic|unknown>", "mobility_confidence": <0-1>}
 
-      Worked examples (illustrating the approach, not a list of allowed labels):
+      WORKED EXAMPLES (illustrating the approach, not a list of allowed labels):
 
-      Room-defining structures take priority over their details:
-      - Recessed lights set into a ceiling panel -> {"label": "ceiling", "label_confidence": 0.92, "mobility_class": "static", "mobility_confidence": 0.99}
-      - A ceiling panel with embedded vents and fixtures -> {"label": "ceiling", "label_confidence": 0.91, "mobility_class": "static", "mobility_confidence": 0.99}
-      - A wall carrying a whiteboard or a mounted sign -> {"label": "wall", "label_confidence": 0.89, "mobility_class": "static", "mobility_confidence": 0.99}
-      - A floor with a rug or carpet on it -> {"label": "floor", "label_confidence": 0.90, "mobility_class": "static", "mobility_confidence": 0.99}
-      - A door and its opening -> {"label": "door", "label_confidence": 0.93, "mobility_class": "static", "mobility_confidence": 0.99}
+      Room-defining structure over incidental detail:
+      - Boundary spans a panelled ceiling covering many tiles and a recessed light -> {"label": "ceiling", "label_confidence": 0.92, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary covers a wall area with a whiteboard mounted on part of it -> {"label": "wall", "label_confidence": 0.85, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary on a wall plane; an armchair sits in front of it, outside the boundary -> {"label": "wall", "label_confidence": 0.86, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary on a floor area with a rug on it -> {"label": "floor", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
 
-      Furniture takes priority over the objects on it:
-      - An office chair filling most of the frame -> {"label": "office_chair", "label_confidence": 0.91, "mobility_class": "static", "mobility_confidence": 0.99}
-      - A desk seen clearly, with items on top -> {"label": "desk", "label_confidence": 0.92, "mobility_class": "static", "mobility_confidence": 0.99}
-      - A sofa or couch -> {"label": "sofa", "label_confidence": 0.90, "mobility_class": "static", "mobility_confidence": 0.99}
+      Distinctive infrastructure that fills the boundary - name it:
+      - Exposed pipes or ductwork running across the ceiling, filling the boundary -> {"label": "pipes", "label_confidence": 0.8, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A large air vent or diffuser that dominates the enclosed region -> {"label": "air_vent", "label_confidence": 0.82, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A fire hose reel on the wall, filling the boundary -> {"label": "fire_hose_reel", "label_confidence": 0.85, "mobility_class": "static", "mobility_confidence": 0.99}
+
+      Glass and reflective surfaces:
+      - A framed glass partition dividing two areas -> {"label": "glass_wall", "label_confidence": 0.8, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A glass-panelled door in a frame -> {"label": "glass_door", "label_confidence": 0.82, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A reflective rectangular panel showing a mirror image of the room -> {"label": "mirror", "label_confidence": 0.75, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A plain white rectangular panel on a wall, no reflection -> {"label": "whiteboard", "label_confidence": 0.7, "mobility_class": "static", "mobility_confidence": 0.99}
+
+      Furniture vs plain surface:
+      - An office chair filling most of the frame -> {"label": "office_chair", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A desk seen clearly, with items on top -> {"label": "desk", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A flat vertical surface with a visible handle, seam and toe-kick -> {"label": "cabinet", "label_confidence": 0.8, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A flat vertical surface with no handles, seams or depth cues -> {"label": "wall", "label_confidence": 0.5, "mobility_class": "static", "mobility_confidence": 0.95}
 
       Moving agents:
       - A person in the space -> {"label": "person", "label_confidence": 0.93, "mobility_class": "dynamic", "mobility_confidence": 0.98}
 
       Unclear:
-      - A blurred, truncated or unidentifiable crop -> {"label": "VLM_no_result", "label_confidence": 0.0, "mobility_class": "unknown", "mobility_confidence": 0.0}
+      - A blurred, dark or truncated region with no identifiable object -> {"label": "VLM_no_result", "label_confidence": 0.0, "mobility_class": "unknown", "mobility_confidence": 0.0}
 
       Return only the JSON object. No markdown, explanations, or additional text.
