@@ -25,7 +25,8 @@ prompts:
     name: "P1 - simple (short, zero-shot, general)"
     provenance: "adapted from v1_simplified - label enumeration removed, JSON-only line added"
     prior_qwen3vl8b_accuracy: 0.469
-    active: true
+    r1_accuracy: 0.48   # session_20260901_195516, 24/50
+    active: false
     template: |
       Classify the single SAM-segmented target in this indoor crop.
 
@@ -46,40 +47,54 @@ prompts:
       Return only the JSON object. No markdown, explanations, or extra text.
 
   P2_v5_examples_based:
-    name: "P2 - example-driven (simple rules + many worked examples, general)"
-    provenance: "reconstructed from v5_examples_based - label list removed, examples broadened, dynamic example added"
+    name: "P2 - example-driven (boundary-focus + generalisation rules + worked examples from R1, general)"
+    provenance: "reworked from v5_examples_based after R1 (P1 @ 48%): elaborated boundary-only rule, added 'multiple instances / surface-with-fixture -> name the enclosing surface' rule, added confidence calibration to stop 0.95-on-everything, examples taken from real R1 misses. Still open-vocabulary - no label list."
     prior_qwen3vl8b_accuracy: 0.518
-    active: false
+    active: true
     template: |
-      Classify the main object outlined by the cyan boundary in this indoor crop.
+      Identify the object that the cyan boundary encloses in this indoor crop.
 
-      Rules:
-      - Identify only the object inside the cyan boundary. Ignore anything outside it.
-      - Name the broadest, largest, most dominant object the boundary covers. When a surface such as a ceiling, wall or floor contains fixtures, attachments or details, name the surface, not the smaller thing on it.
-      - Use a concise, singular, lowercase label that best fits what you see. There is no fixed list of labels.
-      - Use a confidence above 0.90 only when the identification is unmistakable.
-      - If the crop is unclear or truncated, use label VLM_no_result with confidence 0.0.
+      WHICH OBJECT TO NAME
+      - The cyan boundary marks one region of the image. Name only what lies inside that boundary.
+      - Everything outside the boundary is background. A large, obvious object outside the boundary - a chair, a shelf, a bookcase, a whiteboard, a plant - is NOT the answer. Use the surroundings only to understand what the enclosed region is, never as the label itself.
+      - First decide what the enclosed region mainly shows, then name that.
+
+      HOW TO CHOOSE THE LABEL
+      - Name the largest, most complete thing the boundary covers. If the boundary encloses only part of a bigger structure, name the bigger structure.
+      - If the boundary spans many repeated units of one surface - several ceiling tiles or panels, a run of floor, a stretch of wall - name the surface itself ("ceiling", "floor", "wall"), not a single unit ("ceiling_tile").
+      - If the boundary covers a surface that carries a smaller mounted or attached item - a wall bearing a whiteboard, sign, monitor or vent; a ceiling holding a light or diffuser; a floor with a rug on it - name the surface, not the attached item. Name the attached item only when it clearly fills the boundary on its own.
+      - When you are torn between a specific object and the surface or structure behind it, choose the surface or structure.
+      - Use a concise, singular, lowercase label that best fits what you actually see. There is no fixed list of labels - name whatever it is.
+
+      CONFIDENCE ("label_confidence") - be honest, do not default to 0.95
+      - 0.90-1.00: unmistakable; the enclosed region can only be this.
+      - 0.60-0.85: probable, but a competing reading exists.
+      - 0.30-0.55: genuinely ambiguous, low detail, or a guess.
+      - 0.0 with label VLM_no_result: too blurred, dark, or truncated to identify at all.
+      Do not report 0.90+ on a crop you would not bet on.
 
       Mobility:
       - "dynamic": a human, an animal, or a self-propelled robot only
       - "static": everything else
-      - "unknown": when the label is unknown
+      - "unknown": when the label is unknown or mobility cannot be determined
 
       Output exactly one JSON object:
       {"label": "<label>", "label_confidence": <0-1>, "mobility_class": "<static|dynamic|unknown>", "mobility_confidence": <0-1>}
 
-      Examples (these show the reasoning pattern, not a list of allowed labels):
-      - Recessed lights set into a ceiling panel -> {"label": "ceiling", "label_confidence": 0.92, "mobility_class": "static", "mobility_confidence": 0.99}
-      - A ceiling panel with embedded vents and fixtures -> {"label": "ceiling", "label_confidence": 0.91, "mobility_class": "static", "mobility_confidence": 0.99}
-      - A wall with a whiteboard mounted on it -> {"label": "wall", "label_confidence": 0.90, "mobility_class": "static", "mobility_confidence": 0.99}
-      - A wall with an air-conditioning unit on it -> {"label": "wall", "label_confidence": 0.89, "mobility_class": "static", "mobility_confidence": 0.99}
-      - A floor with a rug lying on it -> {"label": "floor", "label_confidence": 0.90, "mobility_class": "static", "mobility_confidence": 0.99}
-      - A door and its frame -> {"label": "door", "label_confidence": 0.92, "mobility_class": "static", "mobility_confidence": 0.99}
-      - A window with a view behind it -> {"label": "window", "label_confidence": 0.90, "mobility_class": "static", "mobility_confidence": 0.99}
-      - An office chair filling most of the frame -> {"label": "office_chair", "label_confidence": 0.91, "mobility_class": "static", "mobility_confidence": 0.99}
-      - A potted plant on a stand -> {"label": "potted_plant", "label_confidence": 0.88, "mobility_class": "static", "mobility_confidence": 0.95}
-      - A person standing in the space -> {"label": "person", "label_confidence": 0.93, "mobility_class": "dynamic", "mobility_confidence": 0.98}
-      - A blurred or cut-off crop with no identifiable object -> {"label": "VLM_no_result", "label_confidence": 0.0, "mobility_class": "unknown", "mobility_confidence": 0.0}
+      WORKED EXAMPLES (these show the reasoning, not a list of allowed labels):
+      - Boundary is on a wall plane; an armchair sits in front of it, outside the boundary -> {"label": "wall", "label_confidence": 0.86, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary is on the floor; a shelf unit stands beyond it, outside the boundary -> {"label": "floor", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary spans a panelled ceiling covering many tiles and a light fixture -> {"label": "ceiling", "label_confidence": 0.92, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary covers a wall area that has a whiteboard mounted on part of it -> {"label": "wall", "label_confidence": 0.85, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary covers a single whiteboard that fills almost the whole region -> {"label": "whiteboard", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary is on a flat vertical surface with little detail - could be a cabinet front, a pillar or a wall -> {"label": "wall", "label_confidence": 0.4, "mobility_class": "static", "mobility_confidence": 0.9}
+      - Boundary shows a reflective rectangular panel on a wall - could be a mirror or a whiteboard -> {"label": "wall", "label_confidence": 0.4, "mobility_class": "static", "mobility_confidence": 0.9}
+      - Boundary encloses a recessed light set into a ceiling panel -> {"label": "ceiling", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary encloses a floor with a rug lying on it -> {"label": "floor", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary encloses a potted plant that fills the region -> {"label": "potted_plant", "label_confidence": 0.88, "mobility_class": "static", "mobility_confidence": 0.95}
+      - Boundary encloses a door and its frame -> {"label": "door", "label_confidence": 0.92, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary encloses a person standing in the space -> {"label": "person", "label_confidence": 0.93, "mobility_class": "dynamic", "mobility_confidence": 0.98}
+      - Boundary region is blurred, dark or cut off with no identifiable object -> {"label": "VLM_no_result", "label_confidence": 0.0, "mobility_class": "unknown", "mobility_confidence": 0.0}
 
       Return only the JSON object. No markdown, explanations, or extra text.
 

@@ -148,43 +148,61 @@ Output exactly one JSON object:
 Return only the JSON object. No markdown, explanations, or extra text.
 ```
 
-### P2 — example-driven (simple rules + many worked examples, general)
+### P2 — example-driven (boundary-focus + generalisation, reworked against R1)
+
+Reworked after R1 (P1 @ 48 %). Targets the three R1 failure clusters: boundary
+violations (5), sub-part-instead-of-surface (8), and 0.95-confidence hallucination
+on ambiguous crops (subset of 13 `wrong_class`). Still open-vocabulary — no label list.
 
 ```text
-Classify the main object outlined by the cyan boundary in this indoor crop.
+Identify the object that the cyan boundary encloses in this indoor crop.
 
-Rules:
-- Identify only the object inside the cyan boundary. Ignore anything outside it.
-- Name the broadest, largest, most dominant object the boundary covers. When a surface such as a ceiling, wall or floor contains fixtures, attachments or details, name the surface, not the smaller thing on it.
-- Use a concise, singular, lowercase label that best fits what you see. There is no fixed list of labels.
-- Use a confidence above 0.90 only when the identification is unmistakable.
-- If the crop is unclear or truncated, use label VLM_no_result with confidence 0.0.
+WHICH OBJECT TO NAME
+- The cyan boundary marks one region of the image. Name only what lies inside that boundary.
+- Everything outside the boundary is background. A large, obvious object outside the boundary - a chair, a shelf, a bookcase, a whiteboard, a plant - is NOT the answer. Use the surroundings only to understand what the enclosed region is, never as the label itself.
+- First decide what the enclosed region mainly shows, then name that.
+
+HOW TO CHOOSE THE LABEL
+- Name the largest, most complete thing the boundary covers. If the boundary encloses only part of a bigger structure, name the bigger structure.
+- If the boundary spans many repeated units of one surface - several ceiling tiles or panels, a run of floor, a stretch of wall - name the surface itself ("ceiling", "floor", "wall"), not a single unit ("ceiling_tile").
+- If the boundary covers a surface that carries a smaller mounted or attached item - a wall bearing a whiteboard, sign, monitor or vent; a ceiling holding a light or diffuser; a floor with a rug on it - name the surface, not the attached item. Name the attached item only when it clearly fills the boundary on its own.
+- When you are torn between a specific object and the surface or structure behind it, choose the surface or structure.
+- Use a concise, singular, lowercase label that best fits what you actually see. There is no fixed list of labels - name whatever it is.
+
+CONFIDENCE ("label_confidence") - be honest, do not default to 0.95
+- 0.90-1.00: unmistakable; the enclosed region can only be this.
+- 0.60-0.85: probable, but a competing reading exists.
+- 0.30-0.55: genuinely ambiguous, low detail, or a guess.
+- 0.0 with label VLM_no_result: too blurred, dark, or truncated to identify at all.
+Do not report 0.90+ on a crop you would not bet on.
 
 Mobility:
 - "dynamic": a human, an animal, or a self-propelled robot only
 - "static": everything else
-- "unknown": when the label is unknown
+- "unknown": when the label is unknown or mobility cannot be determined
 
 Output exactly one JSON object:
 {"label": "<label>", "label_confidence": <0-1>, "mobility_class": "<static|dynamic|unknown>", "mobility_confidence": <0-1>}
 
-Examples (these show the reasoning pattern, not a list of allowed labels):
-- Recessed lights set into a ceiling panel -> {"label": "ceiling", ...}
-- A ceiling panel with embedded vents and fixtures -> {"label": "ceiling", ...}
-- A wall with a whiteboard mounted on it -> {"label": "wall", ...}
-- A wall with an air-conditioning unit on it -> {"label": "wall", ...}
-- A floor with a rug lying on it -> {"label": "floor", ...}
-- A door and its frame -> {"label": "door", ...}
-- A window with a view behind it -> {"label": "window", ...}
-- An office chair filling most of the frame -> {"label": "office_chair", ...}
-- A potted plant on a stand -> {"label": "potted_plant", ...}
-- A person standing in the space -> {"label": "person", "mobility_class": "dynamic", ...}
-- A blurred or cut-off crop with no identifiable object -> {"label": "VLM_no_result", ...}
+WORKED EXAMPLES (these show the reasoning, not a list of allowed labels):
+- Boundary on a wall plane; an armchair sits in front of it, outside the boundary -> {"label": "wall", ...}
+- Boundary on the floor; a shelf unit stands beyond it, outside the boundary -> {"label": "floor", ...}
+- Boundary spans a panelled ceiling covering many tiles and a light fixture -> {"label": "ceiling", ...}
+- Boundary covers a wall area with a whiteboard mounted on part of it -> {"label": "wall", ...}
+- Boundary covers a single whiteboard that fills almost the whole region -> {"label": "whiteboard", ...}
+- Boundary on a flat vertical surface with little detail - cabinet front / pillar / wall -> {"label": "wall", "label_confidence": 0.4, ...}
+- Boundary shows a reflective rectangular panel on a wall - mirror or whiteboard -> {"label": "wall", "label_confidence": 0.4, ...}
+- Recessed light set into a ceiling panel -> {"label": "ceiling", ...}
+- Floor with a rug on it -> {"label": "floor", ...}
+- Potted plant that fills the region -> {"label": "potted_plant", ...}
+- Door and its frame -> {"label": "door", ...}
+- Person standing in the space -> {"label": "person", "mobility_class": "dynamic", ...}
+- Blurred, dark or cut-off region with no identifiable object -> {"label": "VLM_no_result", ...}
 
 Return only the JSON object. No markdown, explanations, or extra text.
 ```
 
-(Full example JSON with confidences is in `prompts_under_test.yaml` — 11 examples.)
+(Full example JSON with confidences is in `prompts_under_test.yaml`.)
 
 ### P3 — detailed (reasoning strategy + confidence calibration + grouped examples, general)
 
@@ -334,8 +352,8 @@ rebuilds / model reloads).
 
 | Run | Model | Prompt | Folder | Status | Verified N | Accuracy | `ceiling_light` errs | median inference ms |
 |-----|-------|--------|--------|--------|-----------|----------|----------------------|---------------------|
-| R1 | qwen3vl8b | P1 v1_simplified | `runs/R1__qwen3vl8b__v1_simplified/` | ☐ not started | — | — | — | — |
-| R2 | qwen3vl8b | P2 v5_examples_based | `runs/R2__qwen3vl8b__v5_examples_based/` | ☐ not started | — | — | — | — |
+| R1 | qwen3vl8b | P1 v1_simplified | `runs/R1__qwen3vl8b__v1_simplified/session_20260901_195516/` | ☑ **complete** | 50 | **48 %** | 6 (+2 as `ceiling`) | 6250 |
+| R2 | qwen3vl8b | P2 v5_examples_based (reworked) | `runs/R2__qwen3vl8b__v5_examples_based/` | ◐ prompt ready, run pending | — | — | — | — |
 | R3 | qwen3vl8b | P3 v6_structural_priority | `runs/R3__qwen3vl8b__v6_structural_priority/` | ☐ not started | — | — | — | — |
 | R4 | qwen35_4b | P1 v1_simplified | `runs/R4__qwen35_4b__v1_simplified/` | ☐ not started | — | — | — | — |
 | R5 | qwen35_4b | P2 v5_examples_based | `runs/R5__qwen35_4b__v5_examples_based/` | ☐ not started | — | — | — | — |
@@ -358,9 +376,16 @@ debug/prompt_optimisation_experiment/
 ├── vlm_results_TEMPLATE.csv      <- header-only template
 └── runs/
     └── R{n}__{model}__{prompt}/
-        ├── crops/                <- every crop JPEG for that run
-        └── vlm_results.csv       <- one row per VLM call (schema below)
+        ├── crops/               <- scaffold placeholder (.gitkeep)
+        ├── vlm_results.csv      <- scaffold placeholder (header only)
+        └── session_<YYYYmmdd_HHMMSS>/   <- one per pipeline start
+            ├── crops/           <- every crop JPEG for that session
+            └── vlm_results.csv  <- one row per VLM call (schema below)
 ```
+
+`runs/*/session_*/` is git-ignored so scratch/smoke sessions don't clutter the
+tree; a **completed, annotated** session is committed deliberately with
+`git add -f <session_dir>` and recorded in §7 / §11.
 
 `vlm_results.csv` columns:
 
@@ -429,15 +454,23 @@ debug/prompt_optimisation_experiment/
 
 > Fill one block per run. Keep the prose to observations that the CSV cannot show.
 
-### R1 — qwen3vl8b × P1 v1_simplified
-- Run date / wall time: —
-- Objects classified: — | Verified: — | Excluded (`crop_quality`): —
-- **Accuracy: —**
-- Latency (`vlm_inference_ms`): median — | p90 — | p95 — | max — | mean —
-- Latency (`end_to_end_ms`): median — | p90 — | max —
-- Error tally: `ceiling_light` — | `surface_vs_fixture` — | `boundary_violation` — | `unknown_overuse` — | `wrong_class` — | `mobility_wrong` — | `other` —
+### R1 — qwen3vl8b × P1 v1_simplified  ✅ COMPLETE
+- Run date / wall time: 2026-09-01 · ~700 s wall @ `--rate 0.1` · session `session_20260901_195516`
+- Data: `runs/R1__qwen3vl8b__v1_simplified/session_20260901_195516/` (59 crops + `vlm_results.csv`)
+- Objects classified: 59 | Verified: 50 (rows 51–59 not annotated) | Excluded (`crop_quality`): 0
+- **Accuracy: 24/50 = 48 %** (strict). Label-only accuracy identical — every row is `mobility_class: static` and every mobility call is correct, so mobility contributes no errors.
+- Rejection rate: **0/59** — every call `accepted`. `label_confidence` is **0.95 or 0.99 on every single crop**, including the 52 % that are wrong. The confidence field carries no signal, so the `min_label_confidence: 0.80` gate never fires and cannot help. Accuracy is therefore the same with or without rejected rows.
+- Latency (`vlm_inference_ms`): median 6250 | p90 6525 | p95 6650 | max 6955 | mean 6119 (min 4903)
+- Latency (`end_to_end_ms`): median 6461 | p90 7194 | max 7447 | mean 6428
+- Throughput: 59 crops / 700 s ≈ one every ~12 s wall (≈ 6.2 s of that is model compute).
+- Error tally (of 26 wrong): `ceiling_light`* 6 | `surface_vs_fixture` 2 | `boundary_violation` 5 | `unknown_overuse` 0 | `wrong_class` 13 | `mobility_wrong` 0 | `other` 0
+  - *\*`ceiling_light` bucket used for the same failure mode with a different sub-part token:* all 6 are `ceiling_tile` returned where the contour spans a whole panelled ceiling (ground truth `ceiling`) — rows 1, 7, 9, 14, 32, 43. Of the 9 ground-truth-`ceiling` crops in the run, only 1 (row 33) was labelled `ceiling`; `ceiling_panel` on row 19 was accepted as correct by the annotator. Panelled-ceiling failure from the prior campaign is **fully reproduced**.
 - Observations:
-  - —
+  - **Boundary violations (5):** the model names a salient object that is *in the frame but outside the cyan contour* — armchair (rows 2, 6), shelf (35), whiteboard (38), bookshelf (47). The contour target was a wall/floor plane behind/around the named object. P1's "identify only this object … the surrounding area may be used as context" is not strong enough — the model treats the whole crop as fair game.
+  - **Sub-part instead of the enclosing surface (6 + 2):** `ceiling_tile` for a panelled ceiling (×6); `whiteboard` for a wall region that merely contains a whiteboard (rows 26, 48). When the contour encloses many repeated instances or a surface-with-a-fixture, the model picks the small nameable thing, not the general term.
+  - **Hallucination on low-information crops (subset of the 13 `wrong_class`):** mirror↔whiteboard confusion twice (39, 42), `keyboard` invented from a ceiling panel (22), `refrigerator`/`cabinet` for what the annotator read as a wall/pillar (13, 21, 29), `fireplace` for a cabinet (20), `glass_surface` missed as `shelf` (49). The model commits to a specific object at 0.95 even when the crop is ambiguous rather than backing off to the dominant structure or `VLM_no_result`.
+  - **Mobility is a non-issue** for this scene — everything static, all correct.
+  - Latency is tight and predictable (~6.1–6.3 s inference, low variance) — not a differentiator to worry about for the 8B FP16 profile.
 
 ### R2 — qwen3vl8b × P2 v5_examples_based
 - Run date / wall time: —
@@ -527,16 +560,16 @@ debug/prompt_optimisation_experiment/
 
 | Accuracy | P1 v1_simplified | P2 v5_examples_based | P3 v6_structural_priority | best prompt |
 |---|---|---|---|---|
-| qwen3vl8b | — | — | — | — |
+| qwen3vl8b | 48 % (24/50) | — | — | — |
 | qwen35_4b | — | — | — | — |
 | qwen35_9b | — | — | — | — |
 | best model | — | — | — | — |
 
 ### 12.2 `ceiling_light` error rate — model × prompt
 
-| ceiling→ceiling_light rate | P1 | P2 | P3 |
+| ceiling→sub-part rate | P1 | P2 | P3 |
 |---|---|---|---|
-| qwen3vl8b | — | — | — |
+| qwen3vl8b | 8/9 (89 %) — 6×`ceiling_tile`, +`keyboard`, +`shelf`; 1×`ceiling` correct | — | — |
 | qwen35_4b | — | — | — |
 | qwen35_9b | — | — | — |
 
@@ -544,7 +577,7 @@ debug/prompt_optimisation_experiment/
 
 | median inf. ms | P1 | P2 | P3 |
 |---|---|---|---|
-| qwen3vl8b | — | — | — |
+| qwen3vl8b | 6250 (mean 6119, p95 6650) | — | — |
 | qwen35_4b | — | — | — |
 | qwen35_9b | — | — | — |
 
@@ -605,3 +638,5 @@ debug/prompt_optimisation_experiment/
 | 2026-08-31 | Boundary colour set to **cyan** (was drafted as white). All 3 prompts now say "cyan boundary"; live pipeline `target_contour_rgb` must be changed `[255,255,255]` → `[0,255,255]` before R1. |
 | 2026-08-31 | Prompts re-worked to a clean design: (a) **complexity gradient** P1 simple → P2 +many examples → P3 detailed strategy+calibration; (b) **all enumerated label lists removed** — every prompt is open-vocabulary ("no fixed list of labels") for generalisation; (c) JSON output format + "return only JSON" line now in **all three**; (d) one `dynamic` (person) example added to P2 and P3; (e) shared JSON schema / mobility defs / `VLM_unknown` fallback unified. P3 is no longer byte-verbatim from `rsg_pipeline.yaml`. §10 now also requires accuracy reported with/without `rejected` rows. |
 | 2026-09-01 | Model-abstention label renamed `VLM_unknown` → **`VLM_no_result`** across all three prompts, `rsg_pipeline.yaml` `phase1.vlm.prompt`, and this report. `vlm_result.py` now recognises `vlm_no_result`/`vlm_unknown` as abstention sentinels and records the rejected result as `label="VLM_no_result"` (distinct from `unknown_object`, which stays reserved for parse failures, HTTP/worker errors, and sub-threshold real guesses). Lets CSV review separate "model looked and could not identify" from "no VLM result at all". |
+| 2026-09-01 | **R1 complete** (session `session_20260901_195516`, 59 crops, 50 annotated). Accuracy **48 %** (24/50). Dominant failures: `wrong_class` 13 (hallucination on ambiguous crops), `ceiling`→sub-part 6+ (panelled-ceiling failure reproduced), `boundary_violation` 5, `surface_vs_fixture` 2. Confidence is a constant 0.95/0.99 — zero rejection signal. Latency median 6.25 s. §11 R1 + §12.1/12.2/12.3 (qwen3vl8b row) filled. |
+| 2026-09-01 | **P2 reworked** against R1 findings: elaborated boundary-focus section (name only what the contour encloses; salient context objects are *not* the target), explicit "multiple instances / surface-with-fixture → name the general enclosing surface" rule, calibrated-confidence table so ambiguous crops stop returning 0.95, and worked examples drawn from real R1 misses (armchair-behind-wall, `ceiling_tile`→`ceiling`, whiteboard-on-wall→`wall`, mirror↔whiteboard, wall/pillar↔cabinet). Still open-vocabulary — no label list. `active: true` moved P1 → P2; `rsg_pipeline.yaml` `phase1.vlm.prompt` + `prompt_optimisation.{run_id,prompt_version}` switched to R2. |
