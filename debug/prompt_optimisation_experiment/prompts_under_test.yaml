@@ -26,7 +26,7 @@ prompts:
     provenance: "adapted from v1_simplified - label enumeration removed, JSON-only line added"
     prior_qwen3vl8b_accuracy: 0.469
     r1_accuracy: 0.48   # session_20260901_195516, 24/50
-    active: true
+    active: false
     template: |
       Classify the single SAM-segmented target in this indoor crop.
 
@@ -51,7 +51,7 @@ prompts:
     provenance: "reworked from v5_examples_based after R1 (P1 @ 48%): elaborated boundary-only rule, added 'multiple instances / surface-with-fixture -> name the enclosing surface' rule, added confidence calibration to stop 0.95-on-everything, examples taken from real R1 misses. Still open-vocabulary - no label list."
     prior_qwen3vl8b_accuracy: 0.518
     r2_accuracy: 0.72   # session_20260901_204248, 36/50 (+24 pp over R1)
-    active: false
+    active: true
     template: |
       Identify the object that the cyan boundary encloses in this indoor crop.
 
