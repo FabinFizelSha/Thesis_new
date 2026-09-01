@@ -231,6 +231,7 @@ d. When readings compete, choose the larger, more dominant, more structural one.
 
 MATERIAL AND AMBIGUITY CUES
 - Transparent/translucent panel, framed glass screen, glazed partition, glass-panelled door -> name it as glass ("glass_wall", "glass_partition", "glass_door").
+- Judge transparency directly: if the room / objects / people / light behind the panel are visible through it - even dimly, even with a frame or faint reflection - it is glass; a panel you cannot see through at all is solid.
 - Reflects the room / shows a mirror image -> mirror. Plain matte white or lightly-marked panel -> whiteboard. Can't tell -> name the wall it sits on, low confidence.
 - Low detail / shadow / blur / heavy truncation -> structural reading (wall/floor/ceiling) at low confidence, or VLM_no_result.
 

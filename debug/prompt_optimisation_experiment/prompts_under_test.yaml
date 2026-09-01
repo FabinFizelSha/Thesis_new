@@ -121,6 +121,7 @@ prompts:
 
       MATERIAL AND AMBIGUITY CUES
       - A transparent or translucent panel, a framed glass screen, a glazed partition or a glass-panelled door -> name it as glass (for example "glass_wall", "glass_partition", "glass_door"). Offices often divide space with glass rather than solid wall.
+      - Judge transparency directly: if the room, objects, people or light behind the panel are visible through it - even dimly, even with a frame, mullions or a faint surface reflection - it is glass; a panel you cannot see through at all is solid (wall, door, cabinet).
       - A rectangular panel that reflects the room or shows a mirror image -> mirror. A plain matte white or lightly-marked panel -> whiteboard. If you cannot tell, name the wall it sits on at low confidence.
       - Low detail, deep shadow, motion blur or heavy truncation -> do not commit to a specific object; give the structural reading (wall / floor / ceiling) at low confidence, or VLM_no_result if nothing is identifiable.
 
