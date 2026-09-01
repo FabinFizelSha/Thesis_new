@@ -386,7 +386,7 @@ rebuilds / model reloads).
 | R1 | qwen3vl8b | P1 v1_simplified | `runs/R1__qwen3vl8b__v1_simplified/session_20260901_195516/` | ☑ **complete** | 50 | **48 %** | 6 (+2 as `ceiling`) | 6250 |
 | R2 | qwen3vl8b | P2 v5_examples_based (reworked) | `runs/R2__qwen3vl8b__v5_examples_based/session_20260901_204248/` | ☑ **complete** | 50 | **72 %** | 2 | 4826 |
 | R3 | qwen3vl8b | P3 v6_structural_priority (tuned on R1+R2) | `runs/R3__qwen3vl8b__v6_structural_priority/session_20260901_211319/` | ☑ **complete** | 49 | **63 %** | 3 | 4806 |
-| R4 | qwen35_4b | P1 v1_simplified | `runs/R4__qwen35_4b__v1_simplified/` | ◐ wired & ready — run pending | — | — | — | — |
+| R4 | qwen35_4b | P1 v1_simplified | `runs/R4__qwen35_4b__v1_simplified/session_20260901_215455/` | ☑ **complete** | 50 | **64 %** | 4 | 2691 |
 | R5 | qwen35_4b | P2 v5_examples_based | `runs/R5__qwen35_4b__v5_examples_based/` | ☐ not started | — | — | — | — |
 | R6 | qwen35_4b | P3 v6_structural_priority | `runs/R6__qwen35_4b__v6_structural_priority/` | ☐ not started | — | — | — | — |
 | R7 | qwen35_9b | P1 v1_simplified | `runs/R7__qwen35_9b__v1_simplified/` | ☐ not started | — | — | — | — |
@@ -547,15 +547,24 @@ tree; a **completed, annotated** session is committed deliberately with
   - **Calibration vs the operational gate is now a real tension.** P3 is the first prompt to produce honest sub-0.80 confidence; the pipeline's `min_label_confidence: 0.80` then rejects those rows as `unknown_object` even when the label was right (2/2 here). For the *experiment* this is fine (annotator sees the raw answer); for *production* it means P3 + the current gate throws away correct hard-case labels. See §13.
   - **Verdict: for qwen3vl8b, P2 (72 %) > P3 (63 %) > P1 (48 %).** P3's added structural machinery did not pay for itself and its furniture rule actively hurt.
 
-### R4 — qwen35_4b × P1 v1_simplified
-- Run date / wall time: —
-- Objects classified: — | Verified: — | Excluded: —
-- **Accuracy: —**
-- Latency (`vlm_inference_ms`): median — | p90 — | p95 — | max — | mean —
-- Latency (`end_to_end_ms`): median — | p90 — | max —
-- Error tally: `ceiling_light` — | `surface_vs_fixture` — | `boundary_violation` — | `unknown_overuse` — | `wrong_class` — | `mobility_wrong` — | `other` —
+### R4 — qwen35_4b × P1 v1_simplified  ✅ COMPLETE
+- Run date / wall time: 2026-09-01 · ~700 s wall @ `--rate 0.1` · session `session_20260901_215455`
+  - *(First attempt `session_20260901_213914` was void — 57/57 empty responses from Qwen3.5's default thinking mode; fixed with `--reasoning off` + `enable_thinking=false`. See §15.)*
+- Data: `runs/R4__qwen35_4b__v1_simplified/session_20260901_215455/` (61 crops saved, 50 in CSV, all 50 annotated)
+- Objects classified: 50 | Verified: 50 | Excluded (`crop_quality`): 0
+- **Accuracy: 32/50 = 64 %** (strict). All `static`, all mobility correct.
+- **vs R1 (8B × P1 @ 48 %): +16 pp — the 4B is *better* than the 8B on the zero-shot prompt.**
+- Rejection: **0/50** — the thinking-mode fix works; every response parsed. Row 23 came back markdown-fenced (```` ```json ````) and the validator's fence-strip handled it.
+- Latency (`vlm_inference_ms`): median **2691** | p90 3134 | p95 3332 | max 3535 | mean 2773 (min 2425) — **~2.3× faster than the 8B** (P1 6250, P2/P3 ~4800). e2e median 3260.
+- Confidence distribution: **0.95 ×50** — completely flat, no calibration at all (worse than the 8B's P1, which at least varied 0.95/0.99). P1's "confidence above 0.90 only when unmistakable" line is ignored by the 4B.
+- Error tally (of 18 wrong): `ceiling_light`* 4 | `surface_vs_fixture` 1 | `boundary_violation` 1 | `unknown_overuse` 0 | `wrong_class` 12 | `mobility_wrong` 0 | `other` 0
+  - *\*ceiling-related: `ceiling_light`→`ceiling` (row 1), and rows 13/18/19 — pipe / air vent / door-part all returned as `ceiling`.*
 - Observations:
-  - —
+  - **Dominant failure — hallucinating a specific object on a plain surface (11).** On bare wall / floor / ceiling crops the 4B invents `clothes_rack`, `whiteboard`, `flag`, `mirror`, `desk`, `table` ×2, `sofa`, `monitor` ×3, `screen` (rows 12, 14, 17, 27, 30, 35, 37, 39, 42, 45, 46). The 8B did this too but less often and less wildly — the 4B is markedly more prone to confabulating furniture/screens where there is none.
+  - **Ceiling infrastructure still collapses to `ceiling` (3)** — pipe, air vent, door-part (rows 13, 18, 19). Same failure as every 8B prompt; model-independent so far. The 4B is also *inconsistent*: row 10 it labels a wall crop `pipe` (pipe visible but outside the contour — 1 boundary violation), row 13 it labels an actual pipe `ceiling`.
+  - **Boundary discipline is decent** — only 1 violation (row 10), vs 5 for the 8B on P1. P1's lone "identify only this object" line lands better on the 4B.
+  - **`ceiling_vent` correct once (row 38)** — the 4B will name a ceiling sub-part when it's the whole crop, but defaults to `ceiling` for infra.
+  - **Speed is the headline.** 2.7 s/call vs the 8B's 4.8–6.2 s, for +16 pp accuracy on this prompt. If P2 holds its 8B lead on the 4B, the 4B becomes the obvious production pick.
 
 ### R5 — qwen35_4b × P2 v5_examples_based
 - Run date / wall time: —
@@ -616,7 +625,7 @@ tree; a **completed, annotated** session is committed deliberately with
 | Accuracy | P1 v1_simplified | P2 v5_examples_based | P3 v6_structural_priority | best prompt |
 |---|---|---|---|---|
 | qwen3vl8b | 48 % (24/50) | **72 % (36/50)** | 63 % (31/49) · 59 % pipeline-eff. | **P2** (P2 > P3 > P1) |
-| qwen35_4b | — | — | — | — |
+| qwen35_4b | 64 % (32/50) | — | — | — |
 | qwen35_9b | — | — | — | — |
 | best model | — | — | — | — |
 
@@ -625,7 +634,7 @@ tree; a **completed, annotated** session is committed deliberately with
 | ceiling→sub-part rate | P1 | P2 | P3 |
 |---|---|---|---|
 | qwen3vl8b | 8/9 (89 %) — 6×`ceiling_tile`, +`keyboard`, +`shelf`; 1×`ceiling` correct | ~2/13 (15 %) — `ceiling` now the default; misses are `rug`/`wall` for `ceiling_tile` crops. But 4 *new* over-generalisations: exposed pipes/vents → `ceiling` | pipe / ceiling light / air vent → `ceiling` ×3. Rule (b) "name distinctive infrastructure" had **no effect** — model will not name ceiling infra even with a worked-example group |
-| qwen35_4b | — | — | — |
+| qwen35_4b | `ceiling_light`→`ceiling` ×1; pipe/vent/door-part→`ceiling` ×3; `ceiling_vent` correct ×1. Same infra-collapse as the 8B — model-independent | — | — |
 | qwen35_9b | — | — | — |
 
 ### 12.3 Latency — model × prompt (median `vlm_inference_ms`)
@@ -633,7 +642,7 @@ tree; a **completed, annotated** session is committed deliberately with
 | median inf. ms | P1 | P2 | P3 |
 |---|---|---|---|
 | qwen3vl8b | 6250 (mean 6119, p95 6650) | 4826 (mean 4997, p95 5882) | 4806 (mean 4872, p95 5097) |
-| qwen35_4b | — | — | — |
+| qwen35_4b | **2691** (mean 2773, p95 3332) | — | — |
 | qwen35_9b | — | — | — |
 
 ### 12.4 Accuracy ↔ latency
@@ -648,7 +657,7 @@ tree; a **completed, annotated** session is committed deliberately with
 
 ## 13. Findings & recommendation (fill at the end)
 
-- Q1 — does Qwen 3.5 break the ~50 % ceiling / `ceiling_light` error?  **— (pending R4–R9)**
+- Q1 — does Qwen 3.5 break the ~50 % ceiling / `ceiling_light` error?  **Partly. qwen35_4b on P1 hits 64 % (vs the 8B's 48 % on P1) and cuts boundary violations 5→1, but the ceiling-infrastructure collapse (pipe/vent/door-part → `ceiling`) survives unchanged — that failure is model-independent across everything tested. The 4B trades it for more *hallucination of specific objects on plain surfaces* (11/18 of its errors). Pending 4B×P2/P3 and the 9B.**
 - Q2 — best prompt per model:  **qwen3vl8b → P2 (72 %). P2 > P3 (63 %) > P1 (48 %).** The example-driven prompt beats both the zero-shot P1 and the elaborate structural-priority P3. P3's extra machinery did not pay for itself: its "distinctive-infrastructure" rule had no measurable effect, and its furniture-discriminator worked-example *primed* `cabinet` over-prediction on ambiguous flat surfaces (7 misses vs P2's 3). *Latency is not a tie-breaker — P2 and P3 are both ~4.8 s, P1 ~6.2 s.*
 - Q3 — accuracy/latency trade-off; recommended production profile + prompt:  **— (pending 4B/9B)**. So far: qwen3vl8b + P2, ~4.8 s/call, ~72 %.
 - Any prompt change to promote into `rsg_pipeline.yaml`:  **P2 is the current front-runner.** Open item from R3: better calibration (P3) makes honest sub-0.80 answers that the operational `min_label_confidence: 0.80` gate then discards as `unknown_object` even when correct (2/2 in R3). If a calibrated prompt is adopted, lower that gate or route sub-threshold-but-plausible labels to a softer path.
@@ -683,6 +692,14 @@ tree; a **completed, annotated** session is committed deliberately with
 - **One model at a time** on :8000 — never launch two llama-servers.
 - `qwen3_vl_8b_f16` needs ≥32 GB; if it will not load, record R1–R3 as blocked
   rather than dropping to the 2B profile mid-experiment.
+- **Prompts are frozen after the 8B sweep.** P1/P2/P3 are *not* re-tuned per model.
+  R4–R9 run the exact same three templates so the comparison is model × prompt,
+  not model × prompt-variant. Any per-model prompt idea goes into a fresh R10+ row.
+- **Qwen3.5 is a thinking model** — its profiles carry `server.extra_args:
+  ["--reasoning","off"]` and the backend sends `enable_thinking=false`. Without
+  both, `max_tokens: 96` is consumed by `<think>` and every response is empty
+  (see the void R4 attempt, §15). Verify the first crop of any 3.5 run returns
+  non-empty `raw_response` before trusting the session.
 
 ---
 
@@ -703,3 +720,4 @@ tree; a **completed, annotated** session is committed deliberately with
 | 2026-09-01 | **R3 complete** (session `session_20260901_211319`, 56 crops, 49 in CSV, all annotated). Accuracy **63 %** (31/49) — **−9 pp vs R2**, so P3 regressed. P3's calibration guidance finally landed (confidence spans 0.50–0.95, 2 honest sub-0.80 answers — both correct, both rejected by the 0.80 gate). But the furniture-discriminator example primed `cabinet` over-prediction (7 misses vs R2's 3), and rule (b) "name distinctive infrastructure" had no effect (pipe/vent/light → `ceiling` ×3). Glass net-neutral (`glass_door` ×3 right; `glass_wall` over-applied ×1; 2 still missed). New cluster: "door part" ×3. **qwen3vl8b sweep done: P2 (72 %) > P3 (63 %) > P1 (48 %) — P2 is the recommended prompt.** §7 / §11 / §12.1–12.4 (qwen3vl8b) / §13 Q2 filled. Pipeline left on P3/R3 — flip to a 4B/9B profile for R4–R9. |
 | 2026-09-01 | **Switched to Qwen 3.5 4B for R4.** `rsg_pipeline.yaml` `phase1.vlm.active_profile = qwen3_5_4b_q4` (weights present at `~/rsg_models/qwen3_5_4b/`, `llama-server -m Qwen3.5-4B-Q4_K_M.gguf --mmproj mmproj-BF16.gguf`). `phase1.vlm.prompt` reset to P1 template (verified byte-identical), `run_id = R4__qwen35_4b__v1_simplified`, `prompt_version = P1_v1_simplified`; `prompts_under_test.yaml` `active` P3 → P1. Full P1/P2/P3 sweep on 4B, run manually (R4 → R5 → R6). Needs VLM-server relaunch (new model) + phase1 restart. |
 | 2026-09-01 | **First R4 attempt (`session_20260901_213914`) VOID — 57/57 empty responses, all rejected.** Root cause: Qwen3.5-4B is a *reasoning* model; llama.cpp's default `--reasoning auto` makes it emit `<think>…</think>` and put only post-`</think>` text in `message.content`. At `max_tokens: 96` (fine for the non-thinking Qwen3-VL-8B) the 4B spends the whole budget thinking → `content=""` → validator rejects every crop as `unknown_object` @ 0.0. Fix: `server.extra_args: ["--reasoning","off"]` on the qwen3_5 profiles (via new `rsg_vlm_server` support) + `chat_template_kwargs.enable_thinking=false` in the request payload (no-op for R1–R3's model). Session `_213914` discarded, not counted as R4. Re-run after relaunching the 4B server with `--reasoning off`. |
+| 2026-09-01 | **R4 complete** (re-run `session_20260901_215455`, 61 crops, 50 in CSV, all annotated). Accuracy **64 %** (32/50) — **+16 pp over the 8B on P1** (R1 @ 48 %). Thinking fix confirmed: 0 empty, 0 rejected. Latency median **2691 ms** — ~2.3× faster than the 8B. Confidence flat 0.95 on all 50 (no calibration). Errors: hallucinated furniture/screens on plain surfaces 11, ceiling-infra→`ceiling` 3, 1 boundary violation. Prompts frozen for 3.5 (P1/P2/P3 unchanged). §7 / §11 / §12.1–12.4 (qwen35_4b P1) / §13 Q1 filled. Next: R5 (4B × P2). |
