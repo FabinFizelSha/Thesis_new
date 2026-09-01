@@ -366,9 +366,12 @@ phase1:                                                                         
     temperature: 0.0                                                                                 # Deterministic labels for consistent RAP memory entries.
     jpeg_quality: 100                                                                                 # Good visual quality with manageable request size.
     prompt: |
+      OUTPUT RULE — READ THIS FIRST
+      Your entire reply is ONE JSON object and nothing else. The first character you output is "{" and the last is "}". No preamble, no analysis, no numbered steps, no sentences such as "Based on the visual evidence...", and no markdown code fences. Work through the approach below silently and output only the result.
+
       This is an indoor object-classification task. Identify the object that the cyan boundary encloses.
 
-      APPROACH
+      APPROACH (reason through this silently - do not write any of it)
       1. Look only inside the cyan boundary. Everything outside it is background - never name it, however large or obvious. Use the surroundings only to work out what the enclosed region is.
       2. Decide what the enclosed region mainly shows.
       3. Choose the label using the priority order below.
@@ -401,8 +404,16 @@ phase1:                                                                         
       - "static": any stationary object, including all surfaces, structures, furniture, glass and fixtures
       - "unknown": when the label is unknown
 
-      Output format (required) - exactly one JSON object:
+      OUTPUT - exactly one JSON object, with nothing before it or after it:
       {"label": "<label>", "label_confidence": <0-1>, "mobility_class": "<static|dynamic|unknown>", "mobility_confidence": <0-1>}
+
+      GOOD - this is the whole reply:
+      {"label": "wall", "label_confidence": 0.85, "mobility_class": "static", "mobility_confidence": 0.99}
+
+      BAD - never reply like any of these:
+      - Based on the visual evidence within the cyan boundary: 1. Analysis: ... then the JSON
+      - The object is a wall. {"label": "wall", ...}
+      - the JSON object wrapped in triple-backtick code fences
 
       WORKED EXAMPLES (illustrating the approach, not a list of allowed labels):
 
@@ -435,12 +446,12 @@ phase1:                                                                         
       Unclear:
       - A blurred, dark or truncated region with no identifiable object -> {"label": "VLM_no_result", "label_confidence": 0.0, "mobility_class": "unknown", "mobility_confidence": 0.0}
 
-      Return only the JSON object. No markdown, explanations, or additional text.
+      Return only the JSON object - nothing before "{", nothing after "}". No markdown, no explanation, no numbered analysis.
 
     prompt_optimisation:                                                                             # VLM prompt-optimisation experiment (debug/prompt_optimisation_experiment/). Set enabled: false for normal runs.
       enabled: true                                                                                  # Route VLM crop + per-call CSV into the experiment run folder.
-      run_id: R6__qwen35_4b__v6_structural_priority                                                        # Experiment matrix row; folder name under output_root.
-      prompt_version: P3_v6_structural_priority                                                            # Which prompt from prompts_under_test.yaml is active above.
+      run_id: R6.1__qwen35_4b__v6b_format_enforced                                                        # Experiment matrix row; folder name under output_root.
+      prompt_version: P3b_v6b_format_enforced                                                            # Which prompt from prompts_under_test.yaml is active above.
       output_root: /home/student/Thesis_new/debug/prompt_optimisation_experiment/runs                # <output_root>/<run_id>/session_<timestamp>/{crops,vlm_results.csv}
 
     result_validation:

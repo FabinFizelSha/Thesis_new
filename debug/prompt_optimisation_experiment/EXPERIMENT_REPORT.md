@@ -388,7 +388,8 @@ rebuilds / model reloads).
 | R3 | qwen3vl8b | P3 v6_structural_priority (tuned on R1+R2) | `runs/R3__qwen3vl8b__v6_structural_priority/session_20260901_211319/` | ☑ **complete** | 49 | **63 %** | 3 | 4806 |
 | R4 | qwen35_4b | P1 v1_simplified | `runs/R4__qwen35_4b__v1_simplified/session_20260901_215455/` | ☑ **complete** | 50 | **64 %** | 4 | 2691 |
 | R5 | qwen35_4b | P2 v5_examples_based | `runs/R5__qwen35_4b__v5_examples_based/session_20260901_221739/` | ☑ **complete** | 50 | **80 %** | 6 | 2959 |
-| R6 | qwen35_4b | P3 v6_structural_priority | `runs/R6__qwen35_4b__v6_structural_priority/` | ◐ wired & ready — run pending | — | — | — | — |
+| R6 | qwen35_4b | P3 v6_structural_priority | `runs/R6__qwen35_4b__v6_structural_priority/` | ✗ **ABANDONED** — P3 unusable on the 4B (output-syntax failure; see §11) | — | — | — | — |
+| R6.1 | qwen35_4b | **P3b** v6b_format_enforced | `runs/R6.1__qwen35_4b__v6b_format_enforced/` | ◐ wired & ready — run pending | — | — | — | — |
 | R7 | qwen35_9b | P1 v1_simplified | `runs/R7__qwen35_9b__v1_simplified/` | ☐ not started | — | — | — | — |
 | R8 | qwen35_9b | P2 v5_examples_based | `runs/R8__qwen35_9b__v5_examples_based/` | ☐ not started | — | — | — | — |
 | R9 | qwen35_9b | P3 v6_structural_priority | `runs/R9__qwen35_9b__v6_structural_priority/` | ☐ not started | — | — | — | — |
@@ -587,13 +588,25 @@ tree; a **completed, annotated** session is committed deliberately with
   - **2 `wrong_class`:** mirror for a door part (22), door for a cabinet (43).
   - **No boundary violations, no hallucinated furniture on plain surfaces** — P2's boundary discipline + example grounding fixed the two things the 4B was worst at on P1 (R4 had 1 + 11).
 
-### R6 — qwen35_4b × P3 v6_structural_priority
-- **First attempt `session_20260901_233159` VOID** — 24/51 rejected, 21 of them because the 4B wrote a numbered analysis ("Based on the visual evidence… 1. Analysis… 2. Check for furniture cues…") mirroring P3's step-by-step APPROACH and never reached the JSON inside `max_tokens: 96`. The 27 that parsed all came back as clean (mostly ```` ```json ````-fenced) objects. The 256-token re-run (`session_20260901_234911`) cut format rejections to 3/50 (44/50 accepted); `max_tokens` then raised to **512** for full headroom (§14). Both interim sessions discarded, re-run pending.
+### R6 — qwen35_4b × P3 v6_structural_priority  ✗ ABANDONED
+**P3 is not usable on qwen35_4b — the failure is output *syntax*, not labelling.** P3's step-by-step "APPROACH: 1… 2… 3…" framing makes the 4B write the analysis out in the visible content ("Based on the visual evidence within the cyan boundary: 1. Analysis… 2. Check for furniture cues…") instead of emitting the JSON. Progression across three token budgets:
+
+| session | `max_tokens` | accepted | format-rejected (prose, no JSON) | note |
+|---|---|---|---|---|
+| `session_20260901_233159` | 96 | 27/51 | 21 | first attempt |
+| `session_20260901_234911` | 256 | 44/50 | 3 | + 3 confidence-gate rejects |
+| (512 run) | 512 | — | still a few narrations overrun; user confirms P3 still fails syntax | |
+
+P1 and P2 on the *same* 4B had **zero** format rejections — the issue is specific to P3's "reason step by step" structure meeting a small model with no `<think>` channel (`--reasoning off`). Raising `max_tokens` reduces but does not eliminate it, and even the accepted rows carry a long prose preamble (higher latency, messy `raw_response`). All R6 sessions discarded; **superseded by R6.1 (P3b)**. Finding for §13: *P3's structural-priority prompt does not transfer to small models — it breaks JSON compliance.*
+
+### R6.1 — qwen35_4b × P3b v6b_format_enforced
+- P3b = **P3 with hard output-syntax enforcement, same reasoning/priority/cues/examples.** Adds: a leading `OUTPUT RULE — READ THIS FIRST` block ("your entire reply is ONE JSON object… first char `{`, last char `}`… no preamble, no numbered steps, no 'Based on the visual evidence…', no code fences"); the `APPROACH` heading now says *"reason through this silently — do not write any of it"*; a GOOD / BAD reply-example block (BAD = the exact prose failure); a stronger closing line. P3 itself is unchanged (frozen for R3).
+- Watch: (a) format-rejection rate — does the leading OUTPUT RULE + BAD examples stop the narration; (b) does `raw_response` come back as a bare `{…}` (no fences, no preamble); (c) once parsing works, how does P3b's *labelling* compare to P2 @ 80 % on the 4B.
 - Run date / wall time: —
 - Objects classified: — | Verified: — | Excluded: —
 - **Accuracy: —**
 - Latency (`vlm_inference_ms`): median — | p90 — | p95 — | max — | mean —
-- Latency (`end_to_end_ms`): median — | p90 — | max —
+- Format-rejection rate: — | Confidence-gate rejections: —
 - Error tally: `ceiling_light` — | `surface_vs_fixture` — | `boundary_violation` — | `unknown_overuse` — | `wrong_class` — | `mobility_wrong` — | `other` —
 - Observations:
   - —
@@ -670,7 +683,7 @@ tree; a **completed, annotated** session is committed deliberately with
 ## 13. Findings & recommendation (fill at the end)
 
 - Q1 — does Qwen 3.5 break the ~50 % ceiling / `ceiling_light` error?  **Partly. qwen35_4b on P1 hits 64 % (vs the 8B's 48 % on P1) and cuts boundary violations 5→1, but the ceiling-infrastructure collapse (pipe/vent/door-part → `ceiling`) survives unchanged — that failure is model-independent across everything tested. The 4B trades it for more *hallucination of specific objects on plain surfaces* (11/18 of its errors). Pending 4B×P2/P3 and the 9B.**
-- Q2 — best prompt per model:  **qwen3vl8b → P2 (72 %). P2 > P3 (63 %) > P1 (48 %).** The example-driven prompt beats both the zero-shot P1 and the elaborate structural-priority P3. P3's extra machinery did not pay for itself: its "distinctive-infrastructure" rule had no measurable effect, and its furniture-discriminator worked-example *primed* `cabinet` over-prediction on ambiguous flat surfaces (7 misses vs P2's 3). *Latency is not a tie-breaker — P2 and P3 are both ~4.8 s, P1 ~6.2 s.*
+- Q2 — best prompt per model:  **qwen3vl8b → P2 (72 %). P2 > P3 (63 %) > P1 (48 %).** The example-driven prompt beats both the zero-shot P1 and the elaborate structural-priority P3. P3's extra machinery did not pay for itself: its "distinctive-infrastructure" rule had no measurable effect, and its furniture-discriminator worked-example *primed* `cabinet` over-prediction on ambiguous flat surfaces (7 misses vs P2's 3). *Latency is not a tie-breaker — P2 and P3 are both ~4.8 s, P1 ~6.2 s.* **qwen35_4b → P2 (80 %) so far. P1 = 64 %. P3 does not transfer at all — its "reason step by step" structure makes the 4B narrate the analysis instead of emitting JSON (R6 abandoned, output-syntax failure); a format-hardened variant (P3b) is under test as R6.1.**
 - Q3 — accuracy/latency trade-off; recommended production profile + prompt:  **— (pending 4B/9B)**. So far: qwen3vl8b + P2, ~4.8 s/call, ~72 %.
 - Any prompt change to promote into `rsg_pipeline.yaml`:  **P2 is the current front-runner.** Open item from R3: better calibration (P3) makes honest sub-0.80 answers that the operational `min_label_confidence: 0.80` gate then discards as `unknown_object` even when correct (2/2 in R3). If a calibrated prompt is adopted, lower that gate or route sub-threshold-but-plausible labels to a softer path.
 - **Unsolved across all 3 qwen3vl8b prompts:** flat-surface cabinet ↔ wall/pillar; ceiling infrastructure (pipes/vents/lights) collapsing to `ceiling`; some glass panels read as `wall`. None of P1/P2/P3's wording fixed these — they may be model-capability limits, not prompt problems.
@@ -749,3 +762,4 @@ tree; a **completed, annotated** session is committed deliberately with
 | 2026-09-01 | **Wired R6** — `phase1.vlm.prompt` = P3 template (verified byte-identical), `run_id = R6__qwen35_4b__v6_structural_priority`, `prompt_version = P3_v6_structural_priority`; `active` P2 → P3. Profile stays `qwen3_5_4b_q4` (4B server loaded, `--reasoning off`). Phase1 restart only. |
 | 2026-09-01 | **First R6 attempt (`session_20260901_233159`) VOID — format non-compliance.** 24/51 rejected; 21 because the 4B narrates P3's step-by-step APPROACH in the visible content ("Based on the visual evidence… 1. Analysis…") and runs out of `max_tokens: 96` before the JSON. P1/P2 on the same 4B had 0 format rejections. **Fix: `phase1.vlm.max_tokens` 96 → 256, held fixed R6–R9.** R1–R5 all produced complete JSON inside 96 → not re-run (headroom only; capping P3 at 96 would have handicapped the most verbose prompt). §5 / §14 / §11 R6 updated. Session discarded. Re-run R6. |
 | 2026-09-02 | **`max_tokens` 256 → 512.** The 256-token R6 re-run (`session_20260901_234911`) landed 44/50 accepted (format rejections 21→3), but a few P3 narrations still hit the 256 cap (12–13 s inference, no JSON). Raised to **512** for full headroom, held fixed R6–R9. Both interim R6 sessions (`_233159`, `_234911`) discarded. |
+| 2026-09-02 | **R6 ABANDONED — P3 does not transfer to the 4B (output-syntax failure).** Even at 512 the 4B keeps narrating P3's step-by-step APPROACH ("Based on the visual evidence… 1. Analysis…") instead of emitting JSON. Not a labelling failure — P1/P2 on the same 4B had 0 format rejections. Recorded as a §13 finding: P3's structural-priority framing breaks JSON compliance on small models. **Replaced by R6.1 (P3b_v6b_format_enforced):** P3 verbatim + hard output enforcement — leading `OUTPUT RULE — READ THIS FIRST` block, `APPROACH` marked "reason silently", GOOD/BAD reply examples (BAD = the exact prose failure), stronger closing line. `rsg_pipeline.yaml` `phase1.vlm.prompt` = P3b (byte-identical), `run_id = R6.1__qwen35_4b__v6b_format_enforced`, `prompt_version = P3b_v6b_format_enforced`; `active` P3 → P3b. P3 unchanged (frozen for R3). Phase1 restart only. §7 / §11 (R6 + R6.1) / §13 Q2 updated. |
