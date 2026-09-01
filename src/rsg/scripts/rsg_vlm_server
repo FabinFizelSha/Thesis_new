@@ -103,6 +103,13 @@ def _build_llama_command(server: Dict[str, Any]) -> List[str]:
         "-ngl", str(int(server.get("gpu_layers", 99))),
         "-c", str(int(server.get("context_size", 4096))),
     ])
+
+    # Optional per-profile llama.cpp flags (e.g. "--reasoning off" for Qwen3.5
+    # thinking models, which otherwise spend the whole token budget in <think>).
+    extra = server.get("extra_args") or []
+    if isinstance(extra, str):
+        extra = shlex.split(extra)
+    command.extend(str(arg) for arg in extra)
     return command
 
 

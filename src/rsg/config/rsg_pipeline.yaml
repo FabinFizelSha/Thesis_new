@@ -454,6 +454,7 @@ phase1:                                                                         
           context_size: 4096                                                                         # Standard context budget.
           gpu_layers: 99                                                                             # Offload all layers to GPU.
           min_system_memory_gib: 8                                                                   # 4B Q4 requires less memory than 8B F16.
+          extra_args: ["--reasoning", "off"]                                                         # Qwen3.5 is a thinking model; without this it burns the whole max_tokens budget inside <think> and returns empty content.
 
       qwen3_5_9b_q4:
         endpoint: http://127.0.0.1:8000/v1/chat/completions                                          # Same endpoint; only one selected profile is launched at a time.
@@ -468,6 +469,7 @@ phase1:                                                                         
           context_size: 4096                                                                         # Standard context budget.
           gpu_layers: 99                                                                             # Offload all layers to GPU.
           min_system_memory_gib: 16                                                                  # 9B Q4 requires moderate memory (between 4B and 8B F16).
+          extra_args: ["--reasoning", "off"]                                                         # Qwen3.5 is a thinking model; without this it burns the whole max_tokens budget inside <think> and returns empty content.
 
   object_geometry:
     enabled: true                                                                                    # Estimate 3D object geometry from mask and depth.

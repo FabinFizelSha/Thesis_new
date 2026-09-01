@@ -807,6 +807,11 @@ class OpenAICompatibleVlmBackend:
                 ],
                 "max_tokens": int(self.config.vlm_max_tokens),
                 "temperature": float(self.config.vlm_temperature),
+                # Qwen3 / Qwen3.5 are reasoning models: left on "auto" they emit
+                # <think>...</think> first and, with a small max_tokens, return
+                # empty message.content (all budget spent thinking). Force it off.
+                # No-op for non-thinking models (Qwen3-VL-8B, R1-R3).
+                "chat_template_kwargs": {"enable_thinking": False},
             }
             data = json.dumps(payload).encode("utf-8")
             headers = {"Content-Type": "application/json"}
