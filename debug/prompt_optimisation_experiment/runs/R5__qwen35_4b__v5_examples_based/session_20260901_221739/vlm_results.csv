@@ -1,0 +1,105 @@
+object_id,crop_filename,frame_timestamp,run_id,model_profile,prompt_version,vlm_label,label_confidence,mobility_class,mobility_confidence,vlm_inference_ms,end_to_end_ms,success,validation_status,raw_response,manual_label,manual_is_correct,error_category,manual_notes
+1,obj_000001_crop.jpg,11.704879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.9,static,0.99,4934.09,5139.84,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+2,obj_000002_crop.jpg,12.604879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.9,static,0.99,2854.6,3043.6,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+3,obj_000003_crop.jpg,11.604879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,3004.31,3086.93,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+4,obj_000004_crop.jpg,11.604879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,floor,0.95,static,0.99,2876,3168.76,True,accepted,"{""label"": ""floor"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+5,obj_000005_crop.jpg,15.30488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,3053.11,3895.86,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+6,obj_000006_crop.jpg,20.35488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.9,static,0.99,2771.87,2892.73,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+7,obj_000007_crop.jpg,15.30488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,floor,0.95,static,0.99,2853,3194.49,True,accepted,"{""label"": ""floor"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+8,obj_000008_crop.jpg,11.604879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,floor,0.95,static,0.99,2821.98,3208.89,True,accepted,"{""label"": ""floor"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+9,obj_000009_crop.jpg,13.954879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,2942.24,3699.6,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+10,obj_000010_crop.jpg,27.25488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.9,static,0.99,2839.54,3059.43,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",pipe,,,
+11,obj_000011_crop.jpg,27.654879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.95,static,0.99,3005.02,3169.03,True,accepted,"```json
+{""label"": ""ceiling"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",ceiling light,,,
+12,obj_000012_crop.jpg,28.25488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,2856.27,3302.11,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+13,obj_000013_crop.jpg,32.20488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,door,0.95,static,0.99,2956.55,3259.97,True,accepted,"```json
+{""label"": ""door"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+14,obj_000014_crop.jpg,30.654879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,2917.64,4063,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+15,obj_000015_crop.jpg,32.20488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,3037.48,3808.24,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+16,obj_000016_crop.jpg,32.20488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,floor,0.95,static,0.99,3056.55,3205.77,True,accepted,"```json
+{""label"": ""floor"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+17,obj_000017_crop.jpg,36.404879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,flag,0.95,static,0.99,2984.61,3123.78,True,accepted,"```json
+{""label"": ""flag"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+18,obj_000018_crop.jpg,33.004879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.9,static,0.99,2961.23,3210.44,True,accepted,"```json
+{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",door part,,,
+19,obj_000019_crop.jpg,28.25488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.9,static,0.99,3025.34,3312.21,True,accepted,"```json
+{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",air vent,,,
+20,obj_000020_crop.jpg,34.054879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.9,static,0.99,2768.48,3290.56,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",door part,,,
+21,obj_000021_crop.jpg,36.60488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,2811.6,2930.28,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+22,obj_000022_crop.jpg,35.85488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,mirror,0.9,static,0.99,2887.55,4124.25,True,accepted,"```json
+{""label"": ""mirror"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",door part,,,
+23,obj_000023_crop.jpg,40.004879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,2686.49,3056.39,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",glass panel,,,
+24,obj_000024_crop.jpg,36.60488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,3011.21,3412.56,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+25,obj_000025_crop.jpg,31.60488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,door,0.9,static,0.99,2910.08,3767.6,True,accepted,"```json
+{""label"": ""door"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+26,obj_000026_crop.jpg,42.404879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,floor,0.95,static,0.99,3079.89,3319.79,True,accepted,"{""label"": ""floor"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+27,obj_000027_crop.jpg,39.75488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.92,static,0.99,2809.66,3894.57,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.92, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+28,obj_000028_crop.jpg,39.20488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.92,static,0.99,2835.4,4220.77,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.92, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+29,obj_000029_crop.jpg,35.004879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,door,0.9,static,0.99,3114.79,3858.74,True,accepted,"```json
+{""label"": ""door"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+30,obj_000030_crop.jpg,39.404879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,2756.96,3298.87,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+31,obj_000031_crop.jpg,43.35488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,2862.22,3265.04,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+32,obj_000032_crop.jpg,45.154879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,door,0.95,static,0.99,3022.34,3338.1,True,accepted,"```json
+{""label"": ""door"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+33,obj_000033_crop.jpg,43.10488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,cabinet,0.9,static,0.99,3011.53,3043.68,True,accepted,"```json
+{""label"": ""cabinet"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+34,obj_000034_crop.jpg,45.004879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,whiteboard,0.9,static,0.99,2690.99,3092.48,True,accepted,"{""label"": ""whiteboard"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+35,obj_000035_crop.jpg,36.804879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.9,static,0.99,2983.73,3258.84,True,accepted,"```json
+{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+36,obj_000036_crop.jpg,38.404879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,whiteboard,0.9,static,0.99,2946.5,3348.34,True,accepted,"```json
+{""label"": ""whiteboard"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+37,obj_000037_crop.jpg,42.004879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,cabinet,0.9,static,0.99,3029.72,3132.56,True,accepted,"```json
+{""label"": ""cabinet"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+38,obj_000038_crop.jpg,41.35488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.95,static,0.99,3380.78,3653.81,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+39,obj_000039_crop.jpg,43.75488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,2984.47,3229.7,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+40,obj_000040_crop.jpg,44.804879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,2962.24,3333.99,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+41,obj_000041_crop.jpg,50.75488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,cabinet,0.9,static,0.99,2964.23,3894.35,True,accepted,"```json
+{""label"": ""cabinet"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+42,obj_000042_crop.jpg,47.95488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,2932.86,4225.55,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",glass partition,,,
+43,obj_000043_crop.jpg,48.35488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,door,0.95,static,0.99,3017.94,3949.68,True,accepted,"```json
+{""label"": ""door"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",cabinet,,,
+44,obj_000044_crop.jpg,42.804879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.95,static,0.99,2970.56,3166.72,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,
+45,obj_000045_crop.jpg,43.75488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,whiteboard,0.9,static,0.99,2901.21,3271.26,True,accepted,"```json
+{""label"": ""whiteboard"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+46,obj_000046_crop.jpg,48.95488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,ceiling,0.9,static,0.99,3143.25,4244.29,True,accepted,"```json
+{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",partition,,,
+47,obj_000047_crop.jpg,51.804879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,door,0.9,static,0.99,3113.98,3614.33,True,accepted,"```json
+{""label"": ""door"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+48,obj_000048_crop.jpg,39.404879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,2933.03,4270.99,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+49,obj_000049_crop.jpg,54.154879999,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,floor,0.95,static,0.99,3131.77,3285.57,True,accepted,"```json
+{""label"": ""floor"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,yes,,
+50,obj_000050_crop.jpg,54.60488,R5__qwen35_4b__v5_examples_based,qwen3_5_4b_q4,P2_v5_examples_based,wall,0.9,static,0.99,2795.64,3065.8,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,yes,,

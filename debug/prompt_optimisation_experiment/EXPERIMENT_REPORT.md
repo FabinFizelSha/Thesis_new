@@ -387,7 +387,7 @@ rebuilds / model reloads).
 | R2 | qwen3vl8b | P2 v5_examples_based (reworked) | `runs/R2__qwen3vl8b__v5_examples_based/session_20260901_204248/` | ☑ **complete** | 50 | **72 %** | 2 | 4826 |
 | R3 | qwen3vl8b | P3 v6_structural_priority (tuned on R1+R2) | `runs/R3__qwen3vl8b__v6_structural_priority/session_20260901_211319/` | ☑ **complete** | 49 | **63 %** | 3 | 4806 |
 | R4 | qwen35_4b | P1 v1_simplified | `runs/R4__qwen35_4b__v1_simplified/session_20260901_215455/` | ☑ **complete** | 50 | **64 %** | 4 | 2691 |
-| R5 | qwen35_4b | P2 v5_examples_based | `runs/R5__qwen35_4b__v5_examples_based/` | ◐ wired & ready — run pending | — | — | — | — |
+| R5 | qwen35_4b | P2 v5_examples_based | `runs/R5__qwen35_4b__v5_examples_based/session_20260901_221739/` | ☑ **complete** | 50 | **80 %** | 6 | 2959 |
 | R6 | qwen35_4b | P3 v6_structural_priority | `runs/R6__qwen35_4b__v6_structural_priority/` | ☐ not started | — | — | — | — |
 | R7 | qwen35_9b | P1 v1_simplified | `runs/R7__qwen35_9b__v1_simplified/` | ☐ not started | — | — | — | — |
 | R8 | qwen35_9b | P2 v5_examples_based | `runs/R8__qwen35_9b__v5_examples_based/` | ☐ not started | — | — | — | — |
@@ -566,15 +566,26 @@ tree; a **completed, annotated** session is committed deliberately with
   - **`ceiling_vent` correct once (row 38)** — the 4B will name a ceiling sub-part when it's the whole crop, but defaults to `ceiling` for infra.
   - **Speed is the headline.** 2.7 s/call vs the 8B's 4.8–6.2 s, for +16 pp accuracy on this prompt. If P2 holds its 8B lead on the 4B, the 4B becomes the obvious production pick.
 
-### R5 — qwen35_4b × P2 v5_examples_based
-- Run date / wall time: —
-- Objects classified: — | Verified: — | Excluded: —
-- **Accuracy: —**
-- Latency (`vlm_inference_ms`): median — | p90 — | p95 — | max — | mean —
-- Latency (`end_to_end_ms`): median — | p90 — | max —
-- Error tally: `ceiling_light` — | `surface_vs_fixture` — | `boundary_violation` — | `unknown_overuse` — | `wrong_class` — | `mobility_wrong` — | `other` —
+### R5 — qwen35_4b × P2 v5_examples_based  ✅ COMPLETE
+- Run date / wall time: 2026-09-01 · ~700 s wall @ `--rate 0.1` · session `session_20260901_221739`
+- Data: `runs/R5__qwen35_4b__v5_examples_based/session_20260901_221739/` (57 crops saved, 50 in CSV, all 50 annotated)
+- Objects classified: 50 | Verified: 50 | Excluded (`crop_quality`): 0
+- **Accuracy: 40/50 = 80 %** (strict). All `static`, all mobility correct. **Best run in the matrix so far** (8B P2 72 %, 4B P1 64 %).
+- Rejection: **0/50**, 0 empty — thinking fix holding.
+- Latency (`vlm_inference_ms`): median 2959 | p90 3114 | p95 3138 | max 4934 | mean 2984 (min 2686) — a touch slower than R4 (2691) from the longer P2 prompt, still ~1.6× faster than the 8B on P2.
+- Confidence distribution: 0.90 ×35, 0.92 ×2, 0.95 ×13 — the 4B **does** partly follow P2's calibration guidance (mostly 0.90 now, not R4's flat 0.95), though still nothing below 0.90.
+- Error tally (of 10 wrong): `ceiling_light`* 6 | `surface_vs_fixture` 2 | `boundary_violation` 0 | `unknown_overuse` 0 | `wrong_class` 2 | `mobility_wrong` 0 | `other` 0
+  - *\*all 6 are the same failure — see below.*
 - Observations:
-  - —
+  - **`ceiling` over-use is 6 of the 10 errors.** `ceiling` predicted 14×, wrong 6×: pipe (10), ceiling light (11), air vent (19), door part (18, 20), partition (46). **The P2 prompt causes this directly** — four reinforcing spots all push `ceiling`:
+    1. *"a ceiling holding a light or diffuser — name the surface, not the attached item"* and *"…whiteboard, sign, monitor **or vent**…"* (the "surface over fixture" rule) — this literally instructs light→`ceiling` (id11) and vent→`ceiling` (id19); the annotator's ground truth ("ceiling light", "air vent") is the *opposite* of what P2 says to do.
+    2. *"many repeated units of one surface — several **ceiling tiles or panels** … name the surface itself ('ceiling'…)"* — `ceiling` is the headline example of "generalise".
+    3. Two of the 13 worked examples map *ceiling + a light* → `{"label": "ceiling"}` (lines 33, 38); there is no counter-example where a ceiling fixture is named.
+    4. `ceiling` appears 8× in the P2 text as the archetype surface. The 4B follows examples heavily, so it reaches for `ceiling` on anything overhead — including pipes, door-tops and a partition-top that are not ceiling at all (id10, 18, 20, 46).
+    This is a **deliberate spec vs annotation-convention conflict**: the "surface over fixture" rule is what took the 8B from 48 % (P1, `ceiling_tile` everywhere) to 72 % (P2). It over-fires on the 4B because the 4B leans on the examples more. Not changed — P2 is frozen for the model comparison.
+  - **Glass (2): rows 23, 42 → `wall`.** P2 has no glass concept (only P3 does), so glass partition / glass panel default to `wall`. Expected.
+  - **2 `wrong_class`:** mirror for a door part (22), door for a cabinet (43).
+  - **No boundary violations, no hallucinated furniture on plain surfaces** — P2's boundary discipline + example grounding fixed the two things the 4B was worst at on P1 (R4 had 1 + 11).
 
 ### R6 — qwen35_4b × P3 v6_structural_priority
 - Run date / wall time: —
@@ -625,7 +636,7 @@ tree; a **completed, annotated** session is committed deliberately with
 | Accuracy | P1 v1_simplified | P2 v5_examples_based | P3 v6_structural_priority | best prompt |
 |---|---|---|---|---|
 | qwen3vl8b | 48 % (24/50) | **72 % (36/50)** | 63 % (31/49) · 59 % pipeline-eff. | **P2** (P2 > P3 > P1) |
-| qwen35_4b | 64 % (32/50) | — | — | — |
+| qwen35_4b | 64 % (32/50) | **80 % (40/50)** | — | P2 so far (+16 pp; best run in the matrix) |
 | qwen35_9b | — | — | — | — |
 | best model | — | — | — | — |
 
@@ -634,7 +645,7 @@ tree; a **completed, annotated** session is committed deliberately with
 | ceiling→sub-part rate | P1 | P2 | P3 |
 |---|---|---|---|
 | qwen3vl8b | 8/9 (89 %) — 6×`ceiling_tile`, +`keyboard`, +`shelf`; 1×`ceiling` correct | ~2/13 (15 %) — `ceiling` now the default; misses are `rug`/`wall` for `ceiling_tile` crops. But 4 *new* over-generalisations: exposed pipes/vents → `ceiling` | pipe / ceiling light / air vent → `ceiling` ×3. Rule (b) "name distinctive infrastructure" had **no effect** — model will not name ceiling infra even with a worked-example group |
-| qwen35_4b | `ceiling_light`→`ceiling` ×1; pipe/vent/door-part→`ceiling` ×3; `ceiling_vent` correct ×1. Same infra-collapse as the 8B — model-independent | — | — |
+| qwen35_4b | `ceiling_light`→`ceiling` ×1; pipe/vent/door-part→`ceiling` ×3; `ceiling_vent` correct ×1. Same infra-collapse as the 8B — model-independent | **`ceiling` predicted 14×, wrong 6×** (pipe, ceiling light, air vent, door-part ×2, partition). P2's "surface over fixture" rule + 2 ceiling examples + 8 `ceiling` mentions over-fire on the 4B. 6/10 of R5's errors | — |
 | qwen35_9b | — | — | — |
 
 ### 12.3 Latency — model × prompt (median `vlm_inference_ms`)
@@ -642,7 +653,7 @@ tree; a **completed, annotated** session is committed deliberately with
 | median inf. ms | P1 | P2 | P3 |
 |---|---|---|---|
 | qwen3vl8b | 6250 (mean 6119, p95 6650) | 4826 (mean 4997, p95 5882) | 4806 (mean 4872, p95 5097) |
-| qwen35_4b | **2691** (mean 2773, p95 3332) | — | — |
+| qwen35_4b | **2691** (mean 2773, p95 3332) | 2959 (mean 2984, p95 3138) | — |
 | qwen35_9b | — | — | — |
 
 ### 12.4 Accuracy ↔ latency
@@ -650,7 +661,7 @@ tree; a **completed, annotated** session is committed deliberately with
 | Model | best accuracy (prompt) | median inf. ms at that prompt | verified objects / 700 s |
 |---|---|---|---|
 | qwen3vl8b | 72 % (P2) | 4826 | 50 (P2 run) |
-| qwen35_4b | — | — | — |
+| qwen35_4b | **80 % (P2)** — best overall | 2959 | 50 (P2 run) |
 | qwen35_9b | — | — | — |
 
 ---
@@ -722,3 +733,4 @@ tree; a **completed, annotated** session is committed deliberately with
 | 2026-09-01 | **First R4 attempt (`session_20260901_213914`) VOID — 57/57 empty responses, all rejected.** Root cause: Qwen3.5-4B is a *reasoning* model; llama.cpp's default `--reasoning auto` makes it emit `<think>…</think>` and put only post-`</think>` text in `message.content`. At `max_tokens: 96` (fine for the non-thinking Qwen3-VL-8B) the 4B spends the whole budget thinking → `content=""` → validator rejects every crop as `unknown_object` @ 0.0. Fix: `server.extra_args: ["--reasoning","off"]` on the qwen3_5 profiles (via new `rsg_vlm_server` support) + `chat_template_kwargs.enable_thinking=false` in the request payload (no-op for R1–R3's model). Session `_213914` discarded, not counted as R4. Re-run after relaunching the 4B server with `--reasoning off`. |
 | 2026-09-01 | **R4 complete** (re-run `session_20260901_215455`, 61 crops, 50 in CSV, all annotated). Accuracy **64 %** (32/50) — **+16 pp over the 8B on P1** (R1 @ 48 %). Thinking fix confirmed: 0 empty, 0 rejected. Latency median **2691 ms** — ~2.3× faster than the 8B. Confidence flat 0.95 on all 50 (no calibration). Errors: hallucinated furniture/screens on plain surfaces 11, ceiling-infra→`ceiling` 3, 1 boundary violation. Prompts frozen for 3.5 (P1/P2/P3 unchanged). §7 / §11 / §12.1–12.4 (qwen35_4b P1) / §13 Q1 filled. Next: R5 (4B × P2). |
 | 2026-09-01 | **Wired R5** — `phase1.vlm.prompt` = P2 template (verified byte-identical), `run_id = R5__qwen35_4b__v5_examples_based`, `prompt_version = P2_v5_examples_based`; `active` P1 → P2. Profile stays `qwen3_5_4b_q4` (VLM server already loaded). Needs a phase1 restart only. |
+| 2026-09-01 | **R5 complete** (session `session_20260901_221739`, 57 crops, 50 in CSV, all annotated). Accuracy **80 % (40/50)** — best run so far (8B/P2 72 %, 4B/P1 64 %). 0 rejected, latency median 2959 ms. **`ceiling` over-used: predicted 14×, wrong 6× (pipe, ceiling light, air vent, door-part ×2, partition) = 6/10 of all errors.** Traced to P2 itself — the "surface over fixture" rule literally says "a ceiling holding a light or diffuser → name the surface", lists "vent" as a thing to generalise past, has 2 ceiling→`ceiling` examples and 8 `ceiling` mentions; the 4B follows examples harder than the 8B did so it over-applies. Deliberate spec vs annotation conflict (that rule is what took the 8B 48→72 %); P2 frozen, not changed. Also: glass ×2 → `wall` (P2 has no glass concept), 2 misc wrong_class. No boundary violations, no plain-surface hallucination (both were the 4B's P1 weaknesses). §7 / §11 / §12.1–12.4 (qwen35_4b P2) updated. Next: R6 (4B × P3). |
