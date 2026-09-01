@@ -26,7 +26,7 @@ prompts:
     provenance: "adapted from v1_simplified - label enumeration removed, JSON-only line added"
     prior_qwen3vl8b_accuracy: 0.469
     r1_accuracy: 0.48   # session_20260901_195516, 24/50
-    active: false
+    active: true
     template: |
       Classify the single SAM-segmented target in this indoor crop.
 
@@ -104,7 +104,7 @@ prompts:
     provenance: "built on P2 @ R2 72%. Keeps P2's wins (boundary discipline, generalise repeated surface units, surface-over-mounted-fixture). Adds fixes for the 3 R2 failure clusters: (1) distinctive infrastructure that fills the boundary is NAMED, not generalised to the surface (pipes/vents/ducts -> ceiling was wrong); (2) glass partitions / glass-panelled doors get a glass label (were called wall/door); (3) discriminative cue for flat-surface cabinet-vs-wall/pillar + wider honest confidence band for it. Still open-vocabulary - no label list."
     prior_qwen3vl8b_accuracy: 0.500
     r2_baseline_accuracy: 0.72   # P2 @ session_20260901_204248
-    active: true
+    active: false
     template: |
       This is an indoor object-classification task. Identify the object that the cyan boundary encloses.
 
