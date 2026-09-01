@@ -392,12 +392,9 @@ rebuilds / model reloads).
 | R7 | qwen35_9b | P1 v1_simplified | `runs/R7__qwen35_9b__v1_simplified/` | ☐ not started | — | — | — | — |
 | R8 | qwen35_9b | P2 v5_examples_based | `runs/R8__qwen35_9b__v5_examples_based/` | ☐ not started | — | — | — | — |
 | R9 | qwen35_9b | P3 v6_structural_priority | `runs/R9__qwen35_9b__v6_structural_priority/` | ☐ not started | — | — | — | — |
-| R10 | qwen35_4b | **P2b** v5b_reduced_ceiling | `runs/R10__qwen35_4b__v5b_reduced_ceiling/session_20260901_231227/` | ☑ complete — **change failed (74 %, −6 pp)** | 50 | 74 % | 5 | 2964 |
 
 “maybe more if needed” — add R10+ rows here for extra prompts/models; keep the
-same folder + CSV convention. **R10** is an A/B on R5: P2b = P2 with the ceiling
-cues trimmed (1 worked example instead of 2, fixture rule no longer names ceiling
-lights/vents, `ceiling` mentions 8 → 5). Compare R10 directly against R5's 80 %.
+same folder + CSV convention.
 
 ---
 
@@ -630,20 +627,6 @@ tree; a **completed, annotated** session is committed deliberately with
 - Observations:
   - —
 
-### R10 — qwen35_4b × P2b v5b_reduced_ceiling  (A/B vs R5)  ✅ COMPLETE — change FAILED, revert to P2
-- Hypothesis: R5's `ceiling` over-use (14 predicted, 6 wrong) is example/wording-driven. P2b keeps P2's structure but trims the ceiling cues — drops worked example #8 (`recessed light → ceiling`), removes "monitor or vent" and "a ceiling holding a light or diffuser" from the surface-over-fixture rule, adds a `window` example. `ceiling` mentions 8 → 5; ceiling worked examples 2 → 1.
-- Run date / wall time: 2026-09-01 · ~700 s wall @ `--rate 0.1` · session `session_20260901_231227`
-- Data: `runs/R10__qwen35_4b__v5b_reduced_ceiling/session_20260901_231227/` (50 in CSV, all annotated; misses-only convention — blank `manual_label` = correct)
-- Objects classified: 50 | Verified: 50 | Excluded: 0
-- **Accuracy: 37/50 = 74 % — −6 pp vs R5 (P2 @ 80 %). The change made it worse.**
-- Latency (`vlm_inference_ms`): median 2964 | p90 3401 | max 4383 | mean 3028 — unchanged from R5 (2959). Confidence 0.85 ×2, 0.90 ×36, 0.95 ×12.
-- Error tally (of 13 wrong): `ceiling_light`* 5 | `surface_vs_fixture` 0 | `boundary_violation` 0 | `unknown_overuse` 0 | `wrong_class` 8 | `mobility_wrong` 0 | `other` 0
-- **Result — the two changes both missed:**
-  1. **Trimming the ceiling cues did nothing.** `ceiling` is still predicted **exactly 14 times** (R5: 8 right / 6 wrong → R10: 9 right / 5 wrong — inside noise). The 4B was never reading the fixture-rule wording or example #8; the driver is the *kept* "repeated units → name the surface" rule + the panelled-ceiling example + the model's prior for anything overhead. Infra → `ceiling` still fires 5× (pipe ×2, air vent, door-part ×2).
-  2. **The `window` replacement example backfired.** `window` predicted 3×, **all 3 wrong** — `door part` (21), `glass partition` (49, 50). It taught the 4B a new wrong label. Glass partitions that R5 called `wall` (wrong but safe) are now `window` (wrong and further off). That is most of the 6-pp drop.
-- Other errors unchanged from R5: glass unhandled (4 misses — P2b still has no glass concept), `door part` missed 4×, cabinet↔wall/pillar 2×.
-- **Takeaways:** (a) on the 4B the `ceiling` over-use is **not example-count-sensitive** — it comes from the generalisation rule + model prior, so trimming examples won't fix it; (b) swapping in a worked example is risky — it can teach a *new* wrong label (`window`); (c) **P2 (80 %) remains the 4B's best prompt.** Pipeline should be reverted P2b → P2 before R6 / the 9B runs.
-
 ---
 
 ## 12. Cross-run comparison (fill after all runs)
@@ -751,5 +734,3 @@ tree; a **completed, annotated** session is committed deliberately with
 | 2026-09-01 | **R4 complete** (re-run `session_20260901_215455`, 61 crops, 50 in CSV, all annotated). Accuracy **64 %** (32/50) — **+16 pp over the 8B on P1** (R1 @ 48 %). Thinking fix confirmed: 0 empty, 0 rejected. Latency median **2691 ms** — ~2.3× faster than the 8B. Confidence flat 0.95 on all 50 (no calibration). Errors: hallucinated furniture/screens on plain surfaces 11, ceiling-infra→`ceiling` 3, 1 boundary violation. Prompts frozen for 3.5 (P1/P2/P3 unchanged). §7 / §11 / §12.1–12.4 (qwen35_4b P1) / §13 Q1 filled. Next: R5 (4B × P2). |
 | 2026-09-01 | **Wired R5** — `phase1.vlm.prompt` = P2 template (verified byte-identical), `run_id = R5__qwen35_4b__v5_examples_based`, `prompt_version = P2_v5_examples_based`; `active` P1 → P2. Profile stays `qwen3_5_4b_q4` (VLM server already loaded). Needs a phase1 restart only. |
 | 2026-09-01 | **R5 complete** (session `session_20260901_221739`, 57 crops, 50 in CSV, all annotated). Accuracy **80 % (40/50)** — best run so far (8B/P2 72 %, 4B/P1 64 %). 0 rejected, latency median 2959 ms. **`ceiling` over-used: predicted 14×, wrong 6× (pipe, ceiling light, air vent, door-part ×2, partition) = 6/10 of all errors.** Traced to P2 itself — the "surface over fixture" rule literally says "a ceiling holding a light or diffuser → name the surface", lists "vent" as a thing to generalise past, has 2 ceiling→`ceiling` examples and 8 `ceiling` mentions; the 4B follows examples harder than the 8B did so it over-applies. Deliberate spec vs annotation conflict (that rule is what took the 8B 48→72 %); P2 frozen, not changed. Also: glass ×2 → `wall` (P2 has no glass concept), 2 misc wrong_class. No boundary violations, no plain-surface hallucination (both were the 4B's P1 weaknesses). §7 / §11 / §12.1–12.4 (qwen35_4b P2) updated. Next: R6 (4B × P3). |
-| 2026-09-01 | **P2b_v5b_reduced_ceiling added + wired for R10** (A/B vs R5, qwen35_4b). P2 stays frozen (R2/R5 unchanged). P2b = P2 minus ceiling emphasis: worked example #8 (`recessed light → ceiling`) replaced with a `window` example; surface-over-fixture rule trimmed to drop "monitor or vent" and "a ceiling holding a light or diffuser"; `ceiling` mentions 8 → 5, ceiling examples 2 → 1. The "repeated units → name the surface" rule and the panelled-ceiling example are kept. `rsg_pipeline.yaml` `phase1.vlm.prompt` = P2b (byte-identical), `run_id = R10__qwen35_4b__v5b_reduced_ceiling`, `prompt_version = P2b_v5b_reduced_ceiling`. Phase1 restart only (4B server already loaded). |
-| 2026-09-01 | **R10 complete — P2b FAILED, reverting to P2.** 37/50 = 74 %, −6 pp vs R5. Trimming the ceiling cues did nothing (`ceiling` still predicted 14×, 6→5 wrong — noise); the 4B's ceiling over-use comes from the kept "repeated units" rule + model prior, not the example count. The `window` replacement example backfired: predicted 3×, all 3 wrong (`door part`, `glass partition` ×2), teaching a new wrong label. Lesson: on the 4B this failure is not example-count-sensitive, and swapping worked examples is risky. **P2 stays the 4B best (80 %).** §7 / §11 R10 / §15 updated. Pipeline needs P2b → P2 revert before R6. |

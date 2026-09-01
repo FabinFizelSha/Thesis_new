@@ -376,7 +376,7 @@ phase1:                                                                         
       HOW TO CHOOSE THE LABEL
       - Name the largest, most complete thing the boundary covers. If the boundary encloses only part of a bigger structure, name the bigger structure.
       - If the boundary spans many repeated units of one surface - several ceiling tiles or panels, a run of floor, a stretch of wall - name the surface itself ("ceiling", "floor", "wall"), not a single unit ("ceiling_tile").
-      - If the boundary covers a surface that carries a smaller mounted or attached item - a wall bearing a whiteboard or a sign, a floor with a rug on it - name the surface, not the attached item. Name the attached item only when it clearly fills the boundary on its own.
+      - If the boundary covers a surface that carries a smaller mounted or attached item - a wall bearing a whiteboard, sign, monitor or vent; a ceiling holding a light or diffuser; a floor with a rug on it - name the surface, not the attached item. Name the attached item only when it clearly fills the boundary on its own.
       - When you are torn between a specific object and the surface or structure behind it, choose the surface or structure.
       - Use a concise, singular, lowercase label that best fits what you actually see. There is no fixed list of labels - name whatever it is.
 
@@ -403,7 +403,7 @@ phase1:                                                                         
       - Boundary covers a single whiteboard that fills almost the whole region -> {"label": "whiteboard", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
       - Boundary is on a flat vertical surface with little detail - could be a cabinet front, a pillar or a wall -> {"label": "wall", "label_confidence": 0.4, "mobility_class": "static", "mobility_confidence": 0.9}
       - Boundary shows a reflective rectangular panel on a wall - could be a mirror or a whiteboard -> {"label": "wall", "label_confidence": 0.4, "mobility_class": "static", "mobility_confidence": 0.9}
-      - Boundary encloses a framed window with a view behind it -> {"label": "window", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary encloses a recessed light set into a ceiling panel -> {"label": "ceiling", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
       - Boundary encloses a floor with a rug lying on it -> {"label": "floor", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
       - Boundary encloses a potted plant that fills the region -> {"label": "potted_plant", "label_confidence": 0.88, "mobility_class": "static", "mobility_confidence": 0.95}
       - Boundary encloses a door and its frame -> {"label": "door", "label_confidence": 0.92, "mobility_class": "static", "mobility_confidence": 0.99}
@@ -414,8 +414,8 @@ phase1:                                                                         
 
     prompt_optimisation:                                                                             # VLM prompt-optimisation experiment (debug/prompt_optimisation_experiment/). Set enabled: false for normal runs.
       enabled: true                                                                                  # Route VLM crop + per-call CSV into the experiment run folder.
-      run_id: R10__qwen35_4b__v5b_reduced_ceiling                                                        # Experiment matrix row; folder name under output_root.
-      prompt_version: P2b_v5b_reduced_ceiling                                                            # Which prompt from prompts_under_test.yaml is active above.
+      run_id: R5__qwen35_4b__v5_examples_based                                                        # Experiment matrix row; folder name under output_root.
+      prompt_version: P2_v5_examples_based                                                            # Which prompt from prompts_under_test.yaml is active above.
       output_root: /home/student/Thesis_new/debug/prompt_optimisation_experiment/runs                # <output_root>/<run_id>/session_<timestamp>/{crops,vlm_results.csv}
 
     result_validation:
