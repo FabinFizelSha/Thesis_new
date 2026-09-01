@@ -13,7 +13,7 @@
 # - All three specify the JSON output format explicitly AND end with a
 #   "return only the JSON object" instruction.
 # - Shared core across all three: cyan boundary, identical JSON schema, identical
-#   mobility definitions, VLM_unknown fallback.
+#   mobility definitions, VLM_no_result fallback.
 #
 # BOUNDARY COLOUR: cyan. The live pipeline contour must be set to cyan for this
 # experiment:  semantic_crop.target_contour_rgb: [0, 255, 255]  (currently white).
@@ -33,7 +33,7 @@ prompts:
 
       Assume an indoor setting.
 
-      Name the object with a concise, singular, lowercase snake_case label that best describes what it actually is. There is no fixed list of labels. Do not describe colour, material, position, condition or activity. Use a confidence above 0.90 only when the identification is unmistakable. If the target is unclear, truncated or unidentifiable, use the label VLM_unknown with confidence 0.0.
+      Name the object with a concise, singular, lowercase snake_case label that best describes what it actually is. There is no fixed list of labels. Do not describe colour, material, position, condition or activity. Use a confidence above 0.90 only when the identification is unmistakable. If the target is unclear, truncated or unidentifiable, use the label VLM_no_result with confidence 0.0.
 
       Mobility:
       - "dynamic": a human, an animal, or a self-propelled robot only
@@ -58,7 +58,7 @@ prompts:
       - Name the broadest, largest, most dominant object the boundary covers. When a surface such as a ceiling, wall or floor contains fixtures, attachments or details, name the surface, not the smaller thing on it.
       - Use a concise, singular, lowercase label that best fits what you see. There is no fixed list of labels.
       - Use a confidence above 0.90 only when the identification is unmistakable.
-      - If the crop is unclear or truncated, use label VLM_unknown with confidence 0.0.
+      - If the crop is unclear or truncated, use label VLM_no_result with confidence 0.0.
 
       Mobility:
       - "dynamic": a human, an animal, or a self-propelled robot only
@@ -79,7 +79,7 @@ prompts:
       - An office chair filling most of the frame -> {"label": "office_chair", "label_confidence": 0.91, "mobility_class": "static", "mobility_confidence": 0.99}
       - A potted plant on a stand -> {"label": "potted_plant", "label_confidence": 0.88, "mobility_class": "static", "mobility_confidence": 0.95}
       - A person standing in the space -> {"label": "person", "label_confidence": 0.93, "mobility_class": "dynamic", "mobility_confidence": 0.98}
-      - A blurred or cut-off crop with no identifiable object -> {"label": "VLM_unknown", "label_confidence": 0.0, "mobility_class": "unknown", "mobility_confidence": 0.0}
+      - A blurred or cut-off crop with no identifiable object -> {"label": "VLM_no_result", "label_confidence": 0.0, "mobility_class": "unknown", "mobility_confidence": 0.0}
 
       Return only the JSON object. No markdown, explanations, or extra text.
 
@@ -106,7 +106,7 @@ prompts:
       - 0.70-0.90: clear, minor uncertainty
       - 0.50-0.70: plausible but competing interpretations
       - below 0.50: very uncertain
-      - 0.0: incomprehensible crop (use label VLM_unknown)
+      - 0.0: incomprehensible crop (use label VLM_no_result)
 
       Mobility:
       - "dynamic": only a human, an animal, or a self-propelled moving object
@@ -134,6 +134,6 @@ prompts:
       - A person in the space -> {"label": "person", "label_confidence": 0.93, "mobility_class": "dynamic", "mobility_confidence": 0.98}
 
       Unclear:
-      - A blurred, truncated or unidentifiable crop -> {"label": "VLM_unknown", "label_confidence": 0.0, "mobility_class": "unknown", "mobility_confidence": 0.0}
+      - A blurred, truncated or unidentifiable crop -> {"label": "VLM_no_result", "label_confidence": 0.0, "mobility_class": "unknown", "mobility_confidence": 0.0}
 
       Return only the JSON object. No markdown, explanations, or additional text.

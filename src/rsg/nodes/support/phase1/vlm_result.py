@@ -23,6 +23,17 @@ UNKNOWN_LABELS = {
     "none",
     "n/a",
 }
+# Labels the model itself emits when it looked at the crop and could not
+# identify the target.  Kept separate from UNKNOWN_LABELS so a deliberate
+# model abstention is recorded as ``VLM_no_result`` rather than collapsing
+# into ``unknown_object`` (which stays reserved for parse failures, transport
+# errors, and sub-threshold real guesses).
+NO_RESULT_LABEL = "VLM_no_result"
+NO_RESULT_LABELS = {
+    "vlm_no_result",
+    "vlm_unknown",
+    "no_result",
+}
 VALID_MOBILITY_CLASSES = {"static", "dynamic", "unknown"}
 _MOBILITY_ALIASES = {
     "stationary": "static",
@@ -204,11 +215,12 @@ def validate_vlm_response(
         mobility_confidence = 0.0
         reasons.append("invalid_mobility_confidence")
 
-    if label in UNKNOWN_LABELS or label_confidence < float(min_label_confidence):
-        reasons.append("unknown_or_low_label_confidence")
+    model_abstained = label in NO_RESULT_LABELS
+    if model_abstained or label in UNKNOWN_LABELS or label_confidence < float(min_label_confidence):
+        reasons.append("model_abstained" if model_abstained else "unknown_or_low_label_confidence")
         return ValidatedVlmResult(
             success=False,
-            label="unknown_object",
+            label=NO_RESULT_LABEL if model_abstained else "unknown_object",
             label_confidence=float(label_confidence),
             mobility_class="unknown",
             mobility_confidence=float(mobility_confidence),

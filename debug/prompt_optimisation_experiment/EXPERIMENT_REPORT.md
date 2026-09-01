@@ -107,7 +107,7 @@ The blocks below are the same text; run from the YAML.
   "Return only the JSON object. No markdown…". Output-format compliance is held
   constant so it is not a confound.
 - **Shared core** — identical cyan-boundary reference, identical JSON schema
-  string, identical mobility definitions, `VLM_unknown` + 0.0 fallback.
+  string, identical mobility definitions, `VLM_no_result` + 0.0 fallback.
 - Examples in P2/P3 are labelled *"not a list of allowed labels"* and both
   include one `dynamic` (person) example so mobility has at least one exemplar.
 - P1 is derived from v1_simplified (label enumeration removed, JSON-only line
@@ -135,7 +135,7 @@ The target object is the one outlined by the cyan boundary. Identify only this o
 
 Assume an indoor setting.
 
-Name the object with a concise, singular, lowercase snake_case label that best describes what it actually is. There is no fixed list of labels. Do not describe colour, material, position, condition or activity. Use a confidence above 0.90 only when the identification is unmistakable. If the target is unclear, truncated or unidentifiable, use the label VLM_unknown with confidence 0.0.
+Name the object with a concise, singular, lowercase snake_case label that best describes what it actually is. There is no fixed list of labels. Do not describe colour, material, position, condition or activity. Use a confidence above 0.90 only when the identification is unmistakable. If the target is unclear, truncated or unidentifiable, use the label VLM_no_result with confidence 0.0.
 
 Mobility:
 - "dynamic": a human, an animal, or a self-propelled robot only
@@ -158,7 +158,7 @@ Rules:
 - Name the broadest, largest, most dominant object the boundary covers. When a surface such as a ceiling, wall or floor contains fixtures, attachments or details, name the surface, not the smaller thing on it.
 - Use a concise, singular, lowercase label that best fits what you see. There is no fixed list of labels.
 - Use a confidence above 0.90 only when the identification is unmistakable.
-- If the crop is unclear or truncated, use label VLM_unknown with confidence 0.0.
+- If the crop is unclear or truncated, use label VLM_no_result with confidence 0.0.
 
 Mobility:
 - "dynamic": a human, an animal, or a self-propelled robot only
@@ -179,7 +179,7 @@ Examples (these show the reasoning pattern, not a list of allowed labels):
 - An office chair filling most of the frame -> {"label": "office_chair", ...}
 - A potted plant on a stand -> {"label": "potted_plant", ...}
 - A person standing in the space -> {"label": "person", "mobility_class": "dynamic", ...}
-- A blurred or cut-off crop with no identifiable object -> {"label": "VLM_unknown", ...}
+- A blurred or cut-off crop with no identifiable object -> {"label": "VLM_no_result", ...}
 
 Return only the JSON object. No markdown, explanations, or extra text.
 ```
@@ -206,7 +206,7 @@ Confidence calibration for "label_confidence":
 - 0.70-0.90: clear, minor uncertainty
 - 0.50-0.70: plausible but competing interpretations
 - below 0.50: very uncertain
-- 0.0: incomprehensible crop (use label VLM_unknown)
+- 0.0: incomprehensible crop (use label VLM_no_result)
 
 Mobility:
 - "dynamic": only a human, an animal, or a self-propelled moving object
@@ -234,7 +234,7 @@ Moving agents:
 - A person in the space -> {"label": "person", "mobility_class": "dynamic", ...}
 
 Unclear:
-- A blurred, truncated or unidentifiable crop -> {"label": "VLM_unknown", ...}
+- A blurred, truncated or unidentifiable crop -> {"label": "VLM_no_result", ...}
 
 Return only the JSON object. No markdown, explanations, or additional text.
 ```
@@ -396,7 +396,7 @@ debug/prompt_optimisation_experiment/
 | `ceiling_light` | ground truth is `ceiling` but model returned the embedded light/fixture (the prior campaign’s signature failure) |
 | `surface_vs_fixture` | other surface↔attachment confusion: `wall`↔whiteboard/sign/AC/monitor, `floor`↔rug/carpet, `door`↔handle, etc. |
 | `boundary_violation` | model labelled an object **outside** the cyan contour |
-| `unknown_overuse` | model returned `VLM_unknown`/`unknown_object` but the object was clearly identifiable |
+| `unknown_overuse` | model returned `VLM_no_result`/`unknown_object` but the object was clearly identifiable |
 | `wrong_class` | plain misclassification not covered above (e.g. `chair`→`desk`) |
 | `mobility_wrong` | label correct but `mobility_class` wrong (e.g. person → static) |
 | `hallucinated_object` | label names something not present in the crop at all |
@@ -604,3 +604,4 @@ debug/prompt_optimisation_experiment/
 | 2026-08-31 | Scaffold created: folder tree, 9 run dirs (`runs/R1..R9`), CSV template, `prompts_under_test.yaml`, this report. Prompts chosen: v1_simplified, v5_examples_based, v6_structural_priority. 0/9 runs done. Depends on `uHumans2_office_s1_00h_ros2` bag conversion (in progress) and Qwen 3.5 4B/9B weights being present under `~/rsg_models/`. |
 | 2026-08-31 | Boundary colour set to **cyan** (was drafted as white). All 3 prompts now say "cyan boundary"; live pipeline `target_contour_rgb` must be changed `[255,255,255]` → `[0,255,255]` before R1. |
 | 2026-08-31 | Prompts re-worked to a clean design: (a) **complexity gradient** P1 simple → P2 +many examples → P3 detailed strategy+calibration; (b) **all enumerated label lists removed** — every prompt is open-vocabulary ("no fixed list of labels") for generalisation; (c) JSON output format + "return only JSON" line now in **all three**; (d) one `dynamic` (person) example added to P2 and P3; (e) shared JSON schema / mobility defs / `VLM_unknown` fallback unified. P3 is no longer byte-verbatim from `rsg_pipeline.yaml`. §10 now also requires accuracy reported with/without `rejected` rows. |
+| 2026-09-01 | Model-abstention label renamed `VLM_unknown` → **`VLM_no_result`** across all three prompts, `rsg_pipeline.yaml` `phase1.vlm.prompt`, and this report. `vlm_result.py` now recognises `vlm_no_result`/`vlm_unknown` as abstention sentinels and records the rejected result as `label="VLM_no_result"` (distinct from `unknown_object`, which stays reserved for parse failures, HTTP/worker errors, and sub-threshold real guesses). Lets CSV review separate "model looked and could not identify" from "no VLM result at all". |

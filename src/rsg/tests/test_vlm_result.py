@@ -115,6 +115,42 @@ class VlmResultValidationTests(unittest.TestCase):
         self.assertEqual(result.label, "unknown_object")
         self.assertEqual(result.mobility_class, "unknown")
 
+    def test_model_abstention_is_recorded_as_vlm_no_result(self) -> None:
+        """A deliberate ``VLM_no_result`` abstention keeps that label, not ``unknown_object``."""
+        result = validate({
+            "label": "VLM_no_result",
+            "label_confidence": 0.0,
+            "mobility_class": "unknown",
+            "mobility_confidence": 0.0,
+        })
+        self.assertFalse(result.success)
+        self.assertEqual(result.label, "VLM_no_result")
+        self.assertEqual(result.validation_status, "rejected")
+        self.assertIn("model_abstained", result.validation_reason)
+
+    def test_legacy_vlm_unknown_alias_maps_to_no_result(self) -> None:
+        """The pre-rename ``VLM_unknown`` token is still treated as an abstention."""
+        result = validate({
+            "label": "VLM_unknown",
+            "label_confidence": 0.0,
+            "mobility_class": "unknown",
+            "mobility_confidence": 0.0,
+        })
+        self.assertFalse(result.success)
+        self.assertEqual(result.label, "VLM_no_result")
+
+    def test_low_confidence_real_guess_stays_unknown_object(self) -> None:
+        """A weak but genuine label is rejected as ``unknown_object``, not an abstention."""
+        result = validate({
+            "label": "chair",
+            "label_confidence": 0.10,
+            "mobility_class": "static",
+            "mobility_confidence": 0.90,
+        })
+        self.assertFalse(result.success)
+        self.assertEqual(result.label, "unknown_object")
+        self.assertIn("unknown_or_low_label_confidence", result.validation_reason)
+
 
 if __name__ == "__main__":
     unittest.main()

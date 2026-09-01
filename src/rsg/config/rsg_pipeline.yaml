@@ -372,7 +372,7 @@ phase1:                                                                         
 
       Assume an indoor setting.
 
-      Name the object with a concise, singular, lowercase snake_case label that best describes what it actually is. There is no fixed list of labels. Do not describe colour, material, position, condition or activity. Use a confidence above 0.90 only when the identification is unmistakable. If the target is unclear, truncated or unidentifiable, use the label VLM_unknown with confidence 0.0.
+      Name the object with a concise, singular, lowercase snake_case label that best describes what it actually is. There is no fixed list of labels. Do not describe colour, material, position, condition or activity. Use a confidence above 0.90 only when the identification is unmistakable. If the target is unclear, truncated or unidentifiable, use the label VLM_no_result with confidence 0.0.
 
       Mobility:
       - "dynamic": a human, an animal, or a self-propelled robot only
