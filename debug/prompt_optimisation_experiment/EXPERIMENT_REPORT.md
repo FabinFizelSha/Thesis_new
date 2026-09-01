@@ -385,7 +385,7 @@ rebuilds / model reloads).
 |-----|-------|--------|--------|--------|-----------|----------|----------------------|---------------------|
 | R1 | qwen3vl8b | P1 v1_simplified | `runs/R1__qwen3vl8b__v1_simplified/session_20260901_195516/` | ☑ **complete** | 50 | **48 %** | 6 (+2 as `ceiling`) | 6250 |
 | R2 | qwen3vl8b | P2 v5_examples_based (reworked) | `runs/R2__qwen3vl8b__v5_examples_based/session_20260901_204248/` | ☑ **complete** | 50 | **72 %** | 2 | 4826 |
-| R3 | qwen3vl8b | P3 v6_structural_priority (tuned on R1+R2) | `runs/R3__qwen3vl8b__v6_structural_priority/` | ◐ wired & ready — run pending | — | — | — | — |
+| R3 | qwen3vl8b | P3 v6_structural_priority (tuned on R1+R2) | `runs/R3__qwen3vl8b__v6_structural_priority/session_20260901_211319/` | ☑ **complete** | 49 | **63 %** | 3 | 4806 |
 | R4 | qwen35_4b | P1 v1_simplified | `runs/R4__qwen35_4b__v1_simplified/` | ☐ not started | — | — | — | — |
 | R5 | qwen35_4b | P2 v5_examples_based | `runs/R5__qwen35_4b__v5_examples_based/` | ☐ not started | — | — | — | — |
 | R6 | qwen35_4b | P3 v6_structural_priority | `runs/R6__qwen35_4b__v6_structural_priority/` | ☐ not started | — | — | — | — |
@@ -525,15 +525,27 @@ tree; a **completed, annotated** session is committed deliberately with
   - **mirror ↔ whiteboard** still misfires once (row 50) — down from 2 in R1.
   - Mobility remains a non-issue for this scene.
 
-### R3 — qwen3vl8b × P3 v6_structural_priority
-- Run date / wall time: —
-- Objects classified: — | Verified: — | Excluded: —
-- **Accuracy: —**
-- Latency (`vlm_inference_ms`): median — | p90 — | p95 — | max — | mean —
-- Latency (`end_to_end_ms`): median — | p90 — | max —
-- Error tally: `ceiling_light` — | `surface_vs_fixture` — | `boundary_violation` — | `unknown_overuse` — | `wrong_class` — | `mobility_wrong` — | `other` —
+### R3 — qwen3vl8b × P3 v6_structural_priority (tuned on R1+R2)  ✅ COMPLETE
+- Run date / wall time: 2026-09-01 · ~700 s wall @ `--rate 0.1` · session `session_20260901_211319`
+- Data: `runs/R3__qwen3vl8b__v6_structural_priority/session_20260901_211319/` (56 crops saved, 49 in CSV, all 49 annotated)
+- Objects classified: 49 | Verified: 49 | Excluded (`crop_quality`): 0
+- **Accuracy: 31/49 = 63 %** (strict, as annotated — the annotator credited the model's *raw* answer on the 2 rows the pipeline gate rejected).
+- **vs R2 (P2 @ 72 %): −9 pp — P3 regressed.** Within the ±14 pp CI so not "significant", but the direction is backed by the error analysis below.
+- Accuracy excluding the 2 rejected rows: 29/47 = 62 %. **Pipeline-effective** accuracy (rejected label = `unknown_object` = unusable): 29/49 = **59 %**.
+- Rejection: **2/49** — rows 21 (`wall` @ 0.50) and 28 (`whiteboard` @ 0.70). Both raw answers were **correct**; P3's honest calibration pushed them below `min_label_confidence: 0.80` and the gate discarded them. Better calibration cost 2 correct answers.
+- Latency (`vlm_inference_ms`): median 4806 | p90 4910 | p95 5097 | max 7433 (cold first call) | mean 4872 (min 4611) — essentially identical to R2.
+- Latency (`end_to_end_ms`): median 5407 | p90 5841 | max 8000 | mean 5438
+- Confidence distribution: 0.50 ×1, 0.70 ×1, 0.80 ×6, 0.82 ×3, **0.85 ×16**, 0.90 ×2, **0.92 ×19**, 0.95 ×1 — P3's calibration guidance clearly landed (R1 was flat 0.95/0.99; R2 reached 0.85/0.92/0.95; R3 finally uses the whole band, including sub-0.80).
+- Error tally (of 18 wrong): `ceiling_light`* 3 | `surface_vs_fixture` 1 | `boundary_violation` **0** | `unknown_overuse` 0 | `wrong_class` 14 | `mobility_wrong` 0 | `other` 0
+  - *\*ceiling-related: rows 9, 10, 17 — exposed pipe / ceiling light / air vent all returned as `ceiling`.*
 - Observations:
-  - —
+  - **cabinet ↔ wall/pillar got worse: 7 misses (R2 had 3).** Rows 12, 16, 23, 29 all returned `cabinet` where the truth was a flat wall/pillar; rows 37, 44 the inverse (`wall` for a real cabinet); row 5 `glass_wall` for a wall/pillar. **P3's furniture section backfired** — adding the "flat surface with a handle/seam/toe-kick → cabinet" worked-example appears to have *primed* `cabinet` on ambiguous flat surfaces rather than disciplined it. This is the single biggest reason P3 < P2.
+  - **Rule (b) "name distinctive infrastructure, don't generalise" still does not work: 3 misses** (pipe, ceiling light, air vent → `ceiling`) — same as R2 despite the dedicated example group. The model will not name ceiling infrastructure.
+  - **Glass: net-neutral.** New correct behaviour — `glass_door` ×3, all right (rows 19, 22, 36). But `glass_wall` over-applied once (row 5) and 2 glass panels still missed → `wall` (rows 34, 48). The transparency line did not move the misses.
+  - **New cluster — "door part" (3): rows 18, 20, 45** — partial/edge-on door crops returned as `ceiling` / `wall`.
+  - **Boundary discipline retained** — 0 violations, same as R2.
+  - **Calibration vs the operational gate is now a real tension.** P3 is the first prompt to produce honest sub-0.80 confidence; the pipeline's `min_label_confidence: 0.80` then rejects those rows as `unknown_object` even when the label was right (2/2 here). For the *experiment* this is fine (annotator sees the raw answer); for *production* it means P3 + the current gate throws away correct hard-case labels. See §13.
+  - **Verdict: for qwen3vl8b, P2 (72 %) > P3 (63 %) > P1 (48 %).** P3's added structural machinery did not pay for itself and its furniture rule actively hurt.
 
 ### R4 — qwen35_4b × P1 v1_simplified
 - Run date / wall time: —
@@ -603,7 +615,7 @@ tree; a **completed, annotated** session is committed deliberately with
 
 | Accuracy | P1 v1_simplified | P2 v5_examples_based | P3 v6_structural_priority | best prompt |
 |---|---|---|---|---|
-| qwen3vl8b | 48 % (24/50) | **72 % (36/50)** | — | P2 so far (+24 pp) |
+| qwen3vl8b | 48 % (24/50) | **72 % (36/50)** | 63 % (31/49) · 59 % pipeline-eff. | **P2** (P2 > P3 > P1) |
 | qwen35_4b | — | — | — | — |
 | qwen35_9b | — | — | — | — |
 | best model | — | — | — | — |
@@ -612,7 +624,7 @@ tree; a **completed, annotated** session is committed deliberately with
 
 | ceiling→sub-part rate | P1 | P2 | P3 |
 |---|---|---|---|
-| qwen3vl8b | 8/9 (89 %) — 6×`ceiling_tile`, +`keyboard`, +`shelf`; 1×`ceiling` correct | ~2/13 (15 %) — `ceiling` now the default; misses are `rug`/`wall` for `ceiling_tile` crops. But 4 *new* over-generalisations: exposed pipes/vents → `ceiling` | — |
+| qwen3vl8b | 8/9 (89 %) — 6×`ceiling_tile`, +`keyboard`, +`shelf`; 1×`ceiling` correct | ~2/13 (15 %) — `ceiling` now the default; misses are `rug`/`wall` for `ceiling_tile` crops. But 4 *new* over-generalisations: exposed pipes/vents → `ceiling` | pipe / ceiling light / air vent → `ceiling` ×3. Rule (b) "name distinctive infrastructure" had **no effect** — model will not name ceiling infra even with a worked-example group |
 | qwen35_4b | — | — | — |
 | qwen35_9b | — | — | — |
 
@@ -620,7 +632,7 @@ tree; a **completed, annotated** session is committed deliberately with
 
 | median inf. ms | P1 | P2 | P3 |
 |---|---|---|---|
-| qwen3vl8b | 6250 (mean 6119, p95 6650) | 4826 (mean 4997, p95 5882) | — |
+| qwen3vl8b | 6250 (mean 6119, p95 6650) | 4826 (mean 4997, p95 5882) | 4806 (mean 4872, p95 5097) |
 | qwen35_4b | — | — | — |
 | qwen35_9b | — | — | — |
 
@@ -628,7 +640,7 @@ tree; a **completed, annotated** session is committed deliberately with
 
 | Model | best accuracy (prompt) | median inf. ms at that prompt | verified objects / 700 s |
 |---|---|---|---|
-| qwen3vl8b | — | — | — |
+| qwen3vl8b | 72 % (P2) | 4826 | 50 (P2 run) |
 | qwen35_4b | — | — | — |
 | qwen35_9b | — | — | — |
 
@@ -636,10 +648,11 @@ tree; a **completed, annotated** session is committed deliberately with
 
 ## 13. Findings & recommendation (fill at the end)
 
-- Q1 — does Qwen 3.5 break the ~50 % ceiling / `ceiling_light` error?  **—**
-- Q2 — best prompt per model:  **—**
-- Q3 — accuracy/latency trade-off; recommended production profile + prompt:  **—**
-- Any prompt change to promote into `rsg_pipeline.yaml`:  **—**
+- Q1 — does Qwen 3.5 break the ~50 % ceiling / `ceiling_light` error?  **— (pending R4–R9)**
+- Q2 — best prompt per model:  **qwen3vl8b → P2 (72 %). P2 > P3 (63 %) > P1 (48 %).** The example-driven prompt beats both the zero-shot P1 and the elaborate structural-priority P3. P3's extra machinery did not pay for itself: its "distinctive-infrastructure" rule had no measurable effect, and its furniture-discriminator worked-example *primed* `cabinet` over-prediction on ambiguous flat surfaces (7 misses vs P2's 3). *Latency is not a tie-breaker — P2 and P3 are both ~4.8 s, P1 ~6.2 s.*
+- Q3 — accuracy/latency trade-off; recommended production profile + prompt:  **— (pending 4B/9B)**. So far: qwen3vl8b + P2, ~4.8 s/call, ~72 %.
+- Any prompt change to promote into `rsg_pipeline.yaml`:  **P2 is the current front-runner.** Open item from R3: better calibration (P3) makes honest sub-0.80 answers that the operational `min_label_confidence: 0.80` gate then discards as `unknown_object` even when correct (2/2 in R3). If a calibrated prompt is adopted, lower that gate or route sub-threshold-but-plausible labels to a softer path.
+- **Unsolved across all 3 qwen3vl8b prompts:** flat-surface cabinet ↔ wall/pillar; ceiling infrastructure (pipes/vents/lights) collapsing to `ceiling`; some glass panels read as `wall`. None of P1/P2/P3's wording fixed these — they may be model-capability limits, not prompt problems.
 
 ---
 
@@ -687,3 +700,4 @@ tree; a **completed, annotated** session is committed deliberately with
 | 2026-09-01 | **P3 updated against R2 findings** (still open-vocabulary). Kept P2's wins; added: (b) "distinctive infrastructure that fills the boundary is named, not generalised" with a pipes/vent/fire-hose example group (fixes R2's 4 pipes/vents → `ceiling`); a glass-surface cue + `glass_wall`/`glass_door`/mirror-vs-whiteboard example group (fixes R2's 5 glass misses); (c) a handle/seam/toe-kick discriminator for cabinet-vs-wall/pillar plus a wider 0.45–0.70 honest-confidence band for it (R2's low-confidence example didn't move the model). §4 P3 text refreshed. `active` still on P2 — P3 not yet wired into `rsg_pipeline.yaml`. |
 | 2026-09-01 | P3: added a direct see-through transparency test (room/objects/light visible through the panel → glass; opaque → solid) — R2's glass misses were framed, lightly-reflective partitions read as `wall`. |
 | 2026-09-01 | **P3 wired for R3.** `prompts_under_test.yaml` `active` flipped P2 → P3. `rsg_pipeline.yaml` `phase1.vlm.prompt` = P3 template (verified byte-identical), `prompt_optimisation.run_id = R3__qwen3vl8b__v6_structural_priority`, `prompt_version = P3_v6_structural_priority`. Crops + CSV for the next run land in `runs/R3__qwen3vl8b__v6_structural_priority/session_<ts>/`. Needs a phase1 coordinator restart. |
+| 2026-09-01 | **R3 complete** (session `session_20260901_211319`, 56 crops, 49 in CSV, all annotated). Accuracy **63 %** (31/49) — **−9 pp vs R2**, so P3 regressed. P3's calibration guidance finally landed (confidence spans 0.50–0.95, 2 honest sub-0.80 answers — both correct, both rejected by the 0.80 gate). But the furniture-discriminator example primed `cabinet` over-prediction (7 misses vs R2's 3), and rule (b) "name distinctive infrastructure" had no effect (pipe/vent/light → `ceiling` ×3). Glass net-neutral (`glass_door` ×3 right; `glass_wall` over-applied ×1; 2 still missed). New cluster: "door part" ×3. **qwen3vl8b sweep done: P2 (72 %) > P3 (63 %) > P1 (48 %) — P2 is the recommended prompt.** §7 / §11 / §12.1–12.4 (qwen3vl8b) / §13 Q2 filled. Pipeline left on P3/R3 — flip to a 4B/9B profile for R4–R9. |
