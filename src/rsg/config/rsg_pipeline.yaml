@@ -450,8 +450,8 @@ phase1:                                                                         
 
     prompt_optimisation:                                                                             # VLM prompt-optimisation experiment (debug/prompt_optimisation_experiment/). Set enabled: false for normal runs.
       enabled: true                                                                                  # Route VLM crop + per-call CSV into the experiment run folder.
-      run_id: R6.1__qwen35_4b__v6b_format_enforced                                                        # Experiment matrix row; folder name under output_root.
-      prompt_version: P3b_v6b_format_enforced                                                            # Which prompt from prompts_under_test.yaml is active above.
+      run_id: R6__qwen35_4b__v6_structural_priority                                                        # Experiment matrix row; folder name under output_root.
+      prompt_version: P3_v6_structural_priority                                                            # Which prompt from prompts_under_test.yaml is active above.
       output_root: /home/student/Thesis_new/debug/prompt_optimisation_experiment/runs                # <output_root>/<run_id>/session_<timestamp>/{crops,vlm_results.csv}
 
     result_validation:
