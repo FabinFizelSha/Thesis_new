@@ -1,0 +1,107 @@
+object_id,crop_filename,frame_timestamp,run_id,model_profile,prompt_version,vlm_label,label_confidence,mobility_class,mobility_confidence,vlm_inference_ms,end_to_end_ms,success,validation_status,raw_response,manual_label,manual_is_correct,error_category,manual_notes
+1,obj_000001_crop.jpg,11.55488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.9,static,0.99,4382.83,5068.83,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+2,obj_000002_crop.jpg,12.55488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.95,static,0.99,2969.98,3338.12,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+3,obj_000003_crop.jpg,11.55488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.95,static,0.99,3802.79,4133.52,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+4,obj_000004_crop.jpg,11.55488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,floor,0.95,static,0.99,3574.33,3737.16,True,accepted,"{""label"": ""floor"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+5,obj_000005_crop.jpg,13.354879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,2970.55,3168.62,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+6,obj_000006_crop.jpg,14.954879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,floor,0.95,static,0.99,2863.79,3340.12,True,accepted,"{""label"": ""floor"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+7,obj_000007_crop.jpg,11.55488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,floor,0.95,static,0.99,2800.05,3307.92,True,accepted,"{""label"": ""floor"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+8,obj_000008_crop.jpg,18.25488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.9,static,0.99,2965.26,3838.77,True,accepted,"```json
+{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+9,obj_000009_crop.jpg,27.25488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.9,static,0.99,2767.67,2810.35,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",Pipe,,,
+10,obj_000010_crop.jpg,28.25488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,2824.1,3220.75,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+11,obj_000011_crop.jpg,31.25488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,2914.68,2938.48,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+12,obj_000012_crop.jpg,30.85488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,sofa,0.95,static,0.99,3001.03,3412.31,True,accepted,"```json
+{""label"": ""sofa"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+13,obj_000013_crop.jpg,32.304879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,floor,0.95,static,0.99,2790.35,3381.18,True,accepted,"{""label"": ""floor"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+14,obj_000014_crop.jpg,32.304879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,2720.58,3138.37,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+15,obj_000015_crop.jpg,34.75488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,door,0.9,static,0.99,2891.85,3209.98,True,accepted,"```json
+{""label"": ""door"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",Piller / wall,,,
+16,obj_000016_crop.jpg,28.25488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.9,static,0.99,2970.33,3187.46,True,accepted,"```json
+{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",air vent,,,
+17,obj_000017_crop.jpg,32.904879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.9,static,0.99,2719.85,3102.63,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",door part,,,
+18,obj_000018_crop.jpg,33.50488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,floor,0.9,static,0.99,2872.68,3156.08,True,accepted,"```json
+{""label"": ""floor"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+19,obj_000019_crop.jpg,33.95488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.9,static,0.99,2800.07,3151.83,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",door part,,,
+20,obj_000020_crop.jpg,29.454879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,door,0.9,static,0.99,2857.89,3139.52,True,accepted,"```json
+{""label"": ""door"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+21,obj_000021_crop.jpg,38.75488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,window,0.9,static,0.99,2963.67,3317.05,True,accepted,"```json
+{""label"": ""window"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",door part,,,
+22,obj_000022_crop.jpg,34.554879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,mirror,0.85,static,0.99,2942.15,3111.11,True,accepted,"```json
+{""label"": ""mirror"", ""label_confidence"": 0.85, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+23,obj_000023_crop.jpg,36.554879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,3044.3,3206.93,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+24,obj_000024_crop.jpg,35.154879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,door,0.9,static,0.99,2806.63,3412.53,True,accepted,"{""label"": ""door"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+25,obj_000025_crop.jpg,35.154879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.95,static,0.99,2946.53,3340.53,True,accepted,"```json
+{""label"": ""ceiling"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+26,obj_000026_crop.jpg,40.004879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,2683.2,3182.35,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",glass,,,
+27,obj_000027_crop.jpg,35.95488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,3376.04,4235.64,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+28,obj_000028_crop.jpg,35.95488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.95,static,0.99,3325.07,3405.5,True,accepted,"```json
+{""label"": ""ceiling"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+29,obj_000029_crop.jpg,36.35488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,3005.87,3510.2,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+30,obj_000030_crop.jpg,38.554879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.85,static,0.99,3009.67,3382.2,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.85, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",door part,,,
+31,obj_000031_crop.jpg,38.154879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.9,static,0.99,2986.15,3198.04,True,accepted,"```json
+{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+32,obj_000032_crop.jpg,38.904879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.95,static,0.99,2833.15,3158.17,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+33,obj_000033_crop.jpg,39.25488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,2726.6,3263.95,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+34,obj_000034_crop.jpg,40.804879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,2782.36,3070.52,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+35,obj_000035_crop.jpg,46.054879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,2954.81,3778.18,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+36,obj_000036_crop.jpg,44.75488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,whiteboard,0.9,static,0.99,2997.3,3309.23,True,accepted,"```json
+{""label"": ""whiteboard"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+37,obj_000037_crop.jpg,36.70488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.9,static,0.99,2978.75,3426.72,True,accepted,"```json
+{""label"": ""ceiling"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+38,obj_000038_crop.jpg,42.004879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,cabinet,0.9,static,0.99,2989.05,3364.95,True,accepted,"```json
+{""label"": ""cabinet"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+39,obj_000039_crop.jpg,44.154879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,3392.66,3479.68,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+40,obj_000040_crop.jpg,43.304879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,3064.89,3959.68,True,accepted,"{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+41,obj_000041_crop.jpg,39.154879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,2949.3,5026.35,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+42,obj_000042_crop.jpg,41.404879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.95,static,0.99,3146.75,3413.5,True,accepted,"{""label"": ""ceiling"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}",,,,
+43,obj_000043_crop.jpg,45.804879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,ceiling,0.95,static,0.99,3028.93,3343.25,True,accepted,"```json
+{""label"": ""ceiling"", ""label_confidence"": 0.95, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",Pipe,,,
+44,obj_000044_crop.jpg,50.75488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,cabinet,0.9,static,0.99,3588.08,4337.01,True,accepted,"```json
+{""label"": ""cabinet"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+45,obj_000045_crop.jpg,45.804879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,whiteboard,0.9,static,0.99,3480.22,3992.63,True,accepted,"```json
+{""label"": ""whiteboard"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+46,obj_000046_crop.jpg,48.904879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,whiteboard,0.9,static,0.99,2997.06,4044.23,True,accepted,"```json
+{""label"": ""whiteboard"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",glass partition,,,
+47,obj_000047_crop.jpg,48.10488,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,wall,0.9,static,0.99,3219.93,4305.48,True,accepted,"```json
+{""label"": ""wall"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",cabinet,,,
+48,obj_000048_crop.jpg,48.904879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,shelf,0.9,static,0.99,2915.06,4101.42,True,accepted,"```json
+{""label"": ""shelf"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",,,,
+49,obj_000049_crop.jpg,41.654879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,window,0.9,static,0.99,2918.48,3477.68,True,accepted,"```json
+{""label"": ""window"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",glass partition,,,
+50,obj_000050_crop.jpg,46.054879999,R10__qwen35_4b__v5b_reduced_ceiling,qwen3_5_4b_q4,P2b_v5b_reduced_ceiling,window,0.9,static,0.99,2893.87,3404.81,True,accepted,"```json
+{""label"": ""window"", ""label_confidence"": 0.9, ""mobility_class"": ""static"", ""mobility_confidence"": 0.99}
+```",glass partition,,,
