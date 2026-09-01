@@ -362,7 +362,7 @@ phase1:                                                                         
     queue_drop_policy: defer_track_id                                                                # Full FIFO defers a unique track ID instead of dropping it.
     api_key: ''                                                                                      # No key is required for the local endpoint.
     timeout_sec: 60.0                                                                                # Allow sufficient time for Jetson inference.
-    max_tokens: 256                                                                                  # Raised 96 -> 256 from R6: the 4B on P3 narrates the reasoning strategy in the visible content and ran out of 96 tokens before emitting the JSON (21/51 rejected). 96 already sufficed for P1/P2 and all 8B runs, so this only adds headroom.
+    max_tokens: 512                                                                                  # Raised 96 -> 256 -> 512 from R6: the 4B on P3 narrates the reasoning strategy in the visible content before the JSON; 256 cut format rejections 21->3 but a few still overran, 512 gives full headroom. 96 already sufficed for P1/P2 and all 8B runs, so this only adds headroom.
     temperature: 0.0                                                                                 # Deterministic labels for consistent RAP memory entries.
     jpeg_quality: 100                                                                                 # Good visual quality with manageable request size.
     prompt: |
