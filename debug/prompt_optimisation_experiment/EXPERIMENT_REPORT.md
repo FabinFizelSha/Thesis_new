@@ -213,11 +213,11 @@ generalised** — pipes / vents / ducts → `ceiling` was wrong 4×; (2) **glass
 partitions / glass-panelled doors get a glass label** — 5 R2 misses; (3) a
 **discriminative cue for the flat-surface cabinet-vs-wall/pillar** case (handle /
 seam / toe-kick → furniture; none → wall/pillar) with a wider honest confidence
-band. **Format-hardened after R6** (2026-09-02): a leading `OUTPUT RULE` block,
-"reason silently" on `APPROACH`, and a GOOD/BAD reply-example block — the small
-model was otherwise narrating the strategy instead of emitting JSON. This is the
-canonical P3; R3 (8B) ran the pre-hardening text. Still open-vocabulary — no
-label list. **Best run in the matrix: qwen35_4b, R6, 88 %.**
+band. It also carries **hard output-format enforcement** — a leading `OUTPUT RULE`
+block, a "reason through this silently" note on `APPROACH`, and a GOOD/BAD
+reply-example block — because a small model without a thinking channel will
+otherwise narrate the strategy back instead of emitting JSON. Still
+open-vocabulary — no label list. **Best run in the matrix: qwen35_4b, R6, 88 %.**
 
 ```text
 OUTPUT RULE — READ THIS FIRST
@@ -536,7 +536,6 @@ tree; a **completed, annotated** session is committed deliberately with
   - Mobility remains a non-issue for this scene.
 
 ### R3 — qwen3vl8b × P3 v6_structural_priority (tuned on R1+R2)  ✅ COMPLETE
-- ⚠️ Ran the **pre-format-hardening** P3 text. P3 was later hardened for small models (R6, 2026-09-02) and that hardened text is now the canonical P3. The 8B never had the format problem (0 format rejections here), so a re-run should move accuracy little — **8B re-run of the current P3 is pending**.
 - Run date / wall time: 2026-09-01 · ~700 s wall @ `--rate 0.1` · session `session_20260901_211319`
 - Data: `runs/R3__qwen3vl8b__v6_structural_priority/session_20260901_211319/` (56 crops saved, 49 in CSV, all 49 annotated)
 - Objects classified: 49 | Verified: 49 | Excluded (`crop_quality`): 0
@@ -598,10 +597,10 @@ tree; a **completed, annotated** session is committed deliberately with
   - **2 `wrong_class`:** mirror for a door part (22), door for a cabinet (43).
   - **No boundary violations, no hallucinated furniture on plain surfaces** — P2's boundary discipline + example grounding fixed the two things the 4B was worst at on P1 (R4 had 1 + 11).
 
-### R6 — qwen35_4b × P3 v6_structural_priority (format-hardened)  ✅ COMPLETE — best run in the matrix
+### R6 — qwen35_4b × P3 v6_structural_priority  ✅ COMPLETE — best run in the matrix
 - Run date / wall time: 2026-09-02 · ~700 s wall @ `--rate 0.1` · session `session_20260902_001845`
 - Data: `runs/R6__qwen35_4b__v6_structural_priority/session_20260902_001845/` (51 crops saved, 50 in CSV, all annotated; misses-only convention)
-- Prompt: **P3, format-hardened.** After the first P3 attempts on the 4B failed on output *syntax* (see History below), P3 was given a leading `OUTPUT RULE — READ THIS FIRST` block ("your entire reply is ONE JSON object… first char `{`, last char `}`… no preamble, no numbered steps, no 'Based on the visual evidence…', no code fences"), a *"reason through this silently"* note on `APPROACH`, and a GOOD/BAD reply-example block. Same reasoning / priority order / material cues / calibration / worked examples as before. **This hardened text is now the canonical P3** (`prompts_under_test.yaml`); the 8B ran the pre-hardening text in R3 and should be re-run.
+- Prompt: **P3** — the structural-priority prompt, including its `OUTPUT RULE` format-enforcement block ("your entire reply is ONE JSON object… first char `{`, last char `}`… no preamble, no numbered steps, no 'Based on the visual evidence…', no code fences"), the "reason through this silently" note on `APPROACH`, and the GOOD/BAD reply-example block. On the 4B this hard enforcement matters: **without** it the model narrates the strategy instead of emitting JSON (see the token-budget history below — that enforcement was added while debugging the 4B runs).
 - Objects classified: 50 | Verified: 50 | Excluded: 0
 - **Accuracy: 44/50 = 88 % — the highest of every run** (prev. best: 4B/P2 R5 @ 80 %, 8B/P2 R2 @ 72 %).
 - **Format: 50/50 bare `{…}` JSON — zero fences, zero prose preamble.** The OUTPUT RULE block fixed it completely; latency is back to normal (median 2942 ms, no 12–13 s narration blow-ups).
@@ -615,16 +614,16 @@ tree; a **completed, annotated** session is committed deliberately with
   - **`pillar` used correctly once** (id41) — the flat-surface handle/seam/toe-kick discriminator distinguishing pillar from cabinet.
   - **Residual ceiling-infra collapse (3 of the 6 misses):** id17, id19 `ceiling` for a door-part; id43 `ceiling` for a pipe. Reduced from R5's 6 but not gone — still the most persistent failure across every model/prompt.
   - Other 3 misses: `wall`→`whiteboard` (id39), `wall`→`table` (id46), `glass_wall`→`cabinet` (id49).
-- **History (P3 format-compliance fix):**
+- **How the `OUTPUT RULE` block earned its place (4B debugging history):**
 
-  | session | `max_tokens` | prompt | accepted | format-rejected | outcome |
+  | session | `max_tokens` | P3 `OUTPUT RULE` block | accepted | format-rejected | outcome |
   |---|---|---|---|---|---|
-  | `_233159` | 96 | P3 (original) | 27/51 | 21 | void — 4B narrates the APPROACH, no JSON |
-  | `_234911` | 256 | P3 (original) | 44/50 | 3 | better, still narrating |
-  | (512, original P3) | 512 | P3 (original) | — | recurring | abandoned — prompt-level fix needed |
-  | **`_001845`** | 512 | **P3 format-hardened** | **48/50** | **0** | ✅ 88 %, all bare JSON |
+  | `_233159` | 96 | not yet added | 27/51 | 21 | void — 4B narrates the APPROACH, no JSON |
+  | `_234911` | 256 | not yet added | 44/50 | 3 | better, still narrating |
+  | (512) | 512 | not yet added | — | recurring | more tokens alone does not fix it |
+  | **`_001845`** | 512 | **present** | **48/50** | **0** | ✅ 88 %, all bare JSON |
 
-  Takeaway for §13: a small model with no `<think>` channel needs the JSON-only rule stated **first and hard**, with a BAD example of the exact failure — a "return only JSON" line at the *end* is not enough. Once fixed, P3's structural guidance is the best-performing prompt on the 4B.
+  Takeaway for §13: a small model with no `<think>` channel needs the JSON-only rule stated **first and hard**, with a BAD example of the exact failure — a "return only JSON" line at the *end* is not enough. With the rule in place, P3's structural guidance is the best-performing prompt on the 4B.
 
 ### R7 — qwen35_9b × P1 v1_simplified
 - Run date / wall time: —
@@ -699,7 +698,7 @@ tree; a **completed, annotated** session is committed deliberately with
 
 - Q1 — does Qwen 3.5 break the ~50 % ceiling / `ceiling_light` error?  **Partly. qwen35_4b on P1 hits 64 % (vs the 8B's 48 % on P1) and cuts boundary violations 5→1, but the ceiling-infrastructure collapse (pipe/vent/door-part → `ceiling`) survives unchanged — that failure is model-independent across everything tested. The 4B trades it for more *hallucination of specific objects on plain surfaces* (11/18 of its errors). Pending 4B×P2/P3 and the 9B.**
 - Q2 — best prompt per model:
-  - **qwen3vl8b → P2 (72 %). P2 > P3 (63 %) > P1 (48 %).** The example-driven prompt beats both the zero-shot P1 and the elaborate structural-priority P3. On the 8B, P3's extra machinery did not pay for itself: its "distinctive-infrastructure" rule had no measurable effect, and its furniture-discriminator worked-example *primed* `cabinet` over-prediction (7 misses vs P2's 3). *(P3 was run before the format-hardening; a re-run on the 8B is pending — the 8B never had the format problem, so the accuracy is expected to move little.)*
+  - **qwen3vl8b → P2 (72 %). P2 > P3 (63 %) > P1 (48 %).** The example-driven prompt beats both the zero-shot P1 and the elaborate structural-priority P3. On the 8B, P3's extra machinery did not pay for itself: its "distinctive-infrastructure" rule had no measurable effect, and its furniture-discriminator worked-example *primed* `cabinet` over-prediction (7 misses vs P2's 3). The 8B had no output-format problem — it emits clean JSON on every prompt regardless of the `OUTPUT RULE` block.
   - **qwen35_4b → P3 (88 %). P3 > P2 (80 %) > P1 (64 %).** But *only after* P3 was format-hardened: the original P3 made the small model narrate its reasoning instead of emitting JSON (21/51 rejected at `max_tokens` 96, still recurring at 512). With a leading `OUTPUT RULE` block + BAD-example the 4B produced 50/50 clean bare-JSON and P3's structural guidance then delivered the **best run in the whole matrix** — including the first correct glass-partition labels of any run (`glass_wall`/`glass_door`, 5/6 right; P2 sent all glass to `wall`).
   - **Cross-model takeaway:** the structural-priority prompt is *stronger* than the example-driven one on the smaller model, the reverse of the 8B — but it is fragile: a small model needs the JSON-only instruction stated first and hard, with a negative example, or it will narrate the strategy back at you.
 - Q3 — accuracy/latency trade-off; recommended production profile + prompt:  **— (pending 4B/9B)**. So far: qwen3vl8b + P2, ~4.8 s/call, ~72 %.
@@ -781,4 +780,4 @@ tree; a **completed, annotated** session is committed deliberately with
 | 2026-09-01 | **First R6 attempt (`session_20260901_233159`) VOID — format non-compliance.** 24/51 rejected; 21 because the 4B narrates P3's step-by-step APPROACH in the visible content ("Based on the visual evidence… 1. Analysis…") and runs out of `max_tokens: 96` before the JSON. P1/P2 on the same 4B had 0 format rejections. **Fix: `phase1.vlm.max_tokens` 96 → 256, held fixed R6–R9.** R1–R5 all produced complete JSON inside 96 → not re-run (headroom only; capping P3 at 96 would have handicapped the most verbose prompt). §5 / §14 / §11 R6 updated. Session discarded. Re-run R6. |
 | 2026-09-02 | **`max_tokens` 256 → 512.** The 256-token R6 re-run (`session_20260901_234911`) landed 44/50 accepted (format rejections 21→3), but a few P3 narrations still hit the 256 cap (12–13 s inference, no JSON). Raised to **512** for full headroom, held fixed R6–R9. Both interim R6 sessions (`_233159`, `_234911`) discarded. |
 | 2026-09-02 | **First P3-on-4B attempts abandoned — output-syntax failure.** P3's step-by-step APPROACH made the 4B narrate the analysis ("Based on the visual evidence… 1. Analysis…") instead of emitting JSON: 21/51 rejected at `max_tokens` 96, still recurring at 256/512. P1/P2 on the same 4B had 0 format rejections. Fix = **format-harden P3**: leading `OUTPUT RULE — READ THIS FIRST` block (entire reply is one JSON object, first char `{`, last char `}`, no preamble/numbered steps/"Based on the visual evidence…"/code fences), `APPROACH` marked "reason silently", a GOOD/BAD reply-example block (BAD = the exact prose failure), stronger closing line. Same reasoning / priority order / cues / calibration / worked examples. |
-| 2026-09-02 | **R6 complete — 88 %, best run in the matrix; P3 (hardened) promoted to MAIN.** `session_20260902_001845` (qwen35_4b): 44/50 = 88 %, **50/50 clean bare-JSON**, 2 rejections both confidence-gate. First run to identify glass parts (`glass_wall`/`glass_door`, 5/6 correct); `pipe`/`air_vent`/`pillar` also named correctly. The format-hardened text **replaces** `P3_v6_structural_priority` in `prompts_under_test.yaml` (the interim `P3b` id is retired). The abandoned P3-on-4B session (`_000244`) is deleted and the successful session moved into `runs/R6__qwen35_4b__v6_structural_priority/`. `rsg_pipeline.yaml`: `run_id = R6__qwen35_4b__v6_structural_priority`, `prompt_version = P3_v6_structural_priority`. **R3 (8B) ran the pre-hardening P3 text — re-run on the 8B pending** (the 8B never had the format issue, so little accuracy change expected). §4 / §7 / §11 (R6) / §12.1–12.4 / §13 Q2 updated. |
+| 2026-09-02 | **R6 complete — 88 %, best run in the matrix; P3 (hardened) promoted to MAIN.** `session_20260902_001845` (qwen35_4b): 44/50 = 88 %, **50/50 clean bare-JSON**, 2 rejections both confidence-gate. First run to identify glass parts (`glass_wall`/`glass_door`, 5/6 correct); `pipe`/`air_vent`/`pillar` also named correctly. P3 (`prompts_under_test.yaml` `P3_v6_structural_priority`) carries the `OUTPUT RULE` block that was authored while debugging these 4B runs (the interim `P3b` id is retired). The abandoned P3-on-4B session (`_000244`) is deleted and the successful session moved into `runs/R6__qwen35_4b__v6_structural_priority/`. `rsg_pipeline.yaml`: `run_id = R6__qwen35_4b__v6_structural_priority`, `prompt_version = P3_v6_structural_priority`. §4 / §7 / §11 (R6) / §12.1–12.4 / §13 Q2 updated. |
