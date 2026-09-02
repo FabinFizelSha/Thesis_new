@@ -152,20 +152,36 @@ in the same module.
    Cost: one `lookup_transform` + a cheap SE(3) compare per frame; the O(tracks)
    walk only on an actual jump (rare). Negligible.
 
-### 3c. Camera-pose frame — open question to resolve first
+### 3c. Camera-pose frame — RESOLVED
 
-Whether phase 1 also needs to compose `map → odom` into each **incoming**
-`camera_pose` depends on what frame the upstream preprocessing node stamps
-poses in:
+`preprocessor.py:401,479-483`: the camera pose is
+`t_odom_camera = t_odom_base @ t_base_camera`, where `t_odom_base` is an
+interpolated `/tesse/odom` sample straight out of `OdomBuffer.lookup()`. No TF,
+no `map → odom`. `make_pose_msg` then stamps it `frame_id = world_frame`.
 
-* upstream already publishes camera pose in **`map`** (via a TF chain that
-  includes the correction) → nothing more to do; §3b handles the cache.
-* upstream publishes camera pose in **`odom`** → phase 1 must left-multiply each
-  pose by the current `map → odom` before 3D projection, so new observations
-  land in `map` frame consistent with the (re-anchored) cache.
+**So the incoming `camera_pose` is in the raw `odom` frame** (labelled `world`
+because today `world == odom == map`). It is **not** corrected by anything.
 
-Action: confirm `frame.camera_pose.header.frame_id` and the upstream TF usage on
-a drifting-front-end config before writing §3b's pose handling.
+Consequence for a drifting-front-end + LCD config: phase 1 must, going forward,
+left-multiply each incoming pose by the live `map → odom` before 3D projection,
+so new observations land in the `map` (corrected) frame and stay consistent with
+the re-anchored cache. That is an added ~3 lines in the frame path *plus* the
+§3b jump handler. (With GT odom / identity `map → odom` it is a no-op, so it can
+land now and stay dormant.)
+
+### 3d. Rigid ΔT is an approximation — accepted for v1
+
+A real pose-graph loop closure re-optimises the **whole trajectory**; the
+correction is non-rigid (distributed along the path) and the back-end
+re-publishes the full corrected DSG. Applying the single live `map → odom` step
+`ΔT` rigidly to every cached track is a first-order approximation — exact for
+objects near the loop point, increasingly loose for objects mapped far from it.
+
+v1 accepts this: it is O(tracks) arithmetic off one TF read, needs no DSG
+subscription, and fixes the dominant failure (duplicate spawn on re-observation
+right after the closure). A later refinement could ingest the re-published DSG
+node deltas for a per-object correction, but that is explicitly out of scope
+here (and re-introduces the big-message subscription we are avoiding).
 
 ---
 
@@ -261,7 +277,7 @@ slot, so a re-anchored, non-duplicated slot set flows through as-is.
 
 ## 7. Order of work
 
-1. resolve §3c (camera-pose frame) — 15 min reading upstream node.
+1. ~~resolve §3c (camera-pose frame)~~ — done: incoming pose is raw `odom`.
 2. `reanchor_all` + rigid helpers + `test_reanchor.py` §5b (unit, no ROS). ✅ gate
 3. `loop_jump_injector.py`.
 4. phase-1 TF listener + call site + config + event topic.
