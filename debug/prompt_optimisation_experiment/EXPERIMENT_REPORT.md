@@ -400,7 +400,7 @@ rebuilds / model reloads).
 | R5 | qwen35_4b | P2 v5_examples_based | `runs/R5__qwen35_4b__v5_examples_based/session_20260901_221739/` | ☑ **complete** | 50 | **80 %** | 6 | 2959 |
 | R6 | qwen35_4b | P3 v6_structural_priority (format-hardened) | `runs/R6__qwen35_4b__v6_structural_priority/session_20260902_001845/` | ☑ **complete** | 50 | **88 %** | 3 | 2942 |
 | R7 | qwen35_9b | P1 v1_simplified | `runs/R7__qwen35_9b__v1_simplified/session_20260902_181502/` | ☑ **complete** | 50 | **64 %** | 1 | 3656 |
-| R8 | qwen35_9b | P2 v5_examples_based | `runs/R8__qwen35_9b__v5_examples_based/` | ◐ wired & ready — run pending | — | — | — | — |
+| R8 | qwen35_9b | P2 v5_examples_based | `runs/R8__qwen35_9b__v5_examples_based/session_20260902_193816/` | ☑ **complete** | 50 | **68 %** | 6 | 4464 |
 | R9 | qwen35_9b | P3 v6_structural_priority | `runs/R9__qwen35_9b__v6_structural_priority/` | ☐ not started | — | — | — | — |
 
 “maybe more if needed” — add R10+ rows here for extra prompts/models; keep the
@@ -643,15 +643,21 @@ tree; a **completed, annotated** session is committed deliberately with
   - **Does name ceiling infrastructure when it fills the crop:** `pipe` ×2 (id6, id11), `ceiling_light` (id10), `ceiling_beam` (id25) — all accepted by the annotator. The infra-collapse that plagued P2/P3 is not a P1 problem.
   - **Takeaway:** on the zero-shot prompt, model size (4B → 9B) is a wash; the wins in this experiment come from the *prompt* (P2/P3 structure), not the model.
 
-### R8 — qwen35_9b × P2 v5_examples_based
-- Run date / wall time: —
-- Objects classified: — | Verified: — | Excluded: —
-- **Accuracy: —**
-- Latency (`vlm_inference_ms`): median — | p90 — | p95 — | max — | mean —
-- Latency (`end_to_end_ms`): median — | p90 — | max —
-- Error tally: `ceiling_light` — | `surface_vs_fixture` — | `boundary_violation` — | `unknown_overuse` — | `wrong_class` — | `mobility_wrong` — | `other` —
+### R8 — qwen35_9b × P2 v5_examples_based  ✅ COMPLETE
+- Run date / wall time: 2026-09-02 · ~700 s wall @ `--rate 0.1` · session `session_20260902_193816` (first attempt `_192605` was void — 503, server not ready)
+- Data: `runs/R8__qwen35_9b__v5_examples_based/session_20260902_193816/` (50 crops, 50 in CSV, all annotated; misses-only convention)
+- Objects classified: 50 | Verified: 50 | Excluded: 0
+- **Accuracy: 34/50 = 68 % — the *worst* P2 result.** 4B/P2 = 80 %, 8B/P2 = 72 %, **9B/P2 = 68 %**. Bigger is not better in the 3.5 family: the 9B also matched the 4B on P1 (both 64 %) and now falls *below* it on P2.
+- Format: **50/50 bare `{…}` JSON, 0 rejected, 0 empty** — `--reasoning off` + the raised token budget hold up on the 9B.
+- Confidence: 0.90 ×19, 0.92 ×2, 0.95 ×29 — some spread (P2's "be honest" line partly lands), nothing below 0.90. Better than the 9B's flat-0.95 on P1.
+- Latency (`vlm_inference_ms`): median 4464 | p90 5167 | max 6716 | mean 4598 — the slowest 3.5 config so far (9B on the longer P2 prompt; cf. 4B/P2 2959, 9B/P1 3656).
+- Error tally (of 16 wrong): `ceiling_light`* 6 | `surface_vs_fixture` 0 | `boundary_violation` 0 | `unknown_overuse` 0 | `wrong_class` 10 | `mobility_wrong` 0 | `other` 0
 - Observations:
-  - —
+  - **P2's `ceiling` over-use, again.** `ceiling` predicted 13×, wrong 7× — **6 of the 16 misses are `ceiling`←infra/door** (pipe ×3, air vent ×1, door-part ×2). This is the *same* failure P2 produced on the 4B (R5: `ceiling` 14×, 6 wrong). The "surface over fixture" rule + ceiling examples over-fire regardless of model.
+  - **Glass unhandled — 5** (id28, id43, id48 `wall`; id30 `mirror`; id49 `floor`; truths `glass panel` / `partition`). P2 has no glass concept — this is what P3's cues fixed on the 4B (R6).
+  - **Panel → `mirror` habit — 3** (id16 for a door panel, id39 & id45 for a whiteboard) — the 9B's recurring reflex for flat rectangular panels (also in R7).
+  - `pillar` missed once (id13 → `cabinet`).
+  - **Takeaway:** on P2, model size *inverts* — 4B (80 %) > 8B (72 %) > 9B (68 %). The 9B Q4 is the weakest vision model of the three for this task; the experiment's gains stay with the *prompt*, and the 4B is the standout profile.
 
 ### R9 — qwen35_9b × P3 v6_structural_priority
 - Run date / wall time: —
@@ -673,7 +679,7 @@ tree; a **completed, annotated** session is committed deliberately with
 |---|---|---|---|---|
 | qwen3vl8b | 48 % (24/50) | **72 % (36/50)** | 63 % (31/49) · 59 % pipeline-eff. | **P2** (P2 > P3 > P1) |
 | qwen35_4b | 64 % (32/50) | 80 % (40/50) | **88 % (44/50)** — format-hardened P3 | **P3** (P3 > P2 > P1); best cell in the table |
-| qwen35_9b | 64 % (32/50) | — | — | — |
+| qwen35_9b | 64 % (32/50) | 68 % (34/50) | — | P2 marginally; **all 3 below the 4B** — 9B is the weakest of the family |
 | best model | — | — | qwen35_4b @ 88 % | — |
 
 ### 12.2 `ceiling_light` error rate — model × prompt
@@ -682,7 +688,7 @@ tree; a **completed, annotated** session is committed deliberately with
 |---|---|---|---|
 | qwen3vl8b | 8/9 (89 %) — 6×`ceiling_tile`, +`keyboard`, +`shelf`; 1×`ceiling` correct | ~2/13 (15 %) — `ceiling` now the default; misses are `rug`/`wall` for `ceiling_tile` crops. But 4 *new* over-generalisations: exposed pipes/vents → `ceiling` | pipe / ceiling light / air vent → `ceiling` ×3. Rule (b) "name distinctive infrastructure" had **no effect** — model will not name ceiling infra even with a worked-example group |
 | qwen35_4b | `ceiling_light`→`ceiling` ×1; pipe/vent/door-part→`ceiling` ×3; `ceiling_vent` correct ×1. Same infra-collapse as the 8B — model-independent | **`ceiling` predicted 14×, wrong 6×** (pipe, ceiling light, air vent, door-part ×2, partition). P2's "surface over fixture" rule + 2 ceiling examples + 8 `ceiling` mentions over-fire on the 4B. 6/10 of R5's errors | **`ceiling`→infra ×3** (door-part ×2, pipe ×1) — 3/6 of R6's errors. Reduced from R5's 6 but still the most persistent failure. `pipe` and `air_vent` *are* named correctly elsewhere in the run. |
-| qwen35_9b | `vent`→(annotator wanted `ceiling`) ×1 — inverse of the usual collapse; `pipe`/`ceiling_light`/`ceiling_beam` all named & accepted. Not a P1 problem | — | — |
+| qwen35_9b | `vent`→(annotator wanted `ceiling`) ×1 — inverse of the usual collapse; `pipe`/`ceiling_light`/`ceiling_beam` all named & accepted. Not a P1 problem | **`ceiling` predicted 13×, wrong 7×** (pipe ×3, vent ×1, door-part ×2, table ×1) — 6/16 of R8's misses. Same P2 over-fire as the 4B (R5). | — |
 
 ### 12.3 Latency — model × prompt (median `vlm_inference_ms`)
 
@@ -690,7 +696,7 @@ tree; a **completed, annotated** session is committed deliberately with
 |---|---|---|---|
 | qwen3vl8b | 6250 (mean 6119, p95 6650) | 4826 (mean 4997, p95 5882) | 4806 (mean 4872, p95 5097) |
 | qwen35_4b | **2691** (mean 2773, p95 3332) | 2959 (mean 2984, p95 3138) | 2942 (mean 3109, p95 ~3.5k) — format-hardened P3, no prose bloat |
-| qwen35_9b | 3656 (mean 3623, p90 3851) | — | — |
+| qwen35_9b | 3656 (mean 3623, p90 3851) | 4464 (mean 4598, p90 5167) | — |
 
 ### 12.4 Accuracy ↔ latency
 
@@ -708,8 +714,9 @@ tree; a **completed, annotated** session is committed deliberately with
 - Q2 — best prompt per model:
   - **qwen3vl8b → P2 (72 %). P2 > P3 (63 %) > P1 (48 %).** The example-driven prompt beats both the zero-shot P1 and the elaborate structural-priority P3. On the 8B, P3's extra machinery did not pay for itself: its "distinctive-infrastructure" rule had no measurable effect, and its furniture-discriminator worked-example *primed* `cabinet` over-prediction (7 misses vs P2's 3). The 8B had no output-format problem — it emits clean JSON on every prompt regardless of the `OUTPUT RULE` block.
   - **qwen35_4b → P3 (88 %). P3 > P2 (80 %) > P1 (64 %).** But *only after* P3 was format-hardened: the original P3 made the small model narrate its reasoning instead of emitting JSON (21/51 rejected at `max_tokens` 96, still recurring at 512). With a leading `OUTPUT RULE` block + BAD-example the 4B produced 50/50 clean bare-JSON and P3's structural guidance then delivered the **best run in the whole matrix** — including the first correct glass-partition labels of any run (`glass_wall`/`glass_door`, 5/6 right; P2 sent all glass to `wall`).
-  - **Cross-model takeaway:** the structural-priority prompt is *stronger* than the example-driven one on the smaller model, the reverse of the 8B — but it is fragile: a small model needs the JSON-only instruction stated first and hard, with a negative example, or it will narrate the strategy back at you.
-- Q3 — accuracy/latency trade-off; recommended production profile + prompt:  **— (pending 4B/9B)**. So far: qwen3vl8b + P2, ~4.8 s/call, ~72 %.
+  - **qwen35_9b → P2 (68 %). P2 (68 %) ≈ P1 (64 %); P3 pending.** The 9B Q4 is the **weakest** vision model of the three for this task — it is at or below the 4B on both prompts run so far, and it re-introduces P2's `ceiling`-over-fire (7 wrong `ceiling`, same as the 4B) plus a "flat panel → `mirror`" reflex. Slowest 3.5 config (median 4.5 s).
+  - **Cross-model takeaway:** structural-priority (P3) is the strongest prompt on the 4B, example-driven (P2) on the 8B — but the differences are prompt-driven, not size-driven. **Model size does not help in the 3.5 family: 4B ≥ 9B on every prompt tested.** The one universal win is P3's format enforcement (the small models narrate without it) and P3's glass cues. The one universal failure is ceiling infrastructure collapsing to `ceiling` (survives every model × prompt).
+- Q3 — accuracy/latency trade-off; recommended production profile + prompt:  **qwen35_4b + P3 (format-hardened): 88 %, ~2.9 s/call — best accuracy *and* fastest.** The 8B (P2, 72 %, ~4.8 s) and 9B (P2, 68 %, ~4.5 s) are both dominated by it. R9 (9B × P3) is the last data point.
 - Any prompt change to promote into `rsg_pipeline.yaml`:  **P2 is the current front-runner.** Open item from R3: better calibration (P3) makes honest sub-0.80 answers that the operational `min_label_confidence: 0.80` gate then discards as `unknown_object` even when correct (2/2 in R3). If a calibrated prompt is adopted, lower that gate or route sub-threshold-but-plausible labels to a softer path.
 - **Unsolved across all 3 qwen3vl8b prompts:** flat-surface cabinet ↔ wall/pillar; ceiling infrastructure (pipes/vents/lights) collapsing to `ceiling`; some glass panels read as `wall`. None of P1/P2/P3's wording fixed these — they may be model-capability limits, not prompt problems.
 
@@ -794,3 +801,4 @@ tree; a **completed, annotated** session is committed deliberately with
 | 2026-09-02 | **Wired R8** — `phase1.vlm.prompt` = P2 template (byte-identical), `run_id = R8__qwen35_9b__v5_examples_based`, `prompt_version = P2_v5_examples_based`; `active` P1 → P2. Profile stays `qwen3_5_9b_q4` (server already loaded), `max_tokens` 512. Phase1 restart only. |
 | 2026-09-02 | **First R8 attempt (`session_20260902_192605`) VOID** — 50/50 `HTTP Error 503: Service Unavailable`. The llama-server was not ready (still loading the 9B, or down) when the replay started; every VLM call got 503 → `rejected`. The 9B itself is fine (R7 ran clean on it). Fix: relaunch `rsg_vlm_server`, wait for `/health` → 200 (llama.cpp returns 503 while loading), then replay. Session discarded. |
 | 2026-09-02 | **`max_tokens` 512 → 5000 from R8.** Effectively unbounded generation room for the 3.5 models. llama.cpp clamps to `context_size - prompt tokens`; with `context_size 4096` the real budget is ~2k, i.e. "generate until EOS or context full". Held R8–R9. R1–R7 unaffected (all finished well inside their caps). |
+| 2026-09-02 | **R8 complete** (session `session_20260902_193816`; the earlier `_192605` was a 503 void). Accuracy **68 % (34/50)** — the *worst* P2 result (4B 80 %, 8B 72 %, 9B 68 %). 50/50 bare JSON, 0 rejected. Same P2 `ceiling`-over-fire as the 4B (13 predicted, 7 wrong — 6/16 misses); glass unhandled ×5; "flat panel → `mirror`" ×3. Latency median 4464 ms (slowest 3.5 config). **Finding: model size does not help in the 3.5 family — 4B ≥ 9B on every prompt tested; the 9B Q4 is the weakest vision model of the three.** §7 / §11 / §12.1–12.3 / §13 Q2/Q3 updated. Recommendation now stands: **qwen35_4b + P3 (88 %, ~2.9 s)**. Next: R9 (9B × P3), the final cell. |
