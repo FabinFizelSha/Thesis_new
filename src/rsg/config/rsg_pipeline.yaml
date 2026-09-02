@@ -250,6 +250,17 @@ phase1:                                                                         
       min_consensus: 0.0                                                                             # Do not delay updates while evaluating the RAP/VLM pipeline.
       min_evidence: 0.0                                                                              # Do not require accumulated evidence before publishing a label.
 
+  loop_closure:                                                                                     # Re-anchor the persistent-object cache when the back-end corrects drift via map->odom.
+    enabled: false                                                                                  # Keep off until a front end publishes a non-identity map->odom (LCD on, split map/odom frames). Current GT-odom setup: map==odom==world, nothing to react to.
+    map_frame: map                                                                                  # Drift-corrected frame published by the SLAM back-end.
+    odom_frame: odom                                                                                # Continuous (drifting) odometry frame.
+    min_translation_m: 0.05                                                                         # Ignore map->odom jitter below this; only a real correction re-anchors.
+    min_rotation_deg: 0.5                                                                           # Same, for the yaw component of the correction.
+    merge_duplicates: true                                                                          # After a re-anchor, fold the revisit duplicate track into its pre-closure identity.
+    merge_recent_window_sec: 5.0                                                                    # A track last seen within this window counts as the fresh (post-correction) copy.
+    merge_distance_slack_m: 0.6                                                                     # Drift-pass search radius = |correction|*1.25 + this.
+    event_topic: /rsg/phase1/loop_closure_event                                                     # One JSON diagnostic per re-anchor (delta, track/merge counts).
+
   metadata:
     include_object_metadata: true                                                                    # Include object-to-slot and inference metadata.
     include_known_objects: true                                                                      # Include objects already recognized by RAP/VLM.

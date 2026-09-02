@@ -244,8 +244,67 @@ def _aabb_union_xy_diagonal(
     return _aabb_xy_diagonal(union_min, union_max)
 
 
+def _aabb_iou_3d(
+    a_min: np.ndarray,
+    a_max: np.ndarray,
+    b_min: np.ndarray,
+    b_max: np.ndarray,
+) -> float:
+    """Symmetric 3D intersection-over-union of two axis-aligned boxes."""
+    inter = np.maximum(
+        0.0, np.minimum(a_max, b_max) - np.maximum(a_min, b_min)
+    )
+    inter_vol = float(inter[0] * inter[1] * inter[2])
+    if inter_vol <= 0.0:
+        return 0.0
+    vol_a = float(np.prod(np.maximum(0.0, a_max - a_min)))
+    vol_b = float(np.prod(np.maximum(0.0, b_max - b_min)))
+    union = vol_a + vol_b - inter_vol
+    return inter_vol / union if union > 1e-9 else 0.0
+
+
+def _rigid_point(point: Optional[np.ndarray], rot: np.ndarray, trans: np.ndarray) -> Optional[np.ndarray]:
+    """Apply ``p -> R @ p + t`` to a single 3D point (``None`` passes through)."""
+    if point is None:
+        return None
+    return (rot @ np.asarray(point, dtype=np.float64)) + trans
+
+
+def _rigid_aabb(
+    bbox_min: Optional[np.ndarray],
+    bbox_max: Optional[np.ndarray],
+    rot: np.ndarray,
+    trans: np.ndarray,
+) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+    """Rigid-transform an axis-aligned box.
+
+    A non-zero rotation tilts the box, so all eight corners are transformed and
+    a fresh axis-aligned min/max is taken.  Exact for a pure translation, and
+    the tightest axis-aligned envelope otherwise.
+    """
+    if bbox_min is None or bbox_max is None:
+        return bbox_min, bbox_max
+    lo = np.asarray(bbox_min, dtype=np.float64)
+    hi = np.asarray(bbox_max, dtype=np.float64)
+    corners = np.array(
+        [[lo[0], lo[1], lo[2]], [lo[0], lo[1], hi[2]],
+         [lo[0], hi[1], lo[2]], [lo[0], hi[1], hi[2]],
+         [hi[0], lo[1], lo[2]], [hi[0], lo[1], hi[2]],
+         [hi[0], hi[1], lo[2]], [hi[0], hi[1], hi[2]]],
+        dtype=np.float64,
+    )
+    moved = (corners @ rot.T) + trans
+    return moved.min(axis=0), moved.max(axis=0)
+
+
 def _normalise_label(value: Any) -> str:
     return " ".join(str(value or "").strip().lower().replace("_", " ").split())
+
+
+def _track_sort_key(track_id: Any) -> Tuple[int, Any]:
+    """Deterministic ordering for track ids that are usually plain integers."""
+    text = str(track_id)
+    return (0, int(text)) if text.isdigit() else (1, text)
 
 
 def _as_list(value: Optional[np.ndarray]) -> Optional[List[float]]:
@@ -373,6 +432,7 @@ class PersistentObjectTracker:
         self._spatial_bbox_cells_by_track: Dict[str, Set[Tuple[int, int]]] = {}
         self._spatial_centroid_cell_by_track: Dict[str, Tuple[int, int]] = {}
         self._spatial_fallback_track_ids: Set[str] = set()
+        self._last_reanchor: Optional[Dict[str, Any]] = None
         self._lock = Lock()
 
     def begin_frame(self) -> None:
@@ -1710,6 +1770,353 @@ class PersistentObjectTracker:
         self._activate_segment(track, segment)
         return "new_segment", "local_span_exceeded_or_new_local_identity", None
 
+    # ------------------------------------------------------------------
+    # Loop-closure re-anchoring
+    #
+    # When the SLAM back-end folds an accumulated-drift correction into the
+    # ``map -> odom`` transform, every cached track/segment coordinate is stale
+    # by that same rigid step.  ``reanchor_all`` moves the geometry in place;
+    # ``merge_reanchor_duplicates`` folds identities that were split before the
+    # correction and only coincide once the geometry has been moved.  Neither
+    # runs in the steady-state association path.
+    # ------------------------------------------------------------------
+    def reanchor_all(
+        self,
+        rotation: Any,
+        translation: Any,
+        *,
+        stamp: Optional[float] = None,
+    ) -> int:
+        """Rigid-transform every cached track and segment by ``p -> R @ p + t``.
+
+        Only geometry moves.  EMA state, observation counts, labels, Hydra
+        slots and the shared crop registries are untouched.  ``bbox_volume_m3``
+        is invariant under a rigid motion and is left as-is.  Returns the number
+        of tracks re-anchored.
+        """
+        rot = np.asarray(rotation, dtype=np.float64).reshape(3, 3)
+        trans = np.asarray(translation, dtype=np.float64).reshape(3)
+        with self._lock:
+            for track in self._tracks.values():
+                track.centroid_3d = _rigid_point(track.centroid_3d, rot, trans)
+                track.bbox_3d_min, track.bbox_3d_max = _rigid_aabb(
+                    track.bbox_3d_min, track.bbox_3d_max, rot, trans
+                )
+                track.last_bbox_3d_min, track.last_bbox_3d_max = _rigid_aabb(
+                    track.last_bbox_3d_min, track.last_bbox_3d_max, rot, trans
+                )
+                for segment in track.segments.values():
+                    segment.centroid_3d = _rigid_point(segment.centroid_3d, rot, trans)
+                    segment.bbox_3d_min, segment.bbox_3d_max = _rigid_aabb(
+                        segment.bbox_3d_min, segment.bbox_3d_max, rot, trans
+                    )
+                    segment.last_bbox_3d_min, segment.last_bbox_3d_max = _rigid_aabb(
+                        segment.last_bbox_3d_min, segment.last_bbox_3d_max, rot, trans
+                    )
+                self._refresh_spatial_index(track)
+            count = len(self._tracks)
+            self._last_reanchor = {
+                "stamp_sec": float(stamp) if stamp is not None else None,
+                "translation": [float(v) for v in trans],
+                "rotation": [float(v) for v in rot.reshape(9)],
+                "track_count": int(count),
+            }
+        return count
+
+    def last_reanchor(self) -> Optional[Dict[str, Any]]:
+        """Return a copy of the most recent :meth:`reanchor_all` summary."""
+        with self._lock:
+            return dict(self._last_reanchor) if self._last_reanchor else None
+
+    def _reanchor_labels_compatible(
+        self, a: PersistentObjectTrack, b: PersistentObjectTrack
+    ) -> bool:
+        if a.semantic_kind != b.semantic_kind:
+            return False
+        generic = {"", "unknown", "unknown object", "object", "thing", "stuff", "background"}
+
+        def strong_label(track: PersistentObjectTrack) -> str:
+            for candidate in (
+                track.semantic_label,
+                track.canonical_label,
+                track.raw_vlm_label,
+                track.raw_rap_label,
+            ):
+                name = _normalise_label(candidate)
+                if name and name not in generic:
+                    return name
+            return ""
+
+        label_a = strong_label(a)
+        label_b = strong_label(b)
+        if label_a and label_b:
+            return label_a == label_b
+        return True
+
+    def _merge_track_pair(
+        self,
+        keep: PersistentObjectTrack,
+        drop: PersistentObjectTrack,
+        *,
+        iou_3d: float,
+        distance_m: float,
+        reason: str,
+        adopt_drop_geometry: bool,
+    ) -> None:
+        """Fold ``drop`` into ``keep``.
+
+        ``keep`` always retains the surviving ``track_id``, label evidence and
+        (earlier) first-seen.  With ``adopt_drop_geometry`` the survivor takes
+        ``drop``'s centroid and last box verbatim -- used for the loop-closure
+        case, where ``drop`` is the freshly re-observed, drift-corrected copy
+        and ``keep`` is the stale original.  Otherwise the centroid is an
+        observation-weighted blend and the global box is the union.
+        """
+        kc = max(1, int(keep.seen_count))
+        dc = max(1, int(drop.seen_count))
+
+        union_min = None
+        union_max = None
+        if keep.bbox_3d_min is not None and drop.bbox_3d_min is not None:
+            union_min = np.minimum(keep.bbox_3d_min, drop.bbox_3d_min)
+            union_max = np.maximum(keep.bbox_3d_max, drop.bbox_3d_max)
+
+        if adopt_drop_geometry:
+            if drop.centroid_3d is not None:
+                keep.centroid_3d = np.asarray(drop.centroid_3d, dtype=np.float64).copy()
+            if drop.bbox_3d_min is not None:
+                keep.bbox_3d_min = np.asarray(drop.bbox_3d_min, dtype=np.float64).copy()
+                keep.bbox_3d_max = np.asarray(drop.bbox_3d_max, dtype=np.float64).copy()
+            if drop.last_bbox_3d_min is not None:
+                keep.last_bbox_3d_min = np.asarray(drop.last_bbox_3d_min, dtype=np.float64).copy()
+                keep.last_bbox_3d_max = np.asarray(drop.last_bbox_3d_max, dtype=np.float64).copy()
+        else:
+            if keep.centroid_3d is not None and drop.centroid_3d is not None:
+                keep.centroid_3d = (kc * keep.centroid_3d + dc * drop.centroid_3d) / float(kc + dc)
+            elif keep.centroid_3d is None:
+                keep.centroid_3d = drop.centroid_3d
+            if union_min is not None:
+                keep.bbox_3d_min, keep.bbox_3d_max = union_min, union_max
+            if drop.last_bbox_3d_min is not None and (
+                keep.last_bbox_3d_min is None
+                or float(drop.last_seen_timestamp_sec) >= float(keep.last_seen_timestamp_sec)
+            ):
+                keep.last_bbox_3d_min = drop.last_bbox_3d_min
+                keep.last_bbox_3d_max = drop.last_bbox_3d_max
+
+        if keep.bbox_3d_min is not None and keep.bbox_3d_max is not None:
+            keep.bbox_volume_m3 = float(
+                np.prod(np.maximum(0.0, keep.bbox_3d_max - keep.bbox_3d_min))
+            )
+        keep.seen_count = kc + dc
+
+        if float(drop.first_seen_timestamp_sec) < float(keep.first_seen_timestamp_sec):
+            keep.first_seen_timestamp_sec = drop.first_seen_timestamp_sec
+            keep.first_seen_frame_id = drop.first_seen_frame_id
+            keep.first_seen_sequence = drop.first_seen_sequence
+        if float(drop.last_seen_timestamp_sec) > float(keep.last_seen_timestamp_sec):
+            keep.last_seen_timestamp_sec = drop.last_seen_timestamp_sec
+            keep.last_seen_frame_id = drop.last_seen_frame_id
+            keep.last_seen_sequence = drop.last_seen_sequence
+
+        for key, value in (drop.label_evidence or {}).items():
+            keep.label_evidence[key] = keep.label_evidence.get(key, 0.0) + float(value)
+        for key, value in (drop.label_observations or {}).items():
+            keep.label_observations[key] = keep.label_observations.get(key, 0) + int(value)
+
+        # Hydra slot ids are globally unique, so ``drop``'s segments can be
+        # re-keyed straight onto the survivor without collision.  Each keeps its
+        # own slot; presence continuity matters more than slot economy.
+        for slot_id, segment in drop.segments.items():
+            segment.segment_id = f"{keep.track_id}:slot_{int(segment.hydra_label_id)}"
+            keep.segments.setdefault(int(slot_id), segment)
+
+        keep.metadata.setdefault("reanchor_merged_from", []).append(
+            {
+                "track_id": drop.track_id,
+                "internal_object_id": drop.track_id,
+                "seen_count": int(dc),
+                "iou_3d": round(float(iou_3d), 4),
+                "distance_m": round(float(distance_m), 4),
+                "reason": str(reason),
+                "adopted_geometry": bool(adopt_drop_geometry),
+                "slot_ids": sorted(int(s) for s in drop.segments),
+            }
+        )
+        self._forget_spatial_index(drop.track_id)
+
+    def merge_reanchor_duplicates(
+        self,
+        *,
+        correction_translation_m: float = 0.0,
+        now_sec: Optional[float] = None,
+        recent_window_sec: float = 5.0,
+        distance_slack_m: float = 0.6,
+        min_iou_3d: float = 0.30,
+        max_centroid_distance_m: Optional[float] = None,
+    ) -> int:
+        """Fold together track identities that describe one physical object but
+        were split before a loop closure.
+
+        Two complementary passes, both conservative and both label-gated:
+
+        * **drift pass** (needs ``now_sec``): a track re-observed within
+          ``recent_window_sec`` is folded into an older compatible track whose
+          centroid lies within ``|correction| * 1.25 + distance_slack_m``.  A
+          rigid re-anchor cannot close this gap because the pair straddles the
+          drift; the survivor is the older identity but it adopts the fresh
+          (drift-corrected) geometry.
+        * **overlap pass**: any remaining track pair that now genuinely overlaps
+          (``min_iou_3d``) and sits within ``max_centroid_distance_m`` is folded
+          with an observation-weighted blend -- ordinary fragmentation cleanup.
+
+        Runs once per correction, never in the steady-state association path.
+        Returns the number of tracks removed.
+        """
+        if max_centroid_distance_m is None:
+            max_centroid_distance_m = float(
+                getattr(
+                    self.config,
+                    "persistent_global_centroid_pass_m",
+                    getattr(self.config, "persistent_max_match_distance_m", 1.0),
+                )
+            )
+        drift_radius = max(
+            float(distance_slack_m),
+            abs(float(correction_translation_m)) * 1.25 + float(distance_slack_m),
+        )
+        removed = 0
+        with self._lock:
+            def _xy_gap(a: PersistentObjectTrack, b: PersistentObjectTrack) -> Optional[float]:
+                if a.centroid_3d is None or b.centroid_3d is None:
+                    return None
+                return float(np.linalg.norm(a.centroid_3d[:2] - b.centroid_3d[:2]))
+
+            gone: Set[str] = set()
+            absorbed: Set[str] = set()
+
+            # --- drift pass -------------------------------------------------
+            if now_sec is not None:
+                recent = sorted(
+                    (
+                        t
+                        for t in self._tracks.values()
+                        if t.bbox_3d_min is not None
+                        and t.centroid_3d is not None
+                        and float(now_sec) - float(t.last_seen_timestamp_sec) <= float(recent_window_sec)
+                    ),
+                    key=lambda t: _track_sort_key(t.track_id),
+                )
+                for fresh in recent:
+                    if fresh.track_id in gone:
+                        continue
+                    best: Optional[PersistentObjectTrack] = None
+                    best_gap = drift_radius
+                    for cand in self._tracks.values():
+                        if cand.track_id == fresh.track_id or cand.track_id in gone or cand.track_id in absorbed:
+                            continue
+                        if cand.bbox_3d_min is None or cand.centroid_3d is None:
+                            continue
+                        if float(now_sec) - float(cand.last_seen_timestamp_sec) <= float(recent_window_sec):
+                            continue  # both fresh -> not a stale/fresh pair
+                        if float(cand.first_seen_timestamp_sec) > float(fresh.first_seen_timestamp_sec):
+                            continue  # survivor must be the older identity
+                        if not self._reanchor_labels_compatible(cand, fresh):
+                            continue
+                        gap = _xy_gap(cand, fresh)
+                        if gap is None or gap > best_gap:
+                            continue
+                        best, best_gap = cand, gap
+                    if best is None:
+                        continue
+                    iou = _aabb_iou_3d(
+                        best.bbox_3d_min, best.bbox_3d_max,
+                        fresh.bbox_3d_min, fresh.bbox_3d_max,
+                    )
+                    self._merge_track_pair(
+                        best, fresh,
+                        iou_3d=iou, distance_m=best_gap,
+                        reason="loop_closure_drift", adopt_drop_geometry=True,
+                    )
+                    gone.add(fresh.track_id)
+                    absorbed.add(best.track_id)
+                    self._refresh_spatial_index(best)
+                    removed += 1
+
+            # --- overlap pass --------------------------------------------------
+            ordered = sorted(
+                (
+                    t
+                    for t in self._tracks.values()
+                    if t.track_id not in gone
+                    and t.bbox_3d_min is not None
+                    and t.bbox_3d_max is not None
+                ),
+                key=lambda t: (-int(t.seen_count), _track_sort_key(t.track_id)),
+            )
+            for keep in ordered:
+                if keep.track_id in gone:
+                    continue
+                for cid in self._candidate_track_ids(
+                    keep.centroid_3d, keep.bbox_3d_min, keep.bbox_3d_max
+                ):
+                    if cid == keep.track_id or cid in gone or cid in absorbed:
+                        continue
+                    drop = self._tracks.get(cid)
+                    if (
+                        drop is None
+                        or drop.bbox_3d_min is None
+                        or drop.bbox_3d_max is None
+                        or int(drop.seen_count) > int(keep.seen_count)
+                        or not self._reanchor_labels_compatible(keep, drop)
+                    ):
+                        continue
+                    iou = _aabb_iou_3d(
+                        keep.bbox_3d_min, keep.bbox_3d_max,
+                        drop.bbox_3d_min, drop.bbox_3d_max,
+                    )
+                    if iou < float(min_iou_3d):
+                        continue
+                    gap = _xy_gap(keep, drop)
+                    if gap is not None and gap > float(max_centroid_distance_m):
+                        continue
+                    self._merge_track_pair(
+                        keep, drop,
+                        iou_3d=iou, distance_m=(gap if gap is not None else 0.0),
+                        reason="post_reanchor_overlap", adopt_drop_geometry=False,
+                    )
+                    gone.add(cid)
+                    absorbed.add(keep.track_id)
+                    removed += 1
+                if keep.track_id not in gone:
+                    self._refresh_spatial_index(keep)
+
+            for cid in gone:
+                self._tracks.pop(cid, None)
+        return removed
+
+    def debug_snapshot(self) -> List[Dict[str, Any]]:
+        """Read-only geometry dump for tests and loop-closure diagnostics."""
+        with self._lock:
+            return [
+                {
+                    "track_id": track.track_id,
+                    "internal_object_id": track.track_id,
+                    "seen_count": int(track.seen_count),
+                    "semantic_kind": track.semantic_kind,
+                    "canonical_label": track.canonical_label,
+                    "semantic_label": track.semantic_label,
+                    "centroid_3d": _as_list(track.centroid_3d),
+                    "bbox_3d_min": _as_list(track.bbox_3d_min),
+                    "bbox_3d_max": _as_list(track.bbox_3d_max),
+                    "segment_slot_ids": sorted(int(s) for s in track.segments),
+                    "reanchor_merged_from": list(
+                        track.metadata.get("reanchor_merged_from", [])
+                    ),
+                }
+                for track in self._tracks.values()
+            ]
+
     def _spatial_cell_size(self) -> float:
         return max(0.25, min(2.0, max(
             float(getattr(self.config, "persistent_global_centroid_pass_m", self.config.persistent_max_match_distance_m)),
@@ -1727,20 +2134,27 @@ class PersistentObjectTracker:
             return None
         return {(x, y) for x in range(x0, x1 + 1) for y in range(y0, y1 + 1)}
 
-    def _refresh_spatial_index(self, track: PersistentObjectTrack) -> None:
-        track_id = track.track_id
+    def _forget_spatial_index(self, track_id: str) -> None:
+        """Drop every spatial-index entry for one track id."""
         for cell in self._spatial_bbox_cells_by_track.pop(track_id, set()):
-            ids = self._spatial_bbox_cells[cell]
+            ids = self._spatial_bbox_cells.get(cell)
+            if ids is None:
+                continue
             ids.discard(track_id)
             if not ids:
                 del self._spatial_bbox_cells[cell]
         centroid_cell = self._spatial_centroid_cell_by_track.pop(track_id, None)
         if centroid_cell is not None:
-            ids = self._spatial_centroid_cells[centroid_cell]
-            ids.discard(track_id)
-            if not ids:
-                del self._spatial_centroid_cells[centroid_cell]
+            ids = self._spatial_centroid_cells.get(centroid_cell)
+            if ids is not None:
+                ids.discard(track_id)
+                if not ids:
+                    del self._spatial_centroid_cells[centroid_cell]
         self._spatial_fallback_track_ids.discard(track_id)
+
+    def _refresh_spatial_index(self, track: PersistentObjectTrack) -> None:
+        track_id = track.track_id
+        self._forget_spatial_index(track_id)
 
         if track.bbox_3d_min is None or track.bbox_3d_max is None:
             self._spatial_fallback_track_ids.add(track_id)

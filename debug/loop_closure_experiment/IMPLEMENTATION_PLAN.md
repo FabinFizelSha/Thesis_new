@@ -1,11 +1,25 @@
 # Loop-closure re-anchoring — implementation plan
 
-Status: **proposed, not yet implemented.** Steps 1–2 of the agreed 5-step plan
-are done (code pushed & verified; loop windows identified and test bags cut).
-This is step 3 (implement) + step 4 (test harness). Get sign-off before coding —
-it touches `phase1.py`, `persistent_object_tracker.py`, config, and needs a
-front-end / Hydra prerequisite the current GT-odom setup does not meet
-(see README §5).
+Status: **step 3 implemented + step 4 harness partly built.** Steps 1–2 done
+(code pushed & verified; loop windows identified and test bags cut).
+
+Landed (behind `phase1.loop_closure.enabled: false`, so production is unchanged):
+
+| piece | where |
+|---|---|
+| `_rigid_point`, `_rigid_aabb`, `_aabb_iou_3d`, `_track_sort_key` | `persistent_object_tracker.py` (module helpers) |
+| `PersistentObjectTracker.reanchor_all(rotation, translation, *, stamp=None) -> int` | rigid-transforms every track+segment `centroid_3d` / `bbox_3d_min/max` / `last_bbox_3d_min/max`, rebuilds spatial index, records `last_reanchor()` |
+| `PersistentObjectTracker.merge_reanchor_duplicates(*, correction_translation_m, now_sec, recent_window_sec, distance_slack_m, min_iou_3d, max_centroid_distance_m) -> int` | drift pass (stale↔fresh pair within `\|correction\|·1.25 + slack`, survivor adopts fresh geometry) + overlap pass (weighted blend) |
+| `PersistentObjectTracker.debug_snapshot()`, `last_reanchor()` | read-only dumps for tests / diagnostics |
+| `_forget_spatial_index(track_id)` | extracted from `_refresh_spatial_index` |
+| `Phase1SemanticCoordinator._maybe_reanchor_on_loop_closure(timestamp_sec)` + `_quat_to_rot` | `phase1.py`; TF `Buffer`/`TransformListener(spin_thread=True)` in `__init__`; call site at the `begin_frame()` line |
+| `/rsg/phase1/loop_closure_event` (`std_msgs/String` JSON) | published per re-anchor |
+| `phase1.loop_closure` config block | `phase1_config.py` (`loop_closure_*` fields) + `rsg_pipeline.yaml` |
+| `src/rsg/tests/test_reanchor.py` | 9 unit tests (translation / rotation-AABB / spatial-index / drift-merge / overlap-merge / label-gate / radius-gate / end-to-end), all green |
+| `debug/loop_closure_experiment/loop_jump_injector.py` | ROS node: `map→odom` identity until `t_jump_sec`, then step `(dx,dy,dz,dyaw_deg)` (optional `ramp_sec`) |
+
+Still to do: §5c `run_loop_test.sh` end-to-end script + §5d baseline, and the
+front-end / frame-split prerequisite for step 5 (below).
 
 ---
 
@@ -278,6 +292,17 @@ slot, so a re-anchored, non-duplicated slot set flows through as-is.
 ## 7. Order of work
 
 1. ~~resolve §3c (camera-pose frame)~~ — done: incoming pose is raw `odom`.
+2. ~~`reanchor_all` + rigid helpers + `test_reanchor.py` §5b~~ — done, 9/9 green.
+3. ~~`loop_jump_injector.py`~~ — done.
+4. ~~phase-1 TF listener + call site + config + event topic~~ — done.
+5. ~~`merge_reanchor_duplicates` + its unit test~~ — done (drift + overlap passes).
+6. `run_loop_test.sh`, baseline vs enabled on `uHumans2_loop_L3`. — TODO
+7. large-drift check on `uHumans2_loop_L1`. — TODO
+8. document results + restore `loop_closure.enabled: false` default. — TODO
+
+### Legacy ordered list (kept for reference)
+
+1. resolve §3c (camera-pose frame) — 15 min reading upstream node.
 2. `reanchor_all` + rigid helpers + `test_reanchor.py` §5b (unit, no ROS). ✅ gate
 3. `loop_jump_injector.py`.
 4. phase-1 TF listener + call site + config + event topic.

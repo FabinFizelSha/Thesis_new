@@ -62,6 +62,25 @@ from nodes.support.phase1.vlm_result import infer_mobility_from_label
 from nodes.phase1_pipeline import SegmentationStage, TrackingStage, SemanticsStage, PublishingStage
 
 
+def _quat_to_rot(x: float, y: float, z: float, w: float) -> np.ndarray:
+    """Unit-quaternion (x, y, z, w) -> 3x3 rotation matrix."""
+    n = float(x * x + y * y + z * z + w * w)
+    if n < 1e-12:
+        return np.eye(3)
+    s = 2.0 / n
+    xx, yy, zz = x * x * s, y * y * s, z * z * s
+    xy, xz, yz = x * y * s, x * z * s, y * z * s
+    wx, wy, wz = w * x * s, w * y * s, w * z * s
+    return np.array(
+        [
+            [1.0 - (yy + zz), xy - wz, xz + wy],
+            [xy + wz, 1.0 - (xx + zz), yz - wx],
+            [xz - wy, yz + wx, 1.0 - (xx + yy)],
+        ],
+        dtype=np.float64,
+    )
+
+
 class Phase1SemanticCoordinator(Node):
     """Coordinate Phase 1 segmentation, tracking, RAP retrieval, and VLM fallback.
 
@@ -239,6 +258,31 @@ class Phase1SemanticCoordinator(Node):
         )
         self.status_pub = self.create_publisher(String, self.config.status_topic, output_qos)
         self.unknown_pub = self.create_publisher(String, self.config.unknown_candidates_topic, output_qos)
+
+        # Loop-closure re-anchoring: watch ``map -> odom`` for a drift-correction
+        # step and rigid-transform the whole persistent-object cache when it
+        # jumps.  Off unless a front end actually publishes a non-identity
+        # ``map -> odom`` (LCD on, split map/odom frames).
+        self._loop_closure_enabled = bool(getattr(self.config, "loop_closure_enabled", False))
+        self._tf_buffer = None
+        self._tf_listener = None
+        self._last_map_odom: Optional[Tuple[np.ndarray, np.ndarray]] = None
+        self.loop_closure_pub = None
+        if self._loop_closure_enabled:
+            from tf2_ros import Buffer as _TfBuffer, TransformListener as _TfListener
+
+            self._tf_buffer = _TfBuffer()
+            # spin_thread=True: the listener runs its own executor so TF ingest
+            # never contends with the frame-processing callback.
+            self._tf_listener = _TfListener(self._tf_buffer, self, spin_thread=True)
+            self.loop_closure_pub = self.create_publisher(
+                String, self.config.loop_closure_event_topic, output_qos
+            )
+            self.get_logger().info(
+                "Loop-closure re-anchoring enabled: watching "
+                f"{self.config.loop_closure_map_frame} -> {self.config.loop_closure_odom_frame}"
+            )
+
         self.timing_pub = None
         if self.config.timing_enabled and self.config.publish_timing_topic:
             self.timing_pub = self.create_publisher(Float64MultiArray, self.config.timing_topic, output_qos)
@@ -1030,6 +1074,85 @@ class Phase1SemanticCoordinator(Node):
         )
         return result
 
+    def _maybe_reanchor_on_loop_closure(self, timestamp_sec: float) -> None:
+        """Re-anchor the persistent-object cache after a ``map -> odom`` jump.
+
+        Called once per frame on the tracking/publish thread, immediately
+        before ``begin_frame``.  Reads the latest ``map -> odom`` from TF; on
+        the first read it just records the baseline.  Afterwards a step change
+        beyond the configured thresholds triggers
+        ``PersistentObjectTracker.reanchor_all`` (rigid transform of every
+        track/segment) and, optionally, ``merge_reanchor_duplicates``.
+        """
+        if not self._loop_closure_enabled or self._tf_buffer is None:
+            return
+        from rclpy.time import Time
+
+        try:
+            tf = self._tf_buffer.lookup_transform(
+                self.config.loop_closure_map_frame,
+                self.config.loop_closure_odom_frame,
+                Time(),
+            )
+        except Exception:
+            return  # transform not available yet / extrapolation -- try next frame
+
+        tr = tf.transform.translation
+        q = tf.transform.rotation
+        rot_new = _quat_to_rot(q.x, q.y, q.z, q.w)
+        trans_new = np.array([tr.x, tr.y, tr.z], dtype=np.float64)
+
+        if self._last_map_odom is None:
+            self._last_map_odom = (rot_new, trans_new)
+            return
+
+        rot_old, trans_old = self._last_map_odom
+        # delta = T_new . inv(T_old);  inv(T_old) = (R_old^T, -R_old^T t_old)
+        rot_delta = rot_new @ rot_old.T
+        trans_delta = trans_new - rot_delta @ trans_old
+        trans_norm = float(np.linalg.norm(trans_delta))
+        cos_angle = float(np.clip((np.trace(rot_delta) - 1.0) / 2.0, -1.0, 1.0))
+        angle_deg = float(np.degrees(np.arccos(cos_angle)))
+
+        if (
+            trans_norm < float(self.config.loop_closure_min_translation_m)
+            and angle_deg < float(self.config.loop_closure_min_rotation_deg)
+        ):
+            self._last_map_odom = (rot_new, trans_new)
+            return
+
+        n_tracks = self.persistent_tracker.reanchor_all(
+            rot_delta, trans_delta, stamp=timestamp_sec
+        )
+        n_merged = 0
+        if self.config.loop_closure_merge_duplicates:
+            n_merged = self.persistent_tracker.merge_reanchor_duplicates(
+                correction_translation_m=trans_norm,
+                now_sec=timestamp_sec,
+                recent_window_sec=float(self.config.loop_closure_merge_recent_window_sec),
+                distance_slack_m=float(self.config.loop_closure_merge_distance_slack_m),
+            )
+        self._last_map_odom = (rot_new, trans_new)
+        self.get_logger().warn(
+            f"loop-closure re-anchor: |dt|={trans_norm:.3f} m dtheta={angle_deg:.2f} deg "
+            f"tracks={n_tracks} merged={n_merged}"
+        )
+        if self.loop_closure_pub is not None:
+            msg = String()
+            msg.data = safe_json_dumps(
+                {
+                    "timestamp_sec": float(timestamp_sec),
+                    "delta_translation_m": [float(v) for v in trans_delta],
+                    "delta_translation_norm_m": trans_norm,
+                    "delta_rotation_deg": angle_deg,
+                    "tracks_reanchored": int(n_tracks),
+                    "tracks_merged": int(n_merged),
+                    "map_frame": self.config.loop_closure_map_frame,
+                    "odom_frame": self.config.loop_closure_odom_frame,
+                }
+            )
+            self.loop_closure_pub.publish(msg)
+
     def run_rap_and_metadata(
         self,
         frame: RsgFrame,
@@ -1066,6 +1189,7 @@ class Phase1SemanticCoordinator(Node):
         # debug/optimisation/optimisation_part3/PART3_REPORT.md.
         association_stage_ms: Optional[Dict[str, float]] = {} if timing_enabled else None
         if self.config.persistent_tracking_enabled:
+            self._maybe_reanchor_on_loop_closure(timestamp_sec)
             self.persistent_tracker.begin_frame()
 
         # Build geometry for every SAM observation before mutating any track.

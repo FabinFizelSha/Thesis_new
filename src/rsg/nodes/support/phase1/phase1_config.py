@@ -333,6 +333,22 @@ class Phase1Config:
     persistent_require_known_label_match: bool = True
     persistent_unclassified_label_id: int = 0
 
+    # Loop-closure re-anchoring.  When the SLAM back-end folds an accumulated
+    # drift correction into ``map -> odom``, phase 1 rigid-transforms every
+    # cached track/segment by the same step so a re-observed object
+    # re-associates instead of spawning a duplicate.  Disabled by default; a
+    # front end that publishes a non-identity ``map -> odom`` (LCD on, distinct
+    # map/odom frames) is required for it to do anything.
+    loop_closure_enabled: bool = False
+    loop_closure_map_frame: str = "map"
+    loop_closure_odom_frame: str = "odom"
+    loop_closure_min_translation_m: float = 0.05
+    loop_closure_min_rotation_deg: float = 0.5
+    loop_closure_merge_duplicates: bool = True
+    loop_closure_merge_recent_window_sec: float = 5.0
+    loop_closure_merge_distance_slack_m: float = 0.6
+    loop_closure_event_topic: str = "/rsg/phase1/loop_closure_event"
+
     # Optional fixed Hydra-slot mode. Every new physical object receives a
     # predeclared semantic slot ID, stable for the full mapping session.
     persistent_use_hydra_slots: bool = False
@@ -425,6 +441,7 @@ class Phase1Config:
         persistent_tracking = phase1.get("persistent_tracking", {}) or {}
         persistent_slots = persistent_tracking.get("slots", {}) or {}
         semantic_result = persistent_tracking.get("semantic_result", {}) or {}
+        loop_closure = phase1.get("loop_closure", {}) or {}
         deployment = phase1.get("deployment", {}) or {}
         performance = phase1.get("performance", {}) or {}
 
@@ -766,6 +783,15 @@ class Phase1Config:
             persistent_rap_evidence_weight=max(0.0, float(persistent_tracking.get("rap_evidence_weight", 0.70))),
             persistent_vlm_evidence_weight=max(0.0, float(persistent_tracking.get("vlm_evidence_weight", 1.00))),
             persistent_label_aliases=persistent_label_aliases,
+            loop_closure_enabled=bool(loop_closure.get("enabled", False)),
+            loop_closure_map_frame=str(loop_closure.get("map_frame", "map")),
+            loop_closure_odom_frame=str(loop_closure.get("odom_frame", "odom")),
+            loop_closure_min_translation_m=max(0.0, float(loop_closure.get("min_translation_m", 0.05))),
+            loop_closure_min_rotation_deg=max(0.0, float(loop_closure.get("min_rotation_deg", 0.5))),
+            loop_closure_merge_duplicates=bool(loop_closure.get("merge_duplicates", True)),
+            loop_closure_merge_recent_window_sec=max(0.0, float(loop_closure.get("merge_recent_window_sec", 5.0))),
+            loop_closure_merge_distance_slack_m=max(0.0, float(loop_closure.get("merge_distance_slack_m", 0.6))),
+            loop_closure_event_topic=str(loop_closure.get("event_topic", "/rsg/phase1/loop_closure_event")),
         )
         if config.persistent_tracking_enabled and not config.estimate_object_geometry:
             raise ValueError(

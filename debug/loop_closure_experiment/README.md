@@ -111,14 +111,20 @@ where the robot genuinely re-observes the same objects.
 
 ---
 
-## 6. Proposed implementation (summary — full plan in `IMPLEMENTATION_PLAN.md`)
+## 6. Implementation status (full detail in `IMPLEMENTATION_PLAN.md`)
 
-* **L1 core** — phase-1 reads `map→odom` from TF each cycle; on a jump it
-  computes `ΔT = mapTodom_new ∘ inv(mapTodom_old)` and calls a new
-  `PersistentObjectTracker.reanchor_all(ΔT)` that rigid-transforms every
-  track/segment `centroid_3d`, `bbox_3d_min/max`, `last_bbox_3d_min/max`
+**Landed**, all gated behind `phase1.loop_closure.enabled: false`:
+
+* `PersistentObjectTracker.reanchor_all(R, t)` — rigid-transforms every
+  track/segment `centroid_3d` / `bbox_3d_min/max` / `last_bbox_3d_min/max`
   (8-corner AABB) and rebuilds the spatial index.
-* **L1.5** — a track-merge pass right after re-anchoring, to fold any
-  duplicate tracks created during the loop-detection window.
-* Phase 1 must **not** subscribe to `/hydra/backend/dsg` (large message);
-  TF is enough.
+* `PersistentObjectTracker.merge_reanchor_duplicates(...)` — drift pass (folds
+  the revisit duplicate into its pre-closure identity) + overlap pass.
+* `phase1.py` reads `map→odom` from TF each frame; on a step change beyond the
+  configured thresholds it fires the re-anchor + merge and publishes
+  `/rsg/phase1/loop_closure_event`. No `/hydra/backend/dsg` subscription.
+* `phase1.loop_closure` config block; `src/rsg/tests/test_reanchor.py` (9 tests);
+  `loop_jump_injector.py` (synthetic `map→odom` step for the harness).
+
+**TODO**: `run_loop_test.sh` end-to-end + baseline; the front-end / split
+`map`/`odom` frames prerequisite for a live run (see §5).
