@@ -12,14 +12,25 @@ Landed (behind `phase1.loop_closure.enabled: false`, so production is unchanged)
 | `PersistentObjectTracker.merge_reanchor_duplicates(*, correction_translation_m, now_sec, recent_window_sec, distance_slack_m, min_iou_3d, max_centroid_distance_m) -> int` | drift pass (stale↔fresh pair within `\|correction\|·1.25 + slack`, survivor adopts fresh geometry) + overlap pass (weighted blend) |
 | `PersistentObjectTracker.debug_snapshot()`, `last_reanchor()` | read-only dumps for tests / diagnostics |
 | `_forget_spatial_index(track_id)` | extracted from `_refresh_spatial_index` |
-| `Phase1SemanticCoordinator._maybe_reanchor_on_loop_closure(timestamp_sec)` + `_quat_to_rot` | `phase1.py`; TF `Buffer`/`TransformListener(spin_thread=True)` in `__init__`; call site at the `begin_frame()` line |
+| `nodes/support/phase1/loop_closure.py` | pure `quat_to_rot` + `loop_closure_delta()` (SE(3) step `ΔT = T_new·inv(T_old)` with the below-threshold → `None` gate), no ROS deps |
+| `Phase1SemanticCoordinator._on_tf` + `_maybe_reanchor_on_loop_closure(timestamp_sec)` | `phase1.py`; **two plain `/tf` + `/tf_static` subscriptions on the node's own executor** (no `TransformListener`, no second node/executor), a lock-guarded `_pending_map_odom` latch, call site at the `begin_frame()` line |
 | `/rsg/phase1/loop_closure_event` (`std_msgs/String` JSON) | published per re-anchor |
 | `phase1.loop_closure` config block | `phase1_config.py` (`loop_closure_*` fields) + `rsg_pipeline.yaml` |
-| `src/rsg/tests/test_reanchor.py` | 9 unit tests (translation / rotation-AABB / spatial-index / drift-merge / overlap-merge / label-gate / radius-gate / end-to-end), all green |
+| `src/rsg/tests/test_reanchor.py` | 10 tests (identity-noop / translation / rotation-AABB / spatial-index / drift-merge / overlap-merge / label-gate / radius-gate / end-to-end) |
+| `src/rsg/tests/test_loop_closure_decision.py` | 8 tests: `loop_closure_delta` returns `None` for identity / sub-threshold; left-composition `ΔT·T_old == T_new` |
 | `debug/loop_closure_experiment/loop_jump_injector.py` | ROS node: `map→odom` identity until `t_jump_sec`, then step `(dx,dy,dz,dyaw_deg)` (optional `ramp_sec`) |
 
-Still to do: §5c `run_loop_test.sh` end-to-end script + §5d baseline, and the
-front-end / frame-split prerequisite for step 5 (below).
+**Regression stance (feature turned on, no real correction):** `enabled: false`
+is byte-identical to before the feature (first line of `_maybe_reanchor_*`
+returns; no `/tf` subs created). `enabled: true` with GT odom (`map`/`odom`
+frames never published) adds only the two `/tf` subs + a per-frame
+`None`-latch read; `_pending_map_odom` stays `None`, `reanchor_all` is never
+called, tracker state is untouched. Locked down by the two test files above.
+
+**Synthetic-drift end-to-end test: dropped.** The uHumans2 bag is GT odometry
+with no drift, so fabricating drift only to cancel it re-tests arithmetic the
+unit tests already cover. A real end-to-end test needs a genuinely drifting
+front end + Hydra LCD (below); deferred.
 
 ---
 
@@ -292,13 +303,14 @@ slot, so a re-anchored, non-duplicated slot set flows through as-is.
 ## 7. Order of work
 
 1. ~~resolve §3c (camera-pose frame)~~ — done: incoming pose is raw `odom`.
-2. ~~`reanchor_all` + rigid helpers + `test_reanchor.py` §5b~~ — done, 9/9 green.
-3. ~~`loop_jump_injector.py`~~ — done.
-4. ~~phase-1 TF listener + call site + config + event topic~~ — done.
-5. ~~`merge_reanchor_duplicates` + its unit test~~ — done (drift + overlap passes).
-6. `run_loop_test.sh`, baseline vs enabled on `uHumans2_loop_L3`. — TODO
-7. large-drift check on `uHumans2_loop_L1`. — TODO
-8. document results + restore `loop_closure.enabled: false` default. — TODO
+2. ~~`reanchor_all` + rigid helpers + `test_reanchor.py`~~ — done, 10 tests.
+3. ~~`loop_jump_injector.py`~~ — done (mechanism-only aid).
+4. ~~phase-1 `/tf` watch + call site + config + event topic~~ — done (plain subs, not `TransformListener`).
+5. ~~`merge_reanchor_duplicates` + unit tests~~ — done (drift + overlap passes).
+6. ~~regression tests for feature-on / no-correction~~ — done (`test_loop_closure_decision.py` + `test_reanchor_identity_is_a_noop`).
+7. **Deferred**: real drifting-front-end + Hydra LCD end-to-end test. Blocked on
+   VIO / noisy-IMU odometry wiring in this repo. Synthetic-drift substitute
+   rejected (see the regression-stance note near the top).
 
 ### Legacy ordered list (kept for reference)
 

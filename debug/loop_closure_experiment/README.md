@@ -120,11 +120,21 @@ where the robot genuinely re-observes the same objects.
   (8-corner AABB) and rebuilds the spatial index.
 * `PersistentObjectTracker.merge_reanchor_duplicates(...)` — drift pass (folds
   the revisit duplicate into its pre-closure identity) + overlap pass.
-* `phase1.py` reads `map→odom` from TF each frame; on a step change beyond the
-  configured thresholds it fires the re-anchor + merge and publishes
-  `/rsg/phase1/loop_closure_event`. No `/hydra/backend/dsg` subscription.
-* `phase1.loop_closure` config block; `src/rsg/tests/test_reanchor.py` (9 tests);
-  `loop_jump_injector.py` (synthetic `map→odom` step for the harness).
+* `nodes/support/phase1/loop_closure.py` — pure `loop_closure_delta()`
+  (`ΔT = T_new·inv(T_old)`, `None` when below both thresholds).
+* `phase1.py` — two plain `/tf` + `/tf_static` subscriptions on the node's own
+  executor latch the latest `map→odom`; once per frame, a step beyond the
+  thresholds fires the re-anchor + merge and publishes
+  `/rsg/phase1/loop_closure_event`. No `TransformListener` (no second
+  node/executor), no `/hydra/backend/dsg` subscription.
+* `phase1.loop_closure` config block; `test_reanchor.py` (10) +
+  `test_loop_closure_decision.py` (8); `loop_jump_injector.py` (mechanism aid).
 
-**TODO**: `run_loop_test.sh` end-to-end + baseline; the front-end / split
-`map`/`odom` frames prerequisite for a live run (see §5).
+**Regression check**: `enabled: false` → byte-identical to before the feature.
+`enabled: true` on GT odom (no `map`/`odom` frames) → only 2 `/tf` subs + a
+per-frame no-op latch read; tracker state untouched. Covered by the two test
+files above.
+
+**Deferred**: a real end-to-end test needs a genuinely drifting front end +
+Hydra LCD (see §5). Simulating drift on the GT bag was considered and dropped —
+it only re-tests the arithmetic the unit tests already cover.

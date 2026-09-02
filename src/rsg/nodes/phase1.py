@@ -29,7 +29,7 @@ import rclpy
 from cv_bridge import CvBridge
 from geometry_msgs.msg import PoseStamped, TransformStamped
 from rclpy.node import Node
-from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
+from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import Float64MultiArray, String
 from tf2_ros import TransformBroadcaster
@@ -59,26 +59,8 @@ from nodes.support.phase1.semantic_crop import (
 from nodes.support.phase1.time_utils import stamp_to_float
 from nodes.support.phase1.unknown_tracker import UnknownObjectTracker
 from nodes.support.phase1.vlm_result import infer_mobility_from_label
+from nodes.support.phase1.loop_closure import loop_closure_delta, quat_to_rot
 from nodes.phase1_pipeline import SegmentationStage, TrackingStage, SemanticsStage, PublishingStage
-
-
-def _quat_to_rot(x: float, y: float, z: float, w: float) -> np.ndarray:
-    """Unit-quaternion (x, y, z, w) -> 3x3 rotation matrix."""
-    n = float(x * x + y * y + z * z + w * w)
-    if n < 1e-12:
-        return np.eye(3)
-    s = 2.0 / n
-    xx, yy, zz = x * x * s, y * y * s, z * z * s
-    xy, xz, yz = x * y * s, x * z * s, y * z * s
-    wx, wy, wz = w * x * s, w * y * s, w * z * s
-    return np.array(
-        [
-            [1.0 - (yy + zz), xy - wz, xz + wy],
-            [xy + wz, 1.0 - (xx + zz), yz - wx],
-            [xz - wy, yz + wx, 1.0 - (xx + yy)],
-        ],
-        dtype=np.float64,
-    )
 
 
 class Phase1SemanticCoordinator(Node):
@@ -262,25 +244,39 @@ class Phase1SemanticCoordinator(Node):
         # Loop-closure re-anchoring: watch ``map -> odom`` for a drift-correction
         # step and rigid-transform the whole persistent-object cache when it
         # jumps.  Off unless a front end actually publishes a non-identity
-        # ``map -> odom`` (LCD on, split map/odom frames).
+        # ``map -> odom`` (LCD on, split map/odom frames).  When enabled it adds
+        # only two plain ``/tf`` subscriptions on this node's own executor -- no
+        # extra node, no second executor -- and a per-frame check that
+        # early-returns until a matching ``map -> odom`` transform is seen.
         self._loop_closure_enabled = bool(getattr(self.config, "loop_closure_enabled", False))
-        self._tf_buffer = None
-        self._tf_listener = None
+        self._lc_map_frame = str(getattr(self.config, "loop_closure_map_frame", "map"))
+        self._lc_odom_frame = str(getattr(self.config, "loop_closure_odom_frame", "odom"))
         self._last_map_odom: Optional[Tuple[np.ndarray, np.ndarray]] = None
+        self._pending_map_odom: Optional[Tuple[np.ndarray, np.ndarray]] = None
+        self._map_odom_lock = threading.Lock()
         self.loop_closure_pub = None
         if self._loop_closure_enabled:
-            from tf2_ros import Buffer as _TfBuffer, TransformListener as _TfListener
+            from tf2_msgs.msg import TFMessage
 
-            self._tf_buffer = _TfBuffer()
-            # spin_thread=True: the listener runs its own executor so TF ingest
-            # never contends with the frame-processing callback.
-            self._tf_listener = _TfListener(self._tf_buffer, self, spin_thread=True)
+            tf_qos = QoSProfile(
+                history=HistoryPolicy.KEEP_LAST, depth=100,
+                reliability=ReliabilityPolicy.RELIABLE,
+            )
+            tf_static_qos = QoSProfile(
+                history=HistoryPolicy.KEEP_LAST, depth=100,
+                reliability=ReliabilityPolicy.RELIABLE,
+                durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            )
+            self._tf_sub = self.create_subscription(TFMessage, "/tf", self._on_tf, tf_qos)
+            self._tf_static_sub = self.create_subscription(
+                TFMessage, "/tf_static", self._on_tf, tf_static_qos
+            )
             self.loop_closure_pub = self.create_publisher(
                 String, self.config.loop_closure_event_topic, output_qos
             )
             self.get_logger().info(
                 "Loop-closure re-anchoring enabled: watching "
-                f"{self.config.loop_closure_map_frame} -> {self.config.loop_closure_odom_frame}"
+                f"{self._lc_map_frame} -> {self._lc_odom_frame}"
             )
 
         self.timing_pub = None
@@ -1074,52 +1070,60 @@ class Phase1SemanticCoordinator(Node):
         )
         return result
 
+    def _on_tf(self, msg) -> None:
+        """Capture the latest ``map -> odom`` transform (loop-closure only).
+
+        Runs on this node's executor, same as ``frame_callback``.  Does nothing
+        but store the newest matching transform; all decision logic is deferred
+        to ``_maybe_reanchor_on_loop_closure`` on the tracking thread.
+        """
+        for tr in msg.transforms:
+            if (
+                tr.header.frame_id.lstrip("/") != self._lc_map_frame
+                or tr.child_frame_id.lstrip("/") != self._lc_odom_frame
+            ):
+                continue
+            t = tr.transform.translation
+            q = tr.transform.rotation
+            reading = (
+                quat_to_rot(q.x, q.y, q.z, q.w),
+                np.array([t.x, t.y, t.z], dtype=np.float64),
+            )
+            with self._map_odom_lock:
+                self._pending_map_odom = reading
+
     def _maybe_reanchor_on_loop_closure(self, timestamp_sec: float) -> None:
         """Re-anchor the persistent-object cache after a ``map -> odom`` jump.
 
         Called once per frame on the tracking/publish thread, immediately
-        before ``begin_frame``.  Reads the latest ``map -> odom`` from TF; on
-        the first read it just records the baseline.  Afterwards a step change
-        beyond the configured thresholds triggers
-        ``PersistentObjectTracker.reanchor_all`` (rigid transform of every
-        track/segment) and, optionally, ``merge_reanchor_duplicates``.
+        before ``begin_frame``.  Early-returns unless loop-closure is enabled
+        *and* a ``map -> odom`` transform has actually been received.  The first
+        reading only records the baseline; a later step beyond the configured
+        thresholds triggers ``PersistentObjectTracker.reanchor_all`` and,
+        optionally, ``merge_reanchor_duplicates``.
         """
-        if not self._loop_closure_enabled or self._tf_buffer is None:
+        if not self._loop_closure_enabled:
             return
-        from rclpy.time import Time
+        with self._map_odom_lock:
+            pending = self._pending_map_odom
+        if pending is None:
+            return  # no map -> odom seen yet -- nothing to react to
 
-        try:
-            tf = self._tf_buffer.lookup_transform(
-                self.config.loop_closure_map_frame,
-                self.config.loop_closure_odom_frame,
-                Time(),
-            )
-        except Exception:
-            return  # transform not available yet / extrapolation -- try next frame
-
-        tr = tf.transform.translation
-        q = tf.transform.rotation
-        rot_new = _quat_to_rot(q.x, q.y, q.z, q.w)
-        trans_new = np.array([tr.x, tr.y, tr.z], dtype=np.float64)
-
+        rot_new, trans_new = pending
         if self._last_map_odom is None:
             self._last_map_odom = (rot_new, trans_new)
             return
 
         rot_old, trans_old = self._last_map_odom
-        # delta = T_new . inv(T_old);  inv(T_old) = (R_old^T, -R_old^T t_old)
-        rot_delta = rot_new @ rot_old.T
-        trans_delta = trans_new - rot_delta @ trans_old
-        trans_norm = float(np.linalg.norm(trans_delta))
-        cos_angle = float(np.clip((np.trace(rot_delta) - 1.0) / 2.0, -1.0, 1.0))
-        angle_deg = float(np.degrees(np.arccos(cos_angle)))
-
-        if (
-            trans_norm < float(self.config.loop_closure_min_translation_m)
-            and angle_deg < float(self.config.loop_closure_min_rotation_deg)
-        ):
+        delta = loop_closure_delta(
+            rot_old, trans_old, rot_new, trans_new,
+            min_translation_m=float(self.config.loop_closure_min_translation_m),
+            min_rotation_deg=float(self.config.loop_closure_min_rotation_deg),
+        )
+        if delta is None:
             self._last_map_odom = (rot_new, trans_new)
             return
+        rot_delta, trans_delta, trans_norm, angle_deg = delta
 
         n_tracks = self.persistent_tracker.reanchor_all(
             rot_delta, trans_delta, stamp=timestamp_sec

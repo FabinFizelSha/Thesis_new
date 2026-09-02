@@ -187,6 +187,37 @@ def test_reanchor_pure_translation_shifts_every_coordinate():
     assert np.allclose(summary["translation"], delta)
 
 
+def test_reanchor_identity_is_a_noop():
+    """An identity ΔT (or a below-threshold one the caller still forwards) must
+    leave every coordinate, volume and spatial-index cell untouched."""
+    tracker = PersistentObjectTracker(_config(), _Logger())
+    for i, cx in enumerate((0.0, 3.0, -2.5)):
+        _seed_track(tracker, f"t{i}", center=(cx, 1.0, 0.5), seen=4, slot=i + 1)
+    before = {d["track_id"]: d for d in tracker.debug_snapshot()}
+    before_cells = {
+        tid: sorted(tracker._spatial_bbox_cells_by_track.get(tid, set()))
+        for tid in before
+    }
+
+    n = tracker.reanchor_all(np.eye(3), np.zeros(3), stamp=1.0)
+
+    assert n == 3
+    after = {d["track_id"]: d for d in tracker.debug_snapshot()}
+    for tid, pre in before.items():
+        post = after[tid]
+        assert np.allclose(post["centroid_3d"], pre["centroid_3d"])
+        assert np.allclose(post["bbox_3d_min"], pre["bbox_3d_min"])
+        assert np.allclose(post["bbox_3d_max"], pre["bbox_3d_max"])
+        assert post["segment_slot_ids"] == pre["segment_slot_ids"]
+        assert (
+            sorted(tracker._spatial_bbox_cells_by_track.get(tid, set()))
+            == before_cells[tid]
+        )
+    # and a no-signal merge still removes nothing
+    assert tracker.merge_reanchor_duplicates() == 0
+    assert len(tracker._tracks) == 3
+
+
 def test_reanchor_rotation_uses_corner_aabb():
     tracker = PersistentObjectTracker(_config(), _Logger())
     _seed_track(tracker, "t0", center=(1.0, 0.5, 0.5), half=(1.0, 0.5, 0.5), slot=1)
