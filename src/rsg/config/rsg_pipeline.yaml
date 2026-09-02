@@ -251,7 +251,7 @@ phase1:                                                                         
       min_evidence: 0.0                                                                              # Do not require accumulated evidence before publishing a label.
 
   loop_closure:                                                                                     # Re-anchor the persistent-object cache when the back-end corrects drift via map->odom.
-    enabled: false                                                                                  # Keep off until a front end publishes a non-identity map->odom (LCD on, split map/odom frames). Current GT-odom setup: map==odom==world, nothing to react to.
+    enabled: true                                                                                   # Armed. Inert on the current GT-odom setup (map==odom==world, no map->odom TF): the per-frame check early-returns; reanchor_all/merge are never called. Acts only once a front end publishes a non-identity map->odom (LCD on, split map/odom frames).
     map_frame: map                                                                                  # Drift-corrected frame published by the SLAM back-end.
     odom_frame: odom                                                                                # Continuous (drifting) odometry frame.
     min_translation_m: 0.05                                                                         # Ignore map->odom jitter below this; only a real correction re-anchors.
