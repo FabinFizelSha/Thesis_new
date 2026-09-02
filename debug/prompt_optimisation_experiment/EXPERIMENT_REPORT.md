@@ -399,7 +399,7 @@ rebuilds / model reloads).
 | R4 | qwen35_4b | P1 v1_simplified | `runs/R4__qwen35_4b__v1_simplified/session_20260901_215455/` | ☑ **complete** | 50 | **64 %** | 4 | 2691 |
 | R5 | qwen35_4b | P2 v5_examples_based | `runs/R5__qwen35_4b__v5_examples_based/session_20260901_221739/` | ☑ **complete** | 50 | **80 %** | 6 | 2959 |
 | R6 | qwen35_4b | P3 v6_structural_priority (format-hardened) | `runs/R6__qwen35_4b__v6_structural_priority/session_20260902_001845/` | ☑ **complete** | 50 | **88 %** | 3 | 2942 |
-| R7 | qwen35_9b | P1 v1_simplified | `runs/R7__qwen35_9b__v1_simplified/` | ◐ wired & ready — run pending | — | — | — | — |
+| R7 | qwen35_9b | P1 v1_simplified | `runs/R7__qwen35_9b__v1_simplified/session_20260902_181502/` | ☑ **complete** | 50 | **64 %** | 1 | 3656 |
 | R8 | qwen35_9b | P2 v5_examples_based | `runs/R8__qwen35_9b__v5_examples_based/` | ☐ not started | — | — | — | — |
 | R9 | qwen35_9b | P3 v6_structural_priority | `runs/R9__qwen35_9b__v6_structural_priority/` | ☐ not started | — | — | — | — |
 
@@ -625,15 +625,23 @@ tree; a **completed, annotated** session is committed deliberately with
 
   Takeaway for §13: a small model with no `<think>` channel needs the JSON-only rule stated **first and hard**, with a BAD example of the exact failure — a "return only JSON" line at the *end* is not enough. With the rule in place, P3's structural guidance is the best-performing prompt on the 4B.
 
-### R7 — qwen35_9b × P1 v1_simplified
-- Run date / wall time: —
-- Objects classified: — | Verified: — | Excluded: —
-- **Accuracy: —**
-- Latency (`vlm_inference_ms`): median — | p90 — | p95 — | max — | mean —
-- Latency (`end_to_end_ms`): median — | p90 — | max —
-- Error tally: `ceiling_light` — | `surface_vs_fixture` — | `boundary_violation` — | `unknown_overuse` — | `wrong_class` — | `mobility_wrong` — | `other` —
+### R7 — qwen35_9b × P1 v1_simplified  ✅ COMPLETE
+- Run date / wall time: 2026-09-02 · ~700 s wall @ `--rate 0.1` · session `session_20260902_181502`
+- Data: `runs/R7__qwen35_9b__v1_simplified/session_20260902_181502/` (50 crops, 50 in CSV, all annotated; misses-only convention)
+- Objects classified: 50 | Verified: 50 | Excluded: 0
+- **Accuracy: 32/50 = 64 %** — **identical to the 4B on P1 (R4 @ 64 %)**, and both beat the 8B on P1 (48 %). The extra 5 B of parameters buy nothing on the zero-shot prompt.
+- Format: **50/50 bare `{…}` JSON, 0 rejected, 0 empty** — the `--reasoning off` + 512-token setup carries straight over from the 4B; P1 is terse anyway.
+- Confidence: **flat 0.95 on every one of the 50 rows** — zero calibration, the same behaviour as the 4B on P1 (and worse than the 8B's P1, which at least varied 0.95/0.99). P1's "use confidence above 0.90 only when unmistakable" line is ignored.
+- Latency (`vlm_inference_ms`): median 3656 | p90 3851 | max 4559 | mean 3623 — between the 4B (2691) and 8B (6250), as expected for a 9B Q4.
+- Error tally (of 18 wrong): `ceiling_light`* 1 | `surface_vs_fixture` 0 | `boundary_violation` 2 | `unknown_overuse` 0 | `wrong_class` 15 | `mobility_wrong` 0 | `other` 0
+  - *\*id30: model said `vent`, annotator wanted `ceiling` — the *inverse* of the usual infra-collapse. P1 has no rule either way.*
 - Observations:
-  - —
+  - **Glass panels missed — 5** (id20 `window`, id21 `mirror`, id23 `ceiling`, id40 `shelf`, id48 `plant`, all truth `glass panel`). P1 has no glass concept, so the 9B invents whatever the shape suggests. Same failure as the 4B on P1; only P3's glass cues fixed it (R6).
+  - **`pillar` missed — 4** (id14 `curtain`, id15/22 `cabinet`, id27 `wall`, all truth `piller`). The flat-vertical-surface ambiguity, no discriminator in P1.
+  - **Panel → `mirror` habit — 3** (id38, id42 `mirror` for a `whiteboard`; id21 `mirror` for glass). The 9B reaches for `mirror` on any flat reflective-looking rectangle.
+  - **Boundary violations — 2** (id7 named a `chair` outside the contour; id36 a `whiteboard` outside it). Modest — P1's single "identify only this object" line mostly holds.
+  - **Does name ceiling infrastructure when it fills the crop:** `pipe` ×2 (id6, id11), `ceiling_light` (id10), `ceiling_beam` (id25) — all accepted by the annotator. The infra-collapse that plagued P2/P3 is not a P1 problem.
+  - **Takeaway:** on the zero-shot prompt, model size (4B → 9B) is a wash; the wins in this experiment come from the *prompt* (P2/P3 structure), not the model.
 
 ### R8 — qwen35_9b × P2 v5_examples_based
 - Run date / wall time: —
@@ -665,7 +673,7 @@ tree; a **completed, annotated** session is committed deliberately with
 |---|---|---|---|---|
 | qwen3vl8b | 48 % (24/50) | **72 % (36/50)** | 63 % (31/49) · 59 % pipeline-eff. | **P2** (P2 > P3 > P1) |
 | qwen35_4b | 64 % (32/50) | 80 % (40/50) | **88 % (44/50)** — format-hardened P3 | **P3** (P3 > P2 > P1); best cell in the table |
-| qwen35_9b | — | — | — | — |
+| qwen35_9b | 64 % (32/50) | — | — | — |
 | best model | — | — | qwen35_4b @ 88 % | — |
 
 ### 12.2 `ceiling_light` error rate — model × prompt
@@ -674,7 +682,7 @@ tree; a **completed, annotated** session is committed deliberately with
 |---|---|---|---|
 | qwen3vl8b | 8/9 (89 %) — 6×`ceiling_tile`, +`keyboard`, +`shelf`; 1×`ceiling` correct | ~2/13 (15 %) — `ceiling` now the default; misses are `rug`/`wall` for `ceiling_tile` crops. But 4 *new* over-generalisations: exposed pipes/vents → `ceiling` | pipe / ceiling light / air vent → `ceiling` ×3. Rule (b) "name distinctive infrastructure" had **no effect** — model will not name ceiling infra even with a worked-example group |
 | qwen35_4b | `ceiling_light`→`ceiling` ×1; pipe/vent/door-part→`ceiling` ×3; `ceiling_vent` correct ×1. Same infra-collapse as the 8B — model-independent | **`ceiling` predicted 14×, wrong 6×** (pipe, ceiling light, air vent, door-part ×2, partition). P2's "surface over fixture" rule + 2 ceiling examples + 8 `ceiling` mentions over-fire on the 4B. 6/10 of R5's errors | **`ceiling`→infra ×3** (door-part ×2, pipe ×1) — 3/6 of R6's errors. Reduced from R5's 6 but still the most persistent failure. `pipe` and `air_vent` *are* named correctly elsewhere in the run. |
-| qwen35_9b | — | — | — |
+| qwen35_9b | `vent`→(annotator wanted `ceiling`) ×1 — inverse of the usual collapse; `pipe`/`ceiling_light`/`ceiling_beam` all named & accepted. Not a P1 problem | — | — |
 
 ### 12.3 Latency — model × prompt (median `vlm_inference_ms`)
 
@@ -682,7 +690,7 @@ tree; a **completed, annotated** session is committed deliberately with
 |---|---|---|---|
 | qwen3vl8b | 6250 (mean 6119, p95 6650) | 4826 (mean 4997, p95 5882) | 4806 (mean 4872, p95 5097) |
 | qwen35_4b | **2691** (mean 2773, p95 3332) | 2959 (mean 2984, p95 3138) | 2942 (mean 3109, p95 ~3.5k) — format-hardened P3, no prose bloat |
-| qwen35_9b | — | — | — |
+| qwen35_9b | 3656 (mean 3623, p90 3851) | — | — |
 
 ### 12.4 Accuracy ↔ latency
 
@@ -782,3 +790,4 @@ tree; a **completed, annotated** session is committed deliberately with
 | 2026-09-02 | **First P3-on-4B attempts abandoned — output-syntax failure.** P3's step-by-step APPROACH made the 4B narrate the analysis ("Based on the visual evidence… 1. Analysis…") instead of emitting JSON: 21/51 rejected at `max_tokens` 96, still recurring at 256/512. P1/P2 on the same 4B had 0 format rejections. Fix = **format-harden P3**: leading `OUTPUT RULE — READ THIS FIRST` block (entire reply is one JSON object, first char `{`, last char `}`, no preamble/numbered steps/"Based on the visual evidence…"/code fences), `APPROACH` marked "reason silently", a GOOD/BAD reply-example block (BAD = the exact prose failure), stronger closing line. Same reasoning / priority order / cues / calibration / worked examples. |
 | 2026-09-02 | **R6 complete — 88 %, best run in the matrix; P3 (hardened) promoted to MAIN.** `session_20260902_001845` (qwen35_4b): 44/50 = 88 %, **50/50 clean bare-JSON**, 2 rejections both confidence-gate. First run to identify glass parts (`glass_wall`/`glass_door`, 5/6 correct); `pipe`/`air_vent`/`pillar` also named correctly. P3 (`prompts_under_test.yaml` `P3_v6_structural_priority`) carries the `OUTPUT RULE` block that was authored while debugging these 4B runs (the interim `P3b` id is retired). The abandoned P3-on-4B session (`_000244`) is deleted and the successful session moved into `runs/R6__qwen35_4b__v6_structural_priority/`. `rsg_pipeline.yaml`: `run_id = R6__qwen35_4b__v6_structural_priority`, `prompt_version = P3_v6_structural_priority`. §4 / §7 / §11 (R6) / §12.1–12.4 / §13 Q2 updated. |
 | 2026-09-02 | **Switched to Qwen 3.5 9B for R7.** `active_profile = qwen3_5_9b_q4` (weights present, `--reasoning off`, `min_system_memory_gib 16`). `phase1.vlm.prompt` = P1 template (byte-identical), `run_id = R7__qwen35_9b__v1_simplified`, `prompt_version = P1_v1_simplified`; `active` P3 → P1. `max_tokens` stays 512 (held R6–R9; P1 fits in 96, headroom only). Needs VLM-server relaunch (new model) + phase1 restart. Starts the 9B leg (R7 P1 / R8 P2 / R9 P3). |
+| 2026-09-02 | **R7 complete** (session `session_20260902_181502`, 50 crops, all annotated). Accuracy **64 % (32/50)** — **exactly the 4B's P1 score** (R4 @ 64 %); the 8B on P1 was 48 %. 50/50 bare JSON, 0 rejected, confidence flat 0.95 on all 50. Latency median 3656 ms. Errors: glass panels missed ×5 (P1 has no glass concept), `pillar` missed ×4, panel→`mirror` ×3, 2 boundary violations. **On the zero-shot prompt, 4B→9B is a wash — the experiment's gains come from the prompt, not model size.** §7 / §11 / §12.1–12.3 (qwen35_9b P1) updated. Next: R8 (9B × P2). |
