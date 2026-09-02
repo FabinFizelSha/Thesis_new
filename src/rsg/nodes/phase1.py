@@ -112,9 +112,12 @@ class Phase1SemanticCoordinator(Node):
         self.persistent_tracker = PersistentObjectTracker(self.config, self.get_logger(), coordinator=self)
         self.tf_broadcaster = TransformBroadcaster(self) if self.config.publish_hydra_tf else None
 
-        # Initialize bounding box diagnostics logger for post-run analysis
+        # Initialize bounding box diagnostics logger for post-run analysis.
+        # Gated by phase1.diagnostics.enabled together with every other per-run
+        # diagnostic writer below.
+        self.diagnostics_enabled = bool(getattr(self.config, "diagnostics_enabled", False))
         self.bbox_diagnostics_logger = BboxDiagnosticsLogger(
-            enabled=getattr(self.config, 'bbox_logging_enabled', True),
+            enabled=self.diagnostics_enabled,
             output_dir=os.path.expanduser(getattr(self.config, 'bbox_log_dir', '~/rsg_ros2_ws/debug/bbox_diagnostics'))
         )
 
@@ -311,7 +314,7 @@ class Phase1SemanticCoordinator(Node):
         from pathlib import Path
         crop_evolution_dir = Path(self.config.timing_csv_path).parent / "crop_evolution"
         self.crop_evolution_tracker = CropEvolutionTracker(
-            enabled=True,  # Always enabled for diagnostic branch
+            enabled=self.diagnostics_enabled,
             output_dir=str(crop_evolution_dir),
             logger=self.get_logger(),
         )
@@ -319,16 +322,18 @@ class Phase1SemanticCoordinator(Node):
         # Tracking quality evaluation diagnostics
         tracking_quality_dir = Path(self.config.timing_csv_path).parent / "tracking_quality"
         self.tracking_quality_recorder = TrackingQualityRecorder(
-            enabled=True,  # Always enabled for diagnostic branch
+            enabled=self.diagnostics_enabled,
             output_dir=str(tracking_quality_dir),
             logger=self.get_logger(),
         )
 
-        # RAP-VLM diagnostic crops (best updates, RAP dequeues, VLM dequeues)
-        # Use absolute path to avoid symlink resolution issues
+        # RAP-VLM diagnostic crops (best updates, RAP dequeues, VLM dequeues).
+        # The manager's functional helpers (crop scoring, mask filtering,
+        # contour highlighting) always run; only the disk writes are gated.
         rap_vlm_crops_dir = Path("/home/student/rsg_ros2_ws/RAP-VLM crops")
         self.tracking_crop_manager = TrackingCropManager(
-            output_dir=rap_vlm_crops_dir
+            output_dir=rap_vlm_crops_dir,
+            enabled=self.diagnostics_enabled,
         )
 
         # VLM testing diagnostics (crops + per-call CSV for manual verification).
@@ -346,10 +351,14 @@ class Phase1SemanticCoordinator(Node):
             run_id=self.config.vlm_prompt_opt_run_id,
             model_profile=self.config.vlm_active_profile,
             prompt_version=self.config.vlm_prompt_opt_prompt_version,
+            enabled=self.diagnostics_enabled,
         )
-        self.get_logger().info(
-            f"VLM crop diagnostics -> {self.vlm_test_diagnostics.get_session_dir()}"
-        )
+        if self.diagnostics_enabled:
+            self.get_logger().info(
+                f"VLM crop diagnostics -> {self.vlm_test_diagnostics.get_session_dir()}"
+            )
+        else:
+            self.get_logger().info("Phase 1 per-run diagnostics disabled (phase1.diagnostics.enabled=false)")
 
         self.received_count = 0
         self.processed_count = 0

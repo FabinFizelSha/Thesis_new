@@ -39,15 +39,23 @@ class TrackingCropManager:
     WEIGHT_SHARPNESS = 2.0                   # Emphasize image quality
     WEIGHT_MARGIN = 1.0                      # De-emphasize framing (lower priority)
 
-    def __init__(self, output_dir: Path):
-        """Initialize crop manager with output directory."""
+    def __init__(self, output_dir: Path, enabled: bool = True):
+        """Initialize crop manager with output directory.
+
+        ``enabled=False`` suppresses every disk write (best/RAP/VLM crop images
+        and all summary CSVs) and skips directory creation.  The functional
+        helpers -- ``get_filtered_mask``, ``extract_crop``, ``_score_crop``,
+        ``_highlight_contours``, ``HYSTERESIS_MARGIN`` -- are unaffected.
+        """
+        self.enabled = bool(enabled)
         self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate session folder (timestamp-based) directly under output_dir
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.session_dir = self.output_dir / f"session_{timestamp}"
-        self.session_dir.mkdir(parents=True, exist_ok=True)
+        if self.enabled:
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            self.session_dir.mkdir(parents=True, exist_ok=True)
 
         # For backwards compatibility
         self.crops_root = self.output_dir
@@ -236,6 +244,8 @@ class TrackingCropManager:
         Returns:
             Path to saved crop image, or None if extraction failed
         """
+        if not self.enabled:
+            return None
         try:
             # Validate inputs
             if rgb_image is None or rgb_image.size == 0:
@@ -362,6 +372,8 @@ class TrackingCropManager:
         quality_score: Optional[float] = None,
     ) -> Optional[str]:
         """Save RAP crop (visual retrieval system input)."""
+        if not self.enabled:
+            return None
         try:
             if rap_crop is None or rap_crop.size == 0:
                 return None
@@ -401,6 +413,8 @@ class TrackingCropManager:
         quality_score: Optional[float] = None,
     ) -> Optional[str]:
         """Save VLM crop (vision language model input)."""
+        if not self.enabled:
+            return None
         try:
             if vlm_crop is None or vlm_crop.size == 0:
                 return None
@@ -593,7 +607,7 @@ class TrackingCropManager:
 
     def save_crop_progression_diagnostics(self) -> Path:
         """Save detailed diagnostics of crop score progression for each track."""
-        if not self.track_diagnostics:
+        if not self.enabled or not self.track_diagnostics:
             return None
 
         csv_path = self.session_dir / "crop_progression_diagnostics.csv"
@@ -638,7 +652,7 @@ class TrackingCropManager:
 
     def save_crop_summary(self) -> Path:
         """Save CSV summary of all track crops with best crop update sequence."""
-        if not self.track_crops:
+        if not self.enabled or not self.track_crops:
             return None
 
         csv_path = self.output_dir / "track_crops_summary.csv"
@@ -707,7 +721,7 @@ class TrackingCropManager:
 
     def save_best_crop_updates_log(self) -> Path:
         """Save detailed log of all best crop updates for each track."""
-        if not self.track_crops:
+        if not self.enabled or not self.track_crops:
             return None
 
         csv_path = self.output_dir / "best_crop_updates_log.csv"
@@ -776,6 +790,8 @@ class TrackingCropManager:
         Returns:
             Path to saved crop file, or None if save failed
         """
+        if not self.enabled:
+            return None
         try:
             if source_rgb is None or source_rgb.size == 0:
                 return None
@@ -841,6 +857,8 @@ class TrackingCropManager:
         Returns:
             Path to saved crop file, or None if save failed
         """
+        if not self.enabled:
+            return None
         try:
             if rap_crop is None or rap_crop.size == 0:
                 return None
@@ -902,6 +920,8 @@ class TrackingCropManager:
         Returns:
             Path to saved crop file, or None if save failed
         """
+        if not self.enabled:
+            return None
         try:
             if vlm_crop is None or vlm_crop.size == 0:
                 return None
@@ -947,6 +967,8 @@ class TrackingCropManager:
         Returns:
             Path to CSV file with RAP/VLM usage diagnostics
         """
+        if not self.enabled:
+            return None
         csv_path = self.session_dir / "system_usage_diagnostics.csv"
 
         rows = []

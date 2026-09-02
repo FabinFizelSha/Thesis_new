@@ -53,6 +53,7 @@ class VLMTestDiagnostics:
         run_id: str = "",
         model_profile: str = "",
         prompt_version: str = "",
+        enabled: bool = True,
     ):
         """Initialize diagnostics.
 
@@ -63,26 +64,28 @@ class VLMTestDiagnostics:
             run_id: experiment matrix row id (e.g. ``R1__qwen3vl8b__v1_simplified``)
             model_profile: ``phase1.vlm.active_profile`` for the run
             prompt_version: which prompt is active (e.g. ``P1_v1_simplified``)
+            enabled: when False, no directory or CSV is created and
+                ``log_vlm_result`` is a no-op.
         """
         if output_dir is None:
             output_dir = Path("/home/student/rsg_ros2_ws/VLM-Test-Session")
 
+        self.enabled = bool(enabled)
         self.run_id = str(run_id or "")
         self.model_profile = str(model_profile or "")
         self.prompt_version = str(prompt_version or "")
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.session_dir = Path(output_dir) / f"session_{timestamp}"
-        self.session_dir.mkdir(parents=True, exist_ok=True)
-
         self.crops_dir = self.session_dir / "crops"
-        self.crops_dir.mkdir(exist_ok=True)
-
         self.log_file = self.session_dir / "vlm_results.csv"
-        self._init_csv()
-
         self.object_counter = 0
         self.test_start_time = datetime.now().isoformat()
+
+        if self.enabled:
+            self.session_dir.mkdir(parents=True, exist_ok=True)
+            self.crops_dir.mkdir(exist_ok=True)
+            self._init_csv()
 
     def _init_csv(self) -> None:
         """Write the header once; never truncate an existing file."""
@@ -110,6 +113,8 @@ class VLMTestDiagnostics:
             timestamp: bag time of the crop
             track_id: track id (reference only)
         """
+        if not self.enabled:
+            return None
         try:
             self.object_counter += 1
             object_id = f"{self.object_counter:06d}"

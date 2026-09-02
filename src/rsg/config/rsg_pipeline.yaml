@@ -101,6 +101,7 @@ preprocessing:                                                                  
 
 phase1:                                                                                              # NanoSAM segmentation, RAP retrieval, optional VLM labeling, and Hydra semantic-frame output.
   diagnostics:
+    enabled: false                                                                                  # MASTER SWITCH for all per-run diagnostic writers: bbox dumps, crop-evolution, tracking-quality logs, RAP/VLM crop images, and the VLM test crop+CSV. false => nothing written, near-zero overhead. Functional crop scoring / mask filtering / best-crop selection is unaffected. (The keys below are legacy and currently unwired; `enabled` governs everything.)
     log_tracking: true                                                                              # Record every SAM-to-internal-object/local-slot assignment and crop decision.
     save_tracking_crops: false                                                                      # Save accepted best crops and the exact crop revisions dequeued by RAP/VLM.
     tracking_crop_dir: /home/student/rsg_ros2_ws/debug/phase1_excel_current/tracking_crops            # Per-internal-object diagnostic image directory.

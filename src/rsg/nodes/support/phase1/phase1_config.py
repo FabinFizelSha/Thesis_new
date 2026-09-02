@@ -80,6 +80,12 @@ class Phase1Config:
     publish_status: bool
     status_every_n_frames: int
 
+    # Master switch for Phase 1's per-run diagnostic writers: bbox dumps, crop
+    # evolution, tracking-quality logs, RAP/VLM crop images, and the VLM test
+    # crop+CSV.  Off = nothing written, near-zero overhead.  Functional crop
+    # scoring / mask filtering / best-crop selection is unaffected.
+    diagnostics_enabled: bool = False
+
     # Hydra output.
     publish_hydra_combined: bool
     publish_hydra_separate_topics: bool
@@ -442,6 +448,7 @@ class Phase1Config:
         persistent_slots = persistent_tracking.get("slots", {}) or {}
         semantic_result = persistent_tracking.get("semantic_result", {}) or {}
         loop_closure = phase1.get("loop_closure", {}) or {}
+        diagnostics = phase1.get("diagnostics", {}) or {}
         deployment = phase1.get("deployment", {}) or {}
         performance = phase1.get("performance", {}) or {}
 
@@ -530,6 +537,7 @@ class Phase1Config:
             timing_measurement_enabled=bool(performance.get("measure_timing", True)),
             publish_timing_topic=bool(performance.get("publish_timing", True)),
             write_timing_csv=bool(performance.get("write_timing_csv", performance.get("write_timing_excel", True))),
+            diagnostics_enabled=bool(diagnostics.get("enabled", False)),
             timing_csv_path=timing_csv_path,
             timing_sheet_name=str(performance.get("timing_sheet_name", node_key[:31])),
             timing_excel_autosave_every=int(performance.get("timing_excel_autosave_every", 0)),
