@@ -84,7 +84,7 @@ One local llama.cpp OpenAI-compatible server on `http://127.0.0.1:8000/v1/chat/c
 | **qwen35_9b** | `qwen3_5_9b_q4` | Qwen3.5-VL-9B-Instruct | Q4_K_M | `~/rsg_models/qwen3_5_9b/Qwen3.5-9B-Q4_K_M.gguf` + `mmproj-BF16.gguf` |
 
 Shared VLM request settings (do not change between runs): `temperature: 0.0`,
-`max_tokens: 96` (**raised to `512` from R6** — see §14), `jpeg_quality: 100`, `timeout_sec: 60`.
+`max_tokens: 96` (**512 from R6, 5000 from R8** — see §14), `jpeg_quality: 100`, `timeout_sec: 60`.
 
 ---
 
@@ -319,7 +319,7 @@ Identical for all 9 runs. If any of these changes mid-experiment, record it in
 | Context suppression | greyscale + `vlm_context_alpha: 0.12` | `phase1.semantic_crop` |
 | Target contour | **cyan `[0,255,255]`**, 2 px (change from live `[255,255,255]` — see §4) | `phase1.semantic_crop` |
 | Temperature | `0.0` | `phase1.vlm` |
-| max_tokens | `96` for R1–R5; **`512` from R6 onward** (see §14 — the 4B narrates P3's reasoning strategy before the JSON). 96 sufficed for every R1–R5 response, so the change adds headroom only. | `phase1.vlm` |
+| max_tokens | `96` for R1–R5; **`512` R6–R7, `5000` from R8** (see §14 — the 4B narrates P3's reasoning strategy before the JSON). 96 sufficed for every R1–R5 response, so the change adds headroom only. | `phase1.vlm` |
 | result_validation | unchanged from live (`min_label_confidence: 0.80`, `min_mobility_confidence: 0.70`) | `phase1.vlm.result_validation` |
 | RAP memory / visual store | **cleared before every run** | see §6 step 2 |
 
@@ -793,3 +793,4 @@ tree; a **completed, annotated** session is committed deliberately with
 | 2026-09-02 | **R7 complete** (session `session_20260902_181502`, 50 crops, all annotated). Accuracy **64 % (32/50)** — **exactly the 4B's P1 score** (R4 @ 64 %); the 8B on P1 was 48 %. 50/50 bare JSON, 0 rejected, confidence flat 0.95 on all 50. Latency median 3656 ms. Errors: glass panels missed ×5 (P1 has no glass concept), `pillar` missed ×4, panel→`mirror` ×3, 2 boundary violations. **On the zero-shot prompt, 4B→9B is a wash — the experiment's gains come from the prompt, not model size.** §7 / §11 / §12.1–12.3 (qwen35_9b P1) updated. Next: R8 (9B × P2). |
 | 2026-09-02 | **Wired R8** — `phase1.vlm.prompt` = P2 template (byte-identical), `run_id = R8__qwen35_9b__v5_examples_based`, `prompt_version = P2_v5_examples_based`; `active` P1 → P2. Profile stays `qwen3_5_9b_q4` (server already loaded), `max_tokens` 512. Phase1 restart only. |
 | 2026-09-02 | **First R8 attempt (`session_20260902_192605`) VOID** — 50/50 `HTTP Error 503: Service Unavailable`. The llama-server was not ready (still loading the 9B, or down) when the replay started; every VLM call got 503 → `rejected`. The 9B itself is fine (R7 ran clean on it). Fix: relaunch `rsg_vlm_server`, wait for `/health` → 200 (llama.cpp returns 503 while loading), then replay. Session discarded. |
+| 2026-09-02 | **`max_tokens` 512 → 5000 from R8.** Effectively unbounded generation room for the 3.5 models. llama.cpp clamps to `context_size - prompt tokens`; with `context_size 4096` the real budget is ~2k, i.e. "generate until EOS or context full". Held R8–R9. R1–R7 unaffected (all finished well inside their caps). |
