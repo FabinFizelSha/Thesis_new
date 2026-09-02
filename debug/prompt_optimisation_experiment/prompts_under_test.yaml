@@ -51,7 +51,7 @@ prompts:
     provenance: "reworked from v5_examples_based after R1 (P1 @ 48%): elaborated boundary-only rule, added 'multiple instances / surface-with-fixture -> name the enclosing surface' rule, added confidence calibration to stop 0.95-on-everything, examples taken from real R1 misses. Still open-vocabulary - no label list."
     prior_qwen3vl8b_accuracy: 0.518
     r2_accuracy: 0.72   # session_20260901_204248, 36/50 (+24 pp over R1)
-    active: true
+    active: false
     template: |
       Identify the object that the cyan boundary encloses in this indoor crop.
 
@@ -103,7 +103,7 @@ prompts:
     name: "P3 - structural priority + calibration + grouped examples + hard JSON-format enforcement (MAIN). Tuned on R1/R2 then format-hardened for small models on R6."
     provenance: "Was v6_structural_priority (R3, 8B). After R6 showed the reasoning-strategy framing made qwen35_4b narrate the analysis instead of emitting JSON, P3 was hardened with a leading OUTPUT RULE block, a silent-APPROACH note, and GOOD/BAD reply examples. The hardened P3 scored 88% on qwen35_4b (R6, session_20260902_001845) with 100% clean bare-JSON output and glass parts correctly identified - the best run in the matrix. R3 (8B) ran the pre-hardening text and should be re-run on the 8B. Still open-vocabulary - no label list."
     r6_accuracy: 0.88   # qwen35_4b, session_20260902_001845, 44/50; 100% clean format; 5/6 glass correct
-    active: false
+    active: true
     template: |
       OUTPUT RULE — READ THIS FIRST
       Your entire reply is ONE JSON object and nothing else. The first character you output is "{" and the last is "}". No preamble, no analysis, no numbered steps, no sentences such as "Based on the visual evidence...", and no markdown code fences. Work through the approach below silently and output only the result.

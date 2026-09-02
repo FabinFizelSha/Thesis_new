@@ -401,7 +401,7 @@ rebuilds / model reloads).
 | R6 | qwen35_4b | P3 v6_structural_priority (format-hardened) | `runs/R6__qwen35_4b__v6_structural_priority/session_20260902_001845/` | ☑ **complete** | 50 | **88 %** | 3 | 2942 |
 | R7 | qwen35_9b | P1 v1_simplified | `runs/R7__qwen35_9b__v1_simplified/session_20260902_181502/` | ☑ **complete** | 50 | **64 %** | 1 | 3656 |
 | R8 | qwen35_9b | P2 v5_examples_based | `runs/R8__qwen35_9b__v5_examples_based/session_20260902_193816/` | ☑ **complete** | 50 | **68 %** | 6 | 4464 |
-| R9 | qwen35_9b | P3 v6_structural_priority | `runs/R9__qwen35_9b__v6_structural_priority/` | ☐ not started | — | — | — | — |
+| R9 | qwen35_9b | P3 v6_structural_priority | `runs/R9__qwen35_9b__v6_structural_priority/` | ◐ wired & ready — run pending | — | — | — | — |
 
 “maybe more if needed” — add R10+ rows here for extra prompts/models; keep the
 same folder + CSV convention.
