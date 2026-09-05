@@ -38,3 +38,9 @@ __pycache__/
 # Keep the per-run scaffold (crops/.gitkeep + placeholder vlm_results.csv);
 # ignore the session_<timestamp>/ folders that each pipeline run writes.
 debug/prompt_optimisation_experiment/runs/*/session_*/
+
+# --- Fuser object-relation experiment run outputs -----------------------
+# Keep the results/ scaffold (.gitkeep); ignore each run's raw JSONL log
+# and derived CSVs -- large, regeneratable by re-running with
+# object_contact_diagnostics_enabled: true, no long-term value in git.
+debug/fuser_object_relation_experiment/results/run_*/

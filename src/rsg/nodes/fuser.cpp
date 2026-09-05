@@ -14,8 +14,12 @@
 #include <cmath>
 #include <cctype>
 #include <cstdint>
+#include <ctime>
 #include <exception>
+#include <filesystem>
+#include <fstream>
 #include <functional>
+#include <iomanip>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -33,6 +37,7 @@
 #include <geometry_msgs/msg/point.hpp>
 #include <hydra_msgs/msg/dsg_update.hpp>
 #include <nlohmann/json.hpp>
+#include <rcl_interfaces/msg/set_parameters_result.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/executors/multi_threaded_executor.hpp>
 #include <std_msgs/msg/header.hpp>
@@ -106,6 +111,11 @@ enum class DisplayEdgeType {
   // Derived: two object bounding boxes touch/overlap. Written back into the
   // fused DSG as a real object-object edge carrying contact metadata.
   kDerivedObjectContact,
+  // Derived: two object nodes are local segments phase1 split off from one
+  // physical object that was too large to track as a single segment (same
+  // PresenceObservation internal_object_id). An identity relation, not a
+  // geometric one. Written back into the fused DSG; rendered as a dotted line.
+  kDerivedObjectSegment,
 };
 
 enum class EdgeOrigin {
@@ -127,6 +137,9 @@ struct DisplayEdge {
   // Parent room used only for display color. The authoritative Hydra graph is
   // never modified and this does not create a new DSG edge.
   NodeId color_owner = 0;
+  // Populated only for kDerivedObjectContact; drives the optional contact-label marker.
+  double contact_iou_2d_max = 0.0;  //!< max(iou_xz, iou_yz)
+  double contact_centroid_distance_m = 0.0;
 };
 
 struct LayeredProjection {
@@ -400,9 +413,30 @@ struct AabbContact {
   double overlap_volume_m3 = 0.0;
   double overlap_xy_m2 = 0.0;
   double iou_3d = 0.0;
+  double iou_xz = 0.0;               //!< 2D IoU of the two boxes' projections onto the XZ plane
+  double iou_yz = 0.0;               //!< 2D IoU of the two boxes' projections onto the YZ plane
   double centroid_distance_m = 0.0;
   int contact_axis = -1;            //!< argmax_i gap_i (near-separating axis); -1 if degenerate
+  // Do the boxes genuinely overlap (strictly negative gap, not just a
+  // zero-width graze) on BOTH axes other than contact_axis? touching alone
+  // allows a same-object neighbor-chain artifact through: two boxes that
+  // share a face with a third box (e.g. adjacent segments of one elongated
+  // object) can register "touching" against something merely because that
+  // shared face happens to sit within tolerance, even with zero real
+  // footprint overlap. This flags that case so callers can require an
+  // actual physical contact area, not just an incidental boundary touch.
+  bool contact_footprint_overlaps = false;
 };
+
+/** 2D intersection-over-union of two axis-aligned rectangles, given their per-axis overlap lengths. */
+inline double planarIou(double overlap_u, double overlap_v, double size_a_u, double size_a_v,
+                        double size_b_u, double size_b_v) {
+  const double overlap_area = overlap_u * overlap_v;
+  const double area_a = std::max(0.0, size_a_u) * std::max(0.0, size_a_v);
+  const double area_b = std::max(0.0, size_b_u) * std::max(0.0, size_b_v);
+  const double denom = area_a + area_b - overlap_area;
+  return denom > 1.0e-9 ? overlap_area / denom : 0.0;
+}
 
 inline AabbContact aabbContact(const Eigen::Vector3d& center_a,
                                const Eigen::Vector3d& size_a,
@@ -425,6 +459,41 @@ inline AabbContact aabbContact(const Eigen::Vector3d& center_a,
   out.gap_m = gap.maxCoeff(&axis_index);
   out.contact_axis = static_cast<int>(axis_index);
   out.touching = out.gap_m <= tolerance_m;
+  // Require overlap to exceed a small margin, not just be negative: a
+  // literal boundary touch (two adjacent same-object segments sharing a
+  // face) should land at gap == 0, but floating-point rounding on the
+  // (center, size) arithmetic can just as easily push it a hair below zero,
+  // which a strict "< 0" check would misread as genuine overlap.
+  constexpr double kFootprintOverlapMarginM = 0.001;
+  out.contact_footprint_overlaps = true;
+  for (int i = 0; i < 3; ++i) {
+    if (i == out.contact_axis) {
+      continue;
+    }
+    if (gap[i] >= -kFootprintOverlapMarginM) {
+      out.contact_footprint_overlaps = false;
+      break;
+    }
+  }
+
+  // Planar IoUs only need their own two axes to overlap (e.g. XZ doesn't
+  // care whether the boxes also overlap along Y), so these are independent
+  // of the full 3-axis volumetric overlap gated below. A real surface
+  // contact normally has zero literal overlap on the separating axis (boxes
+  // touch, they don't interpenetrate) — using raw `overlap` there would zero
+  // out the whole plane even when the *other* in-plane axis genuinely
+  // overlaps. Pad by tolerance_m instead, so any axis within touching
+  // tolerance contributes a small positive projected extent rather than
+  // clamping to zero; capped at min(size_a, size_b), the true maximum
+  // possible 1D overlap, so an axis that already fully overlaps can't be
+  // padded past 100% and push the resulting IoU above 1.
+  Eigen::Vector3d padded_overlap;
+  for (int i = 0; i < 3; ++i) {
+    const double max_possible = std::min(std::max(0.0, size_a[i]), std::max(0.0, size_b[i]));
+    padded_overlap[i] = std::min(max_possible, std::max(0.0, tolerance_m - gap[i]));
+  }
+  out.iou_xz = planarIou(padded_overlap[0], padded_overlap[2], size_a[0], size_a[2], size_b[0], size_b[2]);
+  out.iou_yz = planarIou(padded_overlap[1], padded_overlap[2], size_a[1], size_a[2], size_b[1], size_b[2]);
 
   if ((gap.array() <= 0.0).all()) {
     out.overlap_volume_m3 = overlap[0] * overlap[1] * overlap[2];
@@ -446,10 +515,42 @@ const char* contactAxisName(int axis) {
   }
 }
 
+/**
+ * @brief Uniform-grid cell index used to bucket object bbox centers so the
+ * contact search only tests spatially nearby pairs instead of every pair.
+ */
+struct GridCell {
+  int32_t x = 0;
+  int32_t y = 0;
+  int32_t z = 0;
+  bool operator==(const GridCell& other) const {
+    return x == other.x && y == other.y && z == other.z;
+  }
+};
+
+struct GridCellHash {
+  size_t operator()(const GridCell& cell) const {
+    size_t seed = std::hash<int32_t>()(cell.x);
+    seed ^= std::hash<int32_t>()(cell.y) + 0x9e3779b9U + (seed << 6) + (seed >> 2);
+    seed ^= std::hash<int32_t>()(cell.z) + 0x9e3779b9U + (seed << 6) + (seed >> 2);
+    return seed;
+  }
+};
+
+inline GridCell cellForPoint(const Eigen::Vector3d& point, double cell_size_m) {
+  return GridCell{static_cast<int32_t>(std::floor(point.x() / cell_size_m)),
+                  static_cast<int32_t>(std::floor(point.y() / cell_size_m)),
+                  static_cast<int32_t>(std::floor(point.z() / cell_size_m))};
+}
+
 int32_t markerId(NodeId id) {
   // RViz keys a marker by namespace and signed 32-bit id. Keep IDs stable
   // across graph updates so removed nodes can receive targeted DELETE markers.
   return static_cast<int32_t>(fnv1a(idString(id)) & 0x7fffffffULL);
+}
+
+int32_t markerIdForPair(NodeId source, NodeId target) {
+  return static_cast<int32_t>(fnv1a(idString(source) + "_" + idString(target)) & 0x7fffffffULL);
 }
 
 Color hsvToRgb(double hue, double saturation, double value, float alpha = 1.0F) {
@@ -513,6 +614,8 @@ std::string edgeTypeName(DisplayEdgeType type) {
       return "native_room_room_debug";
     case DisplayEdgeType::kDerivedObjectContact:
       return "derived_object_contact";
+    case DisplayEdgeType::kDerivedObjectSegment:
+      return "derived_object_segment";
   }
   return "unknown";
 }
@@ -624,11 +727,48 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     object_contact_tolerance_m_ = declare_parameter<double>("object_contact_tolerance_m", 0.05);
     object_contact_min_iou_3d_ = declare_parameter<double>("object_contact_min_iou_3d", 0.0);
     object_contact_write_dsg_edges_ = declare_parameter<bool>("object_contact_write_dsg_edges", true);
-    object_contact_skip_same_internal_object_ =
-        declare_parameter<bool>("object_contact_skip_same_internal_object", true);
     object_contact_max_objects_ =
         static_cast<size_t>(std::max<int64_t>(0, declare_parameter<int>("object_contact_max_objects", 500)));
+    // Spatial-hash grid narrows the pairing search: 0.0 = auto-size the cell
+    // each cycle from the largest object reach seen (guarantees a single ring
+    // of neighbor cells is enough); a positive override fixes the cell size
+    // instead, with the per-object search ring widened as needed to keep
+    // guaranteed coverage.
+    object_contact_grid_cell_size_m_ = declare_parameter<double>("object_contact_grid_cell_size_m", 0.0);
+    object_contact_grid_min_cell_size_m_ =
+        declare_parameter<double>("object_contact_grid_min_cell_size_m", 0.05);
     show_object_contact_edges_ = declare_parameter<bool>("show_object_contact_edges", true);
+    show_object_contact_labels_ = declare_parameter<bool>("show_object_contact_labels", true);
+    object_contact_text_height_m_ =
+        std::max(0.05, declare_parameter<double>("object_contact_text_height_m", 0.16));
+
+    // Object-segment relationships: connect local segments phase1 split off
+    // from one physical object that was too large to track as a single
+    // segment (same PresenceObservation internal_object_id). Identity
+    // relation, not geometric — no tolerance/grid params needed.
+    object_segment_edges_enabled_ = declare_parameter<bool>("object_segment_edges_enabled", true);
+    object_segment_write_dsg_edges_ =
+        declare_parameter<bool>("object_segment_write_dsg_edges", true);
+    object_segment_max_group_size_ = static_cast<size_t>(
+        std::max<int64_t>(0, declare_parameter<int>("object_segment_max_group_size", 50)));
+    show_object_segment_edges_ = declare_parameter<bool>("show_object_segment_edges", true);
+    object_segment_dot_spacing_m_ =
+        std::max(0.01, declare_parameter<double>("object_segment_dot_spacing_m", 0.08));
+    object_segment_dot_size_m_ =
+        std::max(0.005, declare_parameter<double>("object_segment_dot_size_m", 0.03));
+
+    // Offline verification: dumps every main object's aggregate bbox, every
+    // member's bbox, and the contact/segment edges actually produced, one
+    // JSON line per fusion cycle, so
+    // debug/fuser_object_relation_experiment/analyze_contact_diagnostics.py
+    // can independently recompute the expected edges from raw geometry and
+    // diff against what the fuser decided. Off by default — no effect on
+    // production runs.
+    object_contact_diagnostics_enabled_ =
+        declare_parameter<bool>("object_contact_diagnostics_enabled", false);
+    object_contact_diagnostics_path_ =
+        declare_parameter<std::string>("object_contact_diagnostics_path", "");
+
     show_object_labels_ = declare_parameter<bool>("show_object_labels", true);
     show_room_labels_ = declare_parameter<bool>("show_room_labels", true);
     show_place_labels_ = declare_parameter<bool>("show_place_labels", false);
@@ -793,6 +933,30 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
         input_dsg_topic_.c_str(), semantic_label_topic_.c_str(), semantic_label_qos_depth_,
         markers_topic_.c_str());
     publishStatus("started", "ready");
+
+    // No other param on this node is live-updatable (every declare_parameter
+    // above is read once here and cached into a member); a `ros2 param set`
+    // on an already-running node normally has no effect at all. That's the
+    // wrong UX specifically for a diagnostics on/off switch someone wants to
+    // flip mid-run without restarting the whole pipeline, so these two are
+    // deliberately the exception.
+    parameter_callback_handle_ = add_on_set_parameters_callback(
+        [this](const std::vector<rclcpp::Parameter>& parameters) {
+          rcl_interfaces::msg::SetParametersResult result;
+          result.successful = true;
+          for (const auto& parameter : parameters) {
+            if (parameter.get_name() == "object_contact_diagnostics_enabled" &&
+                parameter.get_type() == rclcpp::ParameterType::PARAMETER_BOOL) {
+              object_contact_diagnostics_enabled_ = parameter.as_bool();
+              RCLCPP_INFO(get_logger(), "object contact diagnostics: %s (live update)",
+                         object_contact_diagnostics_enabled_ ? "enabled" : "disabled");
+            } else if (parameter.get_name() == "object_contact_diagnostics_path" &&
+                       parameter.get_type() == rclcpp::ParameterType::PARAMETER_STRING) {
+              object_contact_diagnostics_path_ = parameter.as_string();
+            }
+          }
+          return result;
+        });
   }
 
 
@@ -1352,100 +1516,574 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     contact_edges_prev_.clear();
   }
 
+  /** Same as pruneOwnedContactEdges(), for the same-physical-object segment edges. */
+  void pruneOwnedSegmentEdges() {
+    if (!graph_) {
+      segment_edges_prev_.clear();
+      return;
+    }
+    for (const auto& [source, target] : segment_edges_prev_) {
+      graph_->removeEdge(source, target);
+    }
+    segment_edges_prev_.clear();
+  }
+
+  struct SegmentMember {
+    NodeId id = 0;
+    uint32_t semantic_slot = 0;
+    Eigen::Vector3d position = Eigen::Vector3d::Zero();
+    bool has_bbox = false;
+    Eigen::Vector3d bbox_center = Eigen::Vector3d::Zero();
+    Eigen::Vector3d bbox_size = Eigen::Vector3d::Zero();
+  };
+
+  struct MainObjectGroup {
+    std::string internal_object_id;      //!< empty for a standalone (unsplit) object
+    std::vector<SegmentMember> members;  //!< sorted by NodeId ascending
+  };
+
   /**
-   * Connect objects whose bounding boxes touch/overlap. Appends display edges
-   * for RViz, writes real object-object edges into the fused DSG (with contact
-   * metadata), and records per-pair metadata for the status JSON.
+   * Group every OBJECTS-layer node by PresenceObservation.internal_object_id
+   * into "main objects": nodes sharing a non-empty internal_object_id are
+   * local segments phase1 split off from one physical object too large to
+   * track as a single segment, and are grouped together; a node with no
+   * internal_object_id is its own singleton main object. Feeds both the
+   * same-object segment chain and, aggregated into one bbox per group,
+   * object-contact detection at the physical-object level.
    */
-  void computeObjectContacts(const SceneModel& model,
-                             const PresenceCache& presence,
-                             LayeredProjection& projection) {
-    last_object_relations_ = Json::array();
-    last_object_contact_edge_count_ = 0;
-    last_object_contact_max_iou_ = 0.0;
-    if (!object_contact_edges_enabled_ || !graph_) {
-      return;
-    }
-
-    std::vector<NodeId> object_ids;
-    object_ids.reserve(model.nodes.size());
-    for (const auto& [node_id, node] : model.nodes) {
-      if (node.kind == LayerKind::kObjects && node.has_bbox) {
-        object_ids.push_back(node_id);
-      }
-    }
-    if (object_contact_max_objects_ > 0 && object_ids.size() > object_contact_max_objects_) {
-      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 10000,
-                           "object contact: %zu objects exceeds object_contact_max_objects=%zu; skipping",
-                           object_ids.size(), object_contact_max_objects_);
-      return;
-    }
-    std::sort(object_ids.begin(), object_ids.end());
-
-    const double now_sec = currentReferenceTimeSec();
+  std::vector<MainObjectGroup> buildMainObjectGroups(const SceneModel& model,
+                                                      const PresenceCache& presence) const {
     const auto internal_id_for = [&](uint32_t slot) -> std::string {
       const auto it = presence.find(slot);
       return it == presence.end() ? std::string() : it->second.internal_object_id;
     };
 
-    for (size_t i = 0; i < object_ids.size(); ++i) {
-      const auto& a = model.nodes.at(object_ids[i]);
-      const Eigen::Vector3d center_a = a.bbox_center.cast<double>();
-      const Eigen::Vector3d size_a = a.bbox_size.cast<double>();
-      const std::string internal_a = internal_id_for(a.semantic_slot);
-      for (size_t j = i + 1; j < object_ids.size(); ++j) {
-        const auto& b = model.nodes.at(object_ids[j]);
-        if (object_contact_skip_same_internal_object_ && !internal_a.empty()) {
-          const std::string internal_b = internal_id_for(b.semantic_slot);
-          if (!internal_b.empty() && internal_b == internal_a) {
-            continue;  // two local segments of one physical object
-          }
-        }
-        const auto contact = aabbContact(center_a, size_a, b.bbox_center.cast<double>(),
-                                         b.bbox_size.cast<double>(), object_contact_tolerance_m_);
-        if (!contact.touching || contact.iou_3d < object_contact_min_iou_3d_) {
+    std::unordered_map<std::string, MainObjectGroup> by_key;
+    for (const auto& [node_id, node] : model.nodes) {
+      if (node.kind != LayerKind::kObjects) {
+        continue;
+      }
+      const std::string internal_id = internal_id_for(node.semantic_slot);
+      // Unique per-node key for a standalone object, so it never merges with
+      // another standalone object under an empty internal_object_id.
+      const std::string key = internal_id.empty() ? ("__solo_" + idString(node_id)) : internal_id;
+
+      SegmentMember member;
+      member.id = node_id;
+      member.semantic_slot = node.semantic_slot;
+      member.position = node.position;
+      member.has_bbox = node.has_bbox;
+      member.bbox_center = node.bbox_center.cast<double>();
+      member.bbox_size = node.bbox_size.cast<double>();
+
+      auto& group = by_key[key];
+      group.internal_object_id = internal_id;
+      group.members.push_back(std::move(member));
+    }
+
+    std::vector<MainObjectGroup> groups;
+    groups.reserve(by_key.size());
+    for (auto& [key, group] : by_key) {
+      std::sort(group.members.begin(), group.members.end(),
+               [](const SegmentMember& lhs, const SegmentMember& rhs) { return lhs.id < rhs.id; });
+      groups.push_back(std::move(group));
+    }
+    std::sort(groups.begin(), groups.end(), [](const MainObjectGroup& lhs, const MainObjectGroup& rhs) {
+      return lhs.members.front().id < rhs.members.front().id;
+    });
+    return groups;
+  }
+
+  /**
+   * Connect main objects whose bounding boxes touch/overlap. A "main object"
+   * is either a standalone node or a whole buildMainObjectGroups() group —
+   * candidate pairing always happens main-object-to-main-object, never
+   * between two segments of the same physical object (impossible: they're
+   * merged into one candidate before pairing starts) and never against
+   * non-touching segments of an otherwise-unrelated split object (e.g. a
+   * single object next to a 3-way-split object where only one of the three
+   * segments is actually close no longer produces three edges, one per
+   * segment; it produces exactly one).
+   *
+   * Two phases per candidate main-object pair:
+   *  - Broad phase (aabbContact() on the aggregates): each main object's
+   *    aggregate bbox is the union of its members' bboxes. A uniform
+   *    spatial-hash grid narrows main-object pairs to candidates whose
+   *    aggregates could possibly touch (same grid/ring scheme as a flat
+   *    per-node search would use — cell size = 2x the largest per-object
+   *    reach this cycle, guaranteeing a single ring of neighbors is enough
+   *    when auto-sized; object_contact_grid_cell_size_m can force a fixed
+   *    cell size instead, with the per-object ring widened as needed). The
+   *    aggregate always contains every member's geometry, so this can only
+   *    ever over-approximate — it cannot miss a pair whose real segments
+   *    touch.
+   *  - Narrow phase (plain centroid distance, no intersection test): once
+   *    the aggregates are confirmed touching, every real member connects to
+   *    its single closest counterpart on the other side by nearest 3D
+   *    centroid distance — run from both directions and deduped, so a
+   *    mutually-closest pair yields one edge while a member whose neighbor's
+   *    own closest match is someone else still gets its own edge. There is
+   *    no per-pair distance cutoff and no bbox-overlap requirement here: the
+   *    aggregate touch test already established the two main objects are in
+   *    contact, so the narrow phase's only job is picking which real
+   *    segments best represent that contact, not re-deciding whether it
+   *    exists. AabbContact is still computed once per selected pair, purely
+   *    to populate the edge's display/diagnostic metadata (gap, IoU, contact
+   *    axis) — geometry no longer decides which pairs are selected.
+   */
+  void computeObjectContacts(const std::vector<MainObjectGroup>& groups,
+                             LayeredProjection& projection) {
+    last_object_relations_ = Json::array();
+    last_object_contact_edge_count_ = 0;
+    last_object_contact_max_iou_ = 0.0;
+    last_object_contact_grid_cell_size_m_ = 0.0;
+    last_object_contact_pairs_tested_ = 0;
+    if (!object_contact_edges_enabled_ || !graph_) {
+      return;
+    }
+
+    struct MainObjectGeom {
+      size_t group_index = 0;
+      Eigen::Vector3d agg_center = Eigen::Vector3d::Zero();
+      Eigen::Vector3d agg_size = Eigen::Vector3d::Zero();
+      double reach_m = 0.0;  //!< half the longest aggregate dimension + tolerance
+      GridCell cell;
+    };
+
+    // Pass 1: aggregate bbox per main object (union of member bboxes; groups
+    // with no bbox anywhere have no geometry to test and are skipped), and
+    // the largest per-object reach, so the grid cell size can guarantee full
+    // coverage from a single ring of neighboring cells.
+    std::vector<MainObjectGeom> geoms;
+    geoms.reserve(groups.size());
+    double global_max_reach_m = 0.0;
+    for (size_t g = 0; g < groups.size(); ++g) {
+      bool any_bbox = false;
+      Eigen::Vector3d agg_min = Eigen::Vector3d::Zero();
+      Eigen::Vector3d agg_max = Eigen::Vector3d::Zero();
+      for (const auto& member : groups[g].members) {
+        if (!member.has_bbox) {
           continue;
         }
+        const Eigen::Vector3d half = 0.5 * member.bbox_size.cwiseMax(0.0);
+        const Eigen::Vector3d mn = member.bbox_center - half;
+        const Eigen::Vector3d mx = member.bbox_center + half;
+        if (!any_bbox) {
+          agg_min = mn;
+          agg_max = mx;
+          any_bbox = true;
+        } else {
+          agg_min = agg_min.cwiseMin(mn);
+          agg_max = agg_max.cwiseMax(mx);
+        }
+      }
+      if (!any_bbox) {
+        continue;
+      }
+      MainObjectGeom geom;
+      geom.group_index = g;
+      geom.agg_center = 0.5 * (agg_min + agg_max);
+      geom.agg_size = agg_max - agg_min;
+      geom.reach_m = 0.5 * geom.agg_size.cwiseMax(0.0).maxCoeff() + object_contact_tolerance_m_;
+      global_max_reach_m = std::max(global_max_reach_m, geom.reach_m);
+      geoms.push_back(geom);
+    }
 
-        const NodeId source = std::min(a.id, b.id);
-        const NodeId target = std::max(a.id, b.id);
+    if (object_contact_max_objects_ > 0 && geoms.size() > object_contact_max_objects_) {
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 10000,
+                           "object contact: %zu main objects exceeds object_contact_max_objects=%zu; "
+                           "skipping", geoms.size(), object_contact_max_objects_);
+      return;
+    }
+    if (geoms.empty()) {
+      return;
+    }
+
+    const double now_sec = currentReferenceTimeSec();
+    const double cell_size_m =
+        object_contact_grid_cell_size_m_ > 0.0
+            ? object_contact_grid_cell_size_m_
+            : std::max(object_contact_grid_min_cell_size_m_, 2.0 * global_max_reach_m);
+    last_object_contact_grid_cell_size_m_ = cell_size_m;
+
+    // Pass 2: bucket main objects by cell.
+    std::unordered_map<GridCell, std::vector<size_t>, GridCellHash> grid;
+    grid.reserve(geoms.size());
+    for (size_t idx = 0; idx < geoms.size(); ++idx) {
+      geoms[idx].cell = cellForPoint(geoms[idx].agg_center, cell_size_m);
+      grid[geoms[idx].cell].push_back(idx);
+    }
+
+    // Canonical per-pair key (each group's smallest member id, distinct
+    // across groups since they partition all object nodes) gives the same
+    // dedup guarantee the old id-based i<j check gave over raw nodes.
+    const auto geom_key = [&groups](const MainObjectGeom& geom) {
+      return groups[geom.group_index].members.front().id;
+    };
+
+    // Pass 3: for each main object, test only candidates within its
+    // reach-derived neighborhood.
+    size_t pairs_tested = 0;
+    for (size_t i = 0; i < geoms.size(); ++i) {
+      const MainObjectGeom& a = geoms[i];
+      const int ring = std::max(
+          1, static_cast<int>(std::ceil((a.reach_m + global_max_reach_m) / cell_size_m)));
+      for (int dz = -ring; dz <= ring; ++dz) {
+        for (int dy = -ring; dy <= ring; ++dy) {
+          for (int dx = -ring; dx <= ring; ++dx) {
+            const auto neighbor_it =
+                grid.find(GridCell{a.cell.x + dx, a.cell.y + dy, a.cell.z + dz});
+            if (neighbor_it == grid.end()) {
+              continue;
+            }
+            for (const size_t j : neighbor_it->second) {
+              const MainObjectGeom& b = geoms[j];
+              if (geom_key(b) <= geom_key(a)) {
+                continue;  // lower-key side already tests this pair
+              }
+              ++pairs_tested;
+
+              const auto broad = aabbContact(a.agg_center, a.agg_size, b.agg_center, b.agg_size,
+                                             object_contact_tolerance_m_);
+              if (!broad.touching) {
+                continue;  // aggregates don't even come close; skip the narrow phase
+              }
+
+              // Narrow phase: once the aggregates are confirmed touching,
+              // every node on the side with FEWER real (bboxed) members
+              // connects to its single closest counterpart on the other
+              // side, by plain centroid distance — no bbox-intersection
+              // test, no per-pair distance cutoff, and matching runs from
+              // the smaller side only. Running both directions (an earlier
+              // version of this code did) forces every node on the LARGER
+              // side to match whenever the smaller side has very few nodes
+              // — e.g. a 1-node wall next to a 5-node floor produced 5
+              // wall-floor edges (every floor node "finds" the wall, since
+              // it's the only candidate on that side), even though only the
+              // one floor node actually nearest the wall is a sensible
+              // contact point. Iterating only the smaller side's nodes caps
+              // the edge count at the smaller side's own node count and
+              // leaves every non-matched larger-side node free, matching
+              // what a real, sparse point of contact should look like. A
+              // larger-side node can still receive more than one edge if
+              // it's independently the closest match for more than one
+              // smaller-side node — that's a genuine multi-point contact,
+              // not the bug above. On a tie in member count, group_a is
+              // used (it's already the side with the smaller minimum
+              // NodeId, by the canonical ordering established above).
+              const MainObjectGroup& group_a = groups[a.group_index];
+              const MainObjectGroup& group_b = groups[b.group_index];
+
+              const auto count_bboxed = [](const std::vector<SegmentMember>& members) {
+                return std::count_if(members.begin(), members.end(),
+                                     [](const SegmentMember& m) { return m.has_bbox; });
+              };
+              const bool a_is_smaller = count_bboxed(group_a.members) <= count_bboxed(group_b.members);
+              const auto& smaller_members = a_is_smaller ? group_a.members : group_b.members;
+              const auto& larger_members = a_is_smaller ? group_b.members : group_a.members;
+
+              struct ClosestPair {
+                const SegmentMember* member_a = nullptr;
+                const SegmentMember* member_b = nullptr;
+              };
+              std::vector<ClosestPair> selected;
+              selected.reserve(smaller_members.size());
+              for (const auto& small_member : smaller_members) {
+                if (!small_member.has_bbox) {
+                  continue;
+                }
+                const SegmentMember* best = nullptr;
+                double best_dist = std::numeric_limits<double>::max();
+                for (const auto& large_member : larger_members) {
+                  if (!large_member.has_bbox) {
+                    continue;
+                  }
+                  const double dist = (small_member.bbox_center - large_member.bbox_center).norm();
+                  if (dist < best_dist) {
+                    best_dist = dist;
+                    best = &large_member;
+                  }
+                }
+                if (best == nullptr) {
+                  continue;
+                }
+                // member_a always comes from group_a and member_b always
+                // from group_b, regardless of which side turned out to be
+                // "smaller", so downstream source/target assignment and
+                // metadata stay consistent with the broad phase's canonical
+                // group ordering.
+                if (a_is_smaller) {
+                  selected.push_back(ClosestPair{&small_member, best});
+                } else {
+                  selected.push_back(ClosestPair{best, &small_member});
+                }
+              }
+
+              // Each selected (nearest-neighbor) pair still gets the full
+              // AabbContact computed once, purely to populate the edge's
+              // display/diagnostic metadata (gap, IoU, overlap volume,
+              // contact axis) — geometry no longer decides which pairs are
+              // selected, only how the selected pairs are described.
+              for (const auto& pc : selected) {
+                const SegmentMember* member_a = pc.member_a;
+                const SegmentMember* member_b = pc.member_b;
+                const auto contact = aabbContact(member_a->bbox_center, member_a->bbox_size,
+                                                 member_b->bbox_center, member_b->bbox_size,
+                                                 object_contact_tolerance_m_);
+                const NodeId source = member_a->id;
+                const NodeId target = member_b->id;
+                // Volumetric 3D IoU is a poor summary for most contacts (e.g.
+                // a small object against a large flat surface); the larger of
+                // the two 2D planar IoUs reads better on the label.
+                const double iou_2d_max = std::max(contact.iou_xz, contact.iou_yz);
+                projection.edges.push_back(DisplayEdge{source, target,
+                                                       DisplayEdgeType::kDerivedObjectContact,
+                                                       EdgeOrigin::kNativeHydraEdge, 0,
+                                                       iou_2d_max, contact.centroid_distance_m});
+
+                Json meta = {
+                    {"schema", "rsg_object_contact_v1"},
+                    {"relation", "bbox_contact"},
+                    {"centroid_distance_m", contact.centroid_distance_m},
+                    {"bbox_gap_m", contact.gap_m},
+                    {"bbox_overlap_volume_m3", contact.overlap_volume_m3},
+                    {"bbox_overlap_xy_m2", contact.overlap_xy_m2},
+                    {"bbox_iou_3d", contact.iou_3d},
+                    {"bbox_iou_xz", contact.iou_xz},
+                    {"bbox_iou_yz", contact.iou_yz},
+                    {"bbox_iou_2d_max", iou_2d_max},
+                    {"contact_axis", contactAxisName(contact.contact_axis)},
+                    {"source_slot_id", member_a->semantic_slot},
+                    {"target_slot_id", member_b->semantic_slot},
+                    {"source_internal_object_id", group_a.internal_object_id},
+                    {"target_internal_object_id", group_b.internal_object_id},
+                    {"source_group_size", group_a.members.size()},
+                    {"target_group_size", group_b.members.size()},
+                    {"updated_timestamp_sec", now_sec},
+                };
+
+                if (object_contact_write_dsg_edges_) {
+                  auto attrs = std::make_unique<spark_dsg::EdgeAttributes>(
+                      clampValue(contact.iou_3d, 0.0, 1.0));
+                  attrs->metadata.set(meta);
+                  if (graph_->addOrUpdateEdge(source, target, std::move(attrs))) {
+                    contact_edges_prev_.emplace(source, target);
+                  }
+                }
+
+                Json record = meta;
+                record["source"] = idString(source);
+                record["target"] = idString(target);
+                last_object_relations_.push_back(std::move(record));
+                ++last_object_contact_edge_count_;
+                last_object_contact_max_iou_ = std::max(last_object_contact_max_iou_, contact.iou_3d);
+              }
+            }
+          }
+        }
+      }
+    }
+    last_object_contact_pairs_tested_ = pairs_tested;
+  }
+
+  /**
+   * Connect local segments phase1 split off from one physical object that
+   * was too large to track as a single segment (buildMainObjectGroups). This
+   * is an identity relation, not a geometric one: segments are chained in
+   * ascending NodeId order — a proxy for formation order, since phase1
+   * assigns each newly-split-off segment a higher id than what already
+   * exists — rather than fully interconnected, so each new segment links to
+   * the most recently existing one and a k-way split gets k-1 edges, not
+   * k*(k-1)/2.
+   */
+  void computeObjectSegmentEdges(const std::vector<MainObjectGroup>& groups,
+                                 LayeredProjection& projection) {
+    last_object_segment_relations_ = Json::array();
+    last_object_segment_edge_count_ = 0;
+    if (!object_segment_edges_enabled_ || !graph_) {
+      return;
+    }
+
+    const double now_sec = currentReferenceTimeSec();
+
+    for (const auto& group : groups) {
+      if (group.internal_object_id.empty() || group.members.size() < 2) {
+        continue;
+      }
+      if (object_segment_max_group_size_ > 0 &&
+          group.members.size() > object_segment_max_group_size_) {
+        RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 10000,
+                             "object segment: internal object '%s' has %zu segments, exceeds "
+                             "object_segment_max_group_size=%zu; skipping",
+                             group.internal_object_id.c_str(), group.members.size(),
+                             object_segment_max_group_size_);
+        continue;
+      }
+
+      // members is already sorted by NodeId ascending (buildMainObjectGroups).
+      const auto& members = group.members;
+      for (size_t i = 0; i + 1 < members.size(); ++i) {
+        const NodeId source = members[i].id;
+        const NodeId target = members[i + 1].id;
         projection.edges.push_back(DisplayEdge{source, target,
-                                               DisplayEdgeType::kDerivedObjectContact,
+                                               DisplayEdgeType::kDerivedObjectSegment,
                                                EdgeOrigin::kNativeHydraEdge, 0});
 
         Json meta = {
-            {"schema", "rsg_object_contact_v1"},
-            {"relation", "bbox_contact"},
-            {"centroid_distance_m", contact.centroid_distance_m},
-            {"bbox_gap_m", contact.gap_m},
-            {"bbox_overlap_volume_m3", contact.overlap_volume_m3},
-            {"bbox_overlap_xy_m2", contact.overlap_xy_m2},
-            {"bbox_iou_3d", contact.iou_3d},
-            {"contact_axis", contactAxisName(contact.contact_axis)},
-            {"source_slot_id", a.id == source ? a.semantic_slot : b.semantic_slot},
-            {"target_slot_id", a.id == source ? b.semantic_slot : a.semantic_slot},
-            {"source_internal_object_id", internal_id_for(a.id == source ? a.semantic_slot : b.semantic_slot)},
-            {"target_internal_object_id", internal_id_for(a.id == source ? b.semantic_slot : a.semantic_slot)},
+            {"schema", "rsg_object_segment_v1"},
+            {"relation", "same_physical_object"},
+            {"internal_object_id", group.internal_object_id},
+            {"source_slot_id", members[i].semantic_slot},
+            {"target_slot_id", members[i + 1].semantic_slot},
+            {"group_size", members.size()},
             {"updated_timestamp_sec", now_sec},
         };
 
-        if (object_contact_write_dsg_edges_) {
-          auto attrs = std::make_unique<spark_dsg::EdgeAttributes>(
-              clampValue(contact.iou_3d, 0.0, 1.0));
+        if (object_segment_write_dsg_edges_) {
+          auto attrs = std::make_unique<spark_dsg::EdgeAttributes>(1.0);
           attrs->metadata.set(meta);
           if (graph_->addOrUpdateEdge(source, target, std::move(attrs))) {
-            contact_edges_prev_.emplace(source, target);
+            segment_edges_prev_.emplace(source, target);
           }
         }
 
         Json record = meta;
         record["source"] = idString(source);
         record["target"] = idString(target);
-        last_object_relations_.push_back(std::move(record));
-        ++last_object_contact_edge_count_;
-        last_object_contact_max_iou_ = std::max(last_object_contact_max_iou_, contact.iou_3d);
+        last_object_segment_relations_.push_back(std::move(record));
+        ++last_object_segment_edge_count_;
       }
     }
+  }
+
+  /**
+   * Offline-verification dump: every main object's aggregate bbox, every
+   * member's own bbox (plus its resolved semantic label, purely for human
+   * identification when reading the log/CSV -- never used by the
+   * verification logic itself, which only reasons about geometry), and the
+   * contact/segment edges actually produced this cycle — one JSON line per
+   * fusion cycle. Gated behind object_contact_diagnostics_enabled_ (default
+   * off, no effect on production runs); the label lookup only happens on
+   * this already-diagnostics-only path, so it costs nothing when disabled.
+   * See debug/fuser_object_relation_experiment/analyze_contact_diagnostics.py
+   * for the offline script that reads this log, independently recomputes
+   * the expected edges from the raw geometry, and diffs against what's
+   * logged here; debug/fuser_object_relation_experiment/IMPLEMENTATION.md
+   * for the full design writeup.
+   */
+  void writeContactDiagnostics(const std::vector<MainObjectGroup>& groups,
+                               const std::unordered_map<NodeId, ResolvedOverlay>& resolved) {
+    if (!object_contact_diagnostics_enabled_ || object_contact_diagnostics_stream_failed_) {
+      return;
+    }
+    if (!object_contact_diagnostics_stream_.is_open()) {
+      std::string path = object_contact_diagnostics_path_;
+      if (path.empty()) {
+        // One fresh timestamped folder per node lifetime (the stream stays
+        // open for the rest of the run once created), under this
+        // experiment's results/ directory, so successive debugging runs
+        // never clobber each other's logs.
+        const std::time_t now_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        std::tm tm_buf{};
+        localtime_r(&now_time, &tm_buf);
+        std::ostringstream stamp;
+        stamp << std::put_time(&tm_buf, "%Y%m%d_%H%M%S");
+        const std::filesystem::path run_dir =
+            std::filesystem::path(
+                "/home/student/Thesis_new/debug/fuser_object_relation_experiment/results") /
+            ("run_" + stamp.str());
+        std::error_code mkdir_error;
+        std::filesystem::create_directories(run_dir, mkdir_error);
+        if (mkdir_error) {
+          RCLCPP_WARN(get_logger(), "object contact diagnostics: failed to create '%s' (%s); disabling",
+                     run_dir.c_str(), mkdir_error.message().c_str());
+          object_contact_diagnostics_stream_failed_ = true;
+          return;
+        }
+        path = (run_dir / "contact_diagnostics.jsonl").string();
+      }
+      object_contact_diagnostics_stream_.open(path, std::ios::out | std::ios::app);
+      if (!object_contact_diagnostics_stream_.is_open()) {
+        RCLCPP_WARN(get_logger(), "object contact diagnostics: failed to open '%s'; disabling",
+                   path.c_str());
+        object_contact_diagnostics_stream_failed_ = true;
+        return;
+      }
+      RCLCPP_INFO(get_logger(), "object contact diagnostics: writing to '%s'", path.c_str());
+    }
+
+    Json main_objects = Json::array();
+    for (const auto& group : groups) {
+      bool any_bbox = false;
+      Eigen::Vector3d agg_min = Eigen::Vector3d::Zero();
+      Eigen::Vector3d agg_max = Eigen::Vector3d::Zero();
+      std::string group_label;  // first member with a non-empty resolved label
+      Json members = Json::array();
+      for (const auto& member : group.members) {
+        const auto overlay_it = resolved.find(member.id);
+        const std::string label =
+            overlay_it != resolved.end() ? overlay_it->second.overlay.label : std::string();
+        if (group_label.empty() && !label.empty()) {
+          group_label = label;
+        }
+        Json member_json = {
+            {"node_id", idString(member.id)},
+            {"semantic_slot_id", member.semantic_slot},
+            {"has_bbox", member.has_bbox},
+            {"label", label},
+        };
+        if (member.has_bbox) {
+          member_json["bbox_center"] = {member.bbox_center.x(), member.bbox_center.y(),
+                                        member.bbox_center.z()};
+          member_json["bbox_size"] = {member.bbox_size.x(), member.bbox_size.y(),
+                                      member.bbox_size.z()};
+          const Eigen::Vector3d half = 0.5 * member.bbox_size.cwiseMax(0.0);
+          const Eigen::Vector3d mn = member.bbox_center - half;
+          const Eigen::Vector3d mx = member.bbox_center + half;
+          if (!any_bbox) {
+            agg_min = mn;
+            agg_max = mx;
+            any_bbox = true;
+          } else {
+            agg_min = agg_min.cwiseMin(mn);
+            agg_max = agg_max.cwiseMax(mx);
+          }
+        }
+        members.push_back(std::move(member_json));
+      }
+      Json group_json = {
+          {"internal_object_id", group.internal_object_id},
+          {"member_count", group.members.size()},
+          {"label", group_label},  // representative label for the whole physical object
+          {"members", std::move(members)},
+      };
+      if (any_bbox) {
+        const Eigen::Vector3d agg_center = 0.5 * (agg_min + agg_max);
+        const Eigen::Vector3d agg_size = agg_max - agg_min;
+        group_json["aggregate_bbox_center"] = {agg_center.x(), agg_center.y(), agg_center.z()};
+        group_json["aggregate_bbox_size"] = {agg_size.x(), agg_size.y(), agg_size.z()};
+      }
+      main_objects.push_back(std::move(group_json));
+    }
+
+    // params included on every line so each line is independently
+    // analyzable without needing to correlate against a separate header.
+    const Json record = {
+        {"schema", "rsg_object_contact_diagnostics_v1"},
+        {"sequence", object_contact_diagnostics_sequence_},
+        {"stamp_sec", currentReferenceTimeSec()},
+        {"params",
+         {
+             {"object_contact_tolerance_m", object_contact_tolerance_m_},
+             {"object_contact_min_iou_3d", object_contact_min_iou_3d_},
+         }},
+        {"main_objects", main_objects},
+        {"contact_edges", last_object_relations_},
+        {"segment_edges", last_object_segment_relations_},
+    };
+    object_contact_diagnostics_stream_ << record.dump() << "\n";
+    object_contact_diagnostics_stream_.flush();
+    ++object_contact_diagnostics_sequence_;
   }
 
   void updateLocalGraphMetadata(const SceneModel& model,
@@ -2294,6 +2932,10 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     return Color{0.91F, 0.64F, 0.24F, alpha};
   }
 
+  static Color objectSegmentEdgeColor(float alpha = 0.95F) {
+    return Color{0.20F, 0.55F, 0.90F, alpha};
+  }
+
   double currentReferenceTimeSec() const {
     const auto clock = const_cast<SemanticSceneGraphFuser*>(this)->get_clock();
     const double clock_sec = static_cast<double>(clock->now().nanoseconds()) * 1.0e-9;
@@ -2764,6 +3406,133 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     addMarker(markers, next_keys, std::move(lines));
   }
 
+  void appendPointList(MarkerArray& markers, MarkerSet& next_keys,
+                       const std::string& frame, const builtin_interfaces::msg::Time& stamp,
+                       const std::string& marker_namespace, int32_t id, const Color& color,
+                       double point_size_m, const std::vector<geometry_msgs::msg::Point>& points) const {
+    if (points.empty()) {
+      return;
+    }
+    Marker dots;
+    dots.header.frame_id = frame;
+    dots.header.stamp = stamp;
+    dots.ns = marker_namespace;
+    dots.id = id;
+    dots.type = Marker::POINTS;
+    dots.action = Marker::ADD;
+    dots.pose.orientation.w = 1.0;
+    dots.scale.x = point_size_m;
+    dots.scale.y = point_size_m;
+    dots.color.r = color.r;
+    dots.color.g = color.g;
+    dots.color.b = color.b;
+    dots.color.a = color.a;
+    dots.points = points;
+    addMarker(markers, next_keys, std::move(dots));
+  }
+
+  /** Evenly spaced points from start to end (inclusive), for a dotted-line marker. */
+  static void appendDottedSegmentPoints(std::vector<geometry_msgs::msg::Point>& points,
+                                        const geometry_msgs::msg::Point& start,
+                                        const geometry_msgs::msg::Point& end, double spacing_m) {
+    const double dx = end.x - start.x;
+    const double dy = end.y - start.y;
+    const double dz = end.z - start.z;
+    const double length_m = std::sqrt(dx * dx + dy * dy + dz * dz);
+    const int n = std::max(2, static_cast<int>(std::round(length_m / std::max(1.0e-6, spacing_m))) + 1);
+    for (int k = 0; k < n; ++k) {
+      const double t = static_cast<double>(k) / static_cast<double>(n - 1);
+      geometry_msgs::msg::Point point;
+      point.x = start.x + t * dx;
+      point.y = start.y + t * dy;
+      point.z = start.z + t * dz;
+      points.push_back(point);
+    }
+  }
+
+  /**
+   * Contact edges are a symmetric relation, so they render as a shaft with an
+   * arrowhead at each end rather than a plain undirected line: two overlapping
+   * ARROW markers along the same segment, one per direction.
+   */
+  void appendObjectContactArrows(MarkerArray& markers, MarkerSet& next_keys, const std::string& frame,
+                                 const builtin_interfaces::msg::Time& stamp, NodeId source, NodeId target,
+                                 const geometry_msgs::msg::Point& start,
+                                 const geometry_msgs::msg::Point& end) const {
+    if (!show_object_contact_edges_) {
+      return;
+    }
+    const Color color = objectContactEdgeColor(0.95F);
+    const double dx = end.x - start.x;
+    const double dy = end.y - start.y;
+    const double dz = end.z - start.z;
+    const double segment_length_m = std::sqrt(dx * dx + dy * dy + dz * dz);
+    // Fixed small head size (not auto-scaled off segment length, which would
+    // otherwise make longer contact edges sprout disproportionately large
+    // heads), capped so it never overshoots a very short segment.
+    const double head_length_m = std::min(edge_width_m_ * 3.0, 0.4 * segment_length_m);
+    const auto make_arrow = [&](int32_t id, const geometry_msgs::msg::Point& tail,
+                                const geometry_msgs::msg::Point& head) {
+      Marker arrow;
+      arrow.header.frame_id = frame;
+      arrow.header.stamp = stamp;
+      arrow.ns = "rsg_object_contact_edges";
+      arrow.id = id;
+      arrow.type = Marker::ARROW;
+      arrow.action = Marker::ADD;
+      arrow.pose.orientation.w = 1.0;
+      arrow.points = {tail, head};
+      arrow.scale.x = edge_width_m_;        // shaft diameter
+      arrow.scale.y = edge_width_m_ * 1.5;  // head diameter
+      arrow.scale.z = head_length_m;
+      arrow.color.r = color.r;
+      arrow.color.g = color.g;
+      arrow.color.b = color.b;
+      arrow.color.a = color.a;
+      addMarker(markers, next_keys, std::move(arrow));
+    };
+    make_arrow(markerIdForPair(source, target), start, end);
+    make_arrow(markerIdForPair(target, source), end, start);
+  }
+
+  /**
+   * Small floating label at a contact edge's midpoint: centroid distance and
+   * 2D IoU (the larger of the XZ- and YZ-plane projections; volumetric 3D
+   * IoU is a poor summary here, e.g. for a small object against a large
+   * flat surface).
+   */
+  void appendObjectContactLabel(MarkerArray& markers, MarkerSet& next_keys, const std::string& frame,
+                                const builtin_interfaces::msg::Time& stamp, NodeId source, NodeId target,
+                                const geometry_msgs::msg::Point& start,
+                                const geometry_msgs::msg::Point& end, double iou_2d_max,
+                                double centroid_distance_m) const {
+    if (!show_object_contact_labels_) {
+      return;
+    }
+    Marker text;
+    text.header.frame_id = frame;
+    text.header.stamp = stamp;
+    text.ns = "rsg_object_contact_labels";
+    text.id = markerIdForPair(source, target);
+    text.type = Marker::TEXT_VIEW_FACING;
+    text.action = Marker::ADD;
+    text.pose.position.x = 0.5 * (start.x + end.x);
+    text.pose.position.y = 0.5 * (start.y + end.y);
+    text.pose.position.z = 0.5 * (start.z + end.z);
+    text.pose.orientation.w = 1.0;
+    text.scale.z = object_contact_text_height_m_;
+    text.color.r = 0.0F;
+    text.color.g = 0.0F;
+    text.color.b = 0.0F;
+    text.color.a = 1.0F;
+    std::ostringstream line;
+    line.setf(std::ios::fixed);
+    line.precision(2);
+    line << centroid_distance_m << " m\n" << "iou_2d " << iou_2d_max;
+    text.text = line.str();
+    addMarker(markers, next_keys, std::move(text));
+  }
+
   void appendEdgeMarkers(MarkerArray& markers, MarkerSet& next_keys, const std::string& frame,
                          const builtin_interfaces::msg::Time& stamp, const SceneModel& model,
                          const LayeredProjection& projection) const {
@@ -2771,7 +3540,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     std::unordered_map<NodeId, std::vector<geometry_msgs::msg::Point>> place_object_points;
     std::vector<geometry_msgs::msg::Point> place_connectivity_points;
     std::vector<geometry_msgs::msg::Point> object_object_points;
-    std::vector<geometry_msgs::msg::Point> object_contact_points;
+    std::vector<geometry_msgs::msg::Point> object_segment_dot_points;
     std::vector<geometry_msgs::msg::Point> room_room_points;
 
     for (const auto& edge : projection.edges) {
@@ -2804,8 +3573,14 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
           object_object_points.push_back(end);
           break;
         case DisplayEdgeType::kDerivedObjectContact:
-          object_contact_points.push_back(start);
-          object_contact_points.push_back(end);
+          appendObjectContactArrows(markers, next_keys, frame, stamp, edge.source, edge.target, start, end);
+          appendObjectContactLabel(markers, next_keys, frame, stamp, edge.source, edge.target, start,
+                                   end, edge.contact_iou_2d_max, edge.contact_centroid_distance_m);
+          break;
+        case DisplayEdgeType::kDerivedObjectSegment:
+          if (show_object_segment_edges_) {
+            appendDottedSegmentPoints(object_segment_dot_points, start, end, object_segment_dot_spacing_m_);
+          }
           break;
         case DisplayEdgeType::kNativeRoomRoomDebug:
           room_room_points.push_back(start);
@@ -2826,11 +3601,10 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
                    blackEdgeColor(0.90F), place_connectivity_points);
     appendLineList(markers, next_keys, frame, stamp, "rsg_native_object_object_edges", 0,
                    blackEdgeColor(0.90F), object_object_points);
-    // Amber so bbox-contact relations read distinct from the black native edges.
-    appendLineList(markers, next_keys, frame, stamp, "rsg_object_contact_edges", 0,
-                   objectContactEdgeColor(0.95F), object_contact_points);
     appendLineList(markers, next_keys, frame, stamp, "rsg_native_room_room_edges", 0,
                    blackEdgeColor(0.90F), room_room_points);
+    appendPointList(markers, next_keys, frame, stamp, "rsg_object_segment_edges", 0,
+                    objectSegmentEdgeColor(0.95F), object_segment_dot_size_m_, object_segment_dot_points);
   }
 
   Json buildSnapshot(const SceneModel& model,
@@ -2918,6 +3692,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
       });
     }
     snapshot["object_relationships"] = last_object_relations_;
+    snapshot["object_segment_relationships"] = last_object_segment_relations_;
     return snapshot;
   }
 
@@ -2967,9 +3742,10 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
       return true;
     }
 
-    // Drop last cycle's derived contact edges before the model is collected so
+    // Drop last cycle's derived edges before the model is collected so
     // collectModel() only sees native Hydra topology.
     pruneOwnedContactEdges();
+    pruneOwnedSegmentEdges();
 
     const SceneModel model = collectModel();
     const std::string frame = latest_header_.frame_id.empty() ? fallback_frame_id_ : latest_header_.frame_id;
@@ -2977,7 +3753,10 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     updateLocalGraphMetadata(model, resolved, presence_snapshot);
     syncRoomDisplayOrdinals(model);
     auto projection = buildLayeredProjection(model);
-    computeObjectContacts(model, presence_snapshot, projection);
+    const auto main_object_groups = buildMainObjectGroups(model, presence_snapshot);
+    computeObjectContacts(main_object_groups, projection);
+    computeObjectSegmentEdges(main_object_groups, projection);
+    writeContactDiagnostics(main_object_groups, resolved);
 
     publishFusedDsg();
     if (publish_markers) {
@@ -3343,6 +4122,9 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
       status["native_room_room_edges"] = native_room_room_edges;
       status["object_contact_edges"] = last_object_contact_edge_count_;
       status["object_contact_max_iou_3d"] = last_object_contact_max_iou_;
+      status["object_contact_grid_cell_size_m"] = last_object_contact_grid_cell_size_m_;
+      status["object_contact_pairs_tested"] = last_object_contact_pairs_tested_;
+      status["object_segment_edges"] = last_object_segment_edge_count_;
       status["mesh_validation_available"] = projection->mesh_validation_available;
       status["local_index_candidates_examined"] = projection->local_index_candidates_examined;
       status["mesh_rejected_candidates"] = projection->mesh_rejected_candidates;
@@ -3401,11 +4183,25 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   bool show_native_room_room_edges_ = false;
   bool object_contact_edges_enabled_ = true;
   double object_contact_tolerance_m_ = 0.05;
+  // No longer consulted by computeObjectContacts()'s narrow phase (nearest-
+  // centroid matching has no IoU gate); kept declared for backward
+  // compatibility with existing launch configs and reported in diagnostics.
   double object_contact_min_iou_3d_ = 0.0;
   bool object_contact_write_dsg_edges_ = true;
-  bool object_contact_skip_same_internal_object_ = true;
   size_t object_contact_max_objects_ = 500;
+  double object_contact_grid_cell_size_m_ = 0.0;
+  double object_contact_grid_min_cell_size_m_ = 0.05;
   bool show_object_contact_edges_ = true;
+  bool show_object_contact_labels_ = true;
+  double object_contact_text_height_m_ = 0.16;
+  bool object_segment_edges_enabled_ = true;
+  bool object_segment_write_dsg_edges_ = true;
+  size_t object_segment_max_group_size_ = 50;
+  bool show_object_segment_edges_ = true;
+  double object_segment_dot_spacing_m_ = 0.08;
+  double object_segment_dot_size_m_ = 0.03;
+  bool object_contact_diagnostics_enabled_ = false;
+  std::string object_contact_diagnostics_path_;
   bool show_object_labels_ = true;
   bool show_room_labels_ = true;
   bool show_place_labels_ = false;
@@ -3509,6 +4305,26 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   Json last_object_relations_ = Json::array();
   size_t last_object_contact_edge_count_ = 0;
   double last_object_contact_max_iou_ = 0.0;
+  // Diagnostics for the spatial-grid pairing search (last computeObjectContacts call).
+  double last_object_contact_grid_cell_size_m_ = 0.0;
+  size_t last_object_contact_pairs_tested_ = 0;
+
+  // Same-physical-object segment edges written into the fused DSG last
+  // cycle, pruned the same way as contact_edges_prev_. Guarded by graph_mutex_.
+  std::set<std::pair<NodeId, NodeId>> segment_edges_prev_;
+  Json last_object_segment_relations_ = Json::array();
+  size_t last_object_segment_edge_count_ = 0;
+
+  // object_contact_diagnostics_enabled_ output stream, opened lazily on the
+  // first write and kept open for the node's lifetime (append + flush per
+  // cycle, so a killed/crashed node still leaves a usable partial log).
+  std::ofstream object_contact_diagnostics_stream_;
+  bool object_contact_diagnostics_stream_failed_ = false;
+  uint64_t object_contact_diagnostics_sequence_ = 0;
+  // Kept alive so the live-toggle callback registered in the constructor
+  // (object_contact_diagnostics_enabled/_path only) stays registered;
+  // letting this handle be destroyed silently de-registers the callback.
+  OnSetParametersCallbackHandle::SharedPtr parameter_callback_handle_;
 
   std::atomic<uint64_t> raw_dsg_updates_{0};
   std::atomic<uint64_t> full_dsg_updates_{0};

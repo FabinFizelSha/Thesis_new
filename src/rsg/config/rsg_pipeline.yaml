@@ -230,7 +230,7 @@ phase1:                                                                         
     global_min_depth_z: 0.30                                                                  # Z-axis (vertical) padding threshold for thin floors/ceilings (meters).
     global_min_depth_xy: 0.15                                                                 # X/Y-axis (horizontal) padding threshold for thin walls/railings (meters).
     revisit_min_2d_iou: 0.75
-    local_segments_enabled: true                                                                      # Split long internal objects into local Hydra semantic slots for confidence. (Re-enabled 2026-09-02; the object-tracking FINAL_OPTIMIZED_CONFIG had this off.)
+    local_segments_enabled: true                                                                      # Split long internal objects into local Hydra semantic slots for confidence. (Re-enabled 2026-09-04 after confirming disabling it did not stop the dotted multi-member lines -- those come from Hydra's own frontend mesh clustering, not phase1; see debug/fuser_object_relation_experiment/IMPLEMENTATION.md "Still open".)
     local_segment_max_xy_span_m: 6.0                                                                 # Maximum horizontal span of one local semantic slot/section.
     local_segment_revisit_distance_m: 1.5                                                            # Re-associate a revisited local section by centroid distance.
     local_segment_gap_m: 0.20                                                                        # Local 3D-box gap allowed when updating the same segment.

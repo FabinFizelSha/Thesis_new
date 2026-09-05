@@ -114,3 +114,43 @@
     presence_observed_epsilon_sec: 1.5
     minimum_object_alpha: 0.03                                                                                 # Never delete nodes; stale objects remain almost transparent.
     presence_decay_continuous_refresh: true                                                                    # Re-render with ROS/bag time so fading continues even when no new object observation arrives.
+
+    # Object-contact relationships (amber double-arrow lines): two physical
+    # objects whose 3D bounding boxes touch/overlap. Objects phase 1 split
+    # into local segments are grouped by internal_object_id into "main
+    # objects" first; contact is always detected main-object-to-main-object,
+    # anchored on the closest real touching sub-object pair(s). See
+    # debug/fuser_object_relation_experiment/IMPLEMENTATION.md for the full
+    # design writeup.
+    object_contact_edges_enabled: true                                                                          # Master switch for contact detection (markers + DSG edges + status).
+    object_contact_tolerance_m: 0.20                                                                            # Max gap between two bboxes to still count as touching. (Raised from 0.05 on 2026-09-05 to treat slightly-separated objects as touching.)
+    object_contact_min_iou_3d: 0.0                                                                              # Unused since the 2026-09-05 nearest-centroid-matching rework of the narrow phase (no IoU gate); kept for backward compatibility.
+    object_contact_write_dsg_edges: true                                                                        # Also write a real object-object edge into the fused DSG, not just the marker.
+    object_contact_max_objects: 500                                                                             # Safety cap on main objects considered per cycle; exceeding it skips contact detection with a warning.
+    object_contact_grid_cell_size_m: 0.0                                                                        # 0.0 = auto-size the spatial-hash cell each cycle from the largest object reach seen.
+    object_contact_grid_min_cell_size_m: 0.05                                                                   # Floor for the auto-sized cell, so a scene of tiny objects doesn't produce a degenerate grid.
+    show_object_contact_edges: true                                                                             # RViz double-arrow markers for contact edges.
+    show_object_contact_labels: true                                                                            # Small floating label per contact edge: centroid distance + max(iou_xz, iou_yz).
+    object_contact_text_height_m: 0.16
+
+    # Object-segment relationships (blue dotted lines): local segments phase 1
+    # split off from one physical object too large to track as a single
+    # segment. Chained in ascending NodeId order (a proxy for formation
+    # order), not fully interconnected -- a k-way split gets k-1 edges.
+    object_segment_edges_enabled: true                                                                          # Master switch for the same-object identity chain.
+    object_segment_write_dsg_edges: true                                                                        # Also write a real object-object edge into the fused DSG, not just the marker.
+    object_segment_max_group_size: 50                                                                           # Safety cap on segments per physical object; exceeding it skips that group's chain with a warning.
+    show_object_segment_edges: true                                                                             # RViz dotted-line markers for the segment chain.
+    object_segment_dot_spacing_m: 0.08                                                                          # Spacing between the small dots that make up each dotted line.
+    object_segment_dot_size_m: 0.03                                                                             # Dot diameter.
+
+    # Offline verification: dumps every main object's aggregate bbox, every
+    # member's own bbox, and the contact/segment edges actually produced, one
+    # JSON line per fusion cycle, to
+    # debug/fuser_object_relation_experiment/results/run_<timestamp>/contact_diagnostics.jsonl
+    # (or object_contact_diagnostics_path if set). See
+    # debug/fuser_object_relation_experiment/README.md to enable and analyze.
+    # Both params are live-toggleable via `ros2 param set
+    # /rsg_scene_graph_fuser ...` without a restart.
+    object_contact_diagnostics_enabled: false
+    object_contact_diagnostics_path: ""                                                                         # Explicit fixed path override; empty = auto timestamped folder under results/.
