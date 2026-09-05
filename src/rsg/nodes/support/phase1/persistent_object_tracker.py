@@ -2430,13 +2430,25 @@ class PersistentObjectTracker:
                 historical_score = max(overlap_volume, gap_score if accumulated_gap_xy > 0.0 else overlap_volume)
                 min_hist = float(getattr(self.config, "persistent_global_historical_overlap_pass", 0.30))
                 min_axis = float(getattr(self.config, "persistent_global_min_axis_overlap", 0.20))
-                # Removed vertical checks from historical_pass; 3D overlap handles height separation
+                max_vertical_gap = float(getattr(self.config, "persistent_max_vertical_gap_m", 0.12))
+                vertical_compatible = bool(vertical_gap <= max_vertical_gap)
+                # The XY-touch shortcut alone cannot tell a floor from something
+                # resting ON it -- their footprints touch/overlap in XY with a
+                # ~0 gap either way. Require vertical compatibility too, so a
+                # track only counts as "touching" when it is also plausibly at
+                # the same height, not just anywhere above/below the same spot.
                 historical_pass = bool(
                     (overlap_volume >= min_hist and overlap_x >= min_axis and overlap_y >= min_axis)
-                    or accumulated_gap_xy <= float(getattr(self.config, "persistent_global_touch_gap_pass_m", 0.02))
+                    or (
+                        accumulated_gap_xy <= float(getattr(self.config, "persistent_global_touch_gap_pass_m", 0.02))
+                        and vertical_compatible
+                    )
                 )
-                # Vertical score removed (now in 3D overlap); keep vertical_pass=False for quorum
-                vertical_pass = False
+                vertical_score = _gaussian_compatibility(
+                    vertical_gap,
+                    max(float(getattr(self.config, "persistent_global_vertical_sigma_m", 0.15)), 1e-3),
+                )
+                vertical_pass = vertical_compatible
 
             # Recent Continuation removed as redundant (3D Historical now handles continuity)
             recent_score = 0.0
