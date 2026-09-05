@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 import re
-from typing import Any, Dict, Iterable, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 
 UNKNOWN_LABELS = {
@@ -160,6 +160,139 @@ def infer_mobility_from_label(
     if _contains_hint(label, dynamic_label_hints):
         return "dynamic"
     return "unknown"
+
+
+@dataclass(frozen=True)
+class ValidatedRiskResult:
+    """Normalised output from one Risk VLM response.
+
+    Deliberately narrower than ``ValidatedVlmResult``: there is no
+    label/mobility contract here, just a clamped hazard score and a short,
+    capped list of hazard strings.
+    """
+
+    success: bool
+    risk_score: float  # signed, [-1.0, 1.0]: negative = risk-reducing, 0 = neutral, positive = hazard
+    risk_factors: Tuple[str, ...]
+    validation_status: str
+    validation_reason: str
+    parsed_payload: Dict[str, Any]
+
+    def as_dict(self) -> Dict[str, Any]:
+        """Return a JSON-serialisable representation used by Phase 1."""
+        return {
+            "success": bool(self.success),
+            "risk_score": float(self.risk_score),
+            "risk_factors": list(self.risk_factors),
+            "validation_status": self.validation_status,
+            "validation_reason": self.validation_reason,
+            "parsed_payload": dict(self.parsed_payload),
+        }
+
+
+def _normalise_risk_score(value: Any) -> Optional[float]:
+    """Return a risk score clamped to ``[-1.0, 1.0]``.
+
+    Unlike confidence values (``_normalise_confidence``, always ``[0, 1]``),
+    risk scores are signed: negative means the object actively *reduces*
+    risk (safety equipment such as a fire extinguisher, hazard-warning
+    signage), 0 is neutral (no hazard, no mitigation), positive is a hazard.
+    No percentage-notation handling here -- a model returning e.g. ``-150``
+    almost certainly means it ignored the range instruction, and clamping
+    straight to ``[-1, 1]`` is simpler and safer than guessing a percentage
+    scale for a signed value.
+    """
+    try:
+        score = float(value)
+    except (TypeError, ValueError):
+        return None
+    return max(-1.0, min(1.0, score))
+
+
+def validate_risk_response(
+    text: str,
+    *,
+    max_risk_factors: int = 5,
+    max_risk_factor_length: int = 120,
+) -> ValidatedRiskResult:
+    """Parse and validate the two-field risk JSON contract: ``risk_score`` +
+    ``risk_factors``.
+
+    ``risk_score`` ranges over ``[-1.0, 1.0]``, not ``[0.0, 1.0]``: negative
+    means the object actively reduces risk (safety equipment, hazard-warning
+    signage), 0 is neutral, positive is a hazard -- see
+    ``_normalise_risk_score``. A missing or unparsable ``risk_score`` fails
+    the whole result -- it is the one field every downstream consumer
+    (fuser metadata, any future risk-based filtering) needs to be
+    trustworthy. An empty ``risk_factors`` list is *not* a failure on its
+    own: a genuinely neutral object can legitimately have no hazards or
+    mitigations to report. ``risk_factors`` is capped to ``max_risk_factors``
+    entries, each truncated to ``max_risk_factor_length`` characters, so a
+    verbose or malformed model response can never grow the fuser's per-node
+    metadata or an RViz label without bound.
+    """
+    payload, parse_status = _extract_json_object(text)
+    if payload is None:
+        return ValidatedRiskResult(
+            success=False,
+            risk_score=0.0,
+            risk_factors=(),
+            validation_status="rejected",
+            validation_reason=parse_status,
+            parsed_payload={},
+        )
+
+    risk_score = _normalise_risk_score(payload.get("risk_score"))
+    if risk_score is None:
+        return ValidatedRiskResult(
+            success=False,
+            risk_score=0.0,
+            risk_factors=(),
+            validation_status="rejected",
+            validation_reason="invalid_risk_score",
+            parsed_payload=payload,
+        )
+
+    raw_factors = payload.get("risk_factors", [])
+    if isinstance(raw_factors, str):
+        raw_factors = [raw_factors]
+    factors: List[str] = []
+    if isinstance(raw_factors, list):
+        limit = max(0, int(max_risk_factors))
+        for item in raw_factors:
+            if len(factors) >= limit:
+                break
+            text_item = str(item or "").strip()
+            if text_item:
+                factors.append(text_item[: max(1, int(max_risk_factor_length))])
+
+    # A non-zero score without any stated reason is not trustworthy: the
+    # prompt asks the model to always name what's driving a score away from
+    # neutral, but real responses have come back with e.g. risk_score=0.1
+    # and risk_factors=[] -- a number with no justification behind it.
+    # Mandatory, not just prompted: reject rather than publish an
+    # unexplained non-zero score. Uses a small epsilon, not a literal
+    # `!= 0.0`, purely to tolerate float representation noise (e.g. a value
+    # arithmetic left at 1e-17 instead of exactly 0.0) -- it is not a
+    # "close enough to neutral" allowance.
+    if abs(risk_score) > 1e-9 and not factors:
+        return ValidatedRiskResult(
+            success=False,
+            risk_score=float(risk_score),
+            risk_factors=(),
+            validation_status="rejected",
+            validation_reason="nonzero_score_missing_factors",
+            parsed_payload=payload,
+        )
+
+    return ValidatedRiskResult(
+        success=True,
+        risk_score=float(risk_score),
+        risk_factors=tuple(factors),
+        validation_status="accepted",
+        validation_reason=parse_status,
+        parsed_payload=payload,
+    )
 
 
 def validate_vlm_response(

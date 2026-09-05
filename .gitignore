@@ -44,3 +44,8 @@ debug/prompt_optimisation_experiment/runs/*/session_*/
 # and derived CSVs -- large, regeneratable by re-running with
 # object_contact_diagnostics_enabled: true, no long-term value in git.
 debug/fuser_object_relation_experiment/results/run_*/
+
+# --- Risk VLM diagnostics run outputs ------------------------------------
+# Keep DESIGN.md; ignore each run's crops + CSV -- regeneratable by
+# re-running with phase1.diagnostics.enabled + phase1.risk_vlm.enabled true.
+debug/risk_assessment_feature/session_*/

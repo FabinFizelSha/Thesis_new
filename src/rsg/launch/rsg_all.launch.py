@@ -43,6 +43,7 @@ sleep 1
             "pipeline_config": LaunchConfiguration("pipeline_config"),
             "start_chroma": LaunchConfiguration("start_chroma"),
             "start_qwen": LaunchConfiguration("start_qwen"),
+            "start_risk_vlm": LaunchConfiguration("start_risk_vlm"),
         }.items(),
     )
 
@@ -80,6 +81,7 @@ sleep 1
         ),
         DeclareLaunchArgument("start_chroma", default_value="true"),
         DeclareLaunchArgument("start_qwen", default_value="true"),
+        DeclareLaunchArgument("start_risk_vlm", default_value="true"),
         DeclareLaunchArgument("start_hydra", default_value="true"),
         DeclareLaunchArgument("dataset", default_value="uhumans2"),
         DeclareLaunchArgument("labelspace", default_value="rsg_slot_only_frozen"),

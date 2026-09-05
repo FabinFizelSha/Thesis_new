@@ -33,9 +33,11 @@ def generate_launch_description() -> LaunchDescription:
     preprocessor_script = PathJoinSubstitution([share, "scripts", "rsg_preprocessor"])
     phase1_script = PathJoinSubstitution([share, "scripts", "rsg_phase1_semantic_coordinator"])
     vlm_server_script = PathJoinSubstitution([share, "scripts", "rsg_vlm_server"])
+    risk_vlm_server_script = PathJoinSubstitution([share, "scripts", "rsg_risk_vlm_server"])
 
     start_chroma = LaunchConfiguration("start_chroma")
     start_qwen = LaunchConfiguration("start_qwen")
+    start_risk_vlm = LaunchConfiguration("start_risk_vlm")
 
     home_dir = Path.home()
     venv_dir = Path(
@@ -80,6 +82,16 @@ def generate_launch_description() -> LaunchDescription:
         condition=IfCondition(start_qwen),
     )
 
+    # Separate model/server from the object-detection VLM above -- its own
+    # process, its own port (phase1.risk_vlm.server), started the same way.
+    risk_qwen = ExecuteProcess(
+        cmd=[python_executable, risk_vlm_server_script, "--config", pipeline_config],
+        name="risk_vlm_server",
+        output="screen",
+        emulate_tty=True,
+        condition=IfCondition(start_risk_vlm),
+    )
+
     preprocessor = _python_node(
         "rsg_preprocessor", preprocessor_script, pipeline_config, python_executable
     )
@@ -108,8 +120,10 @@ def generate_launch_description() -> LaunchDescription:
         ),
         DeclareLaunchArgument("start_chroma", default_value="true"),
         DeclareLaunchArgument("start_qwen", default_value="true"),
+        DeclareLaunchArgument("start_risk_vlm", default_value="true"),
         chroma,
         qwen,
+        risk_qwen,
         preprocessor,
         TimerAction(period=2.0, actions=[phase1]),
         TimerAction(period=3.0, actions=[fuser]),

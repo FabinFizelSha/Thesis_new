@@ -30,7 +30,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from nodes.support.phase1.vlm_result import validate_vlm_response
+from nodes.support.phase1.vlm_result import validate_risk_response, validate_vlm_response
 
 
 def _effective_sam_min_mask_pixels(config: Any) -> int:
@@ -574,6 +574,13 @@ class RealRapBackend:
             label = str(label).strip()
             distance = float(distance)
         except Exception as exc:
+            # Recorded in the returned metadata, but that alone never reached
+            # the console/log -- a query failure (e.g. a GPU-contention
+            # CUBLAS_STATUS_ALLOC_FAILED shared with the add_image() write
+            # path, see rsg_pipeline.yaml's rap.device comment) looked
+            # identical to a genuine "no match" miss with no way to tell
+            # the two apart after the fact.
+            self.logger.error(f"RAP query failed, treating as unknown: {type(exc).__name__}: {exc}")
             return RapMatch("unknown_object", 0.0, False, 1.0, {"backend": self.backend_name, "error": str(exc)})
         is_known = bool(label and label.lower() not in {"unknown", "unknown_object", "unclear", "unsure", "n/a"} and distance <= float(self.config.rap_distance_threshold))
         confidence = max(0.0, min(1.0, 1.0 - distance))
@@ -730,6 +737,89 @@ class _NativeVisualRAP:
         return best_label, best_distance, metadata
 
 
+def _crop_to_data_url(rgb_crop: np.ndarray, jpeg_quality: int) -> str:
+    """Encode an RGB crop as a base64 ``data:`` URL for a vision chat request.
+
+    Shared by every OpenAI-compatible VLM-style backend (object-detection,
+    risk assessment) -- the encoding has nothing to do with what the model
+    is asked to do with the image.
+    """
+    try:
+        import cv2  # type: ignore
+        bgr = cv2.cvtColor(rgb_crop, cv2.COLOR_RGB2BGR)
+        ok, encoded = cv2.imencode(".jpg", bgr, [int(cv2.IMWRITE_JPEG_QUALITY), int(jpeg_quality)])
+        if not ok:
+            raise RuntimeError("cv2.imencode failed")
+        b64 = base64.b64encode(encoded.tobytes()).decode("ascii")
+        return f"data:image/jpeg;base64,{b64}"
+    except Exception:
+        from PIL import Image  # type: ignore
+        stream = BytesIO()
+        Image.fromarray(rgb_crop).save(stream, format="PNG")
+        b64 = base64.b64encode(stream.getvalue()).decode("ascii")
+        return f"data:image/png;base64,{b64}"
+
+
+def _call_openai_compatible_vlm(
+    *,
+    endpoint: str,
+    model: str,
+    api_key: str,
+    prompt: str,
+    rgb_crop: np.ndarray,
+    max_tokens: int,
+    temperature: float,
+    timeout_sec: float,
+    jpeg_quality: int,
+) -> Dict[str, Any]:
+    """POST one crop + prompt to an OpenAI-compatible ``/chat/completions`` endpoint.
+
+    Pure request/response plumbing shared by every VLM-style backend in this
+    module (object-detection classification, risk assessment): builds the
+    payload, sends it, and returns the raw text plus inference timing -- no
+    domain-specific parsing here. Each caller validates and interprets
+    ``raw_response`` itself, since object-detection and risk responses follow
+    different JSON contracts (label/mobility vs. risk_score/risk_factors).
+    Raises on transport/HTTP failure; callers are expected to catch and
+    convert to their own failure-result shape (see ``OpenAICompatibleVlmBackend
+    .identify`` and ``RiskVlmBackend.assess`` for the two call sites).
+    """
+    image_url = _crop_to_data_url(rgb_crop, jpeg_quality)
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": image_url}},
+                ],
+            }
+        ],
+        "max_tokens": int(max_tokens),
+        "temperature": float(temperature),
+        # Qwen3 / Qwen3.5 are reasoning models: left on "auto" they emit
+        # <think>...</think> first and, with a small max_tokens, return
+        # empty message.content (all budget spent thinking). Force it off.
+        # No-op for non-thinking models (Qwen3-VL-8B, R1-R3).
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
+    data = json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+    key = str(api_key or "").strip()
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
+    request = urllib.request.Request(endpoint, data=data, headers=headers, method="POST")
+    with urllib.request.urlopen(request, timeout=float(timeout_sec)) as response:
+        body = response.read().decode("utf-8")
+    result = json.loads(body)
+    text = result.get("choices", [{}])[0].get("message", {}).get("content", "unknown_object")
+    # llama.cpp reports model compute time in `timings` (prompt + generation).
+    timings = result.get("timings") or {}
+    inference_ms = float(timings.get("prompt_ms", 0.0) or 0.0) + float(timings.get("predicted_ms", 0.0) or 0.0)
+    return {"raw_response": text, "inference_ms": inference_ms}
+
+
 class DummyVlmBackend:
     """Dummy unknown-object identification backend for non-VLM machines."""
 
@@ -793,39 +883,19 @@ class OpenAICompatibleVlmBackend:
                 "validation_reason": "empty_crop",
             }
         try:
-            image_url = self._crop_to_data_url(rgb_crop)
-            payload = {
-                "model": self.model,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": self.config.vlm_prompt},
-                            {"type": "image_url", "image_url": {"url": image_url}},
-                        ],
-                    }
-                ],
-                "max_tokens": int(self.config.vlm_max_tokens),
-                "temperature": float(self.config.vlm_temperature),
-                # Qwen3 / Qwen3.5 are reasoning models: left on "auto" they emit
-                # <think>...</think> first and, with a small max_tokens, return
-                # empty message.content (all budget spent thinking). Force it off.
-                # No-op for non-thinking models (Qwen3-VL-8B, R1-R3).
-                "chat_template_kwargs": {"enable_thinking": False},
-            }
-            data = json.dumps(payload).encode("utf-8")
-            headers = {"Content-Type": "application/json"}
-            api_key = str(self.config.vlm_api_key or "").strip()
-            if api_key:
-                headers["Authorization"] = f"Bearer {api_key}"
-            request = urllib.request.Request(self.endpoint, data=data, headers=headers, method="POST")
-            with urllib.request.urlopen(request, timeout=float(self.config.vlm_timeout_sec)) as response:
-                body = response.read().decode("utf-8")
-            result = json.loads(body)
-            text = result.get("choices", [{}])[0].get("message", {}).get("content", "unknown_object")
-            # llama.cpp reports model compute time in `timings` (prompt + generation).
-            _t = result.get("timings") or {}
-            _inference_ms = float(_t.get("prompt_ms", 0.0) or 0.0) + float(_t.get("predicted_ms", 0.0) or 0.0)
+            call = _call_openai_compatible_vlm(
+                endpoint=self.endpoint,
+                model=self.model,
+                api_key=str(self.config.vlm_api_key or ""),
+                prompt=self.config.vlm_prompt,
+                rgb_crop=rgb_crop,
+                max_tokens=int(self.config.vlm_max_tokens),
+                temperature=float(self.config.vlm_temperature),
+                timeout_sec=float(self.config.vlm_timeout_sec),
+                jpeg_quality=int(self.config.vlm_jpeg_quality),
+            )
+            text = call["raw_response"]
+            _inference_ms = call["inference_ms"]
             validated = validate_vlm_response(
                 text,
                 min_label_confidence=float(self.config.vlm_result_min_label_confidence),
@@ -858,21 +928,6 @@ class OpenAICompatibleVlmBackend:
                 "validation_reason": f"request_error:{type(exc).__name__}",
             }
 
-    def _crop_to_data_url(self, rgb_crop: np.ndarray) -> str:
-        try:
-            import cv2  # type: ignore
-            bgr = cv2.cvtColor(rgb_crop, cv2.COLOR_RGB2BGR)
-            ok, encoded = cv2.imencode(".jpg", bgr, [int(cv2.IMWRITE_JPEG_QUALITY), int(self.config.vlm_jpeg_quality)])
-            if not ok:
-                raise RuntimeError("cv2.imencode failed")
-            b64 = base64.b64encode(encoded.tobytes()).decode("ascii")
-            return f"data:image/jpeg;base64,{b64}"
-        except Exception:
-            from PIL import Image  # type: ignore
-            stream = BytesIO()
-            Image.fromarray(rgb_crop).save(stream, format="PNG")
-            b64 = base64.b64encode(stream.getvalue()).decode("ascii")
-            return f"data:image/png;base64,{b64}"
 
 def _allow_fallback(config: Any) -> bool:
     return bool(getattr(config, "allow_dummy_fallback", False))
@@ -925,3 +980,146 @@ def make_vlm_backend(config: Any) -> Any:
     if mode in {"openai", "openai_vision", "qwen", "qwen_http", "real", "orin"}:
         return OpenAICompatibleVlmBackend(config)
     return DummyVlmBackend(config)
+
+
+class DummyRiskVlmBackend:
+    """Dummy risk-assessment backend for machines without a risk VLM server."""
+
+    def __init__(self, config: Any) -> None:
+        self.config = config
+
+    def assess(self, rgb_crop: Optional[np.ndarray], label: str, mobility_class: str, source: str) -> Dict[str, Any]:
+        """Return a fixed, clearly-synthetic risk result."""
+        if float(getattr(self.config, "risk_vlm_dummy_delay_sec", 0.0)) > 0.0:
+            time.sleep(float(self.config.risk_vlm_dummy_delay_sec))
+        return {
+            "success": True,
+            "risk_score": 0.0,
+            "risk_factors": [],
+            "backend": "dummy",
+            "model": "dummy",
+            "raw_response": "dummy_risk_vlm_path",
+            "validation_status": "dummy",
+            "validation_reason": "dummy_backend_has_no_risk_inference",
+        }
+
+
+class RiskVlmBackend:
+    """OpenAI-compatible HTTP adapter for a separate risk-assessment VLM.
+
+    Deliberately a different endpoint/model from ``OpenAICompatibleVlmBackend``
+    (``config.risk_vlm_*`` vs. ``config.vlm_*``): risk assessment only ever
+    runs after an object is already identified, using a crop that was
+    already extracted for classification, so it has no runtime dependency
+    on the object-detection VLM beyond the label/mobility text it's given as
+    context. Sharing the HTTP/JSON mechanics via
+    ``_call_openai_compatible_vlm`` keeps this class small -- the only thing
+    specific to risk is the prompt template and the response schema
+    (``validate_risk_response``).
+    """
+
+    def __init__(self, config: Any) -> None:
+        self.config = config
+        # Mirrors OpenAICompatibleVlmBackend's environment-override
+        # convention, with its own env var names so the two backends can be
+        # pointed at different servers independently in a shell/launch file.
+        env_base = os.environ.get("RISK_VLM_OPENAI_BASE_URL", "").strip()
+        self.endpoint = (env_base.rstrip("/") + "/chat/completions") if env_base else str(config.risk_vlm_endpoint)
+        self.model = os.environ.get("RISK_VLM_MODEL", str(config.risk_vlm_model))
+
+    def assess(self, rgb_crop: Optional[np.ndarray], label: str, mobility_class: str, source: str) -> Dict[str, Any]:
+        """Request and validate one ``risk_score``/``risk_factors`` JSON result.
+
+        ``label``/``mobility_class``/``source`` are folded into the prompt as
+        plain text context (what the object was already identified as, and
+        whether that came from RAP or the classification VLM) -- the model
+        still does its own visual reasoning over the crop's surroundings for
+        the *probability* side of the assessment (e.g. edge vs. middle of a
+        table); this text only supplies the "what is it" half.
+        """
+        if rgb_crop is None or rgb_crop.size == 0:
+            return {
+                "success": False,
+                "risk_score": 0.0,
+                "risk_factors": [],
+                "backend": self.config.risk_vlm_mode,
+                "model": self.model,
+                "raw_response": "empty_crop",
+                "failure_reason": "empty_crop",
+                "validation_status": "rejected",
+                "validation_reason": "empty_crop",
+            }
+        try:
+            prompt = self._build_prompt(label, mobility_class, source)
+            call = _call_openai_compatible_vlm(
+                endpoint=self.endpoint,
+                model=self.model,
+                api_key=str(self.config.risk_vlm_api_key or ""),
+                prompt=prompt,
+                rgb_crop=rgb_crop,
+                max_tokens=int(self.config.risk_vlm_max_tokens),
+                temperature=float(self.config.risk_vlm_temperature),
+                timeout_sec=float(self.config.risk_vlm_timeout_sec),
+                jpeg_quality=int(self.config.risk_vlm_jpeg_quality),
+            )
+            text = call["raw_response"]
+            validated = validate_risk_response(
+                text,
+                max_risk_factors=int(self.config.risk_vlm_max_risk_factors),
+                max_risk_factor_length=int(self.config.risk_vlm_max_risk_factor_length),
+            )
+            output = validated.as_dict()
+            output.update({
+                "backend": self.config.risk_vlm_mode,
+                "model": self.model,
+                "raw_response": text,
+                "risk_inference_ms": call["inference_ms"],
+                "failure_reason": "" if validated.success else validated.validation_reason,
+            })
+            return output
+        except Exception as exc:
+            return {
+                "success": False,
+                "risk_score": 0.0,
+                "risk_factors": [],
+                "backend": self.config.risk_vlm_mode,
+                "model": self.model,
+                "raw_response": str(exc),
+                "failure_reason": f"request_error:{type(exc).__name__}",
+                "validation_status": "rejected",
+                "validation_reason": f"request_error:{type(exc).__name__}",
+            }
+
+    def _build_prompt(self, label: str, mobility_class: str, source: str) -> str:
+        """Fill the configured risk prompt template with this object's identity.
+
+        Plain ``str.format`` substitution (not an f-string baked into code)
+        so the prompt text stays entirely in YAML, editable without touching
+        code -- ``{label}``/``{mobility_class}``/``{source}`` are the only
+        substitution points the template is expected to use.
+        """
+        template = str(self.config.risk_vlm_prompt)
+        try:
+            return template.format(
+                label=label or "unknown_object",
+                mobility_class=mobility_class or "unknown",
+                source=source or "unknown",
+            )
+        except (KeyError, IndexError):
+            # A prompt edited without matching placeholders shouldn't crash
+            # risk assessment -- fall back to the raw template plus a plain
+            # context line appended after it.
+            return f"{template}\n\nObject identified as: {label} (mobility={mobility_class}, source={source})"
+
+
+def make_risk_vlm_backend(config: Any) -> Any:
+    """Create the configured Risk VLM backend.
+
+    Mirrors ``make_vlm_backend``'s mode-string convention, but reads
+    ``risk_vlm_mode`` (a separate config key) since this is a genuinely
+    different model/server by design, not a second profile of the same one.
+    """
+    mode = str(getattr(config, "risk_vlm_mode", "dummy")).lower()
+    if mode in {"openai", "openai_vision", "qwen", "qwen_http", "real", "orin"}:
+        return RiskVlmBackend(config)
+    return DummyRiskVlmBackend(config)

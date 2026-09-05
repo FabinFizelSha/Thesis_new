@@ -28,7 +28,7 @@ input:
         type: camera_info                                                                            # Build the camera model from Phase 1 CameraInfo.
         ns: /rsg/hydra/rgb                                                                           # Resolves to /rsg/hydra/rgb/camera_info.
         min_range: 0.30                                                                              # Match the RSG depth-validity lower bound in metres.
-        max_range: 5.00                                                                              # Updated to 5.00m for better object detection range.
+        max_range: 4.00                                                                              # Reduced to 4.00m 2026-09-05, matching rsg_pipeline.yaml's depth bounds.
 
         extrinsics:
           type: ros                                                                                  # Obtain the fixed camera mounting transform from TF.

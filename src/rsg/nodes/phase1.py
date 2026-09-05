@@ -36,7 +36,7 @@ from tf2_ros import TransformBroadcaster
 
 from rsg.msg import Phase1ClassificationResult, Phase1VlmResult, RsgFrame, RsgHydraFrame
 
-from nodes.support.phase1.backends import SamMask, make_rap_backend, make_sam_backend, make_vlm_backend
+from nodes.support.phase1.backends import SamMask, make_rap_backend, make_risk_vlm_backend, make_sam_backend, make_vlm_backend
 from nodes.support.phase1.bbox_diagnostics import BboxDiagnosticsLogger
 from nodes.support.phase1.crop_evolution_tracker import CropEvolutionTracker
 from nodes.support.phase1.frame_cache import BoundedFrameCache, CachedFrame, EvidenceBuffer
@@ -50,6 +50,7 @@ from nodes.support.phase1.phase1_timing_recorder import Phase1TimingRecorder
 from nodes.support.phase1.persistent_object_tracker import PersistentObjectTracker
 from nodes.support.phase1.vlm_test_diagnostics import VLMTestDiagnostics
 from nodes.support.phase1.rap_memory import RapMemoryUpdater
+from nodes.support.phase1.risk_vlm_diagnostics import RiskVlmDiagnostics
 from nodes.support.phase1.semantic_crop import (
     build_rap_target_only_crop,
     build_vlm_target_focus_crop,
@@ -100,6 +101,10 @@ class Phase1SemanticCoordinator(Node):
         self.sam_backend = make_sam_backend(self.config, self.get_logger())
         self.rap_backend = make_rap_backend(self.config, self.get_logger())
         self.vlm_backend = make_vlm_backend(self.config)
+        # Deliberately a separate backend instance/model from vlm_backend --
+        # risk assessment always runs against its own configured
+        # endpoint/model, never the object-detection VLM's.
+        self.risk_vlm_backend = make_risk_vlm_backend(self.config)
         self.rap_memory_updater = RapMemoryUpdater(
             enabled=self.config.rap_update_enabled,
             output_path=self.config.rap_memory_path,
@@ -193,6 +198,19 @@ class Phase1SemanticCoordinator(Node):
         self._vlm_quality_force_track_ids: set[str] = set()
         self._vlm_quality_deferred_lock = threading.Lock()
 
+        # Risk assessment: one-shot per track, dispatched right after a
+        # track's first successful classification (RAP hit or VLM success).
+        # Unlike rap_queue/vlm_queue, this stores the *crop itself* (already
+        # captured at enqueue time), not a track ID to re-snapshot later --
+        # there is no "wait for a better crop" concept for a one-shot
+        # assessment made from an already-classified track, and the classifying
+        # code path retires that track's live crop registry entry immediately
+        # after publishing its label (see _emit_semantic_label_result), so a
+        # later by-ID lookup would find nothing anyway.
+        self.risk_queue: "queue.Queue[Dict[str, Any]]" = queue.Queue(maxsize=self.config.risk_vlm_queue_size)
+        self.risk_queue_dropped_count = 0
+        self.risk_completed_count = 0
+
         self._stop_event = threading.Event()
         # Segmentation (GPU-bound SAM) and tracking/publish (CPU-bound) run on
         # separate threads so they can overlap: SAM backends release the GIL
@@ -202,6 +220,7 @@ class Phase1SemanticCoordinator(Node):
         self._tracking_publish_thread = threading.Thread(target=self._tracking_publish_loop, daemon=True)
         self._rap_thread = threading.Thread(target=self._rap_loop, daemon=True)
         self._vlm_thread = threading.Thread(target=self._vlm_loop, daemon=True)
+        self._risk_thread = threading.Thread(target=self._risk_loop, daemon=True)
 
         input_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
@@ -234,6 +253,15 @@ class Phase1SemanticCoordinator(Node):
         self.semantic_label_result_pub = self.create_publisher(
             String,
             self.config.semantic_labeling_publish_topic,
+            semantic_label_qos,
+        )
+        # Same JSON-over-String-topic pattern as semantic_label_result, kept
+        # on its own topic since risk arrives later (after a second,
+        # independent VLM call) and carries a different payload shape
+        # (risk_score/risk_factors, not label/mobility).
+        self.risk_result_pub = self.create_publisher(
+            String,
+            self.config.risk_result_topic,
             semantic_label_qos,
         )
         self.active_segments_pub = self.create_publisher(
@@ -360,6 +388,19 @@ class Phase1SemanticCoordinator(Node):
         else:
             self.get_logger().info("Phase 1 per-run diagnostics disabled (phase1.diagnostics.enabled=false)")
 
+        # Risk VLM diagnostics (crops + per-call CSV), same master switch as
+        # every other diagnostic writer above. RiskVlmDiagnostics creates its
+        # own session_<timestamp>/ subfolder under this directory, so
+        # repeated runs never overwrite an earlier run's crops or CSV.
+        self.risk_vlm_diagnostics = RiskVlmDiagnostics(
+            output_dir=Path("/home/student/Thesis_new/debug/risk_assessment_feature"),
+            enabled=self.diagnostics_enabled,
+        )
+        if self.diagnostics_enabled:
+            self.get_logger().info(
+                f"Risk VLM diagnostics -> {self.risk_vlm_diagnostics.get_session_dir()}"
+            )
+
         self.received_count = 0
         self.processed_count = 0
         self.failed_count = 0
@@ -373,6 +414,8 @@ class Phase1SemanticCoordinator(Node):
             self._rap_thread.start()
         if self.config.vlm_enabled:
             self._vlm_thread.start()
+        if self.config.risk_vlm_enabled:
+            self._risk_thread.start()
         self._log_startup_summary()
 
     def _log_startup_summary(self) -> None:
@@ -404,6 +447,11 @@ class Phase1SemanticCoordinator(Node):
             f"slot ontology=physical-instance-only, VLM enabled={self.config.vlm_enabled}, "
             f"VLM mode={self.config.vlm_mode}, profile={self.config.vlm_active_profile or 'default'}, "
             f"model={self.config.vlm_model}, endpoint={self.config.vlm_endpoint}"
+        )
+        self.get_logger().info(
+            f"Risk VLM enabled={self.config.risk_vlm_enabled}, mode={self.config.risk_vlm_mode}, "
+            f"model={self.config.risk_vlm_model}, endpoint={self.config.risk_vlm_endpoint}, "
+            f"yield_to_object_vlm={self.config.risk_vlm_yield_to_object_vlm}"
         )
         self.get_logger().info(
             f"SAM input scale={self.config.sam_input_scale_ratio:.3f}, "
@@ -1912,6 +1960,30 @@ class Phase1SemanticCoordinator(Node):
             })
         return records
 
+    @staticmethod
+    def _semantic_segments_for_fanout(payload: Dict[str, Any], task: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Return every local Hydra segment a classified track owns.
+
+        A track is classified once, but may own several local Hydra slots
+        (phase 1 splits a long physical object into multiple segments -- see
+        persistent_object_tracker.py). Shared by every consumer that needs to
+        fan a single track-level result out to all of that track's segments:
+        today that's semantic labeling (below) and risk-result publishing
+        (_publish_risk_result). Falls back to one synthetic segment built
+        from the top-level hydra_slot_id/hydra_slot_name when the event
+        carries no explicit multi-segment list -- the common case, since most
+        tracks own exactly one segment.
+        """
+        segments = list(payload.get("semantic_segments") or [])
+        if not segments:
+            segments = [{
+                "hydra_slot_id": int(payload.get("hydra_slot_id", task.get("hydra_slot_id", 0)) or 0),
+                "hydra_slot_name": str(payload.get("hydra_slot_name", task.get("hydra_slot_name", ""))),
+                "local_segment_id": str(payload.get("local_segment_id", "")),
+                "centroid_3d": payload.get("centroid_3d", (task.get("object_metadata") or {}).get("centroid_3d")),
+            }]
+        return segments
+
     def _emit_semantic_label_result(self, event: Dict[str, Any], task: Dict[str, Any], *, source: str, finalize_track: bool = True) -> None:
         """Publish final class labels for every local semantic slot of one object.
 
@@ -1930,14 +2002,7 @@ class Phase1SemanticCoordinator(Node):
         if source_name in {"vlm_failed", "rap_unknown", "rap_error"}:
             label = "unknown_object"
 
-        segments = list(payload.get("semantic_segments") or [])
-        if not segments:
-            segments = [{
-                "hydra_slot_id": int(payload.get("hydra_slot_id", task.get("hydra_slot_id", 0)) or 0),
-                "hydra_slot_name": str(payload.get("hydra_slot_name", task.get("hydra_slot_name", ""))),
-                "local_segment_id": str(payload.get("local_segment_id", "")),
-                "centroid_3d": payload.get("centroid_3d", (task.get("object_metadata") or {}).get("centroid_3d")),
-            }]
+        segments = self._semantic_segments_for_fanout(payload, task)
 
         for segment in segments:
             # Abort a partially-started fan-out when ROS shutdown begins.
@@ -1983,6 +2048,175 @@ class Phase1SemanticCoordinator(Node):
                 self._semantic_label_pending_track_ids.discard(track_id)
             self._finalize_track_queue_state(track_id)
             self._retire_track_crop(track_id)
+
+    def _enqueue_risk_task(
+        self,
+        *,
+        event: Dict[str, Any],
+        task: Dict[str, Any],
+        crop: Optional[np.ndarray],
+        label: str,
+        mobility_class: str,
+        source: str,
+    ) -> None:
+        """Fire-and-forget: queue a one-shot risk assessment for a track that
+        was just classified (RAP hit, or successful object-detection VLM).
+
+        Call this *after* ``_emit_semantic_label_result`` at both dispatch
+        points -- risk assessment only ever runs once a label already exists.
+        ``crop`` must be the exact array already in hand at the call site,
+        never looked up again later: ``_emit_semantic_label_result`` retires
+        the track's live crop registry entry (``_retire_track_crop``)
+        immediately after publishing the classification result, so a later
+        by-track-ID lookup from the risk worker thread would find nothing.
+        Capturing the crop here, at enqueue time, sidesteps that ordering
+        problem entirely -- the risk queue carries the crop itself, not an ID.
+        """
+        if not self.config.risk_vlm_enabled:
+            return
+        if crop is None or getattr(crop, "size", 0) == 0:
+            return
+        track_id = str(event.get("persistent_track_id", task.get("persistent_track_id", "")))
+        if not track_id:
+            return
+        segments = self._semantic_segments_for_fanout(event, task)
+        hydra_slot_ids = sorted({
+            slot_id
+            for segment in segments
+            for slot_id in (int(segment.get("hydra_slot_id", segment.get("hydra_label_id", 0)) or 0),)
+            if slot_id > 0
+        })
+        if not hydra_slot_ids:
+            return
+        risk_task = {
+            "track_id": track_id,
+            "hydra_slot_ids": hydra_slot_ids,
+            "crop": crop,
+            "label": str(label or "unknown_object"),
+            "mobility_class": str(mobility_class or "unknown"),
+            "source": str(source),
+            "frame_id": str(task.get("frame_id", "")),
+            "sequence": int(task.get("sequence", 0) or 0),
+            "timestamp_sec": float(task.get("timestamp_sec", 0.0) or 0.0),
+            "created_monotonic": time.perf_counter(),
+        }
+        try:
+            self.risk_queue.put_nowait(risk_task)
+        except queue.Full:
+            # Bounded by design: a slow/unreachable risk server can only ever
+            # delay or drop risk results, never block classification,
+            # tracking, or Hydra publishing. There's no "wait for a better
+            # crop" concept to defer to instead (the crop is already final),
+            # so the only sane full-queue behavior is drop the oldest
+            # pending task to make room for this one.
+            try:
+                self.risk_queue.get_nowait()
+                self.risk_queue_dropped_count += 1
+            except queue.Empty:
+                pass
+            try:
+                self.risk_queue.put_nowait(risk_task)
+            except queue.Full:
+                self.risk_queue_dropped_count += 1
+
+    def _risk_loop(self) -> None:
+        """Dispatch one risk assessment at a time from ``risk_queue``.
+
+        Runs on its own daemon thread, entirely independent of the
+        object-detection VLM's queue/thread/backend -- risk assessment uses a
+        separate model/server by design, so a slow or unreachable risk
+        server can never block classification. The one thing the two loops
+        share is Jetson hardware: even though they're logically separate
+        models, this deployment may run both VLM servers on the same
+        physical GPU, so this loop backs off while the object-detection VLM
+        has pending work rather than dispatching concurrently. That's a
+        priority hint, not a guarantee -- see risk_vlm_yield_to_object_vlm's
+        doc comment in phase1_config.py for the tradeoff, and the design doc
+        (debug/risk_assessment_feature/DESIGN.md) for the full reasoning.
+        As RAP's hit rate improves over a session, object-detection VLM
+        traffic naturally drops (fewer RAP misses need it), so vlm_queue sits
+        empty more often on its own and risk throughput rises without any
+        adaptive tuning here.
+        """
+        while not self._stop_event.is_set():
+            if self.config.risk_vlm_yield_to_object_vlm and not self.vlm_queue.empty():
+                time.sleep(float(self.config.risk_vlm_yield_backoff_sec))
+                continue
+            try:
+                task = self.risk_queue.get(timeout=0.1)
+            except queue.Empty:
+                continue
+            start = time.perf_counter()
+            try:
+                result = self.risk_vlm_backend.assess(
+                    task["crop"], task["label"], task["mobility_class"], task["source"]
+                )
+            except Exception as exc:
+                # Mirrors the object-detection VLM loop's own contract: a
+                # worker-level exception must never crash this thread or
+                # strand a track without ever finishing its risk task.
+                result = {
+                    "success": False,
+                    "risk_score": 0.0,
+                    "risk_factors": [],
+                    "failure_reason": f"worker_exception:{type(exc).__name__}",
+                }
+                if rclpy.ok() and not self._stop_event.is_set():
+                    self.get_logger().error(f"Risk VLM failed for track={task['track_id']}: {exc}")
+            risk_delay_ms = (time.perf_counter() - start) * 1000.0
+            # Logged unconditionally (success or failure) -- a failed or
+            # malformed risk response is exactly the case worth inspecting
+            # later, and this mirrors vlm_test_diagnostics' own convention
+            # for the object-detection VLM.
+            try:
+                self.risk_vlm_diagnostics.log_risk_result(
+                    task["crop"],
+                    result,
+                    risk_delay_ms,
+                    track_id=task["track_id"],
+                    hydra_slot_id=task["hydra_slot_ids"][0] if task["hydra_slot_ids"] else 0,
+                    label=task["label"],
+                    mobility_class=task["mobility_class"],
+                    source=task["source"],
+                    timestamp=task["timestamp_sec"],
+                )
+            except Exception as e:
+                self.get_logger().warn(f"Failed to log risk VLM diagnostics: {e}")
+            if bool(result.get("success", False)):
+                self._publish_risk_result(task, result, risk_delay_ms)
+            self.risk_completed_count += 1
+
+    def _publish_risk_result(self, task: Dict[str, Any], result: Dict[str, Any], risk_delay_ms: float) -> None:
+        """Publish one risk result, fanned out to every Hydra slot the track owns.
+
+        Matches ``_emit_semantic_label_result``'s fan-out shape (one message
+        per slot) so a track that owns several local Hydra segments gets its
+        risk value attached to every one of them, exactly like its label.
+        Published on a dedicated topic (``risk_result_topic``), not folded
+        into ``semantic_label_result``: risk always arrives later, from a
+        second independent VLM call, and carries an unrelated payload shape.
+        """
+        if self._stop_event.is_set() or not rclpy.ok():
+            return
+        risk_score = float(result.get("risk_score", 0.0) or 0.0)
+        risk_factors = [str(item) for item in (result.get("risk_factors") or [])]
+        for slot_id in task["hydra_slot_ids"]:
+            payload = {
+                "event": "risk_result",
+                "persistent_track_id": task["track_id"],
+                "internal_object_id": task["track_id"],
+                "hydra_slot_id": int(slot_id),
+                "risk_score": risk_score,
+                "risk_factors": risk_factors,
+                "label": task["label"],
+                "mobility_class": task["mobility_class"],
+                "source": task["source"],
+                "frame_id": task["frame_id"],
+                "sequence": task["sequence"],
+                "timestamp_sec": task["timestamp_sec"],
+                "risk_delay_ms": float(risk_delay_ms),
+            }
+            self._safe_publish(self.risk_result_pub, String(data=safe_json_dumps(payload)))
 
     def _publish_active_local_segments(self, frame: RsgFrame, track_records: List[Dict[str, Any]], timestamp_sec: float) -> None:
         """Publish the local Hydra slots observed in the current frame.
@@ -2421,6 +2655,14 @@ class Phase1SemanticCoordinator(Node):
         )
         rap = self.rap_backend.classify(crop, synthetic_mask, 0)
         is_known = bool(rap.is_known and rap.confidence >= self.config.rap_confidence_threshold)
+        # Direct RAP hit/miss signal, independent of Risk VLM's source column
+        # (which requires a separate feature enabled) -- this is the ground
+        # truth for whether RAP identified the crop or deferred to VLM.
+        self.get_logger().info(
+            f"RAP {'HIT' if is_known else 'MISS'}: track={task.get('persistent_track_id', '?')} "
+            f"label='{rap.label}' distance={float(rap.distance):.4f} "
+            f"threshold={float(self.config.rap_distance_threshold):.4f} confidence={float(rap.confidence):.3f}"
+        )
         label = str(rap.label or "unknown_object")
         rap_metadata = dict(rap.metadata or {})
         rap_has_mobility_metadata = "mobility_class" in rap_metadata
@@ -2473,6 +2715,14 @@ class Phase1SemanticCoordinator(Node):
             )
             if completed is not None:
                 self._emit_semantic_label_result(completed, task, source="rap")
+                self._enqueue_risk_task(
+                    event=completed,
+                    task=task,
+                    crop=task.get("vlm_rgb_crop", task.get("rgb_crop")),
+                    label=label,
+                    mobility_class=mobility_class,
+                    source="rap",
+                )
         elif not is_known:
             vlm_status = self._enqueue_vlm_after_rap(track_id)
             if not self._vlm_schedule_accepted(vlm_status):
@@ -2846,9 +3096,28 @@ class Phase1SemanticCoordinator(Node):
                         rap_update_status["rap_memory_live_update"] = "added_to_visual_rap"
                         rap_update_status["memory_slot_id"] = memory_metadata["rsg_slot_id"]
                         rap_update_status["memory_crop_revision"] = memory_metadata["crop_revision"]
+                        self.get_logger().info(
+                            f"RAP memory grew: track={track_id} label='{label_for_rap}' "
+                            f"confidence={float(result.get('confidence', 0.0)):.2f}"
+                        )
+                    else:
+                        self.get_logger().debug(
+                            f"RAP live memory update skipped for track={track_id}: "
+                            f"label_for_rap={label_for_rap!r} memory_crop_present="
+                            f"{memory_crop is not None} has_add_image="
+                            f"{hasattr(self.rap_backend, 'add_image')}"
+                        )
             except Exception as exc:
                 rap_update_status["rap_memory_live_update"] = "failed"
                 rap_update_status["live_update_error"] = str(exc)
+                # Previously swallowed with no trace: the Chroma collection RAP
+                # queries against stayed empty across many real sessions with
+                # update_memory_from_vlm=true, and there was no way to tell
+                # why -- this failure carried no console/log signal at all.
+                self.get_logger().error(
+                    f"RAP live memory update failed for track={track_id}: "
+                    f"{type(exc).__name__}: {exc}"
+                )
             result["rap_update"] = rap_update_status
             result["memory_slot_id"] = memory_metadata.get("rsg_slot_id", 0)
             result["memory_crop_revision"] = memory_metadata.get("crop_revision", 0)
@@ -2903,6 +3172,15 @@ class Phase1SemanticCoordinator(Node):
                 )
                 if completed is not None:
                     self._emit_semantic_label_result(completed, semantic_task, source="vlm" if msg.success else "vlm_failed")
+                    if msg.success:
+                        self._enqueue_risk_task(
+                            event=completed,
+                            task=semantic_task,
+                            crop=task.get("vlm_rgb_crop", task.get("rgb_crop")),
+                            label=msg.predicted_label,
+                            mobility_class=msg.mobility_class,
+                            source="vlm",
+                        )
                     persistent_update = completed
                 if persistent_update is not None:
                     result["persistent_track_update"] = persistent_update
@@ -3112,6 +3390,10 @@ class Phase1SemanticCoordinator(Node):
             "vlm_quality_deferred_pending": len(self._vlm_quality_deferred_track_ids),
             "vlm_fifo_queue_size": self.vlm_queue.qsize(),
             "vlm_fifo_queue_max_size": self.config.vlm_queue_size,
+            "risk_completed": self.risk_completed_count,
+            "risk_queue_dropped": self.risk_queue_dropped_count,
+            "risk_fifo_queue_size": self.risk_queue.qsize(),
+            "risk_fifo_queue_max_size": self.config.risk_vlm_queue_size,
         }
         self._safe_publish(self.status_pub, String(data=safe_json_dumps(payload)))
 
@@ -3155,6 +3437,7 @@ class Phase1SemanticCoordinator(Node):
             self._tracking_publish_thread,
             self._rap_thread,
             self._vlm_thread,
+            self._risk_thread,
         ):
             try:
                 if thread.is_alive():

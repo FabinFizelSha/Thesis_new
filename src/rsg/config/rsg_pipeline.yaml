@@ -44,7 +44,7 @@ preprocessing:                                                                  
     output_depth_encoding: 32FC1                                                                     # Required passthrough depth encoding when optional processing is disabled.
     depth_scale_to_meter: 0.001                                                                      # Used only by optional single-pass conversion of 16UC1 depth.
     min_depth_m: 0.30                                                                                # Used by Phase 1 and optional sampled invalid-depth analysis.
-    max_depth_m: 5.0                                                                                 # Used by Phase 1 and optional sampled invalid-depth analysis.
+    max_depth_m: 4.0                                                                                 # Used by Phase 1 and optional sampled invalid-depth analysis.
     max_invalid_depth_ratio: 0.90                                                                    # Used only when optional invalid-depth checking is enabled.
     reject_resolution_mismatch: true                                                                 # Enforce identical RGB and depth dimensions for correct projection.
 
@@ -101,7 +101,7 @@ preprocessing:                                                                  
 
 phase1:                                                                                              # NanoSAM segmentation, RAP retrieval, optional VLM labeling, and Hydra semantic-frame output.
   diagnostics:
-    enabled: false                                                                                  # MASTER SWITCH for all per-run diagnostic writers: bbox dumps, crop-evolution, tracking-quality logs, RAP/VLM crop images, and the VLM test crop+CSV. false => nothing written, near-zero overhead. Functional crop scoring / mask filtering / best-crop selection is unaffected. (The keys below are legacy and currently unwired; `enabled` governs everything.)
+    enabled: true                                                                                   # MASTER SWITCH for all per-run diagnostic writers: bbox dumps, crop-evolution, tracking-quality logs, RAP/VLM crop images, and the VLM test crop+CSV. false => nothing written, near-zero overhead. Functional crop scoring / mask filtering / best-crop selection is unaffected. (The keys below are legacy and currently unwired; `enabled` governs everything.) (Temporarily enabled 2026-09-05 to verify risk VLM diagnostics logging; turn back to false when done.)
     log_tracking: true                                                                              # Record every SAM-to-internal-object/local-slot assignment and crop decision.
     save_tracking_crops: false                                                                      # Save accepted best crops and the exact crop revisions dequeued by RAP/VLM.
     tracking_crop_dir: /home/student/rsg_ros2_ws/debug/phase1_excel_current/tracking_crops            # Per-internal-object diagnostic image directory.
@@ -159,7 +159,7 @@ phase1:                                                                         
     depth_range_filter:
       enabled: true                                                                                  # Apply the same valid depth range to Hydra integration.
       min_range_m: 0.30                                                                              # Lower valid range sent to Hydra.
-      max_range_m: 5.0                                                                               # Upper valid range sent to Hydra.
+      max_range_m: 4.0                                                                               # Upper valid range sent to Hydra.
       semantic_label_id: 0                                                                           # Mark invalid-depth pixels as the unknown semantic class.
 
   hydra_semantic:
@@ -284,7 +284,7 @@ phase1:                                                                         
     depth_filter:
       enabled: false                                                                                  # Avoid generating object masks where depth is invalid.
       min_depth_m: 0.30                                                                              # Match preprocessor and Hydra lower depth bound.
-      max_depth_m: 5.0                                                                               # Match preprocessor and Hydra upper depth bound.
+      max_depth_m: 4.0                                                                               # Match preprocessor and Hydra upper depth bound.
       min_valid_ratio: 0.05                                                                          # Require at least 5% valid depth inside a candidate region.
       crop_to_valid_roi: true                                                                        # Focus SAMs on the valid depth region.
       roi_margin_px: 12                                                                              # Preserve a small margin around valid depth.
@@ -296,14 +296,14 @@ phase1:                                                                         
     auto_download: false                                                                             # Do not download models at runtime.
     mask_threshold: 0.70                                                                             # SAM optimisation experiment Phase 2.3.
     padding: 0.2                                                                                     # Retained for compatibility with non-NanoSAM modes.
-    points_per_side: 3                                                                               # Manual override (was 4, experiment Phase 2.1).
+    points_per_side: 4                                                                               # Manual override, reverted to 4 2026-09-05.
     pred_iou_thresh: 0.0                                                                             # SAM optimisation experiment: disabled.
     min_mask_pixels: 3500                                                                           # SAM optimisation experiment Phase 2.6: confirmed optimal.
     max_masks: 8                                                                                     # Manual override (was 12, experiment Phase 2.2).
     nanosam:
       image_encoder_engine: /home/student/rsg_models/nanosam/resnet18_image_encoder.engine           # TensorRT image encoder engine.
       mask_decoder_engine: /home/student/rsg_models/nanosam/mobile_sam_mask_decoder.engine           # TensorRT mask decoder engine.
-      points_per_side: 3                                                                             # Manual override (was 4, experiment Phase 2.1). NanoSAM backend reads this value.
+      points_per_side: 4                                                                             # Manual override, reverted to 4 2026-09-05. NanoSAM backend reads this value.
       mask_threshold: 0.70                                                                           # SAM optimisation experiment Phase 2.3 (predicted-IoU confidence gate; mask binarised at logit 0.0 in code).
       nms_iou: 0.30                                                                                  # SAM optimisation experiment Phase 2.5.
       point_margin_fraction: 0.167                                                                   # SAM optimisation experiment integration spec.
@@ -311,21 +311,21 @@ phase1:                                                                         
       min_prompt_luma: 4                                                                             # Reject near-black prompt locations.
 
   rap:
-    enabled: false                                                                                   # VLM prompt-optimisation experiment §5: RAP disabled, every crop goes to the VLM. Restore to true for normal runs.
+    enabled: true                                                                                    # Re-enabled 2026-09-05 to evaluate RAP effectiveness over two real sessions (hit rate via risk_results.csv's "source" column, and semantic_label_result's own "source" field).
     backend: real                                                                                    # Use the real RAP implementation rather than a test stub.
     execution_mode: async                                                                            # Keep retrieval off the critical RGB-D-to-Hydra path.
     async: true                                                                                      # Enable asynchronous RAP work.
     queue_size: 300                                                                                  # Store only track IDs; raw crops remain in the per-track registry.
     queue_drop_policy: defer_track_id                                                                # Full FIFO defers a unique track ID instead of dropping its semantic job.
     model_name: openai/clip-vit-base-patch32                                                         # CLIP embedding model used by RAP memory.
-    device: cuda                                                                                     # Use GPU acceleration for embeddings.
+    device: cpu                                                                                      # CPU, not GPU: CLIP-ViT-B/32 is tiny and RAP is only called once per track, but on this Jetson its CUDA calls were silently losing GPU-memory contention against NanoSAM/VLM/Hydra (CUBLAS_STATUS_ALLOC_FAILED on every query() and add_image() call -- see phase1_rap_memory investigation 2026-09-05: 0 items ever reached the Chroma collection despite thousands of qualifying VLM results). CPU avoids that contention entirely.
     storage_path: /home/student/rsg_rap_memory                                                       # Persistent Chroma/RAP memory directory.
     chroma_host: 127.0.0.1                                                                           # Local Chroma server.
     chroma_port: 8001                                                                                # Local Chroma server port.
     collection_name: visual_rag_orin_deploy_vlm                                                      # Persistent collection containing visual examples and labels.
     auto_start_server: false                                                                         # Chroma is launched by the full-stack launch file.
     confidence_threshold: 0.85                                                                        # Minimum RAP confidence for an accepted retrieval label.
-    distance_threshold: 0.15                                                                          # Maximum embedding-distance threshold for an accepted retrieval label.
+    distance_threshold: 0.40                                                                          # Raised from 0.15 -> 0.30 -> 0.40 2026-09-05. With rap_target_only:false (see semantic_crop.rap_target_only), measured same-category CLIP distances cluster 0.15-0.38 and cross-category 0.43-0.64 -- 0.40 sits in that gap. Was too strict at 0.30 (some genuine same-category pairs measured 0.36-0.38).
     update_memory_from_vlm: true                                                                     # Freeze the learned RAP collection during this evaluation run.
     update_min_confidence: 0.90                                                                      # Avoid storing weak VLM classifications.
     memory_update_path: /home/student/rsg_ros2_ws/debug/phase1_rap_memory.jsonl                      # Audit log of memory additions.
@@ -356,7 +356,7 @@ phase1:                                                                         
     min_2d_iou: 0.3                                                                                  # Minimum overlap for unknown-track fallback association.
 
   semantic_crop:
-    rap_target_only: true                                                                           # RAP sees only SAM target pixels inside the tight object box.
+    rap_target_only: false                                                                          # Experiment 2026-09-05: RAP embedding distances were intermixed between same- and cross-category crops with target-only masking (e.g. ceiling-vs-wall closer than genuine ceiling-vs-ceiling) -- testing whether the plain, unsuppressed bbox crop (full room context retained) gives CLIP enough signal to actually discriminate structural surfaces. Was true.
     rap_background_rgb: [32, 32, 32]                                                               # Neutral RGB replacement for every non-target pixel in the RAP crop.
     vlm_target_focus: true                                                                          # VLM sees the full-colour target with suppressed context.
     vlm_context_alpha: 0.12                                                                         # Retain only 12% intensity in non-target context.
@@ -368,13 +368,13 @@ phase1:                                                                         
   vlm:
     enabled: true                                                                                    # Use Qwen for objects not confidently resolved by RAP.
     mode: qwen_http                                                                                  # Query the selected local Qwen OpenAI-compatible HTTP endpoint.
-    active_profile: qwen3_5_9b_q4
+    active_profile: qwen3_5_4b_q4                                                                     # Winner of the prompt-optimisation experiment: qwen3_5_4b_q4 x P3 (format-hardened) = 88% (44/50), fastest (~2.9s/call), least memory. See debug/prompt_optimisation_experiment/EXPERIMENT_REPORT.md §13. (Switched from qwen3_5_9b_q4 2026-09-05 -- that was R9, the last run in the sweep, not the winner; the prompt below was already P3 and needed no change.)
     async: true                                                                                      # Keep VLM calls off the Hydra mapping path.
     queue_size: 300                                                                                  # Store only track IDs; VLM snapshots the current best crop at dequeue time.
     queue_drop_policy: defer_track_id                                                                # Full FIFO defers a unique track ID instead of dropping it.
     api_key: ''                                                                                      # No key is required for the local endpoint.
     timeout_sec: 60.0                                                                                # Allow sufficient time for Jetson inference.
-    max_tokens: 5000                                                                                 # 96 -> 256 -> 512 -> 5000 from R8: the 3.5 models narrate before the JSON; give effectively unbounded generation room. NOTE: llama.cpp clamps to (context_size - prompt tokens); with context_size 4096 and a ~1.5k-token prompt + image, the real budget is ~2k, so this is "generate until EOS or context full". 96 sufficed for P1/P2 and all 8B runs.
+    max_tokens: 512                                                                                  # Matches R6, the actual winning run (qwen3_5_4b_q4 x P3, 88%) -- 5000 (from R8, a later 9B-leg change) was functionally equivalent since llama.cpp clamps to (context_size - prompt tokens) regardless, but this reproduces R6 exactly rather than a later, different row's value.
     temperature: 0.0                                                                                 # Deterministic labels for consistent RAP memory entries.
     jpeg_quality: 100                                                                                 # Good visual quality with manageable request size.
     prompt: |
@@ -461,8 +461,8 @@ phase1:                                                                         
       Return only the JSON object - nothing before "{", nothing after "}". No markdown, no explanation, no numbered analysis.
 
     prompt_optimisation:                                                                             # VLM prompt-optimisation experiment (debug/prompt_optimisation_experiment/). Set enabled: false for normal runs.
-      enabled: true                                                                                  # Route VLM crop + per-call CSV into the experiment run folder.
-      run_id: R9__qwen35_9b__v6_structural_priority                                                        # Experiment matrix row; folder name under output_root.
+      enabled: false                                                                                 # Experiment complete (all 9 runs); switched off 2026-09-05 for normal production use. Route VLM crop + per-call CSV into the experiment run folder only while re-running the matrix.
+      run_id: R6__qwen35_4b__v6_structural_priority                                                        # Experiment matrix row this config now matches (the winner); inert while enabled is false.
       prompt_version: P3_v6_structural_priority                                                            # Which prompt from prompts_under_test.yaml is active above.
       output_root: /home/student/Thesis_new/debug/prompt_optimisation_experiment/runs                # <output_root>/<run_id>/session_<timestamp>/{crops,vlm_results.csv}
 
@@ -547,12 +547,63 @@ phase1:                                                                         
           min_system_memory_gib: 16                                                                  # 9B Q4 requires moderate memory (between 4B and 8B F16).
           extra_args: ["--reasoning", "off"]                                                         # Qwen3.5 is a thinking model; without this it burns the whole max_tokens budget inside <think> and returns empty content.
 
+  # Risk assessment: a second, independent VLM call made only after an
+  # object is already identified (RAP hit, or the object-detection VLM
+  # above succeeds). Deliberately a separate model/server -- there is no
+  # `profiles`/`server` auto-launch section here like phase1.vlm has above;
+  # this endpoint is expected to already be running (its own llama.cpp/vLLM
+  # process, launched independently). See
+  # debug/risk_assessment_feature/DESIGN.md for the full design writeup.
+  risk_vlm:
+    enabled: false                                                                                     # Disabled again 2026-09-05 -- focus narrowed to RAP identification only. RAP hit/miss is now logged directly in phase1.py's RAP dispatch path instead of relying on risk_results.csv's source column.
+    mode: qwen_http                                                                                    # Query an OpenAI-compatible local VLM endpoint, same protocol as phase1.vlm.
+    endpoint: http://127.0.0.1:8100/v1/chat/completions                                                # Different port from phase1.vlm's 8000 -- a genuinely separate server, auto-launched by rsg_risk_vlm_server (see `server:` below and rsg_full_stack.launch.py's start_risk_vlm argument).
+    model: Qwen3.5-VL-4B-Instruct-GGUF                                                                 # Whatever model `server:` below is actually serving.
+    api_key: ''
+    timeout_sec: 30.0
+    max_tokens: 400                                                                                    # Risk needs room for a short factors list, not just one label word.
+    temperature: 0.0
+    jpeg_quality: 85
+    queue_size: 300                                                                                    # Bounded: a slow/unreachable risk server can only ever delay or drop risk results, never block classification.
+    max_risk_factors: 5                                                                                 # Cap on how many hazard strings one assessment can report.
+    max_risk_factor_length: 120                                                                         # Cap per hazard string, in characters.
+    result_topic: /rsg/objects/risk_result                                                             # Consumed by the fuser (rsg_scene_graph_fuser.yaml's risk_result_topic must match).
+    yield_to_object_vlm: true                                                                          # Back off while phase1.vlm has pending work -- this Jetson may share one GPU across both VLM servers even though they're logically separate models. Set false only once that's confirmed not to be the case.
+    yield_backoff_sec: 0.2
+    # Auto-launched by rsg_full_stack.launch.py (rsg_risk_vlm_server script),
+    # gated by the start_risk_vlm launch argument -- same llama.cpp pattern
+    # as phase1.vlm's profiles, but flat (no profile switching) since this is
+    # always a single dedicated model/server, never one of several choices.
+    # Qwen3.5-4B chosen deliberately smaller than phase1.vlm's active 9B
+    # profile: this runs concurrently with it, adding to total GPU load.
+    server:
+      provider: llama_cpp                                                                              # Use llama.cpp for GGUF model serving.
+      binary: /home/student/llama.cpp/build/bin/llama-server                                          # Same CUDA-enabled llama-server binary phase1.vlm's profiles use.
+      model_path: '/home/student/rsg_models/qwen3_5_4b/Qwen3.5-4B-Q4_K_M.gguf'                        # Local Qwen 3.5 4B Q4 model.
+      mmproj_path: '/home/student/rsg_models/qwen3_5_4b/mmproj-BF16.gguf'                              # Vision projector for Qwen 3.5.
+      host: 0.0.0.0                                                                                    # Listen on all local interfaces.
+      port: 8100                                                                                       # Must match the endpoint above.
+      context_size: 4096                                                                               # Standard context budget.
+      gpu_layers: 99                                                                                   # Offload all layers to GPU.
+      min_system_memory_gib: 8                                                                         # 4B Q4 requires less memory than the 9B/8B profiles.
+      extra_args: ["--reasoning", "off"]                                                               # Qwen3.5 is a thinking model; without this it burns the whole max_tokens budget inside <think> and returns empty content.
+    # {label}/{mobility_class}/{source} are filled in from the object's own
+    # classification result (RAP or the object-detection VLM) before this
+    # prompt is sent -- see RiskVlmBackend._build_prompt in backends.py.
+    # Left unset here on purpose: the default in phase1_config.py already
+    # contains the full instructions and worked examples (bottle at a table
+    # edge vs. the middle of a table) and is long enough that duplicating it
+    # in YAML would just invite the two copies to drift. Uncomment and edit
+    # only if the prompt itself needs to change.
+    # prompt: |
+    #   ...
+
   object_geometry:
     enabled: true                                                                                    # Estimate 3D object geometry from mask and depth.
     projection_stride: 4                                                                             # Restore the baseline depth-projection stride for a controlled SAM-only test.
     min_valid_depth_points: 20                                                                       # Require enough depth support for a reliable 3D centroid.
     min_depth_m: 0.30                                                                                # Match all other pipeline depth bounds.
-    max_depth_m: 5.0                                                                                 # Match all other pipeline depth bounds.
+    max_depth_m: 4.0                                                                                 # Match all other pipeline depth bounds.
     centroid_method: median                                                                          # Robust against foreground/background depth outliers.
 
   evidence_buffer:

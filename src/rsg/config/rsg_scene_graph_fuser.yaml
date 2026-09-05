@@ -3,6 +3,7 @@
     use_sim_time: true                                                                                         # Decay uses ROS/bag time; set false only for a live robot without /clock.
     input_dsg_topic: /hydra/backend/dsg
     semantic_label_topic: /rsg/objects/semantic_label_result
+    risk_result_topic: /rsg/objects/risk_result                                                                   # Must match phase1.risk_vlm.result_topic in rsg_pipeline.yaml.
     fused_dsg_topic: /rsg/hydra/fused_dsg
     markers_topic: /rsg/scene_graph/markers
     status_topic: /rsg/hydra/rap_fuser/status

@@ -224,10 +224,173 @@ class Phase1Config:
     vlm_result_min_mobility_confidence: float = 0.50
     vlm_dynamic_label_hints: List[str] = field(default_factory=list)
     vlm_static_label_hints: List[str] = field(default_factory=list)
+
+    # Risk assessment: a second, independent VLM call made only after an
+    # object is already identified (RAP hit or object-detection VLM
+    # success). Deliberately a separate model/server from vlm_* above, so
+    # every field here has its own default rather than falling back to the
+    # object-detection VLM's config.
+    risk_vlm_enabled: bool = False
+    risk_vlm_mode: str = "dummy"
+    # Unlike the object-detection VLM queue (which stores track IDs and
+    # re-snapshots the best crop at dequeue time, since a better crop may
+    # arrive while queued), the risk queue stores the crop itself, fixed at
+    # enqueue time -- there is no "wait for a better crop" concept for a
+    # one-shot, already-classified assessment. So there's exactly one drop
+    # policy when full (drop the oldest pending task), not a configurable
+    # choice -- see _enqueue_risk_task in phase1.py.
+    risk_vlm_queue_size: int = 300
+    risk_vlm_dummy_delay_sec: float = 0.0
+    risk_vlm_endpoint: str = "http://127.0.0.1:8100/v1/chat/completions"
+    risk_vlm_model: str = "Qwen2.5-VL-7B-Instruct"
+    risk_vlm_timeout_sec: float = 30.0
+    risk_vlm_api_key: str = ""
+    risk_vlm_max_tokens: int = 400
+    risk_vlm_temperature: float = 0.0
+    risk_vlm_jpeg_quality: int = 85
+    risk_vlm_prompt: str = (
+        "OUTPUT RULE -- READ THIS FIRST\n"
+        "Your entire reply is ONE JSON object and nothing else: "
+        '{{"risk_score": <-1.0 to 1.0>, "risk_factors": ["...", ...]}}. '
+        'The first character you output is "{{" and the last is "}}". '
+        "No preamble, no analysis, no numbered steps, no sentences such as "
+        '"Looking at the image..." or "Based on the visual evidence...", '
+        "and no markdown code fences. Work through the reasoning below "
+        "silently and output only the final JSON result.\n\n"
+        "MANDATORY: risk_score of exactly 0.0 is the ONLY score allowed with "
+        "an empty risk_factors list. ANY non-zero score -- positive OR "
+        "negative, even a small one like 0.1 -- MUST come with at least one "
+        "specific entry in risk_factors naming what drove it away from "
+        "neutral. A non-zero score with no listed factor is invalid and "
+        "will be discarded, so if you cannot name a concrete reason, set "
+        "risk_score to 0.0 instead.\n\n"
+        "VALID OUTPUTS LOOK EXACTLY LIKE THIS (format only -- your actual "
+        "risk_score and risk_factors depend on the image, not these numbers)\n"
+        '{{"risk_score": 0.0, "risk_factors": []}}\n'
+        '{{"risk_score": 0.7, "risk_factors": ["slip hazard from wet or '
+        'polished surface"]}}\n'
+        '{{"risk_score": 0.9, "risk_factors": ["bottle falling from table '
+        'edge", "chemical spillage", "toxic fume exposure"]}}\n'
+        '{{"risk_score": -0.5, "risk_factors": ["fire extinguisher present '
+        '-- reduces fire risk"]}}\n\n'
+        "This object has already been identified as: {label} "
+        "(mobility: {mobility_class}, identified via: {source}).\n\n"
+        "FOCUS\n"
+        "The cyan boundary marks the main object -- your risk assessment is "
+        "about THAT object. Use the surrounding scene only to judge the "
+        "object's position and context (near an edge, in a walkway, next to "
+        "something else, and so on) -- never shift the assessment onto the "
+        "surroundings themselves.\n\n"
+        "THE LABEL IS GENERIC -- LOOK AT THE IMAGE, DON'T JUST READ THE LABEL\n"
+        "\"{label}\" is a coarse category name from an earlier, separate "
+        "classification step -- it carries no detail about condition. The "
+        "same label covers a completely dry floor and a wet, freshly-mopped "
+        "one; an intact pipe and a corroded, leaking one. Never infer risk "
+        "from the label text alone -- visually inspect the object itself "
+        "(surface condition, damage, obstruction, spillage, wear) and let "
+        "THAT drive the assessment. The label only tells you roughly what "
+        "kind of object it is, nothing about its actual state.\n\n"
+        "MATERIAL-BASED HAZARDS -- LOOK AT WHAT IT'S MADE OF\n"
+        "Inspect the visible material and physical form of the object, not "
+        "just its category, and weigh hazards that come from the material "
+        "itself. Glass and other brittle materials (ceramic, thin acrylic) "
+        "carry an inherent breakage risk even while intact -- if broken, the "
+        "pieces become sharp shards -- so raise the score for glass "
+        "surfaces/panes/fronted cabinets, and raise it further if a crack, "
+        "chip, or existing damage is visible. Metal objects (railings, "
+        "shelving, machinery housings, ductwork, sheet-metal panels) can "
+        "have sharp or exposed edges, corners, torn/bent metal, or exposed "
+        "fasteners -- look for these specifically, since a cutting hazard "
+        "from a sharp edge exists regardless of the object's position. Bare "
+        "or corroded metal near moisture, water, or exposed wiring also "
+        "raises electrical-shock risk on top of the cut hazard. Treat these "
+        "as hazards from the object's material and form, in addition to "
+        "whatever hazards come from its surface condition or position.\n\n"
+        "SCORE MEANING -- THE SCALE IS SIGNED, NOT JUST 0 TO 1\n"
+        "risk_score combines severity (how bad if something goes wrong) and "
+        "probability (how likely, given the visible condition and "
+        "position) into one signed number: +1.0 is a severe, highly likely "
+        "hazard; 0.0 is neutral (no hazard, nothing mitigating); -1.0 means "
+        "the object actively REDUCES risk. Score NEGATIVE for safety "
+        "equipment (fire extinguisher, safety rail, non-slip mat, emergency "
+        "exit sign) and hazard-warning signage (e.g. \"Wet Floor\", \"High "
+        "Voltage\") -- these lower danger or alert people to it, so they "
+        "pull the score below neutral rather than just being \"no risk\". "
+        "Always name them in risk_factors too, so it's clear why the score "
+        "is low or negative.\n\n"
+        "SMALLER COMPONENTS WITHIN THE MAIN OBJECT\n"
+        "If the main object's crop contains a smaller, visually distinct "
+        "item relevant to safety (a mounted warning sign, a fire "
+        "extinguisher, exposed wiring, a crack, a puddle), factor it into "
+        "the MAIN OBJECT's own risk_score and name it explicitly in "
+        "risk_factors -- do not ignore a small but relevant detail just "
+        "because the main object itself is large. For example: a ceiling "
+        "crop that happens to show a mounted warning sign should have that "
+        "sign's risk-reducing effect reflected in the ceiling's own score, "
+        "with the sign itself listed in risk_factors.\n\n"
+        "EXAMPLES (same label, different visible condition -> different risk)\n"
+        "- floor, dry and clear: risk_score ~0.0, risk_factors [] -- normal "
+        "walking surface, no hazard.\n"
+        "- floor, visibly wet or highly polished/shiny with reflections: "
+        'risk_score ~0.7, risk_factors ["slip hazard from wet or polished '
+        'surface"] -- same label as above, but the visible surface condition '
+        "raises slip probability significantly.\n"
+        "- pipes, intact and dry: risk_score ~0.1, risk_factors [] -- fixed "
+        "infrastructure, no visible fault.\n"
+        "- pipes, visibly corroded, dripping, or damaged: risk_score ~0.8, "
+        'risk_factors ["pipe leak", "corrosion", "possible chemical or water '
+        'exposure"] -- same label, but visible damage changes the assessment '
+        "entirely.\n"
+        "- a chemical bottle at the edge of a table: risk_score ~0.9, "
+        'risk_factors ["bottle falling from table edge", "chemical spillage", '
+        '"toxic fume exposure"] -- position near an edge raises the '
+        "probability of falling.\n"
+        "- the same chemical bottle in the middle of a table: risk_score "
+        '~0.6, risk_factors ["chemical spillage", "toxic fume exposure"] -- '
+        "spillage/fumes are still possible, but accidental falling is far "
+        "less probable away from an edge, so overall risk is lower.\n"
+        "- a wall with a fire extinguisher mounted on it: risk_score ~-0.5, "
+        'risk_factors ["fire extinguisher present -- reduces fire risk"] -- '
+        "safety equipment pulls the score below neutral.\n"
+        "- a ceiling that has a small hazard-warning sign visible on it "
+        '(e.g. an electrical-hazard or low-clearance sign): risk_score '
+        '~-0.3, risk_factors ["hazard warning sign visible -- alerts '
+        'occupants, reducing risk of accidental harm"] -- the sign is a '
+        "small component of the larger ceiling object, but its "
+        "risk-reducing effect still belongs to the ceiling's own score.\n"
+        "- a glass panel or glass-fronted cabinet, intact and undamaged: "
+        'risk_score ~0.3, risk_factors ["glass surface -- breakage risk, '
+        'resulting shards would be sharp"] -- brittle material carries '
+        "inherent breakage risk even with no visible damage yet.\n"
+        "- the same kind of glass panel, visibly cracked or chipped: "
+        'risk_score ~0.8, risk_factors ["cracked glass", "sharp shard risk '
+        'from further breakage"] -- visible damage sharply raises the '
+        "probability of full breakage and a cutting injury.\n"
+        "- a metal shelf, railing, or ductwork with a visibly sharp, bent, "
+        'or torn edge/corner: risk_score ~0.6, risk_factors ["exposed sharp '
+        'metal edge", "cut hazard on contact"] -- the material and physical '
+        "form create a laceration hazard independent of position or "
+        "surface condition.\n\n"
+        "risk_factors: a short list of the SPECIFIC hazards or mitigations "
+        "that apply (empty list if there is nothing worth reporting either "
+        "way). risk_score: your overall -1.0 to 1.0 judgement combining "
+        "severity, probability, and any risk-reducing measures present."
+    )
+    risk_vlm_max_risk_factors: int = 5
+    risk_vlm_max_risk_factor_length: int = 120
+    # Priority: object-detection VLM must never be starved by risk calls.
+    # When true, the risk dispatch loop backs off while the object-detection
+    # VLM queue is non-empty, since this Jetson may share one GPU across
+    # both VLM servers even though they are logically separate models. Set
+    # false only once the two are confirmed to run on genuinely separate
+    # hardware.
+    risk_vlm_yield_to_object_vlm: bool = True
+    risk_vlm_yield_backoff_sec: float = 0.2
+    risk_result_topic: str = "/rsg/objects/risk_result"
     # VLM crop selection is kept separate from the semantic settling interval:
     # a track becomes eligible after settling, but a weak crop may wait for a
     # later observation rather than consuming one irreversible VLM request.
-    vlm_crop_context_ratio: float = 0.15
+    vlm_crop_context_ratio: float = 0.10
     vlm_crop_min_area_px: int = 12000
     vlm_crop_min_short_side_px: int = 64
     vlm_crop_min_quality_score: float = 0.34
@@ -439,6 +602,10 @@ class Phase1Config:
             vlm["active_profile"] = active_vlm_profile
         else:
             vlm = dict(vlm)
+        # Risk assessment is a separate model/server by design (never the
+        # object-detection VLM's endpoint), so it deliberately has no
+        # profile-switching machinery of its own -- one flat config block.
+        risk_vlm = phase1.get("risk_vlm", {}) or {}
         geometry = phase1.get("object_geometry", {}) or {}
         evidence = phase1.get("evidence_buffer", {}) or {}
         semantic_labeling = phase1.get("semantic_labeling", {}) or {}
@@ -666,7 +833,7 @@ class Phase1Config:
             vlm_result_min_mobility_confidence=max(0.0, min(1.0, float((vlm.get("result_validation", {}) or {}).get("min_mobility_confidence", 0.50)))),
             vlm_dynamic_label_hints=list((vlm.get("result_validation", {}) or {}).get("dynamic_label_hints", [])),
             vlm_static_label_hints=list((vlm.get("result_validation", {}) or {}).get("static_label_hints", [])),
-            vlm_crop_context_ratio=max(0.0, min(0.50, float(vlm.get("crop_context_ratio", 0.15)))),
+            vlm_crop_context_ratio=max(0.0, min(0.50, float(vlm.get("crop_context_ratio", Phase1Config.vlm_crop_context_ratio)))),
             vlm_crop_min_area_px=max(1, int(vlm.get("min_crop_area_px", 12000))),
             vlm_crop_min_short_side_px=max(1, int(vlm.get("min_crop_short_side_px", 64))),
             vlm_crop_min_quality_score=max(0.0, min(1.0, float(vlm.get("min_crop_quality_score", 0.34)))),
@@ -675,6 +842,23 @@ class Phase1Config:
             vlm_crop_border_penalty=max(0.0, min(0.25, float(vlm.get("border_penalty", 0.18)))),
             vlm_crop_quality_max_wait_sec=max(0.0, float(vlm.get("quality_defer_max_wait_sec", 2.0))),
             vlm_crop_quality_force_on_timeout=bool(vlm.get("quality_defer_force_on_timeout", True)),
+            risk_vlm_enabled=bool(risk_vlm.get("enabled", False)),
+            risk_vlm_mode=str(risk_vlm.get("mode", "dummy")),
+            risk_vlm_queue_size=max(1, int(risk_vlm.get("queue_size", 300))),
+            risk_vlm_dummy_delay_sec=float(risk_vlm.get("dummy_delay_sec", 0.0)),
+            risk_vlm_endpoint=str(risk_vlm.get("endpoint", "http://127.0.0.1:8100/v1/chat/completions")),
+            risk_vlm_model=str(risk_vlm.get("model", "Qwen2.5-VL-7B-Instruct")),
+            risk_vlm_timeout_sec=float(risk_vlm.get("timeout_sec", 30.0)),
+            risk_vlm_api_key=str(risk_vlm.get("api_key", "")),
+            risk_vlm_max_tokens=max(1, int(risk_vlm.get("max_tokens", 400))),
+            risk_vlm_temperature=float(risk_vlm.get("temperature", 0.0)),
+            risk_vlm_jpeg_quality=max(1, min(100, int(risk_vlm.get("jpeg_quality", 85)))),
+            risk_vlm_prompt=str(risk_vlm.get("prompt", Phase1Config.risk_vlm_prompt)),
+            risk_vlm_max_risk_factors=max(0, int(risk_vlm.get("max_risk_factors", 5))),
+            risk_vlm_max_risk_factor_length=max(1, int(risk_vlm.get("max_risk_factor_length", 120))),
+            risk_vlm_yield_to_object_vlm=bool(risk_vlm.get("yield_to_object_vlm", True)),
+            risk_vlm_yield_backoff_sec=max(0.0, float(risk_vlm.get("yield_backoff_sec", 0.2))),
+            risk_result_topic=str(risk_vlm.get("result_topic", "/rsg/objects/risk_result")),
             estimate_object_geometry=bool(geometry.get("enabled", True)),
             projection_stride=max(1, int(geometry.get("projection_stride", 4))),
             min_valid_depth_points=max(1, int(geometry.get("min_valid_depth_points", 20))),

@@ -247,6 +247,24 @@ struct ResolvedOverlay {
   double centroid_distance_m = -1.0;
 };
 
+/// A one-shot hazard assessment for one Hydra slot (see phase1's Risk VLM
+/// dispatch, phase1.py's _publish_risk_result). Deliberately simpler than
+/// SemanticOverlay: risk is computed exactly once per track and never
+/// re-evaluated, so there's no centroid-fallback matching or multi-candidate
+/// tie-breaking to do -- a slot either has a risk result or it doesn't, and
+/// the lookup is a plain slot_id match, same key phase 1 already publishes.
+struct RiskOverlay {
+  uint32_t slot_id = 0;
+  double risk_score = 0.0;  //!< Signed [-1.0, 1.0]: negative = risk-reducing (safety equipment/signage), 0 = neutral, positive = hazard.
+  std::vector<std::string> risk_factors;
+  std::string source;
+  double timestamp_sec = 0.0;
+};
+
+/// Same "ingest under a short-lived mutex, copy for the render pass" shape
+/// as OverlayCache below -- see that type's own comment for why.
+using RiskOverlayCache = std::unordered_map<uint32_t, RiskOverlay>;
+
 
 struct PresenceObservation {
   uint32_t slot_id = 0;
@@ -690,6 +708,8 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
         "semantic_label_topic", "/rsg/objects/semantic_label_result");
     active_segments_topic_ = declare_parameter<std::string>(
         "active_segments_topic", "/rsg/objects/active_local_segments");
+    risk_result_topic_ = declare_parameter<std::string>(
+        "risk_result_topic", "/rsg/objects/risk_result");
     semantic_label_qos_depth_ = static_cast<size_t>(std::max<int64_t>(
         1, declare_parameter<int64_t>("semantic_label_qos_depth", 4096)));
     semantic_refresh_rate_hz_ = std::max(
@@ -914,6 +934,10 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     active_segments_sub_ = create_subscription<std_msgs::msg::String>(
         active_segments_topic_, semantic_qos,
         std::bind(&SemanticSceneGraphFuser::handleActiveSegments, this, std::placeholders::_1),
+        semantic_options);
+    risk_sub_ = create_subscription<std_msgs::msg::String>(
+        risk_result_topic_, semantic_qos,
+        std::bind(&SemanticSceneGraphFuser::handleRiskResult, this, std::placeholders::_1),
         semantic_options);
 
     fused_dsg_pub_ = create_publisher<DsgUpdate>(fused_dsg_topic_, retained_qos);
@@ -1258,6 +1282,71 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   }
 
   /**
+   * Ingest one risk_result message (phase1's one-shot Risk VLM output for a
+   * track) into risk_overlays_by_slot_, keyed by hydra_slot_id exactly like
+   * a semantic label. Unlike handleSemanticLabel there is no multi-candidate
+   * tie-breaking: risk is computed once per track and never re-evaluated, so
+   * a later message for the same slot (which should not normally happen)
+   * simply overwrites the earlier one.
+   */
+  void handleRiskResult(const std_msgs::msg::String::SharedPtr msg) {
+    Json payload;
+    try {
+      payload = Json::parse(msg->data);
+    } catch (const std::exception&) {
+      ++invalid_risk_messages_;
+      return;
+    }
+    if (!payload.is_object() || payload.value("event", std::string()) != "risk_result") {
+      ++invalid_risk_messages_;
+      return;
+    }
+
+    RiskOverlay overlay;
+    try {
+      const auto raw_slot = payload.value("hydra_slot_id", 0);
+      const int64_t slot = raw_slot;
+      if (slot <= 0 || slot > static_cast<int64_t>(std::numeric_limits<uint32_t>::max())) {
+        ++invalid_risk_messages_;
+        return;
+      }
+      overlay.slot_id = static_cast<uint32_t>(slot);
+    } catch (const std::exception&) {
+      ++invalid_risk_messages_;
+      return;
+    }
+    try {
+      // Signed range: negative means the object actively reduces risk
+      // (safety equipment, hazard-warning signage), 0 is neutral, positive
+      // is a hazard -- see RiskVlmBackend's prompt / _normalise_risk_score.
+      overlay.risk_score = clampValue(payload.value("risk_score", 0.0), -1.0, 1.0);
+    } catch (const std::exception&) {
+      overlay.risk_score = 0.0;
+    }
+    const auto factors_it = payload.find("risk_factors");
+    if (factors_it != payload.end() && factors_it->is_array()) {
+      for (const auto& factor : *factors_it) {
+        if (factor.is_string()) {
+          overlay.risk_factors.push_back(factor.get<std::string>());
+        }
+      }
+    }
+    overlay.source = payload.value("source", std::string("none"));
+    try {
+      overlay.timestamp_sec = payload.value("timestamp_sec", 0.0);
+    } catch (const std::exception&) {
+      overlay.timestamp_sec = 0.0;
+    }
+
+    {
+      std::lock_guard<std::mutex> lock(risk_overlays_mutex_);
+      risk_overlays_by_slot_[overlay.slot_id] = overlay;
+    }
+    ++accepted_risk_messages_;
+    render_dirty_.store(true, std::memory_order_release);
+  }
+
+  /**
    * Render the latest graph at a bounded rate.
    *
    * Label updates are copied before the graph mutex is acquired. Therefore the
@@ -1295,13 +1384,18 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
       std::lock_guard<std::mutex> labels_lock(overlays_mutex_);
       overlay_snapshot = overlays_by_slot_;
     }
+    RiskOverlayCache risk_overlay_snapshot;
+    {
+      std::lock_guard<std::mutex> risk_lock(risk_overlays_mutex_);
+      risk_overlay_snapshot = risk_overlays_by_slot_;
+    }
     PresenceCache presence_snapshot;
     {
       std::lock_guard<std::mutex> presence_lock(presence_mutex_);
       presence_snapshot = presence_by_slot_;
     }
 
-    if (!publishFusedOutputs(false, "bounded_fused_graph_refresh", overlay_snapshot, presence_snapshot)) {
+    if (!publishFusedOutputs(false, "bounded_fused_graph_refresh", overlay_snapshot, risk_overlay_snapshot, presence_snapshot)) {
       return;
     }
 
@@ -2088,6 +2182,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
 
   void updateLocalGraphMetadata(const SceneModel& model,
                                 const std::unordered_map<NodeId, ResolvedOverlay>& resolved,
+                                const RiskOverlayCache& risk_overlays,
                                 const PresenceCache& presence) {
     if (!graph_) {
       return;
@@ -2104,6 +2199,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
       metadata.erase("rsg_rap");
       metadata.erase("rsg_presence");
       metadata.erase("rsg_identity");
+      metadata.erase("rsg_risk");
       const auto presence_it = presence.find(node.semantic_slot);
       if (presence_it != presence.end()) {
         const auto& obs = presence_it->second;
@@ -2139,6 +2235,22 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
             {"timestamp_sec", label.overlay.timestamp_sec},
             {"association", label.association},
             {"centroid_distance_m", label.centroid_distance_m},
+        };
+      }
+      // Plain slot_id lookup, same key as rsg_presence above -- risk has no
+      // centroid-fallback matching to do (see RiskOverlay's own comment), so
+      // it doesn't need the resolved/ResolvedOverlay machinery label lookup
+      // above uses.
+      const auto risk_it = risk_overlays.find(node.semantic_slot);
+      if (risk_it != risk_overlays.end()) {
+        const auto& risk = risk_it->second;
+        metadata["rsg_risk"] = {
+            {"schema", "rsg_object_risk_v1"},
+            {"slot_id", risk.slot_id},
+            {"risk_score", risk.risk_score},
+            {"risk_factors", risk.risk_factors},
+            {"source", risk.source},
+            {"timestamp_sec", risk.timestamp_sec},
         };
       }
       attrs.metadata.set(metadata);
@@ -3731,6 +3843,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   bool publishFusedOutputs(bool force_markers,
                            const std::string& reason,
                            const OverlayCache& overlay_snapshot,
+                           const RiskOverlayCache& risk_overlay_snapshot,
                            const PresenceCache& presence_snapshot) {
     std::lock_guard<std::mutex> graph_lock(graph_mutex_);
     if (!graph_) {
@@ -3750,7 +3863,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     const SceneModel model = collectModel();
     const std::string frame = latest_header_.frame_id.empty() ? fallback_frame_id_ : latest_header_.frame_id;
     const auto resolved = resolveOverlays(model, frame, overlay_snapshot);
-    updateLocalGraphMetadata(model, resolved, presence_snapshot);
+    updateLocalGraphMetadata(model, resolved, risk_overlay_snapshot, presence_snapshot);
     syncRoomDisplayOrdinals(model);
     auto projection = buildLayeredProjection(model);
     const auto main_object_groups = buildMainObjectGroups(model, presence_snapshot);
@@ -4158,6 +4271,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   std::string input_dsg_topic_;
   std::string semantic_label_topic_;
   std::string active_segments_topic_;
+  std::string risk_result_topic_;
   std::string fused_dsg_topic_;
   std::string markers_topic_;
   std::string status_topic_;
@@ -4287,11 +4401,20 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   mutable std::mutex graph_mutex_;
   mutable std::mutex overlays_mutex_;
   mutable std::mutex presence_mutex_;
+  // Separate from overlays_mutex_ even though both guard "async result keyed
+  // by slot_id" caches: risk results arrive from an entirely independent
+  // phase 1 pipeline (a second VLM call), so there's no reason for risk
+  // ingestion to ever contend with label ingestion for the same lock.
+  mutable std::mutex risk_overlays_mutex_;
   mutable std::mutex render_mutex_;
   spark_dsg::DynamicSceneGraph::Ptr graph_;
   // One slot normally has one class. Multiple candidates are retained only
   // when contradictory semantic messages are received for that same slot.
   OverlayCache overlays_by_slot_;
+  // One slot has at most one risk result, ever -- it's a one-shot
+  // assessment (see RiskOverlay's own comment), so unlike overlays_by_slot_
+  // there's no candidate list or tie-breaking here.
+  RiskOverlayCache risk_overlays_by_slot_;
   PresenceCache presence_by_slot_;
   std_msgs::msg::Header latest_header_;
   int64_t latest_sequence_ = 0;
@@ -4341,6 +4464,8 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   std::atomic<uint64_t> invalid_label_messages_{0};
   std::atomic<uint64_t> accepted_active_segment_messages_{0};
   std::atomic<uint64_t> invalid_active_segment_messages_{0};
+  std::atomic<uint64_t> accepted_risk_messages_{0};
+  std::atomic<uint64_t> invalid_risk_messages_{0};
   std::atomic<uint64_t> fused_dsg_publications_{0};
   std::atomic<uint64_t> marker_publications_{0};
   std::atomic<uint64_t> semantic_label_generation_{0};
@@ -4356,6 +4481,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   rclcpp::Subscription<DsgUpdate>::SharedPtr dsg_sub_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr label_sub_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr active_segments_sub_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr risk_sub_;
   rclcpp::TimerBase::SharedPtr semantic_refresh_timer_;
   rclcpp::Publisher<DsgUpdate>::SharedPtr fused_dsg_pub_;
   rclcpp::Publisher<MarkerArray>::SharedPtr marker_pub_;
