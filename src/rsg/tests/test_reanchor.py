@@ -335,6 +335,37 @@ def test_overlap_pass_folds_coincident_fragments():
     assert survivor.metadata["reanchor_merged_from"][0]["reason"] == "post_reanchor_overlap"
 
 
+def test_overlap_pass_reconciles_duplicate_segments_instead_of_stacking_them():
+    """Before this fix, ``_merge_track_pair`` re-keyed *every* drop segment
+    onto the survivor verbatim, even when it geometrically overlapped a
+    segment the survivor already had. That left two permanently-static,
+    heavily-overlapping local segments sitting side by side forever -- this
+    is exactly what showed up as a near-duplicate SEGMENT_OVERLAP finding
+    (iou_3d up to 0.74) in a real run. A touching/overlapping drop segment
+    must now be folded into the matching keep segment instead of added as a
+    second, redundant one."""
+    tracker = PersistentObjectTracker(_config(), _Logger())
+    _seed_track(tracker, "t_a", center=(0.0, 0.0, 0.0), half=(1.0, 1.5, 0.05),
+                seen=5, label="ceiling", first_ts=0.0, last_ts=1.0, slot=1)
+    _seed_track(tracker, "t_b", center=(0.1, 0.2, 0.0), half=(1.05, 1.2, 0.05),
+                seen=3, label="ceiling", first_ts=1.2, last_ts=1.6, slot=2)
+
+    removed = tracker.merge_reanchor_duplicates(min_iou_3d=0.3)
+
+    assert removed == 1
+    survivor = tracker._tracks["t_a"]
+    # the two overlapping segments must be reconciled into one -- not left
+    # stacked as two separate, permanently-overlapping slots.
+    assert list(survivor.segments.keys()) == [1]
+    merged_segment = survivor.segments[1]
+    assert np.allclose(merged_segment.bbox_3d_min, [-1.0, -1.5, -0.05])
+    assert np.allclose(merged_segment.bbox_3d_max, [1.15, 1.5, 0.05])
+    assert merged_segment.seen_count == 5 + 3
+    assert merged_segment.last_seen_timestamp_sec == 1.6
+    assert merged_segment.first_seen_timestamp_sec == 0.0
+    assert merged_segment.closed is False
+
+
 def test_no_merge_without_signal():
     tracker = PersistentObjectTracker(_config(), _Logger())
     _seed_track(tracker, "t_a", center=(0.0, 0.0, 0.0), seen=5, label="sofa", slot=1)

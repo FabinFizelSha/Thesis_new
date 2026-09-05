@@ -339,6 +339,16 @@ class PersistentObjectSegment:
     last_bbox_3d_min: Optional[np.ndarray]
     last_bbox_3d_max: Optional[np.ndarray]
     seen_count: int = 1
+    # Permanently frozen once this segment's own XY span reaches
+    # persistent_local_segment_max_xy_span_m -- its bbox never expands again
+    # after that point. Without this, an already-at-cap segment kept
+    # absorbing nearby observations via the centroid-distance revisit
+    # fallback (matched, geometry frozen, but still claimed under the old
+    # identity) instead of handing off to a new segment right at the cap,
+    # producing multi-metre overlaps instead of a clean seam between
+    # segments. See debug/fuser_object_relation_experiment/IMPLEMENTATION.md
+    # for the real-run examples that motivated this.
+    closed: bool = False
 
 
 @dataclass
@@ -1682,19 +1692,41 @@ class PersistentObjectTracker:
         for segment in track.segments.values():
             score: Optional[float] = None
             reason = ""
-            candidate_span = self._segment_xy_span_after_update(segment, bbox_3d_min, bbox_3d_max)
             if (
                 bbox_3d_min is not None and bbox_3d_max is not None
                 and segment.bbox_3d_min is not None and segment.bbox_3d_max is not None
             ):
                 gap = _aabb_gap_xy(bbox_3d_min, bbox_3d_max, segment.bbox_3d_min, segment.bbox_3d_max)
                 center_distance = _aabb_center_distance_xy(bbox_3d_min, bbox_3d_max, segment.bbox_3d_min, segment.bbox_3d_max)
-                if candidate_span is not None and candidate_span <= max_span and gap <= gap_limit:
-                    score = gap + 0.01 * center_distance
-                    reason = "segment_bbox_local"
-                elif center_distance <= revisit_distance:
-                    score = center_distance
-                    reason = "segment_centroid_revisit_no_expand"
+                if not segment.closed:
+                    candidate_span = self._segment_xy_span_after_update(segment, bbox_3d_min, bbox_3d_max)
+                    if candidate_span is not None and candidate_span <= max_span and gap <= gap_limit:
+                        score = gap + 0.01 * center_distance
+                        reason = "segment_bbox_local"
+                    elif gap <= gap_limit:
+                        # Touches this still-growing segment, but merging would
+                        # push it past the span cap: the seam belongs exactly
+                        # here. Freeze the segment now instead of leaving it
+                        # open to keep absorbing further-drifted observations
+                        # via the centroid-distance fallback below -- that is
+                        # what previously produced multi-metre overlaps instead
+                        # of a clean cut between segments.
+                        segment.closed = True
+                        score = gap
+                        reason = "segment_centroid_revisit_no_expand"
+                    elif center_distance <= revisit_distance:
+                        score = center_distance
+                        reason = "segment_centroid_revisit_no_expand"
+                else:
+                    # Already closed: identity-only re-check (e.g. revisiting
+                    # this section from a different angle later) -- geometry
+                    # never expands again regardless of how close this is.
+                    if gap <= gap_limit:
+                        score = gap
+                        reason = "segment_centroid_revisit_no_expand"
+                    elif center_distance <= revisit_distance:
+                        score = center_distance
+                        reason = "segment_centroid_revisit_no_expand"
             elif centroid is not None and segment.centroid_3d is not None:
                 distance = float(np.linalg.norm(centroid[:2] - segment.centroid_3d[:2]))
                 if distance <= revisit_distance:
@@ -1924,12 +1956,65 @@ class PersistentObjectTracker:
         for key, value in (drop.label_observations or {}).items():
             keep.label_observations[key] = keep.label_observations.get(key, 0) + int(value)
 
-        # Hydra slot ids are globally unique, so ``drop``'s segments can be
-        # re-keyed straight onto the survivor without collision.  Each keeps its
-        # own slot; presence continuity matters more than slot economy.
+        # Hydra slot ids are globally unique, so a non-overlapping ``drop``
+        # segment can be re-keyed straight onto the survivor without
+        # collision. But ``keep`` and ``drop`` were tracked independently
+        # until now, so each may already have built its own local segment
+        # covering the same physical patch (e.g. the same ceiling tile seen
+        # moments apart before the duplicate was recognised). Re-keying both
+        # verbatim would leave two permanently-static, heavily-overlapping
+        # segments sitting side by side forever -- geometry is reconciled
+        # into the closest touching existing segment instead of adding a
+        # new, redundant one. Only genuinely disjoint drop segments keep
+        # their own slot; presence continuity matters more than slot economy
+        # for those.
+        gap_limit = float(getattr(self.config, "persistent_local_segment_gap_m", 0.20))
+        max_span = float(getattr(self.config, "persistent_local_segment_max_xy_span_m", 4.0))
         for slot_id, segment in drop.segments.items():
-            segment.segment_id = f"{keep.track_id}:slot_{int(segment.hydra_label_id)}"
-            keep.segments.setdefault(int(slot_id), segment)
+            absorbing: Optional[PersistentObjectSegment] = None
+            best_gap: Optional[float] = None
+            if segment.bbox_3d_min is not None and segment.bbox_3d_max is not None:
+                for existing in keep.segments.values():
+                    if existing.bbox_3d_min is None or existing.bbox_3d_max is None:
+                        continue
+                    gap = _aabb_gap_xy(
+                        segment.bbox_3d_min, segment.bbox_3d_max,
+                        existing.bbox_3d_min, existing.bbox_3d_max,
+                    )
+                    if gap <= gap_limit and (best_gap is None or gap < best_gap):
+                        absorbing, best_gap = existing, gap
+
+            if absorbing is None:
+                segment.segment_id = f"{keep.track_id}:slot_{int(segment.hydra_label_id)}"
+                keep.segments.setdefault(int(slot_id), segment)
+                continue
+
+            absorbing.bbox_3d_min = np.minimum(absorbing.bbox_3d_min, segment.bbox_3d_min)
+            absorbing.bbox_3d_max = np.maximum(absorbing.bbox_3d_max, segment.bbox_3d_max)
+            if _aabb_xy_diagonal(absorbing.bbox_3d_min, absorbing.bbox_3d_max) > max_span:
+                # Same freeze-on-cap rule as live association: a merge can
+                # bridge the cap once, but the result must not keep growing.
+                absorbing.closed = True
+            if float(segment.last_seen_timestamp_sec) >= float(absorbing.last_seen_timestamp_sec):
+                absorbing.last_bbox_3d_min = segment.last_bbox_3d_min
+                absorbing.last_bbox_3d_max = segment.last_bbox_3d_max
+                absorbing.last_seen_frame_id = segment.last_seen_frame_id
+                absorbing.last_seen_sequence = segment.last_seen_sequence
+                absorbing.last_seen_timestamp_sec = segment.last_seen_timestamp_sec
+                if segment.bbox_2d:
+                    absorbing.bbox_2d = segment.bbox_2d
+            if float(segment.first_seen_timestamp_sec) < float(absorbing.first_seen_timestamp_sec):
+                absorbing.first_seen_frame_id = segment.first_seen_frame_id
+                absorbing.first_seen_sequence = segment.first_seen_sequence
+                absorbing.first_seen_timestamp_sec = segment.first_seen_timestamp_sec
+            absorbing.seen_count += int(segment.seen_count)
+            # `segment`'s own Hydra slot is retired here: it is dropped from
+            # the merged track's bookkeeping so no future observation is
+            # ever routed to it again, and its existing DSG node stops
+            # growing -- but note this cannot retroactively erase mesh
+            # geometry Hydra already committed under that slot before the
+            # merge; only the *tracker's* forward association state is
+            # reconciled.
 
         keep.metadata.setdefault("reanchor_merged_from", []).append(
             {
@@ -2818,6 +2903,7 @@ class PersistentObjectTracker:
             "last_bbox_3d_min": _as_list(segment.last_bbox_3d_min),
             "last_bbox_3d_max": _as_list(segment.last_bbox_3d_max),
             "local_segment_xy_span_m": span,
+            "closed": bool(segment.closed),
         }
 
     def _track_record(
