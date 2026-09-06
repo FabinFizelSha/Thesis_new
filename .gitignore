@@ -49,3 +49,15 @@ debug/fuser_object_relation_experiment/results/run_*/
 # Keep DESIGN.md; ignore each run's crops + CSV -- regeneratable by
 # re-running with phase1.diagnostics.enabled + phase1.risk_vlm.enabled true.
 debug/risk_assessment_feature/session_*/
+
+# --- RAP accuracy diagnostics run outputs ---------------------------------
+# Crops + per-hit CSV for manual RAP accuracy verification; regeneratable by
+# re-running with phase1.diagnostics.enabled + phase1.rap.enabled true.
+debug/rap_accuracy_test/session_*/
+
+# --- Object tracking experiment Part 2 run outputs ------------------------
+# Keep EXPERIMENT_REPORT.md; ignore each run's periodic crops/CSV and the
+# tracking_quality associations/frames/lifecycles JSONL+JSON -- large,
+# regeneratable by re-running with phase1.diagnostics.enabled true.
+debug/object_tracking_experiment_part2/periodic_crop_diagnostics/session_*/
+debug/object_tracking_experiment_part2/tracking_quality/*

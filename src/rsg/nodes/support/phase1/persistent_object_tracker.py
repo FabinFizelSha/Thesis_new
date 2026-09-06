@@ -546,6 +546,20 @@ class PersistentObjectTracker:
                 except (ValueError, TypeError):
                     mask_id = -1
 
+                # Per-component scores for the row that actually won (if any),
+                # so a merge can be diagnosed from the real numbers next time
+                # instead of estimating them after the fact.
+                historical_score_out = centroid_score_out = image_score_out = vertical_score_out = None
+                if match_id is not None:
+                    for candidate_row in candidate_evaluations:
+                        if candidate_row.get("candidate_track_id") == match_id and candidate_row.get("selected"):
+                            components = candidate_row.get("global_association_components") or {}
+                            historical_score_out = components.get("historical_overlap")
+                            centroid_score_out = components.get("centroid_3d")
+                            image_score_out = components.get("bbox_2d_iou")
+                            vertical_score_out = components.get("vertical_compatibility")
+                            break
+
                 self.coordinator.tracking_quality_recorder.log_association_decision(
                     frame_id=frame_id,
                     sequence=sequence,
@@ -556,6 +570,10 @@ class PersistentObjectTracker:
                     match_type=match_reason,
                     match_iou_3d=float(metadata.get("mask_iou_3d", 0.0)) if metadata.get("mask_iou_3d") else None,
                     match_score=match_score,
+                    historical_score=historical_score_out,
+                    centroid_score=centroid_score_out,
+                    image_score=image_score_out,
+                    vertical_score=vertical_score_out,
                     prev_track_age_frames=prev_track_age,
                     prev_track_observations=prev_observations,
                     prev_centroid_3d=prev_centroid_3d,

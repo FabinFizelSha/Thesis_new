@@ -51,6 +51,8 @@ from nodes.support.phase1.persistent_object_tracker import PersistentObjectTrack
 from nodes.support.phase1.vlm_test_diagnostics import VLMTestDiagnostics
 from nodes.support.phase1.rap_memory import RapMemoryUpdater
 from nodes.support.phase1.risk_vlm_diagnostics import RiskVlmDiagnostics
+from nodes.support.phase1.rap_accuracy_diagnostics import RapAccuracyDiagnostics
+from nodes.support.phase1.periodic_crop_diagnostics import PeriodicCropDiagnostics
 from nodes.support.phase1.semantic_crop import (
     build_rap_target_only_crop,
     build_vlm_target_focus_crop,
@@ -348,7 +350,7 @@ class Phase1SemanticCoordinator(Node):
         )
 
         # Tracking quality evaluation diagnostics
-        tracking_quality_dir = Path(self.config.timing_csv_path).parent / "tracking_quality"
+        tracking_quality_dir = Path("/home/student/Thesis_new/debug/object_tracking_experiment_part2/tracking_quality")
         self.tracking_quality_recorder = TrackingQualityRecorder(
             enabled=self.diagnostics_enabled,
             output_dir=str(tracking_quality_dir),
@@ -388,13 +390,33 @@ class Phase1SemanticCoordinator(Node):
         else:
             self.get_logger().info("Phase 1 per-run diagnostics disabled (phase1.diagnostics.enabled=false)")
 
-        # Risk VLM diagnostics (crops + per-call CSV), same master switch as
-        # every other diagnostic writer above. RiskVlmDiagnostics creates its
-        # own session_<timestamp>/ subfolder under this directory, so
-        # repeated runs never overwrite an earlier run's crops or CSV.
+        # Risk VLM diagnostics (crops + per-call CSV). Gated on risk_vlm
+        # actually being enabled, not just the diagnostics master switch --
+        # otherwise this creates an empty session_<timestamp>/ folder on
+        # every single run even while the feature itself is off.
         self.risk_vlm_diagnostics = RiskVlmDiagnostics(
             output_dir=Path("/home/student/Thesis_new/debug/risk_assessment_feature"),
+            enabled=self.diagnostics_enabled and self.config.risk_vlm_enabled,
+        )
+
+        # RAP accuracy diagnostics: crop + outcome for every RAP attempt
+        # (hit or miss), for manual cross-checking of RAP's real-world
+        # accuracy in one complete, self-contained CSV. Gated on RAP
+        # actually being enabled, for the same reason as risk_vlm above.
+        self.rap_accuracy_diagnostics = RapAccuracyDiagnostics(
+            output_dir=Path("/home/student/Thesis_new/debug/rap_accuracy_test"),
+            enabled=self.diagnostics_enabled and self.config.rap_enabled,
+        )
+
+        # Periodic per-track crop diagnostics: saves every Nth observation
+        # of every track (raw crop + both the raw per-frame geometry and
+        # the accumulated local-segment envelope), independent of "best
+        # crop" selection -- for tracing exactly when/how a track's mask or
+        # bounding box starts absorbing a different object over time.
+        self.periodic_crop_diagnostics = PeriodicCropDiagnostics(
+            output_dir=Path("/home/student/Thesis_new/debug/object_tracking_experiment_part2/periodic_crop_diagnostics"),
             enabled=self.diagnostics_enabled,
+            interval=self.config.periodic_crop_interval,
         )
         if self.diagnostics_enabled:
             self.get_logger().info(
@@ -1257,6 +1279,13 @@ class Phase1SemanticCoordinator(Node):
         # This enables track-aware mask redundancy analysis (A2) and one global
         # frame-level assignment (E), eliminating SAM-output-order bias.
         prepared: List[Dict[str, Any]] = []
+        # Masks whose depth is entirely outside [min_depth_m, max_depth_m]
+        # (depth_valid_points == 0, not merely "too few") carry no usable
+        # geometry -- there is nothing to add to the semantic map for those
+        # pixels. Tracked separately from keep_mask (rather than skipping the
+        # `prepared` append outright) so `prepared`/`sam_masks`/`keep_mask`
+        # stay strictly index-aligned for the second loop below.
+        depth_range_keep: List[bool] = []
         for idx, mask in enumerate(sam_masks):
             stage_start = time.perf_counter() if timing_enabled else 0.0
             candidate_id = self.make_candidate_id(frame, mask.mask_id, idx, False)
@@ -1271,6 +1300,13 @@ class Phase1SemanticCoordinator(Node):
                 "metadata": metadata, "mask": mask.mask,
                 "timestamp_sec": timestamp_sec, "desired_hydra_label_id": 0,
             })
+            if (
+                self.config.reject_masks_fully_outside_depth_range
+                and metadata.get("depth_valid_points") == 0
+            ):
+                depth_range_keep.append(False)
+            else:
+                depth_range_keep.append(True)
             if timing_enabled:
                 geometry_ms += (time.perf_counter() - stage_start) * 1000.0
         # Part 3 profiling only: accumulates prepare_frame_assignments'
@@ -1283,6 +1319,8 @@ class Phase1SemanticCoordinator(Node):
                      if self.config.persistent_tracking_enabled else [True] * len(sam_masks))
         if timing_enabled:
             assignment_ms = (time.perf_counter() - stage_start) * 1000.0
+        if self.config.reject_masks_fully_outside_depth_range:
+            keep_mask = [keep and in_range for keep, in_range in zip(keep_mask, depth_range_keep)]
 
         for idx, mask in enumerate(sam_masks):
             if not keep_mask[idx]:
@@ -1350,6 +1388,19 @@ class Phase1SemanticCoordinator(Node):
             self._remember_track_crop(external_track_id, rgb, metadata, frame, mask.mask)
             if timing_enabled:
                 crop_update_ms += (time.perf_counter() - stage_start) * 1000.0
+
+            if external_track_id:
+                try:
+                    self.periodic_crop_diagnostics.log_observation(
+                        external_track_id,
+                        int(frame.sequence),
+                        rgb,
+                        mask.mask,
+                        metadata,
+                        timestamp=timestamp_sec,
+                    )
+                except Exception as e:
+                    self.get_logger().warn(f"Failed to log periodic crop diagnostics: {e}")
 
             # Extract crop for diagnostic inspection
             try:
@@ -2663,6 +2714,20 @@ class Phase1SemanticCoordinator(Node):
             f"label='{rap.label}' distance={float(rap.distance):.4f} "
             f"threshold={float(self.config.rap_distance_threshold):.4f} confidence={float(rap.confidence):.3f}"
         )
+        try:
+            self.rap_accuracy_diagnostics.log_rap_result(
+                crop,
+                is_known,
+                str(rap.label),
+                float(rap.distance),
+                float(rap.confidence),
+                float(self.config.rap_distance_threshold),
+                track_id=str(task.get("persistent_track_id", "")),
+                hydra_slot_id=int(task.get("hydra_slot_id", 0) or 0),
+                timestamp=float(task.get("timestamp_sec", 0.0) or 0.0),
+            )
+        except Exception as e:
+            self.get_logger().warn(f"Failed to log RAP result diagnostics: {e}")
         label = str(rap.label or "unknown_object")
         rap_metadata = dict(rap.metadata or {})
         rap_has_mobility_metadata = "mobility_class" in rap_metadata

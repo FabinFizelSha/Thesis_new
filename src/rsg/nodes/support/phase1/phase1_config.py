@@ -85,6 +85,7 @@ class Phase1Config:
     # crop+CSV.  Off = nothing written, near-zero overhead.  Functional crop
     # scoring / mask filtering / best-crop selection is unaffected.
     diagnostics_enabled: bool = False
+    periodic_crop_interval: int = 10
 
     # Hydra output.
     publish_hydra_combined: bool
@@ -409,6 +410,7 @@ class Phase1Config:
     min_depth_m: float = 0.2
     max_depth_m: float = 6.0
     centroid_method: str = "median"
+    reject_masks_fully_outside_depth_range: bool = False
 
     # Evidence buffer for future risk annotation.
     store_evidence_frames: bool = True
@@ -705,6 +707,7 @@ class Phase1Config:
             publish_timing_topic=bool(performance.get("publish_timing", True)),
             write_timing_csv=bool(performance.get("write_timing_csv", performance.get("write_timing_excel", True))),
             diagnostics_enabled=bool(diagnostics.get("enabled", False)),
+            periodic_crop_interval=max(1, int(diagnostics.get("periodic_crop_interval", 10))),
             timing_csv_path=timing_csv_path,
             timing_sheet_name=str(performance.get("timing_sheet_name", node_key[:31])),
             timing_excel_autosave_every=int(performance.get("timing_excel_autosave_every", 0)),
@@ -865,6 +868,7 @@ class Phase1Config:
             min_depth_m=float(geometry.get("min_depth_m", preproc_image.get("min_depth_m", 0.2))),
             max_depth_m=float(geometry.get("max_depth_m", preproc_image.get("max_depth_m", 6.0))),
             centroid_method=str(geometry.get("centroid_method", "median")),
+            reject_masks_fully_outside_depth_range=bool(geometry.get("reject_masks_fully_outside_depth_range", False)),
             store_evidence_frames=bool(evidence.get("enabled", True)),
             evidence_buffer_size=max(1, int(evidence.get("max_frames", 50))),
             unknown_tracking_enabled=bool(unknown_tracking.get("enabled", True)),

@@ -52,6 +52,15 @@ class AssociationDecision:
     match_iou_3d: Optional[float] = None
     match_score: Optional[float] = None
 
+    # Per-component scores behind match_score (only populated when a match
+    # was actually found -- None for a new-track decision). historical and
+    # image are proximity/overlap measures blind to object identity;
+    # centroid is the one score that directly reacts to real 3D distance.
+    historical_score: Optional[float] = None
+    centroid_score: Optional[float] = None
+    image_score: Optional[float] = None
+    vertical_score: Optional[float] = None
+
     # Previous track state at time of match
     prev_track_age_frames: Optional[int] = None
     prev_track_observations: Optional[int] = None
@@ -178,6 +187,10 @@ class TrackingQualityRecorder:
         match_distance_m: Optional[float] = None,
         match_iou_3d: Optional[float] = None,
         match_score: Optional[float] = None,
+        historical_score: Optional[float] = None,
+        centroid_score: Optional[float] = None,
+        image_score: Optional[float] = None,
+        vertical_score: Optional[float] = None,
         prev_track_age_frames: Optional[int] = None,
         prev_track_observations: Optional[int] = None,
         prev_centroid_3d: Optional[List[float]] = None,
@@ -199,6 +212,10 @@ class TrackingQualityRecorder:
             match_distance_m=match_distance_m,
             match_iou_3d=match_iou_3d,
             match_score=match_score,
+            historical_score=historical_score,
+            centroid_score=centroid_score,
+            image_score=image_score,
+            vertical_score=vertical_score,
             prev_track_age_frames=prev_track_age_frames,
             prev_track_observations=prev_track_observations,
             prev_centroid_3d=prev_centroid_3d,
