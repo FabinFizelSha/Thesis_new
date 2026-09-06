@@ -1279,10 +1279,18 @@ class Phase1SemanticCoordinator(Node):
         # This enables track-aware mask redundancy analysis (A2) and one global
         # frame-level assignment (E), eliminating SAM-output-order bias.
         prepared: List[Dict[str, Any]] = []
-        # Masks whose depth is entirely outside [min_depth_m, max_depth_m]
-        # (depth_valid_points == 0, not merely "too few") carry no usable
-        # geometry -- there is nothing to add to the semantic map for those
-        # pixels. Tracked separately from keep_mask (rather than skipping the
+        # Masks with too little in-range depth to yield 3D geometry carry
+        # nothing usable -- no centroid, no box, nothing to add to the
+        # semantic map for those pixels. The threshold is the geometry
+        # estimator's own `min_valid_depth_points`, not zero: a mask whose
+        # object lies beyond max_depth_m can still pick up a handful of
+        # in-range points from near-field speckle elsewhere in the same
+        # contour, which is enough to clear a ==0 test but not enough to
+        # produce geometry. Those fell through as phantom single-observation
+        # tracks (16 of 101 in run 194600), because a candidate without 3D
+        # can reach at most 2 evidence votes (image + temporal) and so can
+        # never satisfy a quorum of 3 -- it can only ever start a new track.
+        # Tracked separately from keep_mask (rather than skipping the
         # `prepared` append outright) so `prepared`/`sam_masks`/`keep_mask`
         # stay strictly index-aligned for the second loop below.
         depth_range_keep: List[bool] = []
@@ -1300,9 +1308,15 @@ class Phase1SemanticCoordinator(Node):
                 "metadata": metadata, "mask": mask.mask,
                 "timestamp_sec": timestamp_sec, "desired_hydra_label_id": 0,
             })
+            # `depth_valid_points` is absent when the depth gather never ran
+            # (geometry disabled, or an empty mask). Keep those: this gate is
+            # about depth range only and must not silently drop every mask
+            # when object geometry is switched off.
+            depth_valid_points = metadata.get("depth_valid_points")
             if (
                 self.config.reject_masks_fully_outside_depth_range
-                and metadata.get("depth_valid_points") == 0
+                and depth_valid_points is not None
+                and int(depth_valid_points) < int(self.config.min_valid_depth_points)
             ):
                 depth_range_keep.append(False)
             else:

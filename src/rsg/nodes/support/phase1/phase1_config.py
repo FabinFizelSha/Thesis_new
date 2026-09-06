@@ -478,6 +478,10 @@ class Phase1Config:
     persistent_global_touch_gap_pass_m: float = 0.02
     persistent_global_centroid_pass_m: float = 0.75
     persistent_global_centroid_sigma_m: float = 0.50
+    # Read by _find_match's containment vote. The default matches the literal
+    # that getattr() fell back to while this field was missing, so behaviour is
+    # unchanged for any config that does not set global_containment_threshold.
+    persistent_global_containment_threshold: float = 0.90
     persistent_global_vertical_score_pass: float = 0.60
     persistent_global_vertical_sigma_m: float = 0.15
     persistent_global_block_2d_on_3d_contradiction: bool = True
@@ -921,9 +925,15 @@ class Phase1Config:
             persistent_global_historical_overlap_pass=min(1.0, max(0.0, float(persistent_tracking.get("global_historical_overlap_pass", 0.30)))),
             persistent_global_recent_overlap_pass=min(1.0, max(0.0, float(persistent_tracking.get("global_recent_overlap_pass", 0.25)))),
             persistent_global_min_axis_overlap=min(1.0, max(0.0, float(persistent_tracking.get("global_min_axis_overlap", 0.20)))),
-            persistent_global_touch_gap_pass_m=max(0.0, float(persistent_tracking.get("global_touch_gap_pass_m", 0.02))),
+            # Not clamped at 0.0: an XY gap is never negative, so a negative
+            # value here is the switch that disables the footprint touch
+            # shortcut entirely (forcing that vote to be earned through real
+            # overlap). Clamping to 0.0 made the shortcut permanently on,
+            # because touching/overlapping boxes report a gap of exactly 0.
+            persistent_global_touch_gap_pass_m=float(persistent_tracking.get("global_touch_gap_pass_m", 0.02)),
             persistent_global_centroid_pass_m=max(0.0, float(persistent_tracking.get("global_centroid_pass_m", 0.75))),
             persistent_global_centroid_sigma_m=max(1e-6, float(persistent_tracking.get("global_centroid_sigma_m", 0.50))),
+            persistent_global_containment_threshold=min(1.0, max(0.0, float(persistent_tracking.get("global_containment_threshold", 0.90)))),
             persistent_global_vertical_score_pass=min(1.0, max(0.0, float(persistent_tracking.get("global_vertical_score_pass", 0.60)))),
             persistent_global_vertical_sigma_m=max(1e-6, float(persistent_tracking.get("global_vertical_sigma_m", 0.15))),
             persistent_global_block_2d_on_3d_contradiction=bool(persistent_tracking.get("global_block_2d_on_3d_contradiction", True)),
