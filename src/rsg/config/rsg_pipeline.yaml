@@ -44,7 +44,7 @@ preprocessing:                                                                  
     output_depth_encoding: 32FC1                                                                     # Required passthrough depth encoding when optional processing is disabled.
     depth_scale_to_meter: 0.001                                                                      # Used only by optional single-pass conversion of 16UC1 depth.
     min_depth_m: 0.30                                                                                # Used by Phase 1 and optional sampled invalid-depth analysis.
-    max_depth_m: 4.0                                                                                 # Used by Phase 1 and optional sampled invalid-depth analysis.
+    max_depth_m: 5.0                                                                                 # Used by Phase 1 and optional sampled invalid-depth analysis.
     max_invalid_depth_ratio: 0.90                                                                    # Used only when optional invalid-depth checking is enabled.
     reject_resolution_mismatch: true                                                                 # Enforce identical RGB and depth dimensions for correct projection.
 
@@ -109,6 +109,7 @@ phase1:                                                                         
     log_vlm_outputs: false                                                                          # Record validated VLM JSON, raw response, label confidence, and mobility confidence.
     log_rap_outputs: false                                                                          # Record RAP label/retrieval confidence plus mobility metadata restored from visual memory.
     log_semantic_results: false                                                                     # Record the final object-level label propagated to every local Hydra slot.
+    periodic_crop_interval: 10                                                                      # Save every Nth observation of every track (crop + raw and accumulated 3D geometry), independent of "best crop" selection -- for tracing exactly when/how a track's mask or bounding box starts absorbing a different object. Gated by the master `enabled` switch above.
 
   profile: real_orin                                                                                 # Performance profile intended for Jetson Orin.
   runtime:
@@ -159,7 +160,7 @@ phase1:                                                                         
     depth_range_filter:
       enabled: true                                                                                  # Apply the same valid depth range to Hydra integration.
       min_range_m: 0.30                                                                              # Lower valid range sent to Hydra.
-      max_range_m: 4.0                                                                               # Upper valid range sent to Hydra.
+      max_range_m: 5.0                                                                               # Upper valid range sent to Hydra.
       semantic_label_id: 0                                                                           # Mark invalid-depth pixels as the unknown semantic class.
 
   hydra_semantic:
@@ -201,21 +202,21 @@ phase1:                                                                         
     same_track_broader_max_route_priority: 2                                                     # Require accumulated, continuation, or centroid 3D support; 2D-IoU-only matches cannot take over.
     same_track_broader_max_volume_ratio: 6.0                                                     # Reject broader-mask takeover when its 3D AABB volume is excessively inconsistent with the track.
     global_association_enabled: true                                                           # Combine all association cues into one score instead of accepting one route independently.
-    global_min_independent_groups: 2                                                       # Require at least two independent evidence groups before a track may continue.
+    global_min_independent_groups: 3                                                       # Require at least three independent evidence groups before a track may continue. Raised from the experiment baseline of 2 on 2026-09-06: `vertical` passes on every row once an envelope spans the room height, and `footprint` passes on nearly every row, so a quorum of 2 was satisfied before `centroid`/`image` could object. With 3 (plus centroid_pass_m 0.55) the floor/sofa and sofa/wall merges are rejected -- costs slightly more fragmentation.
     global_recent_min_score: 0.30                                                         # LOWERED: Match revisit threshold to allow marginal matches in recent mode.
     global_revisit_min_score: 0.30                                                         # LOWERED: Accept weak matches for same-object-different-angle consolidation.
     global_historical_overlap_pass: 0.30                                                  # Observation-normalised accumulated XY overlap required for a footprint vote.
     global_recent_overlap_pass: 0.25                                                      # Observation-normalised recent XY overlap required for recent continuation.
     global_min_axis_overlap: 0.20                                                         # Require meaningful overlap along both horizontal axes.
     global_touch_gap_pass_m: 0.02                                                         # Near-contact may vote, but cannot preserve an ID without another cue.
-    global_centroid_pass_m: 0.75                                                          # Centroid distance that contributes an independent position vote.
+    global_centroid_pass_m: 0.55                                                          # Centroid distance that contributes an independent position vote. Tightened from 0.75 on 2026-09-06: the sofa-into-wall merge sat at 0.63m and kept its centroid vote at 0.75.
     global_centroid_sigma_m: 0.50                                                         # Gaussian scale used to normalise centroid compatibility.
     global_vertical_score_pass: 0.60                                                      # Minimum normalised vertical-compatibility vote.
     global_vertical_sigma_m: 0.15                                                         # Gaussian scale for vertical-centre compatibility.
     global_block_2d_on_3d_contradiction: true                                             # Prevent 2D overlap from overriding reliable contradictory 3D evidence.
     global_recent_weight_historical: 0.70
     global_recent_weight_recent: 0.00
-    global_recent_weight_centroid: 0.15
+    global_recent_weight_centroid: 0.30                                                    # Raised from 0.15 2026-09-06.
     global_recent_weight_vertical: 0.00
     global_recent_weight_image: 0.45
     global_revisit_weight_historical: 0.60
@@ -230,7 +231,7 @@ phase1:                                                                         
     global_min_depth_z: 0.30                                                                  # Z-axis (vertical) padding threshold for thin floors/ceilings (meters).
     global_min_depth_xy: 0.15                                                                 # X/Y-axis (horizontal) padding threshold for thin walls/railings (meters).
     revisit_min_2d_iou: 0.75
-    local_segments_enabled: true                                                                      # Split long internal objects into local Hydra semantic slots for confidence. (Re-enabled 2026-09-04 after confirming disabling it did not stop the dotted multi-member lines -- those come from Hydra's own frontend mesh clustering, not phase1; see debug/fuser_object_relation_experiment/IMPLEMENTATION.md "Still open".)
+    local_segments_enabled: true                                                                      # Deliberate deviation from object-tracking-optimisation-experiment FINAL_OPTIMIZED_CONFIG.yaml (false), re-confirmed 2026-09-06 -- needed for long-internal-object splitting into local Hydra segments. Everything else in this block still matches the experiment exactly.
     local_segment_max_xy_span_m: 6.0                                                                 # Maximum horizontal span of one local semantic slot/section.
     local_segment_revisit_distance_m: 1.5                                                            # Re-associate a revisited local section by centroid distance.
     local_segment_gap_m: 0.20                                                                        # Local 3D-box gap allowed when updating the same segment.
@@ -284,7 +285,7 @@ phase1:                                                                         
     depth_filter:
       enabled: false                                                                                  # Avoid generating object masks where depth is invalid.
       min_depth_m: 0.30                                                                              # Match preprocessor and Hydra lower depth bound.
-      max_depth_m: 4.0                                                                               # Match preprocessor and Hydra upper depth bound.
+      max_depth_m: 5.0                                                                               # Match preprocessor and Hydra upper depth bound.
       min_valid_ratio: 0.05                                                                          # Require at least 5% valid depth inside a candidate region.
       crop_to_valid_roi: true                                                                        # Focus SAMs on the valid depth region.
       roi_margin_px: 12                                                                              # Preserve a small margin around valid depth.
@@ -294,24 +295,24 @@ phase1:                                                                         
     checkpoint_cache_dir: /home/student/.cache/sam                                                   # Cache location for SAM assets.
     device: cuda                                                                                     # Run segmentation on the GPU.
     auto_download: false                                                                             # Do not download models at runtime.
-    mask_threshold: 0.70                                                                             # SAM optimisation experiment Phase 2.3.
+    mask_threshold: 0.80                                                                             # Raised from 0.70 2026-09-06: per-pixel inclusion confidence for NanoSAM's mask decoder -- targets the low-confidence "bridge" pixels at ambiguous contact boundaries (e.g. a sofa's shadow against the wall/floor behind it) causing repeated cross-object mask fusion. SAM experiment's own sweep showed near-zero aggregate F1 cost at 0.80 vs 0.70 (0.4975 vs 0.4977).
     padding: 0.2                                                                                     # Retained for compatibility with non-NanoSAM modes.
-    points_per_side: 4                                                                               # Manual override, reverted to 4 2026-09-05.
+    points_per_side: 3                                                                               # Manual override, reduced to 3 2026-09-06 -- PPS=4 did not prevent the sofa/floor mask-fusion issue, so testing back at 3.
     pred_iou_thresh: 0.0                                                                             # SAM optimisation experiment: disabled.
     min_mask_pixels: 3500                                                                           # SAM optimisation experiment Phase 2.6: confirmed optimal.
     max_masks: 8                                                                                     # Manual override (was 12, experiment Phase 2.2).
     nanosam:
       image_encoder_engine: /home/student/rsg_models/nanosam/resnet18_image_encoder.engine           # TensorRT image encoder engine.
       mask_decoder_engine: /home/student/rsg_models/nanosam/mobile_sam_mask_decoder.engine           # TensorRT mask decoder engine.
-      points_per_side: 4                                                                             # Manual override, reverted to 4 2026-09-05. NanoSAM backend reads this value.
-      mask_threshold: 0.70                                                                           # SAM optimisation experiment Phase 2.3 (predicted-IoU confidence gate; mask binarised at logit 0.0 in code).
+      points_per_side: 3                                                                             # Manual override, reduced to 3 2026-09-06 -- PPS=4 did not prevent the sofa/floor mask-fusion issue, so testing back at 3. NanoSAM backend reads this value.
+      mask_threshold: 0.80                                                                           # Raised from 0.70 2026-09-06 (see phase1.sam.mask_threshold comment). NanoSAM backend reads this value directly as a per-pixel inclusion threshold.
       nms_iou: 0.30                                                                                  # SAM optimisation experiment Phase 2.5.
       point_margin_fraction: 0.167                                                                   # SAM optimisation experiment integration spec.
       skip_black_points: true                                                                        # Ignore black/invalid-depth regions.
       min_prompt_luma: 4                                                                             # Reject near-black prompt locations.
 
   rap:
-    enabled: true                                                                                    # Re-enabled 2026-09-05 to evaluate RAP effectiveness over two real sessions (hit rate via risk_results.csv's "source" column, and semantic_label_result's own "source" field).
+    enabled: false                                                                                    # Turned off 2026-09-06.
     backend: real                                                                                    # Use the real RAP implementation rather than a test stub.
     execution_mode: async                                                                            # Keep retrieval off the critical RGB-D-to-Hydra path.
     async: true                                                                                      # Enable asynchronous RAP work.
@@ -324,8 +325,8 @@ phase1:                                                                         
     chroma_port: 8001                                                                                # Local Chroma server port.
     collection_name: visual_rag_orin_deploy_vlm                                                      # Persistent collection containing visual examples and labels.
     auto_start_server: false                                                                         # Chroma is launched by the full-stack launch file.
-    confidence_threshold: 0.85                                                                        # Minimum RAP confidence for an accepted retrieval label.
-    distance_threshold: 0.20                                                                          # 0.15 -> 0.30 -> 0.40 -> 0.20 2026-09-05. Real-run RAP HIT/MISS logging showed the actual hit/miss boundary sits at ~0.15 in practice (hits cluster 0.00-0.15, misses start at 0.15) with an empty gap all the way to 0.40 -- 0.20 tightens back toward the observed real boundary instead of the wider synthetic-pair margin.
+    confidence_threshold: 0.90                                                                        # Minimum RAP confidence for an accepted retrieval label.
+    distance_threshold: 0.10                                                                          # 0.15 -> 0.30 -> 0.40 -> 0.20 -> 0.15 -> 0.10 2026-09-05.
     update_memory_from_vlm: true                                                                     # Freeze the learned RAP collection during this evaluation run.
     update_min_confidence: 0.90                                                                      # Avoid storing weak VLM classifications.
     memory_update_path: /home/student/rsg_ros2_ws/debug/phase1_rap_memory.jsonl                      # Audit log of memory additions.
@@ -603,8 +604,9 @@ phase1:                                                                         
     projection_stride: 4                                                                             # Restore the baseline depth-projection stride for a controlled SAM-only test.
     min_valid_depth_points: 20                                                                       # Require enough depth support for a reliable 3D centroid.
     min_depth_m: 0.30                                                                                # Match all other pipeline depth bounds.
-    max_depth_m: 4.0                                                                                 # Match all other pipeline depth bounds.
+    max_depth_m: 5.0                                                                                 # Match all other pipeline depth bounds.
     centroid_method: median                                                                          # Robust against foreground/background depth outliers.
+    reject_masks_fully_outside_depth_range: true                                                     # Drop a candidate mask entirely (before tracking/RAP/VLM/Hydra) when zero of its sampled depth points fall inside [min_depth_m, max_depth_m] -- no usable geometry, nothing to add to the semantic map for those pixels. Does not affect a mask with SOME valid points below min_valid_depth_points (a genuinely low-confidence-but-not-empty case); only a fully out-of-range mask is dropped.
 
   evidence_buffer:
     enabled: false                                                                                   # Keep disabled; persistent tracking already aggregates evidence.
