@@ -42,7 +42,10 @@ the diagnostic instruments as the only deliverable.
 **Stage 2** (§"Stage 2", added 2026-09-06) revisited the problem with those
 instruments actually producing data, and this time produced a **shipped
 configuration fix**: `global_min_independent_groups: 2 → 3` together with
-`global_centroid_pass_m: 0.75 → 0.55`. The decisive new evidence was that the
+`global_centroid_pass_m: 0.75 → 0.55`. **Stage 3** then found the same quorum
+still had a third free vote (`containment`, which is the footprint measurement
+under a different threshold) and raised `global_containment_threshold` to 0.92 —
+**that one is tentative and awaiting a confirmation run.** The decisive new evidence was that the
 quorum's five votes are *not* independent in practice — `vertical` passes on
 100% of recorded associations and `footprint` on nearly all of them, so a quorum
 of 2 was always satisfied before `centroid` or `image` could object. Simulated
@@ -474,33 +477,308 @@ other.
 
 ---
 
+## Stage 3: containment is a fourth free vote
+
+> **Status: the analysis below stands; the fix in it was inert for three runs.**
+> `global_containment_threshold` was never parsed — `Phase1Config` had no
+> matching field, so the tracker's `getattr(..., 0.90)` always fell back to the
+> hardcoded literal and every value written in YAML was ignored. This was found
+> in Stage 4 and only then wired up. Sessions `152244`, `170651` and `190046`
+> all ran with containment at 0.90 regardless of what the config said. The
+> vote arithmetic in this section is unaffected — it was computed from logged
+> component scores, not from the config — but any claim here that the change
+> *took effect* is wrong.
+
+The first run after Fix 3 (session `20260906_152244`, 805 associations, 565
+frames) still produced a wall track absorbing a **potted plant** — visible in the
+periodic crop for `rsg_obj_000003` observation 60, sequence 323.
+
+### The merge is 21 frames older than it looks
+
+Observation 60 is not where it broke. Tracing the track's associations from
+sequence 270 onward:
+
+| Seq | Mask area | Obs centroid Z | Step | historical | centroid | image |
+|---|---|---|---|---|---|---|
+| 274 | 46 661 | 2.48 | 0.24 m | 0.959 | 0.892 | 0.907 |
+| 298 | 32 984 | 2.82 | 0.33 m | 0.943 | 0.803 | 0.682 |
+| **302** | **5 167** | **1.97** | **0.94 m** | **0.906** | **0.174** | **0.122** |
+| 307 | 6 503 | 1.98 | 0.51 m | 0.873 | 0.592 | 0.704 |
+| 323 | 9 122 | 1.93 | 0.08 m | 0.961 | 0.986 | 0.708 |
+
+At sequence 302 the mask area collapses from 32 984 px to 5 167 px and the
+centroid drops 0.85 m — the frame where SAM stops returning the wall and returns
+the plant. Both genuinely independent cues rejected it correctly: centroid
+distance 0.935 m (over even the old 0.75 m gate) and image IoU 0.122. They were
+outvoted 3–2 by `footprint` + `vertical` + `containment`.
+
+By observation 60 the track centroid had already been dragged onto the plant, so
+that frame scores a near-perfect five-vote match (centroid distance 8 cm). **A
+merge should be diagnosed at the frame where the mask identity changes, not at
+the frame where it was noticed** — the flagged observation looked innocent in
+every logged number.
+
+### Why containment was the third vote
+
+`_aabb_3d_containment` and `_aabb_overlap_fraction_3d` are the **same formula** —
+both return the observation-normalised overlap volume. Containment is therefore
+not independent evidence; it is the footprint overlap measured against a stricter
+threshold (0.90 vs 0.30). For any small object standing inside a big surface
+track's oversized envelope, `footprint`, `containment` and `vertical` are three
+votes for the single geometric fact "candidate box sits inside track box" — which
+is exactly a quorum of 3.
+
+This extends Stage 2's Finding 1: the quorum has not five independent cues but
+effectively **two** (`centroid`, `image`) plus a cluster of three that co-fire on
+one measurement. Raising the quorum to 4 is not an option — object 3's
+observation 70 in the previous run, confirmed correct by review, passes on
+exactly 3 votes.
+
+### Tentative change: `global_containment_threshold` 0.90 → 0.92
+
+The plant merge sat at containment **0.906** — barely over the threshold — in
+*both* recorded runs (`obj3 seq 301` in the older session, `obj3 seq 302` in the
+newer). Raising the bar to 0.92 removes its containment vote, dropping it to 2.
+
+Simulated across both sessions (1387 associations), 5 rows are newly rejected,
+all sharing one signature — a small mask absorbed into a big track from a
+distance:
+
+| Run | Track | Seq | containment | image IoU | centroid dist | area |
+|---|---|---|---|---|---|---|
+| old | obj1 | 250 | 0.913 | 0.000 | 2.66 m | 7 786 |
+| old | obj1 | 396 | 0.918 | 0.251 | 1.96 m | 15 637 |
+| old | obj3 | 301 | 0.904 | 0.160 | 0.96 m | 5 712 |
+| old | obj3 | 400 | 0.905 | 0.290 | 0.89 m | 10 980 |
+| new | obj3 | 302 | 0.906 | 0.122 | 0.94 m | 5 167 |
+
+Both rows confirmed correct by review (containment 0.9515 and 0.9678) keep a
+3-point margin.
+
+**Caveats carried by this change:**
+
+- Containment values form a **continuum** across 0.88–0.99 with no natural gap,
+  so 0.92 is a dial position, not a discovered boundary. Every increment trades
+  over-merge against fragmentation.
+- The margin is thin: the plant sits at 0.906, so a similar merge landing at
+  0.925 would still pass. The next step is 0.935 (13 rejections across both runs
+  instead of 5, all the same signature).
+- Simulation replays recorded decisions and cannot model the second-order effect
+  of a rejected association spawning a new track.
+
+### Method note: the run's log nearly did not exist
+
+`save_snapshots` is called only from `destroy_node()`
+(`src/rsg/nodes/phase1.py:3483`), so the association log survives only a clean
+shutdown. The first attempt at this run left crops but no log, and the analysis
+above was initially attempted from crop geometry alone — which produced a
+**wrong** inference (an estimated containment of ~0.11, and the conclusion that
+the observed vote pattern was impossible). The measured value was 0.906. Crop
+geometry gives the segment envelope, not the track envelope the scorer actually
+compares against; the two differ enough to invert the conclusion. Open Question 3
+(hardening the flush) is therefore not a convenience item — without the log this
+investigation reached the opposite answer.
+
+---
+
+## Stage 4: the real mechanism, two dead config keys, and closure
+
+Stage 4 began with a floor track (`rsg_obj_000025`, session `205022`) that had
+absorbed a trashcan, a cabinet, a file resting on that cabinet, and a chair. It
+ended with the over-merge mechanism identified exactly, two configuration keys
+found to be silently disconnected, and the optimisation closed.
+
+### Finding 4 — the vote model, validated to zero error
+
+Every earlier conclusion in this report rested on reconstructing the five votes
+from logged component scores. That reconstruction was *approximate*: it modelled
+the footprint vote as `historical_score >= threshold`, and it left 1.3–1.6% of
+accepted associations looking impossible.
+
+Adding the footprint **touch shortcut** to the model closed the gap completely:
+
+| Model | Accepted rows the model says should have been rejected |
+|---|---|
+| footprint = overlap only | 19 / 1460 (1.30%) |
+| footprint = overlap **or touch** | **0 / 1460 (0.00%)** |
+
+Zero contradictions across 1460 associations. From this point the reconstruction
+is exact, and it also settles which config each run used — a question that had
+been guessed at twice and got wrong both times.
+
+### Finding 5 — the touch shortcut is what feeds surfaces
+
+`historical_pass` grants the footprint vote through either branch:
+
+```
+(overlap_volume >= min_hist AND overlap_x >= min_axis AND overlap_y >= min_axis)
+OR (accumulated_gap_xy <= touch_gap_pass_m AND vertical_compatible)
+```
+
+The second branch asks only whether the boxes *touch*. **An object resting on a
+surface always touches it** — zero XY gap, zero Z gap. So every object standing
+on a tracked floor received a free footprint vote no matter how little it
+actually overlapped.
+
+The floor's contamination, traced to the frame:
+
+| Cue | Value at seq 837 | Threshold | |
+|---|---|---|---|
+| footprint | overlap 0.368, but **touching** | 0.50 | pass, via shortcut |
+| vertical | gap 0.00 m (it rests on the floor) | ≤ 0.15 | pass |
+| centroid | 0.43 m (0.32 m of it is just its height) | ≤ 0.60 | pass |
+| containment | 0.368 | ≥ 0.90 | fail |
+| image IoU | 0.000 | ≥ 0.30 | fail |
+
+Three votes, quorum met. The two cues that could tell something was wrong both
+objected and were outvoted — and the three that accepted are **one fact stated
+three ways**: *this thing is standing on the floor, near the middle of the
+patch*. That is true of every object on every floor, which is why the floor
+kept eating them.
+
+The consequence compounds. Seq 837 lifted the floor's Z ceiling from 1.30 m to
+1.83 m, later to 2.30 m. From then on anything standing there was *inside* the
+box, so containment and overlap began passing too — the cabinet and chair
+scored 4–5 votes, not a bare 3, putting them beyond the reach of any threshold.
+**The damage is done by the first off-ground object; everything after is
+downstream.**
+
+### Finding 6 — two configuration keys were silently disconnected
+
+| Key | Defect | Consequence |
+|---|---|---|
+| `global_containment_threshold` | No field in `Phase1Config`, no loader line. Tracker read it via `getattr(..., 0.90)`. | Every value written in YAML was ignored for the life of the key. Three runs were interpreted as testing it. |
+| `global_touch_gap_pass_m` | Loader clamped it with `max(0.0, ...)`. An XY gap is never negative, and touching boxes report exactly 0. | The shortcut could not be switched off by configuration — `<= 0.0` still fires at gap 0. Half the parameter's range was unreachable. |
+| `global_vertical_score_pass` | Parsed into config, never read by the tracker. | Still dead. Left as-is and documented. |
+
+Both defects were fixed by plumbing, not by new logic: a dataclass field plus a
+loader line for the first, and removing the clamp for the second so a negative
+value means "off".
+
+**A threshold that silently does nothing is worse than one set wrong**, because
+it survives every experiment that appears to test it. Two of the three
+"tentative" changes documented in Stage 3 were of this kind.
+
+### Fix 4 (shipped): disable the footprint touch shortcut
+
+Two candidates were simulated against every recorded run:
+
+| | Option 1: `centroid_pass` 0.40 | Option 2: touch shortcut off |
+|---|---|---|
+| floor injection (seq 837) | rejected | rejected |
+| trashcan | rejected | rejected |
+| sofa | rejected | rejected |
+| pipe into ceiling | **still merges** | rejected |
+| obs70 / obs80 (must keep) | kept | kept |
+| extra rejections | +6 / +2 / +1 | +19 / +9 / +1 |
+
+Option 1 shows fewer rejections but was rejected anyway, because
+`global_centroid_pass_m` **doubles as the candidate search radius**
+(`_candidate_track_ids`, `persistent_object_tracker.py:2300`). Tracks excluded
+by a smaller radius are never evaluated and therefore leave no row to count, so
+Option 1's "+6" is a floor rather than an estimate — and that same hidden
+mechanism had already produced a 13 → 47 track jump when the radius was last
+tightened. Option 2 changes no radius, so its higher count is its whole cost.
+
+Shipped as `global_touch_gap_pass_m: -1.0`, which the un-clamped loader now
+reads as "shortcut disabled", forcing the footprint vote to be earned through
+real overlap.
+
+### Finding 7 — depth-less masks were a track factory
+
+Objects 79, 80, 82, 87 and 88 were reported as one wall split five ways. None of
+them had any 3D geometry at all: `valid_geometry=False`, centroid (0,0,0),
+volume 0, each surviving exactly one observation.
+
+The cause is a quorum interaction. Four of the five votes — footprint, centroid,
+vertical, containment — require 3D. Without it the scorer enters an explicit
+degraded mode whose own comment states the design:
+
+> *"Explicit degraded mode: image overlap plus temporal freshness. This preserves
+> tracking through isolated invalid-depth frames while still requiring **two**
+> independent cues."*
+
+Maximum available: **two votes** (image + temporal). Raising the quorum to three
+therefore made the degraded path unreachable, so a depth-less observation could
+never associate — it could only start a new track and then die, because the next
+depth-less frame could not associate with it either.
+
+The evidence is categorical: in every run, *every single* depth-less track has
+exactly one observation.
+
+| Run | Quorum | Tracks | Depth-less tracks | With >1 observation |
+|---|---|---|---|---|
+| 143346 | 2 | 13 | 1 | 0 |
+| 190046 | 3 | 97 | 21 | 0 |
+| 194600 | 3 | 101 | 16 | 0 |
+
+Sixteen of 101 tracks — a sixth of the fragmentation — were phantoms.
+
+### Fix 5 (shipped): align the depth gate with the geometry threshold
+
+The masks were surviving a rejection gate that fired only at *exactly zero*
+in-range depth points, while the geometry estimator needs
+`min_valid_depth_points` (20). The 1–19 band fell through: a mask whose object
+lies beyond `max_depth_m` still collects a few in-range points from near-field
+speckle elsewhere in the same contour — enough to clear a `== 0` test, not
+enough to produce geometry. The crops show this directly: a large contour over
+the far wall of an open office, plus scattered near-field specks.
+
+The gate now rejects whenever the geometry estimator cannot produce a box,
+guarded so it stays inert when the depth gather never ran (geometry disabled, or
+an empty mask) rather than silently dropping every mask in that configuration.
+
+**Result: depth-less tracks went from 16 to 0**, confirmed across three
+subsequent runs.
+
+---
+
 ## Configuration State at End of Part 2
 
-`persistent_tracking` now differs from `FINAL_OPTIMIZED_CONFIG.yaml` in exactly
-three fields:
+### Configuration
 
-| Parameter | Part 1 baseline | Part 2 final | Why |
+`persistent_tracking` differs from `FINAL_OPTIMIZED_CONFIG.yaml` in five fields:
+
+| Parameter | Part 1 | Part 2 final | Why |
 |---|---|---|---|
-| `global_min_independent_groups` | 2 | **3** | Fix 3, Stage 2 — quorum of 2 was met by structurally-free votes |
-| `global_centroid_pass_m` | 0.75 | **0.55** | Fix 3, Stage 2 — 0.63 m sofa merge was still earning a position vote |
-| `local_segments_enabled` | false | true | Unrelated, deliberate: long-object splitting into local Hydra segments, kept on for other reasons |
+| `global_min_independent_groups` | 2 | **3** | Fix 3 — a quorum of 2 was met by structurally-free votes alone |
+| `global_centroid_pass_m` | 0.75 | **0.60** | Fix 3 — the 0.63 m sofa merge was still earning a position vote at 0.75. Note this also controls the candidate search radius |
+| `global_historical_overlap_pass` | 0.30 | **0.50** | Stage 3 — the pipe entered the ceiling track on a footprint vote of 0.426, while legitimate continuations of that same track score 0.83–1.00 |
+| `global_touch_gap_pass_m` | 0.02 | **−1.0** | Fix 4 — negative disables the touch shortcut, which handed a free footprint vote to anything resting on a tracked surface |
+| `global_containment_threshold` | 0.90 | **0.92** | Stage 3 — containment is the footprint measurement re-thresholded, and supplied a third free vote at 0.906. Inert until Stage 4 wired the key up |
+| `local_segments_enabled` | false | true | Unrelated, deliberate: long-object splitting into local Hydra segments |
 
-All other 68 fields match the archived config exactly (verified via automated
-71-key diff). In particular the association **weights are untouched** —
-`historical` 0.70, `centroid` 0.30, `image` 0.45, `vertical` 0.00, and both
-`min_score` gates at 0.30 — because Stage 2 established that the defect lives in
-the quorum, not the blend (see Finding 2).
+The association **weights are untouched** — `historical` 0.70, `centroid` 0.30,
+`image` 0.45, `vertical` 0.00, both `min_score` gates at 0.30. Stage 2
+established the defect lives in the quorum, not the blend, and Finding 2 showed
+reweighting toward the position cue would have rewarded the wrong row.
 
-The one durable code change from this phase is the vertical-gap gating fix
-(Fix 0 above), which is a strict correctness improvement for its specific case
-(objects clearly elevated above a surface) and does not alter behavior for
-objects touching a surface at its own base level.
+### Code changes
 
-**Rollback guidance:** if a later run shows tracks fragmenting (track count well
-above the 13 seen in session `20260906_143346`, or objects that should consolidate
-staying split), relax `global_centroid_pass_m` back toward 0.65 first; only revert
-the quorum to 2 if that is insufficient, since the quorum is what catches the
-lowest-evidence merges.
+| Change | File | Nature |
+|---|---|---|
+| Vertical-gap gating on the historical touch shortcut (Fix 0) | `persistent_object_tracker.py` | Correctness fix, Stage 1 |
+| Per-component association scores in the log | `tracking_quality_recorder.py`, `persistent_object_tracker.py` | Diagnostics |
+| `PeriodicCropDiagnostics` | new module | Diagnostics |
+| `persistent_global_containment_threshold` field + loader line | `phase1_config.py` | Plumbing — key was never parsed |
+| Removed the `max(0.0, …)` clamp on `global_touch_gap_pass_m` | `phase1_config.py` | Plumbing — half the range was unreachable |
+| Depth-range gate widened to the geometry threshold (Fix 5) | `phase1.py` | Correctness fix, Stage 4 |
+
+### Rollback guidance
+
+In order of what to relax first if tracks fragment:
+
+1. `global_touch_gap_pass_m` back to `0.02` — restores the touch shortcut. This
+   is the largest single lever and it re-opens the floor/surface over-merges.
+2. `global_historical_overlap_pass` back toward `0.30`.
+3. `global_centroid_pass_m` toward `0.65` — but note this re-admits the sofa
+   merge, which sits at 0.63 m.
+4. The quorum back to `2` only as a last resort: it re-opens every over-merge
+   documented here *and* silently disables the depth-less degraded path fix's
+   rationale.
+
+Do **not** "restore" these to the Part 1 values on the assumption they drifted by
+accident. Each is deliberate and traced to a specific failure in this report.
 
 Separately, and orthogonally, this phase also iterated on SAM-side parameters in
 pursuit of Failure Mode A:
@@ -538,11 +816,42 @@ Failure Mode A.
   quorum rather than the weights (`vertical` passing on 100% of 582 rows,
   `footprint` on nearly all), and shipped a two-parameter fix that rejects 9 of
   582 recorded associations including both flagged merges, while retaining both
-  user-confirmed-correct continuations. Verification on a fresh run is pending.
+  user-confirmed-correct continuations.
 - **Reweighting was measured, not just suspected, to be the wrong lever here:** the
   bad sofa row's `centroid_score` (0.45) exceeds that of both correct continuations
   (0.07, 0.24), so raising the centroid weight rewards the wrong row. Stage 1's
   Fix 1 was aimed in a direction the data does not support.
+- **Stage 4 found the actual mechanism** — the footprint touch shortcut, which
+  gives a free vote to anything resting on a tracked surface — and two config
+  keys that were silently disconnected, one of which had been reported in this
+  very document as a shipped fix.
+
+### Measured outcome across the campaign
+
+| Run | Configuration | Frames | Tracks | Tracks / 100 frames | Depth-less tracks |
+|---|---|---|---|---|---|
+| 143346 | Part 1 baseline (quorum 2) | 400 | 13 | 3.2 | 1 |
+| 152244 | quorum 3, `cpass` 0.55 | 566 | 56 | 9.9 | 5 |
+| 170651 | quorum 3, `cpass` 0.55 | 588 | 47 | 8.0 | 1 |
+| 190046 | + `hist` 0.50, `cpass` 0.60 | 1056 | 97 | 9.2 | 21 |
+| 194600 | + touch shortcut off | 906 | 101 | 11.1 | 16 |
+| 202338 | + depth gate | 604 | 57 | 9.4 | **0** |
+| 203242 | + depth gate | 494 | 41 | 8.3 | **0** |
+
+Read honestly, this is a **trade, not a win on every axis**. Fragmentation rose
+from 3.2 to roughly 8.5 tracks per 100 frames — about 2.6× — and in exchange the
+confirmed over-merges (floor+sofa, floor+trashcan, wall+sofa, wall+plant,
+ceiling+pipe) stopped occurring. The depth gate recovered the worst of the
+regression, taking the rate from 11.1 back to 8.3–9.4 by eliminating phantom
+tracks entirely.
+
+Whether that trade is favourable depends on the downstream consumer. For a
+semantic scene graph, a fragmented wall is a recoverable error — the pieces can
+be merged later by a geometric or semantic pass. A floor node whose bounding box
+contains a sofa, a cabinet and a chair is not recoverable: the geometry is
+wrong, the crop feeding the VLM shows the wrong object, and the resulting label
+is wrong for every piece of it. **The campaign deliberately optimised for the
+non-recoverable error.**
 
 ## Known Limitations / Open Questions
 
@@ -588,6 +897,38 @@ Failure Mode A.
    be measured differently (e.g. against the *raw* per-frame footprint rather than
    the accumulated envelope, which is what makes it degenerate) or dropped from the
    quorum count entirely was not investigated.
+7. **Two views of one large planar surface cannot be merged by any current cue.**
+   Three confirmed instances, all the same shape:
+
+   | Pair | Overlap fraction | Centroid distance | Votes | What it is |
+   |---|---|---|---|---|
+   | obj7 / obj11 | 0.043 | 0.861 m | 2 | adjacent wall sections meeting at a seam |
+   | obj55 / obj63 | 0.177 | 1.48 m | 1 | one wall, two viewing distances |
+   | obj21 / obj33 | 0.030 | 0.619 m | 1 | one column, edge-on vs face-on |
+
+   Each mask captures a different extent of the same surface — obj21 caught a
+   column as a 15 cm-thick slab, obj33 caught it 1.12 m deep — so the boxes share
+   almost no volume and their centres are far apart *by construction*. Every
+   overlap-based cue is near zero, which is indistinguishable from "two different
+   things near each other". The signal that would separate them is **planarity or
+   surface orientation** — whether both masks lie on the same plane — which the
+   scorer does not compute. obj21/obj33 additionally sits 2 cm outside
+   `centroid_pass_m`, but admitting it would re-admit the sofa merge at 0.63 m;
+   the viable window is about 1 cm wide on distances derived by inverting a
+   Gaussian, which is not a basis for a threshold.
+8. **The degraded path for depth-less observations is unreachable, not repaired.**
+   Fix 5 discards those masks rather than restoring their ability to associate.
+   A genuinely close object that flickers out of depth for one frame is now
+   dropped for that frame instead of being carried on image + temporal. The
+   alternative — letting the degraded path require 2 votes regardless of the
+   quorum, which is what its own comment says was intended — was scoped and not
+   taken.
+9. **Rejected candidates are still not logged.** For a `new_track` decision the
+   log records no scores at all, so every under-merge question in this campaign
+   ended in inference rather than measurement. `_find_match` computes all five
+   cues for every candidate it evaluates; none of it leaves the function. This is
+   the single highest-value diagnostic gap remaining, and it blocked a definitive
+   answer on obj7/obj11, obj55/obj63 and obj21/obj33 alike.
 
 ## Lessons Learned
 
@@ -636,6 +977,14 @@ Failure Mode A.
 1. ~~Capture a real Failure Mode B occurrence with instrument #3 active.~~
    **Done in Stage 2.** ~~Re-attempt `global_min_independent_groups: 3`.~~
    **Done as Fix 3.** Both superseded by item 1' below.
+0'. **Confirm or revert the Stage 3 containment change** — the only open item
+   blocking Part 2 from being closed. Re-run and check whether the wall track
+   still absorbs the potted plant at the sequence-302 equivalent (the frame where
+   mask area collapses, not the later frame where it becomes visible). If it
+   still merges, read that row's containment: below 0.92 means the vote analysis
+   is wrong somewhere; above 0.92 means step the threshold to 0.935. If the merge
+   is gone, also confirm the wall track did not fragment where it should have
+   continued.
 1'. **Verify Fix 3 on a fresh run** — confirm the sofa mask at the sequence-330
    equivalent starts its own track rather than joining the wall track, confirm the
    same for the floor track's sequence-261 equivalent, compare total track count
@@ -677,12 +1026,38 @@ construction: 9 of 582 recorded associations, all with the same low-evidence
 signature, including both flagged merges and neither confirmed-correct
 continuation.
 
-Two caveats are load-bearing and should travel with this result. The fix is
-validated by replay only; a fresh run is required before claiming it works, and it
-knowingly worsens the under-merge direction. And it does not touch Failure Mode A
-at all — the correction documented here shows that mode can contaminate a track
-50 observations into an otherwise clean life, and when SAM delivers one mask
-containing two objects, no association parameter has anything to choose between.
-One track in this run exhibited both failure modes twenty observations apart, which
-is the most compact possible argument for why they must be diagnosed, and fixed,
-as separate problems.
+Stage 4 then found what Stage 2 had only approximated. The defect was not merely
+that some votes were structurally easy — it was one specific branch, the
+footprint **touch shortcut**, which grants its vote to anything whose box merely
+touches the track's. An object resting on a floor always touches it. Every
+object standing on any tracked surface therefore arrived with a free vote, and
+needed only two more from cues that are equally automatic once the surface's
+envelope has grown. Disabling that branch is the single change that stopped the
+floor from eating a trashcan, a cabinet, a file and a chair.
+
+The same stage found two configuration keys that had never been connected to
+anything: one with no field in the config dataclass at all, and one whose loader
+clamped away exactly the half of its range that would have switched a behaviour
+off. **One of them had already been written up in this report as a shipped fix
+and credited with a result it could not have produced.** A silently inert
+threshold is worse than a wrong one, because it survives every experiment that
+appears to test it — and here it survived three.
+
+What closes the phase is a measured trade rather than a clean victory.
+Fragmentation rose roughly 2.6-fold; the confirmed over-merges stopped. That
+trade was chosen deliberately, because a fragmented wall is a recoverable error
+and a floor node containing a chair is not. Three limitations travel with the
+result and are documented above: two views of one large planar surface remain
+unmergeable by any current cue; Failure Mode A is untouched, since no association
+parameter can act when SAM delivers one mask containing two objects; and the
+degraded path for depth-less observations is now unreachable under a quorum of
+three, worked around by discarding those masks rather than by repairing the path.
+
+The most transferable result is methodological. Every wrong turn in this campaign
+came from reasoning about a number nobody was logging — an estimated component
+score in Stage 1, a segment envelope mistaken for a track envelope in Stage 3, a
+config key assumed to be wired in Stage 3 and disproved in Stage 4. Every
+correct turn came from a measurement: the per-component scores, the crop
+contours, the vote reconstruction validated to zero error against 1460 rows.
+**Build the instrument before turning the dial** — and verify the dial is
+connected to something before believing what it appears to tell you.
