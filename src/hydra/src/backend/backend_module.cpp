@@ -305,6 +305,28 @@ void BackendModule::loadState(const std::filesystem::path& mesh_path,
   have_new_mesh_ = true;
   have_loopclosures_ = force_loopclosures;
 
+  // Tell the delta machinery that the restored mesh is already there.
+  //
+  // mesh_offsets_ is the index remap between an incoming MeshDelta's compressed
+  // indices and positions in private_dsg_->graph->mesh(). It is
+  // default-constructed to zero, but the mesh we just installed already holds N
+  // vertices, so without this every subsequent delta is applied through an
+  // offset that is wrong by exactly the restored vertex count -- new geometry
+  // ends up attributed to restored vertices instead of to itself, which shows
+  // up as new mesh appearing where the previous session left off rather than
+  // where the camera actually is. utils::updatePlaces2d (copyMeshDelta) reads
+  // the same offsets, so 2d place positions are wrong in the same way.
+  //
+  // Treating the restored mesh as archived is what makes new vertices append
+  // after it, which is exactly how the frontend's own delta stream is indexed.
+  if (mesh) {
+    mesh_offsets_ = kimera_pgmo::MeshOffsetInfo(
+        mesh->numVertices(), mesh->numVertices(), mesh->numFaces());
+    LOG(WARNING) << "Seeded mesh offsets from restored mesh: "
+                 << mesh->numVertices() << " archived vertices, "
+                 << mesh->numFaces() << " archived faces";
+  }
+
   // An empty path means "restore the mesh but skip the deformation graph".
   // Multi-session resume relies on this: restoring the .dgrf while the replayed
   // pose graph re-sends key (prefix,0) appends a duplicate PriorFactor
