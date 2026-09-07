@@ -31,7 +31,7 @@
 #include <ianvs/image_publisher.h>
 #include <ianvs/image_subscription.h>
 
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <rclcpp/node.hpp>

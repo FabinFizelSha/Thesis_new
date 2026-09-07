@@ -37,7 +37,7 @@
 #include <config_utilities/config.h>
 #include <hydra/input/input_data.h>
 
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 #include <sensor_msgs/msg/point_field.hpp>
 
 namespace hydra {
