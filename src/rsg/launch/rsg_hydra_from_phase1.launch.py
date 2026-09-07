@@ -16,7 +16,7 @@ def generate_launch_description() -> LaunchDescription:
     input_config = PathJoinSubstitution(
         [rsg_share, "config", "hydra", "rsg_phase1_input_tesse.yaml"]
     )
-    rviz_config = PathJoinSubstitution([rsg_share, "config", "rviz", "rsg_hydra_rap_fused_scene_graph.rviz"])
+    rviz_config = LaunchConfiguration("rviz_config")
 
     # Use fresh log path with timestamp to prevent loading old persistent state
     # This ensures each launch gets a completely clean Hydra instance
@@ -45,6 +45,13 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("odom_frame", default_value="world"),
         DeclareLaunchArgument("map_frame", default_value="world"),
         DeclareLaunchArgument("start_rviz", default_value="true"),
+        DeclareLaunchArgument(
+            "rviz_config",
+            default_value=PathJoinSubstitution(
+                [rsg_share, "config", "rviz", "rsg_hydra_rap_fused_scene_graph.rviz"]
+            ),
+            description="RViz config; defaults to the Tesse/uHumans2 view (Fixed Frame: world).",
+        ),
         DeclareLaunchArgument("start_hydra_visualizer", default_value="true"),
         DeclareLaunchArgument("publish_visualization_odom_bridge", default_value="false"),
         DeclareLaunchArgument("glog_level", default_value="0"),

@@ -60,6 +60,7 @@ sleep 1
             "odom_frame": LaunchConfiguration("odom_frame"),
             "map_frame": LaunchConfiguration("map_frame"),
             "start_rviz": LaunchConfiguration("start_rviz"),
+            "rviz_config": LaunchConfiguration("rviz_config"),
             "start_hydra_visualizer": LaunchConfiguration("start_hydra_visualizer"),
             "publish_visualization_odom_bridge": LaunchConfiguration(
                 "publish_visualization_odom_bridge"
@@ -91,6 +92,13 @@ sleep 1
         DeclareLaunchArgument("odom_frame", default_value="world"),
         DeclareLaunchArgument("map_frame", default_value="world"),
         DeclareLaunchArgument("start_rviz", default_value="true"),
+        DeclareLaunchArgument(
+            "rviz_config",
+            default_value=PathJoinSubstitution(
+                [share, "config", "rviz", "rsg_hydra_rap_fused_scene_graph.rviz"]
+            ),
+            description="RViz config; defaults to the Tesse/uHumans2 view (Fixed Frame: world).",
+        ),
         DeclareLaunchArgument("start_hydra_visualizer", default_value="true"),
         DeclareLaunchArgument("publish_visualization_odom_bridge", default_value="false"),
         DeclareLaunchArgument("hydra_extra_yaml", default_value="{show_run_settings: false, config_verbosity: 0}"),
