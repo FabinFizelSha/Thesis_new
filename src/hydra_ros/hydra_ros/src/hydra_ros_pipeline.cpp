@@ -176,6 +176,30 @@ void HydraRosPipeline::init() {
                         " the previous trajectory instead)";
       }
 
+      // Mark every restored node archived. Nodes are saved with whatever
+      // is_active they had at shutdown -- in practice all of them, since the
+      // run ends with objects still inside the active window -- but a previous
+      // session's nodes cannot by definition be in THIS session's active
+      // window.
+      //
+      // This is what lets Hydra recognise a re-observed object instead of
+      // stacking a duplicate on top of it: every association strategy requires
+      // merge candidates to be archived (Pairwise::candidates returns
+      // !is_active, SemanticPairwise/SemanticNearestNode reject rhs_attrs
+      // .is_active). Left as saved, restored nodes are never eligible as merge
+      // targets, so a new detection of the same object can never merge into it.
+      size_t archived = 0;
+      for (const auto& [node_id, layer_key] : restored->node_lookup()) {
+        auto& attrs = restored->getNode(node_id).attributes<spark_dsg::NodeAttributes>();
+        if (attrs.is_active) {
+          attrs.is_active = false;
+          ++archived;
+        }
+      }
+      LOG(WARNING) << "[Hydra] resume: marked " << archived
+                   << " restored node(s) archived so re-observations can merge"
+                      " into them rather than duplicating";
+
       backend_dsg_->graph = restored;
       // The frontend merges into this every spin; seeding it means the first
       // merge adds to history rather than resetting the backend's view.
