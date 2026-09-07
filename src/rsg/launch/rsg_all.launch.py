@@ -65,6 +65,8 @@ sleep 1
                 "publish_visualization_odom_bridge"
             ),
             "hydra_extra_yaml": LaunchConfiguration("hydra_extra_yaml"),
+            "hydra_log_path": LaunchConfiguration("hydra_log_path"),
+            "hydra_load_state_path": LaunchConfiguration("hydra_load_state_path"),
             "glog_level": LaunchConfiguration("glog_level"),
             "glog_verbosity": LaunchConfiguration("glog_verbosity"),
         }.items(),
@@ -94,6 +96,11 @@ sleep 1
         DeclareLaunchArgument("start_hydra_visualizer", default_value="true"),
         DeclareLaunchArgument("publish_visualization_odom_bridge", default_value="false"),
         DeclareLaunchArgument("hydra_extra_yaml", default_value="{show_run_settings: false, config_verbosity: 0}"),
+        # Forwarded to rsg_hydra_from_phase1.launch.py. Declared here too because
+        # a launch argument not declared at this level cannot be set from the
+        # command line when launching rsg_all.
+        DeclareLaunchArgument("hydra_log_path", default_value="/home/student/Thesis_new/memory/hydra"),
+        DeclareLaunchArgument("hydra_load_state_path", default_value="none"),
         DeclareLaunchArgument("glog_level", default_value="0"),
         DeclareLaunchArgument("glog_verbosity", default_value="0"),
         clear_hydra_cache,

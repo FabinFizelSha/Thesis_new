@@ -55,9 +55,11 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("hydra_log_path", default_value=default_log_path),
         # Multi-session resume: point this at a previous run's
         # <log_path>/backend/dsg_with_mesh.json to restore that session's DSG
-        # and mesh at startup. Empty (the default) disables resume entirely, so
-        # behaviour is unchanged unless it is set explicitly.
-        DeclareLaunchArgument("hydra_load_state_path", default_value=""),
+        # and mesh at startup. "none" (the default) disables resume, so
+        # behaviour is unchanged unless it is set explicitly. Must not be empty:
+        # the launch frontend renders an empty arg as YAML null, which
+        # config-utilities cannot convert to a string and throws on.
+        DeclareLaunchArgument("hydra_load_state_path", default_value="none"),
         DeclareLaunchArgument("use_sim_time", default_value="true"),
         DeclareLaunchArgument("sensor_frame", default_value="left_cam"),
         DeclareLaunchArgument("robot_frame", default_value="base_link_gt"),
@@ -68,22 +70,7 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("publish_visualization_odom_bridge", default_value="false"),
         DeclareLaunchArgument("glog_level", default_value="0"),
         DeclareLaunchArgument("glog_verbosity", default_value="0"),
-        # hydra.launch.yaml passes this as the LAST --config-utilities-yaml, so
-        # keys here win over the earlier ones. load_state_path is injected into
-        # the default so multi-session resume needs only hydra_load_state_path.
-        # HydraRosPipeline::Config is read with fromContext<Config>() at the
-        # ROOT namespace, which is why load_state_path sits at top level here
-        # next to show_run_settings rather than nested under a module name.
-        # NOTE: overriding hydra_extra_yaml wholesale drops load_state_path with
-        # it -- re-include the key by hand if you do that and still want resume.
-        DeclareLaunchArgument(
-            "hydra_extra_yaml",
-            default_value=[
-                "{show_run_settings: false, config_verbosity: 0, load_state_path: '",
-                LaunchConfiguration("hydra_load_state_path"),
-                "'}",
-            ],
-        ),
+        DeclareLaunchArgument("hydra_extra_yaml", default_value="{show_run_settings: false, config_verbosity: 0}"),
 
         visualization_odom_bridge,
 
@@ -106,6 +93,11 @@ def generate_launch_description() -> LaunchDescription:
                 "glog_verbosity": LaunchConfiguration("glog_verbosity"),
                 "extra_yaml": LaunchConfiguration("hydra_extra_yaml"),
                 "log_path": LaunchConfiguration("hydra_log_path"),
+                # Dedicated argument rather than folded into extra_yaml: any
+                # parent launch file that declares its own hydra_extra_yaml
+                # default would otherwise silently drop resume. rsg_all.launch.py
+                # does exactly that, which is why the first attempt never loaded.
+                "load_state_path": LaunchConfiguration("hydra_load_state_path"),
             }.items(),
         ),
 

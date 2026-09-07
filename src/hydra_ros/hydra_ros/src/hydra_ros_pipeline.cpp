@@ -107,9 +107,14 @@ void HydraRosPipeline::init() {
   // (a config key silently reaching no field is a mistake this codebase has
   // made before), it would read as empty and be indistinguishable from "resume
   // deliberately off". This line makes the difference visible in the log.
-  const bool resuming = !config.load_state_path.empty();
+  // "none" is the launch-file sentinel for "disabled". It cannot be an empty
+  // string: the launch frontend renders an empty arg as `{load_state_path: }`,
+  // which is YAML null, and config-utilities throws converting null to a
+  // std::string -- that would break every ordinary launch, not just resume.
+  const bool resuming =
+      !config.load_state_path.empty() && config.load_state_path != "none";
   LOG(WARNING) << "[Hydra] multi-session resume: "
-               << (resuming ? config.load_state_path : std::string("disabled (load_state_path empty)"));
+               << (resuming ? config.load_state_path : std::string("disabled"));
 
   if (resuming) {
     const auto restored = spark_dsg::DynamicSceneGraph::load(config.load_state_path);

@@ -25,6 +25,7 @@ launch:
   # output
   - arg: {name: log_name, default: $(var dataset), description: Subdirectory to output to}
   - arg: {name: log_path, default: $(env HOME)/.hydra/$(var log_name), description: Directory to output to}
+  - arg: {name: load_state_path, default: none, description: Multi-session resume - path to a saved backend/dsg_with_mesh.json from an earlier run. 'none' disables. Must not be empty - an empty value renders as YAML null and fails to parse as a string}
   - arg: {name: exit_after_clock, default: 'false', description: Shutdown hydra node after a rosbag finishes playing}
   - arg: {name: enable_zmq, default: 'false', description: Turn on zmq-based publishing for scene graph}
   - arg: {name: zmq_url, default: 'tcp://127.0.0.1:8001', description: ZMQ publish url}
@@ -48,6 +49,7 @@ launch:
         --config-utilities-yaml {enable_lcd: $(var enable_lcd)}
         --config-utilities-file $(var lcd_config_path)
         --config-utilities-yaml {exit_after_clock: $(var exit_after_clock), log_path: $(var log_path)}
+        --config-utilities-yaml {load_state_path: $(var load_state_path)}
         --config-utilities-yaml {print_missing: $(var print_missing), glog_level: $(var glog_level), glog_verbosity: $(var glog_verbosity)}
         --config-utilities-yaml {robot_id: $(var robot_id), odom_frame: $(var odom_frame), robot_frame: $(var robot_frame), map_frame: $(var map_frame)}
         --config-utilities-yaml {enable_zmq: $(var enable_zmq), backend: {zmq_sink: {url: $(var zmq_url), send_mesh: $(var zmq_send_mesh)}}}
