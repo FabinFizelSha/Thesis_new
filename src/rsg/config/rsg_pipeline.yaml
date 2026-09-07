@@ -7,7 +7,7 @@
 debug:                                                                                               # Per-node debug logging switches.
   global_debug: false                                                                                # Keep console output compact during normal runs.
   RSG_pre_processor: false                                                                           # Enable only while debugging synchronization or frame conversion.
-  rsg_object_detection: true                                                                         # Enable Phase 1 timing instrumentation and node-specific diagnostics.
+  rsg_object_detection: false                                                                        # Enable Phase 1 timing instrumentation and node-specific diagnostics.
 
 preprocessing:                                                                                       # Synchronizes RGB-D, caches CameraInfo, associates odometry, and publishes prepared frames.
   runtime:
@@ -90,7 +90,7 @@ preprocessing:                                                                  
     measure_timing: false                                                                             # Retain in-memory timing measurements for diagnostics.
     publish_timing: false                                                                            # Avoid timing-topic overhead during mapping.
     write_timing_excel: false                                                                        # Avoid file I/O while processing the bag.
-    timing_excel_path: /home/student/rsg_ros2_ws/debug/RSG_pre_processor_debug_{session_date}_{creation_time}.xlsx  # Used only if Excel timing is enabled.
+    timing_excel_path: /home/student/Thesis_new/debug/RSG_pre_processor_debug_{session_date}_{creation_time}.xlsx  # Used only if Excel timing is enabled.
     timing_sheet_name: timing_debug                                                                  # Used only if Excel timing is enabled.
     timing_excel_autosave_every: 0                                                                   # Disable periodic spreadsheet writes.
 
@@ -101,8 +101,8 @@ preprocessing:                                                                  
 
 phase1:                                                                                              # NanoSAM segmentation, RAP retrieval, optional VLM labeling, and Hydra semantic-frame output.
   diagnostics:
-    enabled: true                                                                                   # MASTER SWITCH for all per-run diagnostic writers: bbox dumps, crop-evolution, tracking-quality logs, RAP/VLM crop images, and the VLM test crop+CSV. false => nothing written, near-zero overhead. Functional crop scoring / mask filtering / best-crop selection is unaffected. (The keys below are legacy and currently unwired; `enabled` governs everything.) (Temporarily enabled 2026-09-05 to verify risk VLM diagnostics logging; turn back to false when done.)
-    log_tracking: true                                                                              # Object-tracking diagnostics sub-switch: the association/lifecycle/frames JSONL (TrackingQualityRecorder) and the periodic per-track crops. Wired 2026-09-06 (it had been declared here but never parsed). Currently ON to verify session persistence -- the run-2 association log is the only evidence that restored tracks take the revisit branch. The risk-VLM and RAP writers are independent of this and follow `enabled` above.
+    enabled: false                                                                                  # MASTER SWITCH for all per-run diagnostic writers: bbox dumps, crop-evolution, tracking-quality logs, RAP/VLM crop images, and the VLM test crop+CSV. false => nothing written, near-zero overhead. Functional crop scoring / mask filtering / best-crop selection is unaffected. (The keys below are legacy and currently unwired; `enabled` governs everything.) (Turned back off 2026-09-07 -- was temporarily enabled 2026-09-05 to verify risk VLM diagnostics logging.)
+    log_tracking: false                                                                             # Object-tracking diagnostics sub-switch: the association/lifecycle/frames JSONL (TrackingQualityRecorder) and the periodic per-track crops. Wired 2026-09-06 (it had been declared here but never parsed). Was ON to verify session persistence; turned off 2026-09-07 along with the rest of diagnostics. The risk-VLM and RAP writers are independent of this and follow `enabled` above.
     save_tracking_crops: false                                                                      # Save accepted best crops and the exact crop revisions dequeued by RAP/VLM.
     tracking_crop_dir: /home/student/rsg_ros2_ws/debug/phase1_excel_current/tracking_crops            # Per-internal-object diagnostic image directory.
     tracking_crop_jpeg_quality: 95                                                                  # High-quality diagnostic images; does not change VLM request encoding.
@@ -116,7 +116,7 @@ phase1:                                                                         
     use_sim_time: true                                                                               # Follow rosbag /clock consistently with preprocessing and Hydra.
 
   debug:
-    rsg_object_detection: true                                                                       # Required because Phase 1 timing is gated by node debug mode.
+    rsg_object_detection: false                                                                      # Required because Phase 1 timing is gated by node debug mode.
 
   topics:
     preprocessed_frame: /rsg/preprocessed/frame                                                      # Input from the preprocessor.
@@ -617,10 +617,10 @@ phase1:                                                                         
     max_frames: 50                                                                                   # Used only if evidence buffering is enabled later.
 
   performance:
-    measure_timing: true                                                                             # Retain performance metrics for later inspection.
+    measure_timing: false                                                                            # Retain performance metrics for later inspection.
     publish_timing: false                                                                            # Avoid live timing-topic overhead.
-    write_timing_excel: true                                                                         # Buffer timing samples and write the workbook during clean shutdown.
-    timing_excel_path: /home/student/rsg_ros2_ws/debug/{node_name}_debug_{session_date}_{creation_time}.xlsx  # Used only if Excel timing is enabled.
+    write_timing_excel: false                                                                        # Buffer timing samples and write the workbook during clean shutdown.
+    timing_excel_path: /home/student/Thesis_new/debug/{node_name}_debug_{session_date}_{creation_time}.xlsx  # Used only if Excel timing is enabled.
     timing_sheet_name: phase1_timing                                                                 # Worksheet containing Phase 1 stage and end-to-end timing samples.
     timing_excel_autosave_every: 0                                                                   # Disable periodic spreadsheet writes.
     write_simple_csv: false                                                                           # Keep lightweight CSV diagnostics for offline review.
