@@ -767,6 +767,13 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     // segment (same PresenceObservation internal_object_id). Identity
     // relation, not geometric — no tolerance/grid params needed.
     object_segment_edges_enabled_ = declare_parameter<bool>("object_segment_edges_enabled", true);
+    // One semantic slot == one physical object in this pipeline, but Hydra
+    // creates a node per mesh cluster, so a resumed session gets a duplicate
+    // node stacked on the restored one. Collapse them in the fuser, whose
+    // output is the final scene graph.
+    object_slot_collapse_enabled_ = declare_parameter<bool>("object_slot_collapse_enabled", true);
+    object_slot_collapse_max_distance_m_ =
+        declare_parameter<double>("object_slot_collapse_max_distance_m", 2.0);
     object_segment_write_dsg_edges_ =
         declare_parameter<bool>("object_segment_write_dsg_edges", true);
     object_segment_max_group_size_ = static_cast<size_t>(
@@ -1424,20 +1431,40 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     collectLayer(model, spark_dsg::DsgLayers::SEGMENTS, LayerKind::kSegments);
     collectLayer(model, spark_dsg::DsgLayers::AGENTS, LayerKind::kAgents);
 
+    // Collapse object nodes that are the same physical object. Done here, before
+    // edges are collected, so every downstream consumer -- markers, contact
+    // edges, segment edges, node metadata -- sees one node per object.
+    const auto collapsed = collapseDuplicateObjects(model);
+
     std::set<std::pair<NodeId, NodeId>> seen_edges;
-    const auto collect_edges = [&model, &seen_edges](const auto& edges) {
+    const auto collect_edges = [&model, &seen_edges, &collapsed](const auto& edges) {
       for (const auto& [edge_key, edge] : edges) {
         (void)edge_key;
-        if (!model.nodes.count(edge.source) || !model.nodes.count(edge.target)) {
+        // Rewire onto the survivor rather than dropping the edge, so a real
+        // relationship (object->place, contact) is not lost with the duplicate.
+        auto source = edge.source;
+        auto target = edge.target;
+        const auto src_it = collapsed.find(source);
+        if (src_it != collapsed.end()) {
+          source = src_it->second;
+        }
+        const auto tgt_it = collapsed.find(target);
+        if (tgt_it != collapsed.end()) {
+          target = tgt_it->second;
+        }
+        if (source == target) {
+          continue;  // both sides collapsed into the same node
+        }
+        if (!model.nodes.count(source) || !model.nodes.count(target)) {
           continue;
         }
-        const auto key = std::make_pair(std::min(edge.source, edge.target), std::max(edge.source, edge.target));
+        const auto key = std::make_pair(std::min(source, target), std::max(source, target));
         if (!seen_edges.insert(key).second) {
           continue;
         }
-        model.raw_edges.push_back(RawEdge{edge.source, edge.target});
-        model.adjacency[edge.source].push_back(edge.target);
-        model.adjacency[edge.target].push_back(edge.source);
+        model.raw_edges.push_back(RawEdge{source, target});
+        model.adjacency[source].push_back(target);
+        model.adjacency[target].push_back(source);
       }
     };
 
@@ -1454,6 +1481,118 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     }
     collect_edges(graph_->interlayer_edges());
     return model;
+  }
+
+  /**
+   * Collapse Hydra object nodes that are the same physical object into one.
+   *
+   * In this pipeline a semantic slot is allocated per physical object by
+   * Phase 1, so two object nodes carrying the same slot ARE the same object --
+   * a guarantee generic Hydra does not have, since it treats semantic_label as
+   * a class shared by many objects and therefore creates a node per mesh
+   * cluster. That gap is what produces a duplicate node stacked on top of a
+   * restored one when a session resumes: Phase 1 correctly re-identifies the
+   * object and reuses its slot, but Hydra still emits a second node for it.
+   *
+   * The fuser is the right place to enforce it because the fuser's output is
+   * the final scene graph, and the slot is the authoritative cross-pipeline
+   * identity here (the same reasoning resolveOverlays already relies on).
+   *
+   * The survivor is the lowest node id -- the older node -- so a resumed
+   * session keeps the object it already had rather than replacing it with a
+   * newly-created one. Its bounding box is expanded to cover what it absorbed.
+   *
+   * @returns map of absorbed node id -> survivor node id.
+   */
+  /// True when @p point falls inside @p node's axis-aligned bounding box.
+  static bool bboxContains(const NodeView& node, const Eigen::Vector3d& point) {
+    const Eigen::Vector3d center = node.bbox_center.cast<double>();
+    const Eigen::Vector3d half = node.bbox_size.cast<double>() / 2.0;
+    const Eigen::Vector3d delta = (point - center).cwiseAbs();
+    return (delta.array() <= half.array()).all();
+  }
+
+  std::unordered_map<NodeId, NodeId> collapseDuplicateObjects(SceneModel& model) const {
+    std::unordered_map<NodeId, NodeId> collapsed;
+    if (!object_slot_collapse_enabled_) {
+      return collapsed;
+    }
+
+    std::unordered_map<uint32_t, std::vector<NodeId>> by_slot;
+    for (const auto& [node_id, node] : model.nodes) {
+      if (node.kind == LayerKind::kObjects && node.semantic_slot > 0) {
+        by_slot[node.semantic_slot].push_back(node_id);
+      }
+    }
+
+    size_t absorbed_total = 0;
+    for (auto& [slot_id, ids] : by_slot) {
+      if (ids.size() < 2) {
+        continue;
+      }
+      // Lowest id wins: node ids increase monotonically, so this is the oldest.
+      std::sort(ids.begin(), ids.end());
+      const NodeId survivor_id = ids.front();
+      auto& survivor = model.nodes.at(survivor_id);
+
+      for (size_t i = 1; i < ids.size(); ++i) {
+        const NodeId other_id = ids[i];
+        const auto& other = model.nodes.at(other_id);
+
+        // Proximity guard: only collapse nodes that really are co-located.
+        // Same slot should already imply same object, but if Phase 1 ever
+        // re-used a slot for something genuinely elsewhere, this keeps the two
+        // apart rather than fusing distant geometry into one box.
+        //
+        // Either box containing the other's centroid is the same predicate
+        // Hydra's own UpdateObjectsFunctor::findMerges uses, and it is the one
+        // that carries large objects: a wall or floor seen from a new angle can
+        // move its centroid metres while the two boxes still plainly overlap.
+        // Centroid distance is the fallback for small or box-less nodes.
+        // Because the survivor's box grows as it absorbs (below), this is
+        // transitive across a slot's members rather than pairwise-to-first.
+        const bool boxes_overlap =
+            (survivor.has_bbox && bboxContains(survivor, other.position)) ||
+            (other.has_bbox && bboxContains(other, survivor.position));
+        const double distance = (survivor.position - other.position).norm();
+        if (!boxes_overlap && distance > object_slot_collapse_max_distance_m_) {
+          continue;
+        }
+
+        // Union the bounding boxes so the surviving object covers everything it
+        // absorbed, rather than the newer partial observation replacing it.
+        if (other.has_bbox) {
+          if (!survivor.has_bbox) {
+            survivor.has_bbox = true;
+            survivor.bbox_center = other.bbox_center;
+            survivor.bbox_size = other.bbox_size;
+          } else {
+            const Eigen::Vector3f a_min = survivor.bbox_center - survivor.bbox_size / 2.0F;
+            const Eigen::Vector3f a_max = survivor.bbox_center + survivor.bbox_size / 2.0F;
+            const Eigen::Vector3f b_min = other.bbox_center - other.bbox_size / 2.0F;
+            const Eigen::Vector3f b_max = other.bbox_center + other.bbox_size / 2.0F;
+            const Eigen::Vector3f u_min = a_min.cwiseMin(b_min);
+            const Eigen::Vector3f u_max = a_max.cwiseMax(b_max);
+            survivor.bbox_center = (u_min + u_max) / 2.0F;
+            survivor.bbox_size = u_max - u_min;
+          }
+        }
+
+        model.nodes.erase(other_id);
+        collapsed.emplace(other_id, survivor_id);
+        ++absorbed_total;
+      }
+    }
+
+    // Own counter rather than RCLCPP_*_THROTTLE: this method is const and the
+    // throttle macro needs a mutable clock.
+    if (absorbed_total > 0 && (collapse_log_countdown_++ % 100) == 0) {
+      RCLCPP_INFO(get_logger(),
+                  "object slot collapse: absorbed %zu duplicate object node(s) into "
+                  "their same-slot survivors",
+                  absorbed_total);
+    }
+    return collapsed;
   }
 
   void collectLayer(SceneModel& model, const std::string& layer_name, LayerKind kind) const {
@@ -4268,6 +4407,9 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     status_pub_->publish(status_msg);
   }
 
+  mutable size_t collapse_log_countdown_ = 0;
+  bool object_slot_collapse_enabled_ = true;
+  double object_slot_collapse_max_distance_m_ = 2.0;
   std::string input_dsg_topic_;
   std::string semantic_label_topic_;
   std::string active_segments_topic_;

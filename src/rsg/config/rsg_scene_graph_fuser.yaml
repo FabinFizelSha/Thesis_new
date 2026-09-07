@@ -134,6 +134,17 @@
     show_object_contact_labels: true                                                                            # Small floating label per contact edge: centroid distance + max(iou_xz, iou_yz).
     object_contact_text_height_m: 0.16
 
+    # Duplicate-object collapse. A semantic slot is allocated per physical
+    # object by phase 1, so two object nodes on the same slot ARE one object --
+    # a guarantee generic Hydra does not have, since it treats semantic_label
+    # as a class and emits a node per mesh cluster. On a resumed session that
+    # produces a second node stacked on the restored one; the fuser collapses
+    # them because its output is the final scene graph. The older (lowest-id)
+    # node survives with a union bounding box, so a revisit sustains the object
+    # it already had instead of replacing it.
+    object_slot_collapse_enabled: true                                                                          # Master switch. Off = one node per Hydra cluster, duplicates included.
+    object_slot_collapse_max_distance_m: 2.0                                                                    # Centroid fallback. Nodes also collapse when either bbox contains the other's centroid, which is what carries large objects whose centroid shifts as more surface is seen.
+
     # Object-segment relationships (blue dotted lines): local segments phase 1
     # split off from one physical object too large to track as a single
     # segment. Chained in ascending NodeId order (a proxy for formation
