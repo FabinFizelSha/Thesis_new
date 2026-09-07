@@ -1137,6 +1137,9 @@ class Phase1SemanticCoordinator(Node):
         stage_start = time.perf_counter()
         if self.config.persistent_tracking_enabled:
             self._publish_active_local_segments(frame, track_records, current_timestamp_sec)
+            # Push restored labels out early so the resumed map opens labelled,
+            # instead of each object staying blank until it is revisited.
+            self._drain_restored_semantic_labels(frame, current_timestamp_sec)
         frame_stage_ms["active_segments_publish_ms"] = (time.perf_counter() - stage_start) * 1000.0
         stage_start = time.perf_counter()
         if self.config.persistent_tracking_enabled and self.config.semantic_labeling_enabled:
@@ -1485,9 +1488,12 @@ class Phase1SemanticCoordinator(Node):
                 # overlay cache is per-process and starts empty, and the label
                 # only ever reaches it from a RAP/VLM completion. Without this
                 # the object would be tracked correctly and still render
-                # unlabeled. Re-emit the stored label once, on the first frame
-                # the track is actually re-observed (rather than at startup, so
-                # nothing is published for objects the robot never revisits).
+                # unlabeled.
+                #
+                # _drain_restored_semantic_labels normally gets there first, so
+                # this is just the fast path for a track re-observed before the
+                # drain reached it. Emitting is idempotent: the first one to
+                # run discards the track from the pending set.
                 if external_track_id in self._restored_label_pending:
                     self._emit_restored_semantic_label(
                         external_track_id, frame, timestamp_sec
@@ -2129,6 +2135,30 @@ class Phase1SemanticCoordinator(Node):
                 "centroid_3d": payload.get("centroid_3d", (task.get("object_metadata") or {}).get("centroid_3d")),
             }]
         return segments
+
+    def _drain_restored_semantic_labels(
+        self, frame: RsgFrame, timestamp_sec: float, max_per_frame: int = 4
+    ) -> None:
+        """Republish restored labels up front, not only on re-observation.
+
+        A resumed session is meant to open on the previous run's map with its
+        objects already labelled. Emitting only when a track is re-observed
+        leaves every object the robot has not revisited *yet* rendering
+        unlabeled -- which on a partial run is most of them, and reads as the
+        restored map having lost its semantics.
+
+        The fuser's overlay cache is insert-only, so one emit per track holds
+        for the rest of the run. Spread over frames rather than sent in one
+        burst: a restored session can carry dozens of tracks, and each emit
+        fans out to every segment of its track.
+        """
+        pending = getattr(self, "_restored_label_pending", None)
+        if not pending:
+            return
+        # _emit_restored_semantic_label discards from the pending set, so this
+        # drains without needing to mutate the set while iterating it.
+        for track_id in sorted(pending)[:max_per_frame]:
+            self._emit_restored_semantic_label(track_id, frame, timestamp_sec)
 
     def _emit_restored_semantic_label(self, track_id: str, frame: RsgFrame, timestamp_sec: float) -> None:
         """Republish a restored track's stored label to the fuser, once.
