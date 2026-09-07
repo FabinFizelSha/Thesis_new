@@ -180,6 +180,23 @@ void HydraRosPipeline::init() {
       // The frontend merges into this every spin; seeding it means the first
       // merge adds to history rather than resetting the backend's view.
       shared_state_->backend_graph->graph = restored->clone();
+
+      // Give the frontend its OWN copy of the restored mesh so its vertex index
+      // space starts where the backend's does. The frontend emits object
+      // mesh_connections as indices into its mesh and the backend resolves them
+      // against its own; if only the backend were restored, new objects would
+      // resolve to restored vertices and take on the previous session's
+      // geometry. GraphBuilder's ctor keeps a pre-seeded mesh rather than
+      // installing an empty one, and seeds its offsets to match.
+      //
+      // A clone, not a share: the two evolve independently from here.
+      if (restored->hasMesh() && restored->mesh()) {
+        frontend_dsg_->graph->setMesh(restored->mesh()->clone());
+      }
+      // Nodes are deliberately NOT seeded into frontend_dsg_ -- only the mesh.
+      // The frontend re-detects objects from the live delta, and its id
+      // counters are seeded separately (GraphBuilder::seedNodeIdCounters) so
+      // new ids cannot collide with restored ones.
     }
   }
 

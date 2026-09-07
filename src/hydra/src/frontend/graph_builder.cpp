@@ -146,7 +146,29 @@ GraphBuilder::GraphBuilder(const Config& config,
     seedNodeIdCounters(*state_->backend_graph->graph);
   }
 
-  dsg_->graph->setMesh(global_info.createMesh());
+  // Multi-session resume: if a mesh was seeded into this graph before
+  // construction, keep it instead of installing a fresh empty one, and seed the
+  // offsets to match.
+  //
+  // This alignment is load-bearing. The frontend builds object mesh_connections
+  // as indices into ITS mesh, and the backend later resolves them against ITS
+  // mesh (updateObjectGeometry). Normally both start empty and grow from the
+  // same delta stream, so index k means the same vertex in both. If only the
+  // backend's mesh were restored, the frontend would emit 0-based connections
+  // while the backend's 0..N were restored vertices -- every new object's
+  // centroid and bounding box would be computed from the PREVIOUS session's
+  // geometry. Starting both meshes at the same vertex count keeps them aligned.
+  const auto seeded_mesh = dsg_->graph->hasMesh() ? dsg_->graph->mesh() : nullptr;
+  if (seeded_mesh && seeded_mesh->numVertices() > 0) {
+    mesh_offsets_ = kimera_pgmo::MeshOffsetInfo(
+        seeded_mesh->numVertices(), seeded_mesh->numVertices(), seeded_mesh->numFaces());
+    LOG(WARNING) << "[Hydra] resume: frontend keeping seeded mesh ("
+                 << seeded_mesh->numVertices() << " vertices, "
+                 << seeded_mesh->numFaces()
+                 << " faces); mesh offsets seeded to match the backend";
+  } else {
+    dsg_->graph->setMesh(global_info.createMesh());
+  }
 
   mesh_compression_.reset(
       new kimera_pgmo::DeltaCompression(config.pgmo.mesh_resolution));
