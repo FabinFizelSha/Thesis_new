@@ -305,6 +305,16 @@ void BackendModule::loadState(const std::filesystem::path& mesh_path,
   have_new_mesh_ = true;
   have_loopclosures_ = force_loopclosures;
 
+  // An empty path means "restore the mesh but skip the deformation graph".
+  // Multi-session resume relies on this: restoring the .dgrf while the replayed
+  // pose graph re-sends key (prefix,0) appends a duplicate PriorFactor
+  // (addPrior is unconditional), and every corruption path in a resumed session
+  // is gated on have_loopclosures_, which force_loopclosures=false keeps false.
+  if (dgrf_path.empty()) {
+    LOG(WARNING) << "Skipping deformation graph restore (no path given)";
+    return;
+  }
+
   loadDeformationGraphFromFile(dgrf_path);
   LOG(WARNING) << "Loaded " << deformation_graph_->getNumVertices()
                << " vertices for deformation graph";

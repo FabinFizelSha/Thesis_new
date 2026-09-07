@@ -73,6 +73,11 @@ class Place2dSegmenter : public SurfacePlacesInterface {
 
   explicit Place2dSegmenter(const Config& config);
 
+  //! Resume support: move the id counter past ids already in a restored graph.
+  //! emplaceNode on a colliding id is a silent no-op that drops the new
+  //! cluster, so a resumed session must not restart this counter at 0.
+  void setNextNodeIndex(size_t index);
+
   void detect(const ActiveWindowOutput& msg,
               const kimera_pgmo::MeshDelta& mesh_delta,
               const kimera_pgmo::MeshOffsetInfo& offsets,

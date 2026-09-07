@@ -111,6 +111,16 @@ std::string ActiveWindowModule::printInfo() const {
   return config::toString(config) + "\n" + Sink::printSinks(sinks_);
 }
 
+void ActiveWindowModule::save(const DataDirectory& output) {
+  // VolumetricMap::save appends its own suffixes (<base>.yaml, <base>_tsdf,
+  // and <base>_semantics when semantics are enabled), so pass a base name
+  // rather than a filename. Mirrors BackendModule::save's use of
+  // output.path(<subdir>) to keep each module's artifacts separated.
+  const auto base = output.path("active_window") / "map";
+  map_.save(base.string());
+  LOG(INFO) << "[Hydra] saved volumetric map to " << base;
+}
+
 void ActiveWindowModule::spin() {
   bool should_shutdown = false;
   while (!should_shutdown) {

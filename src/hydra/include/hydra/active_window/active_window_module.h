@@ -76,6 +76,13 @@ class ActiveWindowModule : public Module {
 
   std::string printInfo() const override;
 
+  //! Persist the volumetric map so a later session can resume from it. Called
+  //! by HydraPipeline::save over every registered module at shutdown; the
+  //! active window is registered, so no additional wiring is needed. Note
+  //! VolumetricMap::save writes only the TSDF (+semantics) -- the mesh and
+  //! tracking layers are not persisted.
+  void save(const DataDirectory& output) override;
+
   void spin();
 
   bool step(const InputPacket::Ptr& input);

@@ -60,6 +60,10 @@ class FrontierExtractor {
 
   explicit FrontierExtractor(const Config& config);
 
+  //! Resume support: move the id counter past ids already in a restored graph.
+  //! See MeshSegmenter::setNextNodeIndex for why a collision is destructive.
+  void setNextNodeIndex(size_t index);
+
   void updateRecentBlocks(const Eigen::Vector3d& current_position, double block_size);
 
   void detectFrontiers(const ActiveWindowOutput& input,

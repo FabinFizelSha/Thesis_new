@@ -132,6 +132,10 @@ NodeIdSet Place2dSegmenter::getActiveNodes() const {
   return all_active_nodes;
 }
 
+void Place2dSegmenter::setNextNodeIndex(size_t index) {
+  next_node_id_ = NodeSymbol(config.prefix, index);
+}
+
 void Place2dSegmenter::detect(const ActiveWindowOutput& msg,
                               const kimera_pgmo::MeshDelta& delta,
                               const kimera_pgmo::MeshOffsetInfo& offsets,

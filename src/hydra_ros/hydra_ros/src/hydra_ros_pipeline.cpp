@@ -72,6 +72,7 @@ void declare_config(HydraRosPipeline::Config& config) {
   field(config.verbosity, "verbosity");
   field(config.preprint_config, "preprint_config");
   field(config.status_monitor, "status_monitor");
+  field(config.load_state_path, "load_state_path");
 }
 
 HydraRosPipeline::HydraRosPipeline(int robot_id, int config_verbosity)
@@ -92,8 +93,69 @@ void HydraRosPipeline::init() {
   const auto& pipeline_config = GlobalInfo::instance().getConfig();
 
   auto nh = ianvs::NodeHandle::this_node("~");
+
+  // Multi-session resume. Must happen BEFORE the backend is constructed:
+  // BackendModule's ctor does unmerged_graph_ = private_dsg_->graph->clone(),
+  // so a graph injected afterwards would never reach unmerged_graph_.
+  //
+  // Only the two backend-side DSGs are seeded. frontend_dsg_ is deliberately
+  // left empty: the frontend's segmenters restart their node-id counters at 0
+  // every process, and emplaceNode on an existing id is a SILENT no-op that
+  // discards the new cluster's geometry, so seeding the frontend graph would
+  // quietly drop every new object in the resumed session.
+  // Logged unconditionally on purpose. If load_state_path were ever not parsed
+  // (a config key silently reaching no field is a mistake this codebase has
+  // made before), it would read as empty and be indistinguishable from "resume
+  // deliberately off". This line makes the difference visible in the log.
+  const bool resuming = !config.load_state_path.empty();
+  LOG(WARNING) << "[Hydra] multi-session resume: "
+               << (resuming ? config.load_state_path : std::string("disabled (load_state_path empty)"));
+
+  if (resuming) {
+    const auto restored = spark_dsg::DynamicSceneGraph::load(config.load_state_path);
+    if (!restored) {
+      LOG(ERROR) << "[Hydra] resume requested but could not load '"
+                 << config.load_state_path << "'; starting from an empty map";
+    } else {
+      LOG(WARNING) << "[Hydra] resuming from " << config.load_state_path << " ("
+                   << restored->numNodes() << " nodes, "
+                   << (restored->hasMesh() ? restored->mesh()->numVertices() : 0)
+                   << " mesh vertices)";
+      backend_dsg_->graph = restored;
+      // The frontend merges into this every spin; seeding it means the first
+      // merge adds to history rather than resetting the backend's view.
+      shared_state_->backend_graph->graph = restored->clone();
+    }
+  }
+
   backend_ = config.backend.create(backend_dsg_, shared_state_);
   modules_["backend"] = CHECK_NOTNULL(backend_);
+
+  if (resuming) {
+    // The backend ctor installs a fresh empty mesh unconditionally
+    // (backend_module.cpp), discarding whatever was injected above. loadState
+    // exists precisely to re-apply it. force_loopclosures=false is load-bearing,
+    // not a default: it keeps have_loopclosures_ false, which is what prevents
+    // deformPoints from overwriting restored mesh vertices with deformed copies
+    // of the new session's geometry. The empty dgrf path skips the deformation
+    // graph entirely.
+    if (auto backend = std::dynamic_pointer_cast<BackendModule>(backend_)) {
+      backend->loadState(config.load_state_path, "", /*force_loopclosures=*/false);
+
+      // Publish once now, so the restored map is on screen at launch instead of
+      // only after the first frame propagates through the frontend. The backend
+      // spin loop does nothing while its input queue is empty, so without this
+      // the restored graph would sit invisible until the bag starts.
+      //
+      // Safe branch: force_optimize=false and have_loopclosures_ is false (we
+      // skipped the deformation graph), so step() takes the updateDsgMesh path
+      // and the sinks, not optimize()/deformPoints. It does publish with
+      // timestamp 0, which the first real frame immediately supersedes.
+      backend->step(/*force_optimize=*/false);
+    } else {
+      LOG(ERROR) << "[Hydra] resume: backend is not a BackendModule; mesh not restored";
+    }
+  }
 
   frontend_ = config.frontend.create(frontend_dsg_, shared_state_);
   modules_["frontend"] = CHECK_NOTNULL(frontend_);

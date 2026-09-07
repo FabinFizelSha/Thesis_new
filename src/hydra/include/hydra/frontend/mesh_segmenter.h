@@ -70,6 +70,16 @@ class MeshSegmenter {
 
   explicit MeshSegmenter(const Config& config, const std::set<uint32_t>& labels);
 
+  //! Resume support: move the object-id counter past ids already present in a
+  //! restored graph. Without this, a resumed session restarts at 'O0' and every
+  //! emplaceNode collides -- and a collision is a SILENT no-op that discards the
+  //! new cluster's geometry while still consuming the id (the return value is
+  //! not checked at the call site). Takes the next free index, not a count.
+  void setNextNodeIndex(size_t index);
+
+  //! Exposed so callers can scan a restored graph for this segmenter's ids.
+  static constexpr char kNodePrefix = 'O';
+
   LabelClusters detect(uint64_t timestamp_ns,
                        const kimera_pgmo::MeshDelta& active,
                        const kimera_pgmo::MeshOffsetInfo& offsets);

@@ -349,6 +349,10 @@ void processBlock(NearestNodeFinder& finder,
   }
 }
 
+void FrontierExtractor::setNextNodeIndex(size_t index) {
+  next_node_id_ = NodeSymbol(config.prefix, index);
+}
+
 void FrontierExtractor::populateDenseFrontiers(const SpatialCloud::Ptr cloud,
                                                const SpatialCloud::Ptr archived_cloud,
                                                const TsdfLayer& layer) {

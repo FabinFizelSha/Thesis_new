@@ -74,6 +74,21 @@ class HydraRosPipeline : public HydraPipeline {
     bool preprint_config = false;
     //! @brief Monitor to report whether or Hydra is running normally
     StatusMonitor::Config status_monitor;
+    //! @brief Multi-session resume: path to a previous session's saved DSG
+    //! (<log_path>/backend/dsg_with_mesh.json). Empty disables resume.
+    //!
+    //! The graph is injected into the backend-side DSGs before the backend is
+    //! constructed, and the mesh is re-applied afterwards via
+    //! BackendModule::loadState -- the backend ctor installs a fresh empty mesh
+    //! unconditionally, so injecting it earlier would be discarded.
+    //!
+    //! The deformation graph is deliberately NOT restored. Every known
+    //! corruption path in a resumed session (mesh vertex index divergence in
+    //! deformPoints, duplicate priors) is gated on have_loopclosures_, so
+    //! loadState is called with force_loopclosures=false and the .dgrf is
+    //! skipped. Safe only while loop closure is disabled; revisit before
+    //! enabling LCD.
+    std::string load_state_path;
   } const config;
 
   explicit HydraRosPipeline(int robot_id, int config_verbosity = 1);

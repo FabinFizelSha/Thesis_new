@@ -95,13 +95,17 @@ inline bool nodesMatch(const Cluster& cluster, const SceneGraphNode& node) {
 // TODO(nathan) move node ID to not be here
 MeshSegmenter::MeshSegmenter(const Config& config, const std::set<uint32_t>& labels)
     : config(config::checkValid(config)),
-      next_node_id_('O', 0),
+      next_node_id_(kNodePrefix, 0),
       labels_(labels),
       sinks_(Sink::instantiate(config.sinks)) {
   VLOG(2) << "[Mesh Segmenter] using labels: " << clustering::printLabels(labels_);
   for (const auto& label : labels_) {
     active_nodes_[label] = std::set<NodeId>();
   }
+}
+
+void MeshSegmenter::setNextNodeIndex(size_t index) {
+  next_node_id_ = NodeSymbol(kNodePrefix, index);
 }
 
 LabelClusters MeshSegmenter::detect(uint64_t stamp_ns,

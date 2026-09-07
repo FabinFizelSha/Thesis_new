@@ -203,6 +203,10 @@ class GraphBuilder : public Module {
  private:
   void stopImpl();
 
+  //! Move the object / 2d-place / frontier id counters past ids already present
+  //! in `restored`, so a resumed session does not silently collide with them.
+  void seedNodeIdCounters(const DynamicSceneGraph& restored);
+
   std::vector<std::function<void(ActiveWindowOutput::Ptr)>> input_callbacks_;
   std::vector<std::function<void(const ActiveWindowOutput&)>> post_mesh_callbacks_;
 };

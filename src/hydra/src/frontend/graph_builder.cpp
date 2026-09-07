@@ -49,6 +49,7 @@
 #include "hydra/common/pipeline_queues.h"
 #include "hydra/frontend/frontier_extractor.h"
 #include "hydra/frontend/mesh_segmenter.h"
+#include "hydra/frontend/place_2d_segmenter.h"
 #include "hydra/utils/pgmo_mesh_interface.h"
 #include "hydra/utils/pgmo_mesh_traits.h"  // IWYU pragma: keep
 #include "hydra/utils/printing.h"
@@ -131,6 +132,20 @@ GraphBuilder::GraphBuilder(const Config& config,
 
   CHECK(dsg_ != nullptr);
   CHECK(dsg_->graph != nullptr);
+
+  // Multi-session resume: move every id counter past what a restored session
+  // already used. The restored graph lives on the backend side (the frontend's
+  // own dsg_ is intentionally left empty so the frontend never collides with
+  // itself), so scan state_->backend_graph.
+  //
+  // This matters because emplaceNode on an existing id returns false and does
+  // nothing, and none of the three segmenters check that return value -- they
+  // record the id as active and increment the counter regardless. A collision
+  // is therefore silent geometry loss, not an error.
+  if (state_ && state_->backend_graph && state_->backend_graph->graph) {
+    seedNodeIdCounters(*state_->backend_graph->graph);
+  }
+
   dsg_->graph->setMesh(global_info.createMesh());
 
   mesh_compression_.reset(
@@ -160,6 +175,50 @@ GraphBuilder::GraphBuilder(const Config& config,
 GraphBuilder::~GraphBuilder() {
   // intentionally the private implementation to avoid calling virtual method
   stopImpl();
+}
+
+void GraphBuilder::seedNodeIdCounters(const DynamicSceneGraph& restored) {
+  // Highest index already used per NodeSymbol prefix, across every layer.
+  // Scanning by prefix rather than by layer keeps this correct even if a
+  // segmenter's layer assignment changes, since the collision is on the id.
+  std::map<char, size_t> next_index;
+  for (const auto& [node_id, layer_key] : restored.node_lookup()) {
+    const NodeSymbol symbol(node_id);
+    auto& slot = next_index[symbol.category()];
+    slot = std::max(slot, static_cast<size_t>(symbol.categoryId()) + 1);
+  }
+
+  if (next_index.empty()) {
+    return;
+  }
+
+  const auto seed = [&next_index](char prefix, const char* what, auto&& apply) {
+    const auto it = next_index.find(prefix);
+    if (it == next_index.end()) {
+      return;  // nothing restored used this prefix
+    }
+    apply(it->second);
+    LOG(WARNING) << "[Hydra] resume: " << what << " ids continue from '" << prefix
+                 << it->second << "'";
+  };
+
+  if (segmenter_) {
+    seed(MeshSegmenter::kNodePrefix, "object",
+         [this](size_t i) { segmenter_->setNextNodeIndex(i); });
+  }
+
+  // surface_places_ is held as SurfacePlacesInterface; only the Place2dSegmenter
+  // implementation owns an id counter, so cast rather than widening the
+  // interface. A different implementation simply needs no seeding.
+  if (auto* places = dynamic_cast<Place2dSegmenter*>(surface_places_.get())) {
+    seed(places->config.prefix, "2d place",
+         [places](size_t i) { places->setNextNodeIndex(i); });
+  }
+
+  if (frontier_places_) {
+    seed(frontier_places_->config.prefix, "frontier",
+         [this](size_t i) { frontier_places_->setNextNodeIndex(i); });
+  }
 }
 
 void GraphBuilder::start() {

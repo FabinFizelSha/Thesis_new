@@ -1,5 +1,4 @@
 """Launch Hydra mapping and visualization for the official TESSE uHumans2 bag."""
-from datetime import datetime
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
@@ -18,10 +17,23 @@ def generate_launch_description() -> LaunchDescription:
     )
     rviz_config = PathJoinSubstitution([rsg_share, "config", "rviz", "rsg_hydra_rap_fused_scene_graph.rviz"])
 
-    # Use fresh log path with timestamp to prevent loading old persistent state
-    # This ensures each launch gets a completely clean Hydra instance
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
-    fresh_log_path = f"/tmp/hydra_uhumans2_{timestamp}"
+    # Hydra writes its save artifacts (backend/dsg_with_mesh.json, mesh.ply,
+    # deformation_graph.dgrf, and the active window's volumetric map) under
+    # log_path at shutdown.
+    #
+    # This used to be an unconditionally fresh /tmp/hydra_uhumans2_<timestamp>
+    # directory, deliberately, so each launch got a clean Hydra with no chance
+    # of picking up stale state. It is no longer the default, because
+    # multi-session resume needs the previous run's artifacts to still be on
+    # disk and findable. The default now points into the workspace memory/
+    # folder alongside the phase-1 tracker state and the RAP store. To get the
+    # old throwaway behaviour back, pass a /tmp path:
+    #   hydra_log_path:=/tmp/hydra_scratch
+    #
+    # Note this only controls where Hydra SAVES. Loading is opt-in and separate
+    # (hydra_load_state_path below), so a stable log_path on its own cannot
+    # resurrect old state -- it only stops it from being thrown away.
+    default_log_path = "/home/student/Thesis_new/memory/hydra"
 
     visualization_odom_bridge = Node(
         package="tf2_ros",
@@ -39,6 +51,13 @@ def generate_launch_description() -> LaunchDescription:
     return LaunchDescription([
         DeclareLaunchArgument("dataset", default_value="uhumans2"),
         DeclareLaunchArgument("labelspace", default_value="rsg_slot_only_frozen"),
+        # Where Hydra writes its shutdown artifacts. See default_log_path above.
+        DeclareLaunchArgument("hydra_log_path", default_value=default_log_path),
+        # Multi-session resume: point this at a previous run's
+        # <log_path>/backend/dsg_with_mesh.json to restore that session's DSG
+        # and mesh at startup. Empty (the default) disables resume entirely, so
+        # behaviour is unchanged unless it is set explicitly.
+        DeclareLaunchArgument("hydra_load_state_path", default_value=""),
         DeclareLaunchArgument("use_sim_time", default_value="true"),
         DeclareLaunchArgument("sensor_frame", default_value="left_cam"),
         DeclareLaunchArgument("robot_frame", default_value="base_link_gt"),
@@ -49,7 +68,22 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("publish_visualization_odom_bridge", default_value="false"),
         DeclareLaunchArgument("glog_level", default_value="0"),
         DeclareLaunchArgument("glog_verbosity", default_value="0"),
-        DeclareLaunchArgument("hydra_extra_yaml", default_value="{show_run_settings: false, config_verbosity: 0}"),
+        # hydra.launch.yaml passes this as the LAST --config-utilities-yaml, so
+        # keys here win over the earlier ones. load_state_path is injected into
+        # the default so multi-session resume needs only hydra_load_state_path.
+        # HydraRosPipeline::Config is read with fromContext<Config>() at the
+        # ROOT namespace, which is why load_state_path sits at top level here
+        # next to show_run_settings rather than nested under a module name.
+        # NOTE: overriding hydra_extra_yaml wholesale drops load_state_path with
+        # it -- re-include the key by hand if you do that and still want resume.
+        DeclareLaunchArgument(
+            "hydra_extra_yaml",
+            default_value=[
+                "{show_run_settings: false, config_verbosity: 0, load_state_path: '",
+                LaunchConfiguration("hydra_load_state_path"),
+                "'}",
+            ],
+        ),
 
         visualization_odom_bridge,
 
@@ -71,7 +105,7 @@ def generate_launch_description() -> LaunchDescription:
                 "glog_level": LaunchConfiguration("glog_level"),
                 "glog_verbosity": LaunchConfiguration("glog_verbosity"),
                 "extra_yaml": LaunchConfiguration("hydra_extra_yaml"),
-                "log_path": fresh_log_path,
+                "log_path": LaunchConfiguration("hydra_log_path"),
             }.items(),
         ),
 
