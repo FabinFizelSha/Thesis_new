@@ -60,6 +60,10 @@ def generate_launch_description() -> LaunchDescription:
         # Pass "none" to disable. Must not be empty -- the launch frontend
         # renders an empty arg as YAML null, which config-utilities cannot
         # convert to a string and throws on.
+        # On resume, start the trajectory at the map origin (correct when
+        # replaying the same bag). Set false to continue the previous run's
+        # trajectory, which is what you want when genuinely exploring onward.
+        DeclareLaunchArgument("hydra_resume_reset_trajectory", default_value="true"),
         DeclareLaunchArgument(
             "hydra_load_state_path",
             default_value="/home/student/Thesis_new/memory/hydra/backend/dsg_with_mesh.json",
@@ -102,6 +106,7 @@ def generate_launch_description() -> LaunchDescription:
                 # default would otherwise silently drop resume. rsg_all.launch.py
                 # does exactly that, which is why the first attempt never loaded.
                 "load_state_path": LaunchConfiguration("hydra_load_state_path"),
+                "resume_reset_trajectory": LaunchConfiguration("hydra_resume_reset_trajectory"),
             }.items(),
         ),
 

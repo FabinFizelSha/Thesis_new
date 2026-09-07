@@ -67,6 +67,7 @@ sleep 1
             "hydra_extra_yaml": LaunchConfiguration("hydra_extra_yaml"),
             "hydra_log_path": LaunchConfiguration("hydra_log_path"),
             "hydra_load_state_path": LaunchConfiguration("hydra_load_state_path"),
+            "hydra_resume_reset_trajectory": LaunchConfiguration("hydra_resume_reset_trajectory"),
             "glog_level": LaunchConfiguration("glog_level"),
             "glog_verbosity": LaunchConfiguration("glog_verbosity"),
         }.items(),
@@ -101,6 +102,7 @@ sleep 1
         # command line when launching rsg_all.
         DeclareLaunchArgument("hydra_log_path", default_value="/home/student/Thesis_new/memory/hydra"),
         DeclareLaunchArgument("hydra_load_state_path", default_value="/home/student/Thesis_new/memory/hydra/backend/dsg_with_mesh.json"),
+        DeclareLaunchArgument("hydra_resume_reset_trajectory", default_value="true"),
         DeclareLaunchArgument("glog_level", default_value="0"),
         DeclareLaunchArgument("glog_verbosity", default_value="0"),
         clear_hydra_cache,

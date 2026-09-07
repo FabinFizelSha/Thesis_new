@@ -89,6 +89,18 @@ class HydraRosPipeline : public HydraPipeline {
     //! skipped. Safe only while loop closure is disabled; revisit before
     //! enabling LCD.
     std::string load_state_path;
+    //! On resume, drop the restored session's agent (trajectory) nodes so the
+    //! new run starts its trajectory at the map origin instead of continuing
+    //! from wherever the previous run stopped.
+    //!
+    //! Default true, which is correct when REPLAYING THE SAME BAG: the incoming
+    //! pose graph restarts at pose 0 and would otherwise be drawn on top of a
+    //! stale trajectory ending elsewhere, so the camera appears to spawn at the
+    //! previous run's end position.
+    //!
+    //! Set false when genuinely continuing exploration from where the last run
+    //! stopped, where keeping the accumulated trajectory is what you want.
+    bool resume_reset_trajectory = true;
   } const config;
 
   explicit HydraRosPipeline(int robot_id, int config_verbosity = 1);

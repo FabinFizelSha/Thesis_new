@@ -74,6 +74,7 @@ void declare_config(HydraRosPipeline::Config& config) {
   field(config.preprint_config, "preprint_config");
   field(config.status_monitor, "status_monitor");
   field(config.load_state_path, "load_state_path");
+  field(config.resume_reset_trajectory, "resume_reset_trajectory");
 }
 
 HydraRosPipeline::HydraRosPipeline(int robot_id, int config_verbosity)
@@ -150,6 +151,31 @@ void HydraRosPipeline::init() {
                    << restored->numNodes() << " nodes, "
                    << (restored->hasMesh() ? restored->mesh()->numVertices() : 0)
                    << " mesh vertices)";
+
+      if (config.resume_reset_trajectory) {
+        // Agent nodes are keyed NodeSymbol(robot_prefix.key, pose_id)
+        // (graph_builder.cpp), so the robot prefix identifies the trajectory
+        // regardless of which layer/partition it lives in. Removing them makes
+        // the resumed session start its trajectory at the origin rather than
+        // appearing to spawn where the previous run stopped -- the incoming
+        // pose graph restarts at pose 0 on a replay of the same bag, so the
+        // restored trajectory is stale, not a continuation.
+        const auto& prefix = GlobalInfo::instance().getRobotPrefix();
+        std::vector<NodeId> agents;
+        for (const auto& [node_id, layer_key] : restored->node_lookup()) {
+          if (NodeSymbol(node_id).category() == prefix.key) {
+            agents.push_back(node_id);
+          }
+        }
+        for (const auto node_id : agents) {
+          restored->removeNode(node_id);
+        }
+        LOG(WARNING) << "[Hydra] resume: dropped " << agents.size()
+                     << " restored trajectory node(s); new run starts at the map"
+                        " origin (set resume_reset_trajectory=false to continue"
+                        " the previous trajectory instead)";
+      }
+
       backend_dsg_->graph = restored;
       // The frontend merges into this every spin; seeding it means the first
       // merge adds to history rather than resetting the backend's view.
