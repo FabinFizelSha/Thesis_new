@@ -51,7 +51,7 @@ preprocessing:                                                                  
     output_depth_encoding: 32FC1                                                                     # Required passthrough depth encoding when optional processing is disabled.
     depth_scale_to_meter: 0.001                                                                      # Used only by optional single-pass conversion of 16UC1 depth.
     min_depth_m: 0.30                                                                                # Used by Phase 1 and optional sampled invalid-depth analysis.
-    max_depth_m: 5.0                                                                                 # Used by Phase 1 and optional sampled invalid-depth analysis.
+    max_depth_m: 4.0                                                                                 # Used by Phase 1 and optional sampled invalid-depth analysis.
     max_invalid_depth_ratio: 0.90                                                                    # Used only when optional invalid-depth checking is enabled.
     reject_resolution_mismatch: true                                                                 # Enforce identical RGB and depth dimensions for correct projection.
 
@@ -167,7 +167,7 @@ phase1:                                                                         
     depth_range_filter:
       enabled: true                                                                                  # Apply the same valid depth range to Hydra integration.
       min_range_m: 0.30                                                                              # Lower valid range sent to Hydra.
-      max_range_m: 5.0                                                                               # Upper valid range sent to Hydra.
+      max_range_m: 4.0                                                                               # Upper valid range sent to Hydra.
       semantic_label_id: 0                                                                           # Mark invalid-depth pixels as the unknown semantic class.
 
   hydra_semantic:
@@ -296,7 +296,7 @@ phase1:                                                                         
     depth_filter:
       enabled: false                                                                                  # Avoid generating object masks where depth is invalid.
       min_depth_m: 0.30                                                                              # Match preprocessor and Hydra lower depth bound.
-      max_depth_m: 5.0                                                                               # Match preprocessor and Hydra upper depth bound.
+      max_depth_m: 4.0                                                                               # Match preprocessor and Hydra upper depth bound.
       min_valid_ratio: 0.05                                                                          # Require at least 5% valid depth inside a candidate region.
       crop_to_valid_roi: true                                                                        # Focus SAMs on the valid depth region.
       roi_margin_px: 12                                                                              # Preserve a small margin around valid depth.
@@ -615,7 +615,7 @@ phase1:                                                                         
     projection_stride: 4                                                                             # Restore the baseline depth-projection stride for a controlled SAM-only test.
     min_valid_depth_points: 20                                                                       # Require enough depth support for a reliable 3D centroid.
     min_depth_m: 0.30                                                                                # Match all other pipeline depth bounds.
-    max_depth_m: 5.0                                                                                 # Match all other pipeline depth bounds.
+    max_depth_m: 4.0                                                                                 # Match all other pipeline depth bounds.
     centroid_method: median                                                                          # Robust against foreground/background depth outliers.
     reject_masks_fully_outside_depth_range: true                                                     # Drop a candidate mask entirely (before tracking/RAP/VLM/Hydra) when it has fewer than min_valid_depth_points inside [min_depth_m, max_depth_m] -- i.e. whenever the geometry estimator cannot produce a centroid/box for it. Widened 2026-09-06 from "exactly zero valid points": a mask whose object sits beyond max_depth_m still collects a few in-range points from near-field speckle in the same contour, which cleared the ==0 test but not the >=min_valid_depth_points test, leaving a mask with no 3D at all. Since a candidate without 3D can earn at most 2 evidence votes (image + temporal), it can never meet a quorum of 3 and could only ever spawn a one-observation phantom track -- 16 of 101 tracks in run 194600 were exactly this. Masks are still kept when the depth gather never ran (geometry disabled / empty mask).
 

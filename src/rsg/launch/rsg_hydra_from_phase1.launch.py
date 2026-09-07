@@ -13,9 +13,7 @@ def generate_launch_description() -> LaunchDescription:
     """Build the ROS 2 launch description for this component."""
     rsg_share = FindPackageShare("rsg")
     hydra_ros_share = FindPackageShare("hydra_ros")
-    input_config = PathJoinSubstitution(
-        [rsg_share, "config", "hydra", "rsg_phase1_input_tesse.yaml"]
-    )
+    input_config = LaunchConfiguration("input_config")
     rviz_config = LaunchConfiguration("rviz_config")
 
     # Use fresh log path with timestamp to prevent loading old persistent state
@@ -45,6 +43,13 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("odom_frame", default_value="world"),
         DeclareLaunchArgument("map_frame", default_value="world"),
         DeclareLaunchArgument("start_rviz", default_value="true"),
+        DeclareLaunchArgument(
+            "input_config",
+            default_value=PathJoinSubstitution(
+                [rsg_share, "config", "hydra", "rsg_phase1_input_tesse.yaml"]
+            ),
+            description="Hydra ROS input config; defaults to the Tesse/uHumans2 bridge (rosbag TF authoritative).",
+        ),
         DeclareLaunchArgument(
             "rviz_config",
             default_value=PathJoinSubstitution(

@@ -59,6 +59,7 @@ sleep 1
             "robot_frame": LaunchConfiguration("robot_frame"),
             "odom_frame": LaunchConfiguration("odom_frame"),
             "map_frame": LaunchConfiguration("map_frame"),
+            "input_config": LaunchConfiguration("input_config"),
             "start_rviz": LaunchConfiguration("start_rviz"),
             "rviz_config": LaunchConfiguration("rviz_config"),
             "start_hydra_visualizer": LaunchConfiguration("start_hydra_visualizer"),
@@ -92,6 +93,13 @@ sleep 1
         DeclareLaunchArgument("odom_frame", default_value="world"),
         DeclareLaunchArgument("map_frame", default_value="world"),
         DeclareLaunchArgument("start_rviz", default_value="true"),
+        DeclareLaunchArgument(
+            "input_config",
+            default_value=PathJoinSubstitution(
+                [share, "config", "hydra", "rsg_phase1_input_tesse.yaml"]
+            ),
+            description="Hydra ROS input config; defaults to the Tesse/uHumans2 bridge (rosbag TF authoritative).",
+        ),
         DeclareLaunchArgument(
             "rviz_config",
             default_value=PathJoinSubstitution(
