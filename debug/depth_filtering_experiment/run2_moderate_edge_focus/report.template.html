@@ -1,0 +1,146 @@
+<title>Depth Filtering Experiment — Run 2 (moderate/edges)</title>
+<style>
+  :root {
+    --bg: #10141a; --surface: #171d26; --surface-2: #1e2530; --border: #2a323d;
+    --text: #e6ebf2; --text-muted: #8b96a5; --text-faint: #5c6675;
+    --accent: #5eead4; --accent-dim: #2d5f57;
+    --before: #f0a63d; --before-dim: #4a3820;
+    --after: #4ade80; --after-dim: #234a34;
+    --warn: #f0654a; --warn-dim: #4a2620;
+    --run1: #a78bfa; --run1-dim: #362a52;
+    --mono: ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: -apple-system, "Segoe UI", ui-sans-serif, Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #eef1f4; --surface: #ffffff; --surface-2: #f4f6f8; --border: #d7dde3;
+      --text: #131820; --text-muted: #5a6472; --text-faint: #8b95a3;
+      --accent: #0d9488; --accent-dim: #cdf0ea;
+      --before: #b45309; --before-dim: #fbe6cc;
+      --after: #15803d; --after-dim: #d3f0dd;
+      --warn: #b91c1c; --warn-dim: #fbdcdc;
+      --run1: #7c3aed; --run1-dim: #ece4fd;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f4; --surface: #ffffff; --surface-2: #f4f6f8; --border: #d7dde3;
+    --text: #131820; --text-muted: #5a6472; --text-faint: #8b95a3;
+    --accent: #0d9488; --accent-dim: #cdf0ea;
+    --before: #b45309; --before-dim: #fbe6cc;
+    --after: #15803d; --after-dim: #d3f0dd;
+    --warn: #b91c1c; --warn-dim: #fbdcdc;
+    --run1: #7c3aed; --run1-dim: #ece4fd;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); margin: 0; padding: 2.5rem 1.5rem 4rem; line-height: 1.55; }
+  .page { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 2.2rem; }
+  .eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 0 0 0.5rem; }
+  h1 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.01em; margin: 0 0 0.4rem; text-wrap: balance; }
+  .subtitle { font-family: var(--mono); font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+  .spec-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.4rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem 1.5rem; }
+  .spec { display: flex; flex-direction: column; gap: 0.25rem; }
+  .spec-label { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+  .spec-value { font-family: var(--mono); font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+  section.block { display: flex; flex-direction: column; gap: 1rem; }
+  h2 { font-size: 1.15rem; font-weight: 650; margin: 0; display: flex; align-items: baseline; gap: 0.6rem; }
+  h2 .tag { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+  p.note { font-size: 0.87rem; color: var(--text-muted); line-height: 1.65; max-width: 76ch; }
+  p.note strong { color: var(--text); }
+  p.note code { font-family: var(--mono); font-size: 0.85em; background: var(--surface-2); padding: 0.1em 0.35em; border-radius: 3px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem 1.4rem; }
+  table.params { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+  table.params th, table.params td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border); }
+  table.params th { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); font-weight: 600; }
+  table.params td.run1 { font-family: var(--mono); color: var(--run1); font-variant-numeric: tabular-nums; }
+  table.params td.run2 { font-family: var(--mono); color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.9rem; }
+  .stat-box { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 0.9rem 1.05rem; display: flex; flex-direction: column; gap: 0.3rem; }
+  .stat-box .label { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); }
+  .stat-box .value { font-family: var(--mono); font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat-box .sub { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); }
+  .stat-box.good .value { color: var(--after); }
+  .stat-box.warn .value { color: var(--warn); }
+  .stat-box.run1ref .value { color: var(--run1); }
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-dim); border-radius: 0 8px 8px 0; padding: 0.9rem 1.1rem; font-size: 0.87rem; line-height: 1.65; color: var(--text); }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-dim); }
+  .callout strong { color: var(--text); }
+  .example-row { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.7rem; }
+  .example-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; }
+  .example-head .idx { font-family: var(--mono); font-weight: 700; }
+  .example-head .metrics { font-family: var(--mono); font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 1rem; flex-wrap: wrap; }
+  .example-head .metrics b.before { color: var(--before); }
+  .example-head .metrics b.after { color: var(--after); }
+  .example-head .metrics b.edge { color: var(--accent); }
+  .triptych { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; }
+  figure { margin: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  figure img { width: 100%; display: block; background: #000; aspect-ratio: 4/3; object-fit: cover; }
+  figcaption { font-family: var(--mono); font-size: 0.68rem; padding: 0.35rem 0.6rem; background: var(--surface-2); color: var(--text-faint); text-align: center; }
+  footer { font-family: var(--mono); font-size: 0.72rem; color: var(--text-faint); border-top: 1px solid var(--border); padding-top: 1rem; }
+  a { color: var(--accent); }
+  @media (max-width: 720px) { .triptych { grid-template-columns: 1fr; } }
+</style>
+
+<div class="page">
+  <div>
+    <p class="eyebrow">RSG · Go1 / RealSense D455 &middot; depth-filtering experiment &middot; run 2 of 2</p>
+    <h1>Run 2: moderate settings, edge focus, &le;5m</h1>
+    <p class="subtitle">go1_d455_20180128_170537 (the original recording) &middot; 4,265 frames &middot; follow-up to the aggressive run's roughness finding</p>
+  </div>
+
+  <div class="spec-card">
+    <div class="spec"><span class="spec-label">Frames analyzed</span><span class="spec-value">__N_FRAMES__</span></div>
+    <div class="spec"><span class="spec-label">Depth focus</span><span class="spec-value">&le; 5.00 m</span></div>
+    <div class="spec"><span class="spec-label">Hole-fill mode</span><span class="spec-value">1 (farest_from_around)</span></div>
+    <div class="spec"><span class="spec-label">vs. Run 1</span><span class="spec-value"><a href="__RUN1_URL__">aggressive run report</a></span></div>
+  </div>
+
+  <section class="block">
+    <h2>What changed vs. Run 1 <span class="tag">library defaults instead of maxed-out</span></h2>
+    <div class="card">
+      <table class="params">
+        <tr><th>Parameter</th><th>Run 1 (aggressive)</th><th>Run 2 (moderate)</th><th>Why</th></tr>
+        <tr><td>spatial_magnitude</td><td class="run1">5</td><td class="run2">2</td><td>Fewer iterations &rarr; fewer compounded plateau steps.</td></tr>
+        <tr><td>spatial_smooth_alpha</td><td class="run1">0.25</td><td class="run2">0.5</td><td>Library default smoothing weight.</td></tr>
+        <tr><td>spatial_smooth_delta</td><td class="run1">50</td><td class="run2">20</td><td>The direct edge threshold &mdash; stricter about crossing a real depth step.</td></tr>
+        <tr><td>temporal_smooth_alpha</td><td class="run1">0.20</td><td class="run2">0.4</td><td>Library default.</td></tr>
+        <tr><td>temporal_smooth_delta</td><td class="run1">40</td><td class="run2">20</td><td>Same edge-threshold logic; also less motion-smearing on this moving platform.</td></tr>
+        <tr><td>hole_fill_mode</td><td class="run1">2 (nearest)</td><td class="run2">1 (farest)</td><td>Occlusion-shadow holes usually continue as background &mdash; farthest-fill is the more geometrically correct default; nearest-fill (run 1's obstacle-safety bias) grows foreground into what should stay background.</td></tr>
+        <tr><td>max_depth_m</td><td class="run1">6.00</td><td class="run2">5.00</td><td>This run's instruction: focus on the operationally relevant range.</td></tr>
+      </table>
+    </div>
+    <p class="note">Every statistic below is computed only over pixels the <strong>pre-filter</strong> frame measured as valid and &le;5m &mdash; the region of interest is fixed by real sensor data, never by the filter's own output, so nothing here can be circular.</p>
+  </section>
+
+  <section class="block">
+    <h2>Coverage &amp; change magnitude <span class="tag">&le;5m only</span></h2>
+    __COVERAGE_STATS__
+  </section>
+
+  <section class="block">
+    <h2>Edge sharpness <span class="tag">the actual question this run asks</span></h2>
+    <p class="note">At locations Canny edge detection flags in the <strong>RGB</strong> image (a proxy for real object boundaries), the depth gradient magnitude (Sobel) is compared before vs. after filtering, restricted to locations whose full 3&times;3 neighborhood is valid in both frames (never a hole boundary mistaken for an edge). Ratio <strong>&asymp;1</strong> = edge preserved as-sharp; <strong>&lt;1</strong> = blurred/softened; <strong>&gt;1</strong> = steeper than before.</p>
+    __EDGE_STATS__
+  </section>
+
+  <section class="block">
+    <h2>Flat-region roughness <span class="tag">3&times;3 only, for continuity with run 1</span></h2>
+    __ROUGHNESS_STATS__
+  </section>
+
+  <section class="block">
+    <h2>Ten example frames <span class="tag">stratified by pre-filter coverage, worst to best</span></h2>
+    <p class="note">Depth rendered with the TURBO colormap, capped at 5m to match this run's focus range; dark gray = invalid.</p>
+    __EXAMPLES__
+  </section>
+
+  <section class="block">
+    <h2>Caveats</h2>
+    <div class="card" style="display:flex; flex-direction:column; gap:0.8rem;">
+      <p class="note"><strong>Edge sharpness is a proxy, not ground truth.</strong> Canny-detected RGB edges include some texture-only edges (not real depth boundaries), which dilutes rather than biases the signal &mdash; there's no independent higher-precision depth reference for this bag to validate against directly.</p>
+      <p class="note"><strong>Different bag from Run 1</strong>, so the two reports' absolute numbers (coverage %, roughness mm) are not a strict controlled A/B of aggressive-vs-moderate on identical data &mdash; a true head-to-head would rerun both parameter sets on the same bag. This run is the direct answer to "what does moderate get us," not a rerun of run 1 with one setting changed.</p>
+      <p class="note"><strong>Coarse (9&times;9) roughness was not recomputed</strong> this run &mdash; it was the most expensive part of Run 1's analysis, and this run's ask was specifically about edges, not re-litigating flat-region noise at multiple scales.</p>
+    </div>
+  </section>
+
+  <footer>generated by analyze_depth_filtering_edges.py &middot; raw per-frame data in results/stats.json &middot; source images in results/examples/ &middot; see also ../EXPERIMENT_REPORT.md (run 1)</footer>
+</div>

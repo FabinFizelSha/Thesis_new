@@ -1,0 +1,40 @@
+Pass 1/2: computing per-frame statistics over the full bag...
+[INFO] [1788810934.286263459] [rosbag2_storage]: Opened database '/home/student/datasets/rebased_bags/go1_d455_20180128_170537/20180128_170537_rebased_ros2_rectified_aligned/20180128_170537_rebased_ros2_rectified_aligned_0.db3' for READ_ONLY.
+[INFO] [1788810934.477981038] [rosbag2_storage]: Opened database '/home/student/datasets/rebased_bags/go1_d455_20180128_170537/20180128_170537_rebased_ros2_rectified_aligned/20180128_170537_rebased_ros2_rectified_aligned_0.db3' for READ_ONLY.
+[INFO] [1788810934.572251708] [rosbag2_storage]: Opened database '/home/student/datasets/rebased_bags/go1_d455_20180128_170537/20180128_170537_rebased_ros2_rectified_aligned_smoothed_moderate_edges_odom_time_fixed/20180128_170537_rebased_ros2_rectified_aligned_smoothed_moderate_edges_odom_time_fixed_0.db3' for READ_ONLY.
+  500 frames analyzed
+  1000 frames analyzed
+  1500 frames analyzed
+  2000 frames analyzed
+  2500 frames analyzed
+  3000 frames analyzed
+  3500 frames analyzed
+  4000 frames analyzed
+Stats pass complete: 4265 frames
+Pass 2/2: exporting 10 example frames...
+[INFO] [1788811147.652971503] [rosbag2_storage]: Opened database '/home/student/datasets/rebased_bags/go1_d455_20180128_170537/20180128_170537_rebased_ros2_rectified_aligned/20180128_170537_rebased_ros2_rectified_aligned_0.db3' for READ_ONLY.
+[INFO] [1788811147.787122867] [rosbag2_storage]: Opened database '/home/student/datasets/rebased_bags/go1_d455_20180128_170537/20180128_170537_rebased_ros2_rectified_aligned/20180128_170537_rebased_ros2_rectified_aligned_0.db3' for READ_ONLY.
+[INFO] [1788811147.920170810] [rosbag2_storage]: Opened database '/home/student/datasets/rebased_bags/go1_d455_20180128_170537/20180128_170537_rebased_ros2_rectified_aligned_smoothed_moderate_edges_odom_time_fixed/20180128_170537_rebased_ros2_rectified_aligned_smoothed_moderate_edges_odom_time_fixed_0.db3' for READ_ONLY.
+  saved frame_0421  valid_before=72.0%  valid_after=93.5%  edge_ratio=0.98
+  saved frame_0445  valid_before=69.9%  valid_after=92.0%  edge_ratio=1.00
+  saved frame_0589  valid_before=53.5%  valid_after=94.7%  edge_ratio=0.97
+  saved frame_1247  valid_before=77.9%  valid_after=94.2%  edge_ratio=0.97
+  saved frame_1747  valid_before=48.8%  valid_after=93.9%  edge_ratio=0.99
+  saved frame_1832  valid_before=81.9%  valid_after=94.3%  edge_ratio=0.99
+  saved frame_2531  valid_before=37.4%  valid_after=91.4%  edge_ratio=0.99
+  saved frame_2839  valid_before=86.7%  valid_after=94.2%  edge_ratio=0.98
+  saved frame_3175  valid_before=51.4%  valid_after=94.6%  edge_ratio=0.98
+  saved frame_3597  valid_before=60.9%  valid_after=94.5%  edge_ratio=0.95
+
+Wrote /home/student/Thesis_new/debug/depth_filtering_experiment/run2_moderate_edge_focus/results/stats.json
+Wrote 10 example image sets to /home/student/Thesis_new/debug/depth_filtering_experiment/run2_moderate_edge_focus/results/examples
+
+--- Aggregate summary (depth <= 5m only) ---
+Valid before:   mean=64.6%
+Valid after:    mean=94.3%
+Newly filled:   mean=29.7%
+Still invalid:  mean=5.7%
+Mean abs change: 0.56 cm (max seen: 4.5 cm)
+Roughness [3x3]: before=0.62mm after=0.99mm change=+58.6%
+Edge sharpness ratio (after/before depth-gradient at RGB edges): mean=0.976 median=0.979
+  (n edge pixels/frame: mean=8702)

@@ -1,0 +1,217 @@
+<title>Depth Filtering Experiment — go1_d455_20260802_164826</title>
+<style>
+  :root {
+    --bg: #10141a;
+    --surface: #171d26;
+    --surface-2: #1e2530;
+    --border: #2a323d;
+    --text: #e6ebf2;
+    --text-muted: #8b96a5;
+    --text-faint: #5c6675;
+    --accent: #5eead4;
+    --accent-dim: #2d5f57;
+    --before: #f0a63d;
+    --before-dim: #4a3820;
+    --after: #4ade80;
+    --after-dim: #234a34;
+    --warn: #f0654a;
+    --warn-dim: #4a2620;
+    --mono: ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: -apple-system, "Segoe UI", ui-sans-serif, Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #eef1f4; --surface: #ffffff; --surface-2: #f4f6f8; --border: #d7dde3;
+      --text: #131820; --text-muted: #5a6472; --text-faint: #8b95a3;
+      --accent: #0d9488; --accent-dim: #cdf0ea;
+      --before: #b45309; --before-dim: #fbe6cc;
+      --after: #15803d; --after-dim: #d3f0dd;
+      --warn: #b91c1c; --warn-dim: #fbdcdc;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f4; --surface: #ffffff; --surface-2: #f4f6f8; --border: #d7dde3;
+    --text: #131820; --text-muted: #5a6472; --text-faint: #8b95a3;
+    --accent: #0d9488; --accent-dim: #cdf0ea;
+    --before: #b45309; --before-dim: #fbe6cc;
+    --after: #15803d; --after-dim: #d3f0dd;
+    --warn: #b91c1c; --warn-dim: #fbdcdc;
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); margin: 0; padding: 2.5rem 1.5rem 4rem; line-height: 1.55; }
+  .page { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 2.2rem; }
+
+  .eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 0 0 0.5rem; }
+  h1 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.01em; margin: 0 0 0.4rem; text-wrap: balance; }
+  .subtitle { font-family: var(--mono); font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+
+  .stage-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; margin-top: 1.1rem; }
+  .stage { font-family: var(--mono); font-size: 0.72rem; padding: 0.32rem 0.65rem; border-radius: 4px; background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); }
+  .stage.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+  .arrow { color: var(--text-faint); font-size: 0.75rem; }
+
+  .spec-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.4rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem 1.5rem; }
+  .spec { display: flex; flex-direction: column; gap: 0.25rem; }
+  .spec-label { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+  .spec-value { font-family: var(--mono); font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+
+  section.block { display: flex; flex-direction: column; gap: 1rem; }
+  h2 { font-size: 1.15rem; font-weight: 650; margin: 0; display: flex; align-items: baseline; gap: 0.6rem; }
+  h2 .tag { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+  h3 { font-size: 0.95rem; font-weight: 650; margin: 0 0 0.5rem; }
+
+  p.note { font-size: 0.87rem; color: var(--text-muted); line-height: 1.65; max-width: 74ch; }
+  p.note strong { color: var(--text); }
+  p.note code { font-family: var(--mono); font-size: 0.85em; background: var(--surface-2); padding: 0.1em 0.35em; border-radius: 3px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem 1.4rem; }
+
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; font-family: var(--mono); font-size: 0.78rem; }
+  .flow .step { background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 0.7rem; }
+  .flow .step.hl { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+  .flow .op { color: var(--text-faint); }
+
+  table.params { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+  table.params th, table.params td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border); }
+  table.params th { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); font-weight: 600; }
+  table.params td.val { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; white-space: nowrap; }
+  table.params td.range { font-family: var(--mono); color: var(--text-faint); white-space: nowrap; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.9rem; }
+  .stat-box { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 0.9rem 1.05rem; display: flex; flex-direction: column; gap: 0.3rem; }
+  .stat-box .label { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); }
+  .stat-box .value { font-family: var(--mono); font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat-box .sub { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); }
+  .stat-box.good .value { color: var(--after); }
+  .stat-box.warn .value { color: var(--warn); }
+
+  .bar-row { display: flex; flex-direction: column; gap: 0.35rem; }
+  .bar-row-head { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.78rem; }
+  .bar-row-head .name { color: var(--text-muted); }
+  .bar-track { height: 20px; border-radius: 5px; background: var(--surface-2); border: 1px solid var(--border); overflow: hidden; display: flex; }
+  .bar-fill { height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; font-family: var(--mono); font-size: 0.7rem; font-weight: 700; color: #0a0f14; min-width: 2.4em; }
+  .bar-fill.before { background: var(--before); }
+  .bar-fill.after { background: var(--after); }
+  .bar-fill.filled { background: var(--accent); }
+
+  table.roughness { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+  table.roughness th, table.roughness td { text-align: right; padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; font-family: var(--mono); }
+  table.roughness th { text-align: right; font-size: 0.68rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); }
+  table.roughness td:first-child, table.roughness th:first-child { text-align: left; font-family: var(--sans); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-dim); border-radius: 0 8px 8px 0; padding: 0.9rem 1.1rem; font-size: 0.87rem; line-height: 1.65; color: var(--text); }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-dim); }
+  .callout strong { color: var(--text); }
+
+  .example-row { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.7rem; }
+  .example-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; }
+  .example-head .idx { font-family: var(--mono); font-weight: 700; }
+  .example-head .metrics { font-family: var(--mono); font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 1rem; }
+  .example-head .metrics b.before { color: var(--before); }
+  .example-head .metrics b.after { color: var(--after); }
+  .triptych { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; }
+  figure { margin: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  figure img { width: 100%; display: block; background: #000; aspect-ratio: 4/3; object-fit: cover; }
+  figcaption { font-family: var(--mono); font-size: 0.68rem; padding: 0.35rem 0.6rem; background: var(--surface-2); color: var(--text-faint); text-align: center; }
+
+  footer { font-family: var(--mono); font-size: 0.72rem; color: var(--text-faint); border-top: 1px solid var(--border); padding-top: 1rem; }
+  a { color: var(--accent); }
+
+  @media (max-width: 720px) { .triptych { grid-template-columns: 1fr; } }
+</style>
+
+<div class="page">
+  <div>
+    <p class="eyebrow">RSG · Go1 / RealSense D455 &middot; depth-filtering experiment</p>
+    <h1>Depth filtering experiment report</h1>
+    <p class="subtitle">go1_d455_20260802_164826 &middot; full-bag statistics (2,678 frames) + 10 stratified visual examples</p>
+    <div class="stage-strip">
+      <span class="stage">1 · ros1&rarr;ros2</span><span class="arrow">&rarr;</span>
+      <span class="stage">2 · rectify color</span><span class="arrow">&rarr;</span>
+      <span class="stage">3 · align depth (pixel match)</span><span class="arrow">&rarr;</span>
+      <span class="stage active">4 · librealsense filter (this experiment)</span><span class="arrow">&rarr;</span>
+      <span class="stage">5 · fix odom clock</span>
+    </div>
+  </div>
+
+  <div class="spec-card">
+    <div class="spec"><span class="spec-label">Frames analyzed</span><span class="spec-value">__N_FRAMES__</span></div>
+    <div class="spec"><span class="spec-label">Bag duration</span><span class="spec-value">178.7 s</span></div>
+    <div class="spec"><span class="spec-label">Depth topic</span><span class="spec-value">aligned_depth_to_color</span></div>
+    <div class="spec"><span class="spec-label">Filter script</span><span class="spec-value">filter_aligned_depth_bag_librealsense.py</span></div>
+    <div class="spec"><span class="spec-label">Analysis script</span><span class="spec-value">analyze_depth_filtering.py</span></div>
+  </div>
+
+  <section class="block">
+    <h2>What the filter does <span class="tag">real librealsense SDK, not a reimplementation</span></h2>
+    <p class="note">Numpy depth frames decoded from the bag are injected into a <code>rs.software_device</code> — a synthetic sensor the compiled <code>pyrealsense2</code> SDK will accept frames from — so Intel's own spatial, temporal, and hole-filling filters process this data exactly as they would a live D455's stream. RGB is not involved in this stage; librealsense's post-processing filters are depth-only. (RGB <em>is</em> used earlier, in the pixel-matching/alignment stage that produced this bag's aligned-depth topic in the first place.)</p>
+    <div class="card">
+      <h3>Processing order per frame</h3>
+      <div class="flow">
+        <span class="step">raw uint16 depth</span><span class="op">&rarr;</span>
+        <span class="step">range gate [0.30, 6.00]m</span><span class="op">&rarr;</span>
+        <span class="step">depth&rarr;disparity</span><span class="op">&rarr;</span>
+        <span class="step hl">spatial filter</span><span class="op">&rarr;</span>
+        <span class="step hl">temporal filter</span><span class="op">&rarr;</span>
+        <span class="step">disparity&rarr;depth</span><span class="op">&rarr;</span>
+        <span class="step hl">hole filling</span>
+      </div>
+      <p class="note" style="margin-top:0.9rem">Disparity-domain processing (rather than filtering metric depth directly) is Intel's own design: stereo depth noise grows roughly with the square of range, so smoothing behaves more uniformly across near/far pixels in disparity space. The temporal filter is <strong>stateful</strong> — one filter instance is reused for all 2,678 frames in order; a fresh instance per frame would silently disable cross-frame persistence.</p>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Parameters used <span class="tag">"aggressive," as requested</span></h2>
+    <div class="card">
+      <table class="params">
+        <tr><th>Parameter</th><th>Range</th><th>Used</th><th>Why</th></tr>
+        <tr><td>spatial_magnitude</td><td class="range">1&ndash;5</td><td class="val">5</td><td>Max iterations &mdash; single-frame only, no motion risk.</td></tr>
+        <tr><td>spatial_smooth_alpha</td><td class="range">0.25&ndash;1.0</td><td class="val">0.25</td><td>Minimum &mdash; maximum smoothing weight toward neighbors.</td></tr>
+        <tr><td>spatial_smooth_delta</td><td class="range">1&ndash;50</td><td class="val">50</td><td>Max edge tolerance in disparity levels.</td></tr>
+        <tr><td>spatial_holes_fill</td><td class="range">0&ndash;5</td><td class="val">3</td><td>Spatial filter's own light local hole extrapolation.</td></tr>
+        <tr><td>temporal_smooth_alpha</td><td class="range">0&ndash;1</td><td class="val">0.20</td><td>Near-min, not min &mdash; Go1 is moving; full temporal weight risks smearing real scene changes, not just noise.</td></tr>
+        <tr><td>temporal_smooth_delta</td><td class="range">1&ndash;100</td><td class="val">40</td><td>Same moving-platform caveat.</td></tr>
+        <tr><td>temporal_holes_fill</td><td class="range">0&ndash;8</td><td class="val">5</td><td>Persistency mode for cross-frame hole recovery.</td></tr>
+        <tr><td>hole_fill_mode</td><td class="range">0&ndash;2</td><td class="val">2</td><td>nearest_from_around &mdash; extends foreground into gaps rather than background (library default is 1/farthest).</td></tr>
+        <tr><td>min/max_depth_m</td><td class="range">&mdash;</td><td class="val">0.30 / 6.00</td><td>Wide on purpose &mdash; the runtime pipeline already gates to 0.30&ndash;4.0m three times downstream; this bake stays permissive.</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Coverage: before vs. after <span class="tag">whole bag, 2,678 frames</span></h2>
+    __COVERAGE_STATS__
+  </section>
+
+  <section class="block">
+    <h2>Roughness: did smoothing actually smooth? <span class="tag">a more careful look</span></h2>
+    <p class="note">Local roughness is measured as <code>|value &minus; median of its neighborhood|</code>, averaged only over pixels whose entire neighborhood was valid (never contaminated by a hole edge). Measured at two scales &mdash; 3&times;3 (pixel-to-pixel dither) and 9&times;9 (coarser waviness) &mdash; and in three populations: real measurements before filtering, the identical pixel locations after filtering, and territory that hole-filling invented from nothing.</p>
+    __ROUGHNESS_STATS__
+    __ROUGHNESS_INTERPRETATION__
+  </section>
+
+  <section class="block">
+    <h2>Change magnitude</h2>
+    __CHANGE_STATS__
+  </section>
+
+  <section class="block">
+    <h2>Ten example frames <span class="tag">stratified by pre-filter coverage, worst to best</span></h2>
+    <p class="note">Depth rendered with the TURBO colormap (near = warm, far = cool, capped at 5m so every example shares one scale); dark gray = invalid. RGB, before, and after all share the same rectified-color pixel grid, so structure lines up across all three panels in a row.</p>
+    __EXAMPLES__
+  </section>
+
+  <section class="block">
+    <h2>Caveats</h2>
+    <div class="card" style="display:flex; flex-direction:column; gap:0.8rem;">
+      <p class="note"><strong>Depth-only.</strong> This filter stage does not use RGB. It runs the same post-processing a live D455 would run on its own depth stream. RGB's role in this bag is upstream, in pixel-matching depth to the rectified color grid.</p>
+      <p class="note"><strong>No ground truth.</strong> All metrics here are internal consistency checks (coverage, self-agreement, local smoothness) &mdash; there is no independent, higher-accuracy depth reference for this bag to compute true error against.</p>
+      <p class="note"><strong>Temporal settings were deliberately not maxed</strong> for the moving-platform reason in &sect;2's parameter table; a stationary-sensor recording could likely push temporal smoothing further without the same motion-smearing risk.</p>
+      <p class="note"><strong>A separate, unrelated finding</strong> surfaced while tracing topics for this pipeline: <code>rsg_pipeline_go1.yaml</code>'s <code>rgb:</code> key points at the raw (distorted) color topic while depth is aligned to the rectified geometry &mdash; a real geometric mismatch, but orthogonal to this filtering experiment and not yet fixed as of this report.</p>
+    </div>
+  </section>
+
+  <footer>generated by analyze_depth_filtering.py &middot; raw per-frame data in results/stats.json &middot; source images in results/examples/</footer>
+</div>
