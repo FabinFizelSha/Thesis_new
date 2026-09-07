@@ -174,6 +174,19 @@ MergeList UpdateObjectsFunctor::findMerges(const DynamicSceneGraph& graph,
                rhs_attrs->bounding_box.contains(lhs_attrs->position);
       },
       proposals);
+
+  // Visible by default, unlike the VLOG(5) inside MergeTracker::applyMerges.
+  // This is the signal that tells a resumed session apart from a broken one: if
+  // a re-observed object is being recognised rather than duplicated, merges
+  // appear here. Silence across a whole resumed run means the candidate set was
+  // empty -- most likely restored nodes not archived (they are only eligible as
+  // merge targets when is_active is false) or their semantic label not matching
+  // what phase 1 is now publishing for the same object.
+  if (!proposals.empty()) {
+    LOG(INFO) << "[Hydra] object merges proposed: " << proposals.size()
+              << " (active objects examined against archived candidates)";
+  }
+
   return proposals;
 }
 
