@@ -150,14 +150,23 @@
     object_slot_collapse_enabled: true                                                                          # Master switch. Off = one node per Hydra cluster, duplicates included.
     object_slot_collapse_max_distance_m: 2.0                                                                    # Centroid fallback. Nodes also collapse when either bbox contains the other's centroid, which is what carries large objects whose centroid shifts as more surface is seen.
 
-    # Active-window highlight: a translucent cyan halo around every object
-    # Hydra is currently observing and updating. On a resumed run this is what
-    # separates live observation from restored map, and it marks exactly the
-    # nodes the collapse above is allowed to merge. Steady, not pulsing: the
-    # renderer only redraws when the scene changes, so an animated alpha would
-    # stutter rather than glow. Hide it in RViz by unticking the
-    # "rsg_active_objects" marker namespace.
+    # In-view highlight: a translucent cyan halo around the objects phase 1 is
+    # observing in the current camera view. The halo drops as soon as a track
+    # leaves the frame.
+    #
+    # Driven by phase 1 presence recency, NOT by Hydra's is_active flag.
+    # is_active means "in the active window", a volume carried along with the
+    # robot, so it stays true while the robot is nearby no matter where the
+    # camera points -- it highlights nearly everything and is not what "in
+    # view" means. Phase 1 instead republishes presence every frame for exactly
+    # the slots it sees. Restored slots republish with their saved
+    # (past-shifted) timestamps, so they stay unhaloed until re-observed.
+    #
+    # Steady, not pulsing: the renderer only redraws when the scene changes or
+    # presence decays, so an animated alpha would stutter rather than glow.
+    # Hide it in RViz by unticking the "rsg_active_objects" marker namespace.
     highlight_active_objects: true
+    active_object_halo_max_age_sec: 1.0                                                                         # How long a halo lingers after a track leaves view. Only needs to cover the gap between frames; lower it for a snappier drop, raise it if halos flicker between frames.
     active_object_halo_scale: 1.7                                                                               # Halo diameter as a multiple of the object's own sphere.
     active_object_halo_alpha: 0.30                                                                              # Raise for a stronger glow; the halo is drawn over the object sphere.
     active_object_halo_min_margin_m: 0.12                                                                       # Floor on the halo's extra diameter, so small objects still show a visible ring.

@@ -784,6 +784,11 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     active_object_halo_alpha_ = declare_parameter<double>("active_object_halo_alpha", 0.30);
     active_object_halo_min_margin_m_ =
         declare_parameter<double>("active_object_halo_min_margin_m", 0.12);
+    // How long after a track leaves the camera view its halo persists.
+    // Phase 1 republishes presence per frame for the slots it sees, so this
+    // only needs to cover the gap between frames.
+    active_object_halo_max_age_sec_ = std::max(
+        0.0, declare_parameter<double>("active_object_halo_max_age_sec", 1.0));
     object_slot_collapse_max_distance_m_ =
         declare_parameter<double>("object_slot_collapse_max_distance_m", 2.0);
     object_segment_write_dsg_edges_ =
@@ -3341,6 +3346,32 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   }
 
   /** Apply semantic colour and mobility-aware presence alpha to one node. */
+  /**
+   * True while phase 1 is observing this object in the current camera view.
+   *
+   * Presence is republished per frame for exactly the slots phase 1 sees, so
+   * a slot goes stale within presence_observed_epsilon_sec of leaving the
+   * frame. A node with no presence entry at all -- Hydra geometry phase 1 has
+   * never tracked -- is not observed, so it stays unhaloed rather than
+   * defaulting to lit.
+   */
+  bool isObservedNow(const NodeView& node,
+                     const std::unordered_map<NodeId, ResolvedOverlay>& resolved,
+                     const PresenceCache& presence) const {
+    const SemanticOverlay* overlay = overlayForNode(node, resolved);
+    const uint32_t slot_id = overlay ? overlay->slot_id : node.semantic_slot;
+    const std::string mobility_class = overlay ? overlay->mobility_class : "unknown";
+    const ResolvedPresence presence_state =
+        resolvePresenceForSlot(slot_id, presence, mobility_class);
+    if (presence_state.observation.slot_id == 0U) {
+      return false;
+    }
+    // Own age budget rather than the OBSERVED state, so how fast the halo
+    // drops after a track leaves the frame can be tuned without disturbing
+    // presence decay, which feeds label alpha and mobility elsewhere.
+    return presence_state.age_sec <= active_object_halo_max_age_sec_;
+  }
+
   Color objectDisplayColor(
       const NodeView& node,
       const std::unordered_map<NodeId, ResolvedOverlay>& resolved,
@@ -3494,15 +3525,23 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     marker.scale.z = marker_diameter;
     addMarker(markers, next_keys, std::move(marker));
 
-    // Halo around anything Hydra currently has in its active window, i.e. the
-    // objects the robot is looking at and still updating. On a resumed run
-    // this is what separates live observation from map restored off disk --
-    // and it is the same flag the duplicate collapse keys on, so what glows is
-    // exactly what is eligible to be merged.
+    // Halo around the objects phase 1 is observing right now -- the ones in
+    // the camera's view this frame -- so it drops as soon as a track leaves
+    // the frame.
+    //
+    // Deliberately NOT Hydra's is_active flag. That means "in the active
+    // window", a volume carried along with the robot, so a node stays active
+    // for as long as the robot is nearby regardless of where the camera points
+    // and long after the object has left the frame. Phase 1 instead publishes
+    // a presence observation for every slot it actually sees, each frame, and
+    // resolvePresenceForSlot reports OBSERVED only while that is fresher than
+    // presence_observed_epsilon_sec. Restored slots republish with their
+    // saved (past-shifted) timestamps, so they read as DECAYING and stay
+    // unhaloed until genuinely re-observed.
     //
     // A steady halo rather than a pulse: renderDirtyState only redraws when
     // the scene changes, so an animated alpha would stutter rather than glow.
-    if (highlight_active_objects_ && node.is_active) {
+    if (highlight_active_objects_ && isObservedNow(node, resolved, presence)) {
       Marker halo;
       halo.header.frame_id = frame;
       halo.header.stamp = stamp;
@@ -4496,6 +4535,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   double active_object_halo_scale_ = 1.7;
   double active_object_halo_alpha_ = 0.30;
   double active_object_halo_min_margin_m_ = 0.12;
+  double active_object_halo_max_age_sec_ = 1.0;
   bool object_slot_collapse_enabled_ = true;
   double object_slot_collapse_max_distance_m_ = 2.0;
   std::string input_dsg_topic_;
