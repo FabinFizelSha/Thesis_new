@@ -41,6 +41,7 @@ from nodes.support.phase1.backends import SamMask, make_rap_backend, make_risk_v
 from nodes.support.phase1.bbox_diagnostics import BboxDiagnosticsLogger
 from nodes.support.phase1.crop_evolution_tracker import CropEvolutionTracker
 from nodes.support.phase1.frame_cache import BoundedFrameCache, CachedFrame, EvidenceBuffer
+from nodes.support.phase1.persistent_object_tracker import _as_list
 from nodes.support.phase1.tracker_state_store import load_tracker_state, save_tracker_state
 from nodes.support.phase1.tracking_quality_recorder import TrackingQualityRecorder
 from nodes.support.phase1.tracking_crop_manager import TrackingCropManager
@@ -160,6 +161,7 @@ class Phase1SemanticCoordinator(Node):
         # ever arrives from a RAP/VLM completion that will never happen for
         # them. Emptied as each track is seen again.
         self._restored_label_pending: set = set()
+        self._restored_presence_pending: set = set()
         if self.config.session_persistence_enabled and self.tracker_state_path is not None:
             try:
                 load_tracker_state(
@@ -170,6 +172,11 @@ class Phase1SemanticCoordinator(Node):
                     for track_id, track in self.persistent_tracker._tracks.items()
                     if (track.semantic_label or track.canonical_label)
                 }
+                # Every restored track needs its slot -> internal_object_id
+                # mapping republished, labelled or not, so the fuser can group
+                # a multi-segment object instead of drawing solid contact edges
+                # between its own segments.
+                self._restored_presence_pending = set(self.persistent_tracker._tracks)
                 self.get_logger().info(
                     f"{len(self._restored_label_pending)} restored tracks carry a label "
                     "and will republish it to the fuser on re-observation"
@@ -1473,6 +1480,8 @@ class Phase1SemanticCoordinator(Node):
                     self._emit_restored_semantic_label(
                         external_track_id, frame, timestamp_sec
                     )
+                # Seen again: the ordinary heartbeat covers it from now on.
+                self._restored_presence_pending.discard(external_track_id)
 
             # Extract crop for diagnostic inspection
             try:
@@ -2511,6 +2520,20 @@ class Phase1SemanticCoordinator(Node):
                     finalize_track=False,
                 )
 
+        # Restored tracks that have not been re-observed yet still need their
+        # slot -> internal_object_id mapping published, because the fuser's
+        # presence cache is per-process and starts empty. Without it the fuser
+        # cannot tell that two restored nodes belong to one physical object:
+        # internal_id_for() returns empty, each node becomes its own "__solo_"
+        # group, and their overlap renders as a solid contact edge between two
+        # different objects instead of a dotted same-object edge.
+        #
+        # Published every frame until the track is re-observed, rather than once
+        # at startup, so it cannot be lost to a phase1/fuser startup race. The
+        # timestamps are the restored (past-shifted) ones, so presence
+        # confidence correctly treats these as stale rather than fresh.
+        segments.extend(self._restored_presence_segments(seen_slots))
+
         if not segments:
             return
         payload = {
@@ -2521,6 +2544,47 @@ class Phase1SemanticCoordinator(Node):
             "segments": segments,
         }
         self._safe_publish(self.active_segments_pub, String(data=safe_json_dumps(payload)))
+
+    def _restored_presence_segments(self, seen_slots: set) -> List[Dict[str, Any]]:
+        """Presence entries for restored tracks not yet re-observed this session.
+
+        Carries only identity and geometry the fuser needs to group a physical
+        object's segments; a track drops out of here as soon as it is seen
+        again, at which point the ordinary heartbeat covers it.
+        """
+        pending = getattr(self, "_restored_presence_pending", None)
+        if not pending:
+            return []
+
+        out: List[Dict[str, Any]] = []
+        for track_id in list(pending):
+            track = self.persistent_tracker._tracks.get(track_id)
+            if track is None:
+                pending.discard(track_id)
+                continue
+            for slot_id, segment in track.segments.items():
+                slot = int(slot_id)
+                if slot <= 0 or slot in seen_slots:
+                    continue
+                seen_slots.add(slot)
+                out.append({
+                    "persistent_track_id": track_id,
+                    "internal_object_id": track_id,
+                    "persistent_instance_id": int(track.instance_id or 0),
+                    "local_segment_id": str(segment.segment_id),
+                    "semantic_segment_id": str(segment.segment_id),
+                    "hydra_slot_id": slot,
+                    "hydra_slot_name": str(segment.hydra_label_name or ""),
+                    "last_observed_timestamp_sec": float(segment.last_seen_timestamp_sec or 0.0),
+                    "centroid_3d": _as_list(segment.centroid_3d),
+                    "bbox_3d_min": _as_list(segment.bbox_3d_min),
+                    "bbox_3d_max": _as_list(segment.bbox_3d_max),
+                    "last_bbox_3d_min": _as_list(segment.last_bbox_3d_min),
+                    "last_bbox_3d_max": _as_list(segment.last_bbox_3d_max),
+                    "canonical_label": str(track.canonical_label or ""),
+                    "restored_from_previous_session": True,
+                })
+        return out
 
     def _finalize_track_queue_state(self, track_id: str) -> None:
         """Release scheduler de-duplication after a final semantic outcome."""
