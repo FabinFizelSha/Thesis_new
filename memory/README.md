@@ -51,5 +51,21 @@ via `RSG_RAP_STORAGE_PATH`); `phase1.rap.storage_path` must match.
 
 ## Starting clean
 
-Delete the relevant file or directory. A missing tracker state file is treated
-as a normal first run — it is logged and startup continues.
+```bash
+python3 clear_memory.py            # clear everything
+python3 clear_memory.py --dry-run  # show what would go, delete nothing
+python3 clear_memory.py --tracker  # or --hydra / --rap, one store at a time
+```
+
+It deletes; it does not archive, and it does not touch any config — the
+persistence features stay on, so the next run saves state again and the run
+after that reads it back. That is the normal way to set up a two-run resume
+test.
+
+It refuses to run while a process that owns one of the selected stores is
+alive (`phase1` for the tracker, `hydra_node` for Hydra, `chroma` for RAP),
+because phase 1 rewrites its state at shutdown and would undo the clear.
+`--force` overrides.
+
+Deleting by hand works too. A missing tracker state file is treated as a normal
+first run — it is logged and startup continues.
