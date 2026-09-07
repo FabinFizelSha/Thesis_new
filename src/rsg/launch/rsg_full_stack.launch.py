@@ -48,11 +48,15 @@ def generate_launch_description() -> LaunchDescription:
     ).expanduser()
     python_executable = str(venv_dir / "bin" / "python3")
     chroma_executable = str(venv_dir / "bin" / "chroma")
+    # Default moved into the workspace's memory/ folder 2026-09-06 so everything
+    # that survives a run lives in one place. Must stay in sync with
+    # phase1.rap.storage_path in rsg_pipeline.yaml -- the server is launched
+    # with --path, and the node connects over HTTP expecting the same store.
     rap_storage_path = str(
         Path(
             os.environ.get(
                 "RSG_RAP_STORAGE_PATH",
-                str(home_dir / "rsg_rap_memory"),
+                "/home/student/Thesis_new/memory/rap/chroma",
             )
         ).expanduser()
     )

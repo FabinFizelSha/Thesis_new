@@ -85,6 +85,11 @@ class Phase1Config:
     # crop+CSV.  Off = nothing written, near-zero overhead.  Functional crop
     # scoring / mask filtering / best-crop selection is unaffected.
     diagnostics_enabled: bool = False
+    # Sub-switch for the object-tracking writers only (association/lifecycle
+    # JSONL and the periodic per-track crops). Both are also gated by
+    # diagnostics_enabled, so this can turn tracking diagnostics off while
+    # leaving the risk-VLM and RAP writers running.
+    diagnostics_log_tracking: bool = True
     periodic_crop_interval: int = 10
 
     # Hydra output.
@@ -529,6 +534,14 @@ class Phase1Config:
     persistent_use_hydra_slots: bool = False
     persistent_slot_first_label_id: int = 21
     persistent_slot_count: int = 10000
+
+    # Session persistence: save tracker state at shutdown and restore it at
+    # startup, with every stored timestamp shifted into the past so restored
+    # tracks are evaluated through the revisit-association branch rather than
+    # the recent one. See tracker_state_store.py for why the shift is required.
+    session_persistence_enabled: bool = False
+    session_persistence_state_path: str = ""
+    session_persistence_time_shift_sec: float = 86400.0
     persistent_slot_label_prefix: str = "unknown_slot_"
     persistent_slot_label_width: int = 5
 
@@ -618,6 +631,7 @@ class Phase1Config:
         unknown_tracking = phase1.get("unknown_tracking", {}) or {}
         hydra_semantic = phase1.get("hydra_semantic", {}) or {}
         persistent_tracking = phase1.get("persistent_tracking", {}) or {}
+        session_persistence = persistent_tracking.get("session_persistence", {}) or {}
         persistent_slots = persistent_tracking.get("slots", {}) or {}
         semantic_result = persistent_tracking.get("semantic_result", {}) or {}
         loop_closure = phase1.get("loop_closure", {}) or {}
@@ -711,6 +725,7 @@ class Phase1Config:
             publish_timing_topic=bool(performance.get("publish_timing", True)),
             write_timing_csv=bool(performance.get("write_timing_csv", performance.get("write_timing_excel", True))),
             diagnostics_enabled=bool(diagnostics.get("enabled", False)),
+            diagnostics_log_tracking=bool(diagnostics.get("log_tracking", True)),
             periodic_crop_interval=max(1, int(diagnostics.get("periodic_crop_interval", 10))),
             timing_csv_path=timing_csv_path,
             timing_sheet_name=str(performance.get("timing_sheet_name", node_key[:31])),
@@ -981,6 +996,11 @@ class Phase1Config:
             persistent_use_hydra_slots=slot_mode,
             persistent_slot_first_label_id=slot_first_id,
             persistent_slot_count=max(1, min(65535, slot_count)),
+            session_persistence_enabled=bool(session_persistence.get("enabled", False)),
+            session_persistence_state_path=str(session_persistence.get("state_path", "")),
+            session_persistence_time_shift_sec=float(
+                session_persistence.get("time_shift_sec", 86400.0)
+            ),
             persistent_slot_label_prefix=slot_prefix,
             persistent_slot_label_width=max(1, slot_width),
             semantic_result_min_observations=max(1, int(semantic_result.get("min_observations", 1))),

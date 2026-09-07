@@ -102,7 +102,7 @@ preprocessing:                                                                  
 phase1:                                                                                              # NanoSAM segmentation, RAP retrieval, optional VLM labeling, and Hydra semantic-frame output.
   diagnostics:
     enabled: true                                                                                   # MASTER SWITCH for all per-run diagnostic writers: bbox dumps, crop-evolution, tracking-quality logs, RAP/VLM crop images, and the VLM test crop+CSV. false => nothing written, near-zero overhead. Functional crop scoring / mask filtering / best-crop selection is unaffected. (The keys below are legacy and currently unwired; `enabled` governs everything.) (Temporarily enabled 2026-09-05 to verify risk VLM diagnostics logging; turn back to false when done.)
-    log_tracking: true                                                                              # Record every SAM-to-internal-object/local-slot assignment and crop decision.
+    log_tracking: true                                                                              # Object-tracking diagnostics sub-switch: the association/lifecycle/frames JSONL (TrackingQualityRecorder) and the periodic per-track crops. Wired 2026-09-06 (it had been declared here but never parsed). Currently ON to verify session persistence -- the run-2 association log is the only evidence that restored tracks take the revisit branch. The risk-VLM and RAP writers are independent of this and follow `enabled` above.
     save_tracking_crops: false                                                                      # Save accepted best crops and the exact crop revisions dequeued by RAP/VLM.
     tracking_crop_dir: /home/student/rsg_ros2_ws/debug/phase1_excel_current/tracking_crops            # Per-internal-object diagnostic image directory.
     tracking_crop_jpeg_quality: 95                                                                  # High-quality diagnostic images; does not change VLM request encoding.
@@ -238,6 +238,10 @@ phase1:                                                                         
     local_segment_2d_fallback_enabled: true                                                          # Reuse a recent local slot by 2D IoU when either side lacks usable 3D geometry.
     local_segment_max_2d_iou_age_sec: 2.0                                                            # Keep local 2D fallback short-term so stale image positions are not reused.
     local_segment_min_2d_iou: 0.30                                                                   # Minimum local-segment 2D overlap; matches the physical-track fallback threshold.
+    session_persistence:                                                                             # Carry tracker state across runs so the revisit-association branch actually gets exercised.
+      enabled: true                                                                                  # Save tracker state at shutdown and restore it at startup. Confirmed working 2026-09-06: run 2 produced 18 global_revisit_association matches and only 1 new_track (vs 0 and 43 in run 1). Note a stale state file changes association behaviour for every object in the run -- delete state_path to start clean.
+      state_path: /home/student/Thesis_new/memory/tracker/phase1_tracker_state.json                  # Single rolling state file, written atomically (.tmp then replace). Lives under the workspace's memory/ folder alongside the RAP store -- everything that survives a run is in one place.
+      time_shift_sec: 86400.0                                                                        # Every stored timestamp is moved this far into the past on save. REQUIRED, not cosmetic: bag replay restarts at the bag's own start time, which is EARLIER than a saved last_seen_timestamp_sec, so the raw age is negative and _find_match's max(0.0, ...) clamps it to 0 -> recent mode, the opposite of the intent. One day makes age ~= 86400 - bag_duration, far past continuation_max_age_sec (8s) -> revisit mode.
     active_segments_topic: /rsg/objects/active_local_segments                                        # Per-frame slot observation heartbeat used by the fuser.
     require_known_label_match: false                                                                 # Permit tracking before a semantic label has been assigned.
     rap_evidence_weight: 0.7                                                                         # Give RAP evidence substantial, but not absolute, influence.
@@ -320,7 +324,7 @@ phase1:                                                                         
     queue_drop_policy: defer_track_id                                                                # Full FIFO defers a unique track ID instead of dropping its semantic job.
     model_name: openai/clip-vit-base-patch32                                                         # CLIP embedding model used by RAP memory.
     device: cpu                                                                                      # CPU, not GPU: CLIP-ViT-B/32 is tiny and RAP is only called once per track, but on this Jetson its CUDA calls were silently losing GPU-memory contention against NanoSAM/VLM/Hydra (CUBLAS_STATUS_ALLOC_FAILED on every query() and add_image() call -- see phase1_rap_memory investigation 2026-09-05: 0 items ever reached the Chroma collection despite thousands of qualifying VLM results). CPU avoids that contention entirely.
-    storage_path: /home/student/rsg_rap_memory                                                       # Persistent Chroma/RAP memory directory.
+    storage_path: /home/student/Thesis_new/memory/rap/chroma                                          # Persistent Chroma/RAP memory directory. Moved into the workspace memory/ folder 2026-09-06; must match the --path the chroma server is launched with (rsg_full_stack.launch.py, overridable via RSG_RAP_STORAGE_PATH).
     chroma_host: 127.0.0.1                                                                           # Local Chroma server.
     chroma_port: 8001                                                                                # Local Chroma server port.
     collection_name: visual_rag_orin_deploy_vlm                                                      # Persistent collection containing visual examples and labels.
@@ -329,7 +333,7 @@ phase1:                                                                         
     distance_threshold: 0.10                                                                          # 0.15 -> 0.30 -> 0.40 -> 0.20 -> 0.15 -> 0.10 2026-09-05.
     update_memory_from_vlm: true                                                                     # Freeze the learned RAP collection during this evaluation run.
     update_min_confidence: 0.90                                                                      # Avoid storing weak VLM classifications.
-    memory_update_path: /home/student/rsg_ros2_ws/debug/phase1_rap_memory.jsonl                      # Audit log of memory additions.
+    memory_update_path: /home/student/Thesis_new/memory/rap/phase1_rap_memory.jsonl                   # Audit log of memory additions. Moved into the workspace memory/ folder 2026-09-06.
 
   semantic_labeling:
     enabled: true                                                                                    # Publish stable semantic results for the Hydra-RAP fuser.
@@ -556,7 +560,7 @@ phase1:                                                                         
   # process, launched independently). See
   # debug/risk_assessment_feature/DESIGN.md for the full design writeup.
   risk_vlm:
-    enabled: false                                                                                     # Disabled again 2026-09-05 -- focus narrowed to RAP identification only. RAP hit/miss is now logged directly in phase1.py's RAP dispatch path instead of relying on risk_results.csv's source column.
+    enabled: true                                                                                      # Re-enabled 2026-09-06 after the object-tracking optimisation closed. Note this adds a second concurrent VLM server (4B on port 8100) alongside phase1.vlm, sharing the same GPU -- `yield_to_object_vlm` below is the only thing keeping classification from being starved.
     mode: qwen_http                                                                                    # Query an OpenAI-compatible local VLM endpoint, same protocol as phase1.vlm.
     endpoint: http://127.0.0.1:8100/v1/chat/completions                                                # Different port from phase1.vlm's 8000 -- a genuinely separate server, auto-launched by rsg_risk_vlm_server (see `server:` below and rsg_full_stack.launch.py's start_risk_vlm argument).
     model: Qwen3.5-VL-4B-Instruct-GGUF                                                                 # Whatever model `server:` below is actually serving.

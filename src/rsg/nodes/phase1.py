@@ -22,6 +22,7 @@ import queue
 import threading
 import time
 from collections import deque
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -40,6 +41,7 @@ from nodes.support.phase1.backends import SamMask, make_rap_backend, make_risk_v
 from nodes.support.phase1.bbox_diagnostics import BboxDiagnosticsLogger
 from nodes.support.phase1.crop_evolution_tracker import CropEvolutionTracker
 from nodes.support.phase1.frame_cache import BoundedFrameCache, CachedFrame, EvidenceBuffer
+from nodes.support.phase1.tracker_state_store import load_tracker_state, save_tracker_state
 from nodes.support.phase1.tracking_quality_recorder import TrackingQualityRecorder
 from nodes.support.phase1.tracking_crop_manager import TrackingCropManager
 from nodes.support.phase1.json_utils import safe_json_dumps, safe_json_loads
@@ -140,6 +142,40 @@ class Phase1SemanticCoordinator(Node):
         self.static_hydra_label_ids = dict(self.config.hydra_label_lookup)
         self.static_hydra_label_names = dict(self.config.hydra_label_names)
         self.persistent_tracker.set_reserved_slot_ids(set())
+
+        # Restore a previous session's tracks, if enabled. Done here on purpose:
+        # the tracker exists, TrackingStage already holds the reference, but no
+        # subscription has been created and no worker thread has started, so
+        # nothing can race the load. Restored tracks carry timestamps shifted
+        # into the past, which is what routes them through the tracker's
+        # revisit-association branch instead of the recent one.
+        self.tracker_state_path = (
+            Path(self.config.session_persistence_state_path).expanduser()
+            if self.config.session_persistence_state_path
+            else None
+        )
+        # Restored tracks that already carry a label: their label must be
+        # republished to the fuser when they are re-observed, because the
+        # fuser's overlay cache is per-process and the label otherwise only
+        # ever arrives from a RAP/VLM completion that will never happen for
+        # them. Emptied as each track is seen again.
+        self._restored_label_pending: set = set()
+        if self.config.session_persistence_enabled and self.tracker_state_path is not None:
+            try:
+                load_tracker_state(
+                    self.persistent_tracker, self.tracker_state_path, self.get_logger()
+                )
+                self._restored_label_pending = {
+                    track_id
+                    for track_id, track in self.persistent_tracker._tracks.items()
+                    if (track.semantic_label or track.canonical_label)
+                }
+                self.get_logger().info(
+                    f"{len(self._restored_label_pending)} restored tracks carry a label "
+                    "and will republish it to the fuser on re-observation"
+                )
+            except Exception as exc:
+                self.get_logger().error(f"Tracker state restore failed, starting fresh: {exc}")
         self.semantic_reuse_enabled = False
         # RAP/VLM scheduling is intentionally decoupled from Hydra output.  A
         # persistent track receives a unique Hydra slot immediately, while the
@@ -341,7 +377,10 @@ class Phase1SemanticCoordinator(Node):
         )
 
         # Comprehensive crop evolution diagnostics for debugging overlaps and tracking issues
-        from pathlib import Path
+        # (Path is imported at module scope. A function-local `from pathlib
+        # import Path` here would make Path a local for the whole of __init__,
+        # so every earlier use of it -- e.g. the tracker state path -- would
+        # raise UnboundLocalError.)
         crop_evolution_dir = Path(self.config.timing_csv_path).parent / "crop_evolution"
         self.crop_evolution_tracker = CropEvolutionTracker(
             enabled=self.diagnostics_enabled,
@@ -349,10 +388,16 @@ class Phase1SemanticCoordinator(Node):
             logger=self.get_logger(),
         )
 
-        # Tracking quality evaluation diagnostics
+        # Tracking quality evaluation diagnostics. Gated on the object-tracking
+        # sub-switch as well as the master one, so these can be turned off
+        # without also silencing the risk-VLM / RAP writers.
+        self.tracking_diagnostics_enabled = (
+            self.diagnostics_enabled
+            and bool(getattr(self.config, "diagnostics_log_tracking", True))
+        )
         tracking_quality_dir = Path("/home/student/Thesis_new/debug/object_tracking_experiment_part2/tracking_quality")
         self.tracking_quality_recorder = TrackingQualityRecorder(
-            enabled=self.diagnostics_enabled,
+            enabled=self.tracking_diagnostics_enabled,
             output_dir=str(tracking_quality_dir),
             logger=self.get_logger(),
         )
@@ -415,7 +460,7 @@ class Phase1SemanticCoordinator(Node):
         # bounding box starts absorbing a different object over time.
         self.periodic_crop_diagnostics = PeriodicCropDiagnostics(
             output_dir=Path("/home/student/Thesis_new/debug/object_tracking_experiment_part2/periodic_crop_diagnostics"),
-            enabled=self.diagnostics_enabled,
+            enabled=self.tracking_diagnostics_enabled,
             interval=self.config.periodic_crop_interval,
         )
         if self.diagnostics_enabled:
@@ -1416,6 +1461,19 @@ class Phase1SemanticCoordinator(Node):
                 except Exception as e:
                     self.get_logger().warn(f"Failed to log periodic crop diagnostics: {e}")
 
+                # A track restored from a previous session keeps its label and
+                # is therefore never re-sent to RAP/VLM -- but the fuser's
+                # overlay cache is per-process and starts empty, and the label
+                # only ever reaches it from a RAP/VLM completion. Without this
+                # the object would be tracked correctly and still render
+                # unlabeled. Re-emit the stored label once, on the first frame
+                # the track is actually re-observed (rather than at startup, so
+                # nothing is published for objects the robot never revisits).
+                if external_track_id in self._restored_label_pending:
+                    self._emit_restored_semantic_label(
+                        external_track_id, frame, timestamp_sec
+                    )
+
             # Extract crop for diagnostic inspection
             try:
                 # bbox_2d should be in metadata from object_geometry
@@ -2048,6 +2106,59 @@ class Phase1SemanticCoordinator(Node):
                 "centroid_3d": payload.get("centroid_3d", (task.get("object_metadata") or {}).get("centroid_3d")),
             }]
         return segments
+
+    def _emit_restored_semantic_label(self, track_id: str, frame: RsgFrame, timestamp_sec: float) -> None:
+        """Republish a restored track's stored label to the fuser, once.
+
+        Restored tracks are deliberately not re-classified -- they already have
+        a label, and re-running RAP/VLM would waste inference and risk a worse
+        answer. But the label lives only in phase 1's tracker, while the fuser
+        keys its overlay cache by Hydra slot id in its own process, which is
+        empty on a fresh run. So the label has to be pushed once when the track
+        is re-observed, using the same fan-out the RAP/VLM paths use so every
+        local segment of a multi-segment track is covered.
+        """
+        self._restored_label_pending.discard(track_id)
+        track = self.persistent_tracker._tracks.get(track_id)
+        if track is None:
+            return
+        label = str(track.semantic_label or track.canonical_label or "")
+        if not label:
+            return
+
+        segments = [
+            self.persistent_tracker._segment_record(segment)
+            for segment in track.segments.values()
+        ]
+        event = {
+            "persistent_track_id": track_id,
+            "internal_object_id": track_id,
+            "semantic_label": label,
+            "canonical_label": track.canonical_label,
+            "semantic_label_confidence": float(track.semantic_label_confidence or track.label_confidence or 0.0),
+            "mobility_class": track.mobility_class,
+            "mobility_confidence": float(track.mobility_confidence or 0.0),
+            "mobility_source": track.mobility_source,
+            "semantic_segments": segments,
+            "hydra_slot_id": int(track.hydra_label_id),
+            "hydra_slot_name": str(track.hydra_label_name),
+        }
+        task = {
+            "persistent_track_id": track_id,
+            "frame_id": frame.rsg_frame_id,
+            "sequence": int(frame.sequence),
+            "timestamp_sec": float(timestamp_sec),
+        }
+        # finalize_track=False: this track was never added to the pending set
+        # that _emit_semantic_label_result discards from, since it never went
+        # through a dispatch.
+        self._emit_semantic_label_result(
+            event, task, source="restored_session", finalize_track=False
+        )
+        self.get_logger().info(
+            f"Republished restored label '{label}' for {track_id} "
+            f"across {len(segments)} segment(s)"
+        )
 
     def _emit_semantic_label_result(self, event: Dict[str, Any], task: Dict[str, Any], *, source: str, finalize_track: bool = True) -> None:
         """Publish final class labels for every local semantic slot of one object.
@@ -3498,6 +3609,25 @@ class Phase1SemanticCoordinator(Node):
             self.tracking_quality_recorder.generate_report(suffix="_final")
         except Exception as exc:
             print(f"Failed to save tracking quality diagnostics: {exc}", flush=True)
+
+        # Tracker state for the next session. save_tracker_state takes the
+        # tracker's lock: _stop_event is set above but the tracking thread is
+        # not joined until further down, and that join is best-effort with a
+        # 0.20 s timeout, so _tracks may still be mutating right now.
+        # getattr: destroy_node also runs when __init__ failed partway through,
+        # and an exception here would mask the original failure.
+        state_path = getattr(self, "tracker_state_path", None)
+        if self.config.session_persistence_enabled and state_path is not None:
+            try:
+                save_tracker_state(
+                    self.persistent_tracker,
+                    state_path,
+                    self.config.session_persistence_time_shift_sec,
+                    self.get_logger(),
+                    source_run=str(getattr(self, "_session_id", "")),
+                )
+            except Exception as exc:
+                print(f"Failed to save tracker state: {exc}", flush=True)
 
         # Crop saving disabled (diagnostic feature for Phase 2 optimization)
 

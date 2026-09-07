@@ -61,3 +61,11 @@ debug/rap_accuracy_test/session_*/
 # regeneratable by re-running with phase1.diagnostics.enabled true.
 debug/object_tracking_experiment_part2/periodic_crop_diagnostics/session_*/
 debug/object_tracking_experiment_part2/tracking_quality/*
+
+# --- Cross-run memory ------------------------------------------------------
+# memory/ holds everything that survives a run: the RAP Chroma store, its
+# audit log, and the phase-1 tracker state used to exercise revisit
+# association. All are large, machine-local data stores rather than source.
+# The README is kept so the folder's purpose is documented in git.
+memory/*
+!memory/README.md
