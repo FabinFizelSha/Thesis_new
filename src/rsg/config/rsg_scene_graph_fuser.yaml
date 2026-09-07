@@ -142,8 +142,25 @@
     # them because its output is the final scene graph. The older (lowest-id)
     # node survives with a union bounding box, so a revisit sustains the object
     # it already had instead of replacing it.
+    # Only nodes in Hydra's active window (the robot's current view) are ever
+    # removed. Anything restored from a previous session is archived, and
+    # archived nodes are kept exactly as loaded -- both as the surviving node
+    # and as geometry -- so a resume never deletes map the robot is not even
+    # looking at.
     object_slot_collapse_enabled: true                                                                          # Master switch. Off = one node per Hydra cluster, duplicates included.
     object_slot_collapse_max_distance_m: 2.0                                                                    # Centroid fallback. Nodes also collapse when either bbox contains the other's centroid, which is what carries large objects whose centroid shifts as more surface is seen.
+
+    # Active-window highlight: a translucent cyan halo around every object
+    # Hydra is currently observing and updating. On a resumed run this is what
+    # separates live observation from restored map, and it marks exactly the
+    # nodes the collapse above is allowed to merge. Steady, not pulsing: the
+    # renderer only redraws when the scene changes, so an animated alpha would
+    # stutter rather than glow. Hide it in RViz by unticking the
+    # "rsg_active_objects" marker namespace.
+    highlight_active_objects: true
+    active_object_halo_scale: 1.7                                                                               # Halo diameter as a multiple of the object's own sphere.
+    active_object_halo_alpha: 0.30                                                                              # Raise for a stronger glow; the halo is drawn over the object sphere.
+    active_object_halo_min_margin_m: 0.12                                                                       # Floor on the halo's extra diameter, so small objects still show a visible ring.
 
     # Object-segment relationships (blue dotted lines): local segments phase 1
     # split off from one physical object too large to track as a single

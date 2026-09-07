@@ -93,19 +93,32 @@ def main():
 
     absorbed = 0
     for slot, members in sorted(duplicates.items()):
-        # Lowest id first: the survivor, and on a resume the restored node.
         members.sort(key=lambda m: m[0])
-        survivor_id, survivor_pos, survivor_box, survivor_active = members[0]
+        # An archived node always outranks an active one as survivor, and among
+        # equals the lowest id (oldest) wins -- so a resumed run keeps the node
+        # it restored rather than a freshly created one.
+        survivor_id, survivor_pos, survivor_box, survivor_active = min(
+            members, key=lambda m: (bool(m[3]), m[0])
+        )
         notes = []
-        for other_id, other_pos, other_box, other_active in members[1:]:
+        for other_id, other_pos, other_box, other_active in members:
+            if other_id == survivor_id:
+                continue
+            if not other_active:
+                # Restored from a previous session: never removed.
+                notes.append("archived->kept")
+                continue
             distance = math.dist(survivor_pos, other_pos)
             # Same predicate as the fuser: either box holding the other's
-            # centroid, else centroid distance. The survivor's box grows as it
-            # absorbs, so this is transitive across a slot's members.
+            # centroid, else centroid distance.
             overlap = _contains(survivor_box, other_pos) or _contains(other_box, survivor_pos)
             if overlap or distance <= args.max_distance:
                 absorbed += 1
-                survivor_box = _union(survivor_box, other_box)
+                if survivor_active:
+                    # Active-only slot: the survivor's box grows as it absorbs,
+                    # making the collapse transitive. A restored survivor keeps
+                    # its saved extent instead.
+                    survivor_box = _union(survivor_box, other_box)
                 notes.append(f"{distance:.2f}m {'bbox' if overlap else 'dist'}->collapse")
             else:
                 notes.append(f"{distance:.2f}m KEPT APART")
@@ -116,8 +129,8 @@ def main():
     print(f"\ncollapse would absorb {absorbed} node(s) -> {remaining} object nodes")
     kept = sum(len(m) for m in duplicates.values()) - len(duplicates) - absorbed
     if kept:
-        print(f"{kept} same-slot node(s) stay separate (beyond {args.max_distance}m "
-              f"with no bbox overlap)")
+        print(f"{kept} same-slot node(s) stay separate (archived, or beyond "
+              f"{args.max_distance}m with no bbox overlap)")
     return 0
 
 

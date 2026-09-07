@@ -94,6 +94,10 @@ struct NodeView {
   Eigen::Vector3f bbox_center = Eigen::Vector3f::Zero();
   Eigen::Vector3f bbox_size = Eigen::Vector3f::Zero();
   uint32_t semantic_slot = 0;
+  // Hydra's "in the active window" flag: true while the node is in the robot's
+  // current view and still being updated, false once archived -- which is what
+  // every node restored from a previous session is marked as.
+  bool is_active = false;
   std::string name;
 };
 
@@ -772,6 +776,14 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     // node stacked on the restored one. Collapse them in the fuser, whose
     // output is the final scene graph.
     object_slot_collapse_enabled_ = declare_parameter<bool>("object_slot_collapse_enabled", true);
+    // Highlight for the objects Hydra currently has in its active window --
+    // on a resumed run, what the robot is looking at now versus what was
+    // restored from the previous session.
+    highlight_active_objects_ = declare_parameter<bool>("highlight_active_objects", true);
+    active_object_halo_scale_ = declare_parameter<double>("active_object_halo_scale", 1.7);
+    active_object_halo_alpha_ = declare_parameter<double>("active_object_halo_alpha", 0.30);
+    active_object_halo_min_margin_m_ =
+        declare_parameter<double>("active_object_halo_min_margin_m", 0.12);
     object_slot_collapse_max_distance_m_ =
         declare_parameter<double>("object_slot_collapse_max_distance_m", 2.0);
     object_segment_write_dsg_edges_ =
@@ -1483,6 +1495,14 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     return model;
   }
 
+  /// True when @p point falls inside @p node's axis-aligned bounding box.
+  static bool bboxContains(const NodeView& node, const Eigen::Vector3d& point) {
+    const Eigen::Vector3d center = node.bbox_center.cast<double>();
+    const Eigen::Vector3d half = node.bbox_size.cast<double>() / 2.0;
+    const Eigen::Vector3d delta = (point - center).cwiseAbs();
+    return (delta.array() <= half.array()).all();
+  }
+
   /**
    * Collapse Hydra object nodes that are the same physical object into one.
    *
@@ -1498,20 +1518,23 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
    * the final scene graph, and the slot is the authoritative cross-pipeline
    * identity here (the same reasoning resolveOverlays already relies on).
    *
-   * The survivor is the lowest node id -- the older node -- so a resumed
-   * session keeps the object it already had rather than replacing it with a
-   * newly-created one. Its bounding box is expanded to cover what it absorbed.
+   * Only nodes in the robot's current view are ever removed. Everything
+   * restored from a previous session is archived, and archived nodes are kept
+   * exactly as loaded -- both as survivors and as geometry. Merging those
+   * would delete parts of the map the robot is not currently looking at, and
+   * would silently drop one of the two nodes in a slot that legitimately held
+   * a large object Hydra clustered in two pieces last run.
+   *
+   * So an archived node always outranks an active one as survivor, and among
+   * equals the lowest node id (the oldest) wins. A resumed session therefore
+   * keeps the object it already had instead of replacing it with a freshly
+   * created one, and keeps its saved extent rather than being reshaped by a
+   * partial new view. Only when every node in a slot is active -- an ordinary
+   * within-run duplicate, no restored node involved -- is the survivor's box
+   * expanded to cover what it absorbed.
    *
    * @returns map of absorbed node id -> survivor node id.
    */
-  /// True when @p point falls inside @p node's axis-aligned bounding box.
-  static bool bboxContains(const NodeView& node, const Eigen::Vector3d& point) {
-    const Eigen::Vector3d center = node.bbox_center.cast<double>();
-    const Eigen::Vector3d half = node.bbox_size.cast<double>() / 2.0;
-    const Eigen::Vector3d delta = (point - center).cwiseAbs();
-    return (delta.array() <= half.array()).all();
-  }
-
   std::unordered_map<NodeId, NodeId> collapseDuplicateObjects(SceneModel& model) const {
     std::unordered_map<NodeId, NodeId> collapsed;
     if (!object_slot_collapse_enabled_) {
@@ -1530,14 +1553,38 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
       if (ids.size() < 2) {
         continue;
       }
-      // Lowest id wins: node ids increase monotonically, so this is the oldest.
+      // Node ids increase monotonically, so lowest is oldest.
       std::sort(ids.begin(), ids.end());
-      const NodeId survivor_id = ids.front();
-      auto& survivor = model.nodes.at(survivor_id);
 
-      for (size_t i = 1; i < ids.size(); ++i) {
-        const NodeId other_id = ids[i];
+      // Only a node in the robot's current view is ever removed. A node
+      // restored from a previous session is archived, and archived nodes are
+      // left exactly as they were loaded -- collapsing those would delete map
+      // the robot is not even looking at, and a slot legitimately holding two
+      // archived nodes (a large object Hydra clustered in two pieces last run)
+      // would silently lose one of them.
+      const NodeId survivor_id = *std::min_element(
+          ids.begin(), ids.end(), [&model](NodeId lhs, NodeId rhs) {
+            const bool lhs_archived = !model.nodes.at(lhs).is_active;
+            const bool rhs_archived = !model.nodes.at(rhs).is_active;
+            if (lhs_archived != rhs_archived) {
+              return lhs_archived;  // an archived node always outranks an active one
+            }
+            return lhs < rhs;
+          });
+      auto& survivor = model.nodes.at(survivor_id);
+      // Restored geometry stays as loaded: the point of a resume is that the
+      // object keeps the extent it was saved with, rather than being reshaped
+      // by a fresh partial view of it.
+      const bool survivor_restored = !survivor.is_active;
+
+      for (const NodeId other_id : ids) {
+        if (other_id == survivor_id) {
+          continue;
+        }
         const auto& other = model.nodes.at(other_id);
+        if (!other.is_active) {
+          continue;  // archived: loaded from memory, left alone
+        }
 
         // Proximity guard: only collapse nodes that really are co-located.
         // Same slot should already imply same object, but if Phase 1 ever
@@ -1549,8 +1596,10 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
         // that carries large objects: a wall or floor seen from a new angle can
         // move its centroid metres while the two boxes still plainly overlap.
         // Centroid distance is the fallback for small or box-less nodes.
-        // Because the survivor's box grows as it absorbs (below), this is
-        // transitive across a slot's members rather than pairwise-to-first.
+        // When the survivor's box grows as it absorbs (below, active-only
+        // slots), this becomes transitive across a slot's members rather than
+        // pairwise-to-first. A restored survivor keeps its saved box, so there
+        // it stays a straight comparison against the extent from last run.
         const bool boxes_overlap =
             (survivor.has_bbox && bboxContains(survivor, other.position)) ||
             (other.has_bbox && bboxContains(other, survivor.position));
@@ -1561,7 +1610,8 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
 
         // Union the bounding boxes so the surviving object covers everything it
         // absorbed, rather than the newer partial observation replacing it.
-        if (other.has_bbox) {
+        // Skipped when the survivor was restored, which keeps its saved extent.
+        if (other.has_bbox && !survivor_restored) {
           if (!survivor.has_bbox) {
             survivor.has_bbox = true;
             survivor.bbox_center = other.bbox_center;
@@ -1610,6 +1660,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
       view.kind = kind;
       view.visible = layerVisible(kind);
       view.position = attrs->position;
+      view.is_active = attrs->is_active;
 
       const auto* semantic_attrs = node->tryAttributes<spark_dsg::SemanticNodeAttributes>();
       if (semantic_attrs) {
@@ -3426,9 +3477,11 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     marker.id = id;
     marker.action = Marker::ADD;
     const Eigen::Vector3d display_position = displayPosition(node);
-    marker.pose.position.x = display_position.x();
-    marker.pose.position.y = display_position.y();
-    marker.pose.position.z = display_position.z();
+    geometry_msgs::msg::Point marker_position;
+    marker_position.x = display_position.x();
+    marker_position.y = display_position.y();
+    marker_position.z = display_position.z();
+    marker.pose.position = marker_position;
     marker.pose.orientation.w = 1.0;
     marker.color.r = color.r;
     marker.color.g = color.g;
@@ -3440,6 +3493,37 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     marker.scale.y = marker_diameter;
     marker.scale.z = marker_diameter;
     addMarker(markers, next_keys, std::move(marker));
+
+    // Halo around anything Hydra currently has in its active window, i.e. the
+    // objects the robot is looking at and still updating. On a resumed run
+    // this is what separates live observation from map restored off disk --
+    // and it is the same flag the duplicate collapse keys on, so what glows is
+    // exactly what is eligible to be merged.
+    //
+    // A steady halo rather than a pulse: renderDirtyState only redraws when
+    // the scene changes, so an animated alpha would stutter rather than glow.
+    if (highlight_active_objects_ && node.is_active) {
+      Marker halo;
+      halo.header.frame_id = frame;
+      halo.header.stamp = stamp;
+      halo.ns = "rsg_active_objects";
+      halo.id = id;
+      halo.type = Marker::SPHERE;
+      halo.action = Marker::ADD;
+      halo.pose.position = marker_position;
+      halo.pose.orientation.w = 1.0;
+      const double halo_diameter =
+          std::max(marker_diameter * active_object_halo_scale_,
+                   marker_diameter + active_object_halo_min_margin_m_);
+      halo.scale.x = halo_diameter;
+      halo.scale.y = halo_diameter;
+      halo.scale.z = halo_diameter;
+      halo.color.r = 0.15F;
+      halo.color.g = 1.0F;
+      halo.color.b = 0.95F;
+      halo.color.a = static_cast<float>(active_object_halo_alpha_);
+      addMarker(markers, next_keys, std::move(halo));
+    }
 
     if (!show_object_labels_) {
       return;
@@ -4408,6 +4492,10 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   }
 
   mutable size_t collapse_log_countdown_ = 0;
+  bool highlight_active_objects_ = true;
+  double active_object_halo_scale_ = 1.7;
+  double active_object_halo_alpha_ = 0.30;
+  double active_object_halo_min_margin_m_ = 0.12;
   bool object_slot_collapse_enabled_ = true;
   double object_slot_collapse_max_distance_m_ = 2.0;
   std::string input_dsg_topic_;
