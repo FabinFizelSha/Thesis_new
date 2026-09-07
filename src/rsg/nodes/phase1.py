@@ -474,6 +474,9 @@ class Phase1SemanticCoordinator(Node):
         self.dropped_count = 0
         self.hydra_published_count = 0
         self.unknown_vlm_count = 0
+        # Set on the first received frame (not here) so startup delay before
+        # the bag starts flowing frames isn't counted against throughput.
+        self._run_start_time: Optional[float] = None
 
         self._segmentation_thread.start()
         self._tracking_publish_thread.start()
@@ -559,6 +562,8 @@ class Phase1SemanticCoordinator(Node):
             return
 
         now = time.perf_counter()
+        if self._run_start_time is None:
+            self._run_start_time = now
         self.received_count += 1
         frame_id = msg.rsg_frame_id
         rgb_time = stamp_to_float(msg.header.stamp)
@@ -3592,6 +3597,19 @@ class Phase1SemanticCoordinator(Node):
         # Stop new work first. Background loops and semantic fan-out inspect
         # this event and return without producing more slot-level messages.
         self._stop_event.set()
+
+        try:
+            start_time = getattr(self, "_run_start_time", None)
+            elapsed_sec = (time.perf_counter() - start_time) if start_time is not None else 0.0
+            avg_fps = (self.hydra_published_count / elapsed_sec) if elapsed_sec > 0 else 0.0
+            print(
+                f"Phase 1 output FPS: {avg_fps:.2f} "
+                f"({self.hydra_published_count} frames published to Hydra over {elapsed_sec:.1f}s, "
+                f"{self.dropped_count} frames dropped and never reached output)",
+                flush=True,
+            )
+        except Exception as exc:
+            print(f"Failed to compute Phase 1 output FPS: {exc}", flush=True)
 
         try:
             self.timing_recorder.save()
