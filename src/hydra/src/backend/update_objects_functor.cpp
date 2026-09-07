@@ -182,10 +182,35 @@ MergeList UpdateObjectsFunctor::findMerges(const DynamicSceneGraph& graph,
   // empty -- most likely restored nodes not archived (they are only eligible as
   // merge targets when is_active is false) or their semantic label not matching
   // what phase 1 is now publishing for the same object.
-  if (!proposals.empty()) {
-    LOG(INFO) << "[Hydra] object merges proposed: " << proposals.size()
-              << " (active objects examined against archived candidates)";
+  // Diagnostic for multi-session resume. A duplicate node stacked on a restored
+  // one means this path found nothing, and there are only a few possible
+  // reasons; log enough to tell them apart in one run rather than by
+  // inspection. Throttled because findMerges runs every backend spin.
+  static size_t report_countdown = 0;
+  if (!proposals.empty() || report_countdown == 0) {
+    size_t active_examined = 0;
+    for (const auto& node : view) {
+      (void)node;
+      ++active_examined;
+    }
+
+    size_t archived_objects = 0;
+    std::set<SemanticNodeAttributes::Label> archived_labels;
+    for (const auto& [node_id, node] : objects.nodes()) {
+      const auto attrs = node->tryAttributes<SemanticNodeAttributes>();
+      if (attrs && !attrs->is_active) {
+        ++archived_objects;
+        archived_labels.insert(attrs->semantic_label);
+      }
+    }
+
+    LOG(INFO) << "[Hydra] object merge scan: " << proposals.size() << " proposed | "
+              << active_examined << " active examined | " << archived_objects
+              << " archived candidates across " << archived_labels.size()
+              << " label(s) | " << objects.numNodes() << " objects total";
+    report_countdown = 50;
   }
+  --report_countdown;
 
   return proposals;
 }
