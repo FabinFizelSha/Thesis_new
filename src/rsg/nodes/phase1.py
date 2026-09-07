@@ -176,7 +176,19 @@ class Phase1SemanticCoordinator(Node):
                 # mapping republished, labelled or not, so the fuser can group
                 # a multi-segment object instead of drawing solid contact edges
                 # between its own segments.
-                self._restored_presence_pending = set(self.persistent_tracker._tracks)
+                #
+                # Tracked per *slot*, not per track. The ordinary heartbeat
+                # republishes only the one slot observed in the current frame
+                # (_publish_active_local_segments keys on record's
+                # hydra_slot_id), so retiring a whole track the moment any one
+                # of its segments is re-observed strands the rest: they stop
+                # being published having possibly never been published at all.
+                self._restored_presence_pending = {
+                    int(slot_id)
+                    for track in self.persistent_tracker._tracks.values()
+                    for slot_id in track.segments
+                    if int(slot_id) > 0
+                }
                 self.get_logger().info(
                     f"{len(self._restored_label_pending)} restored tracks carry a label "
                     "and will republish it to the fuser on re-observation"
@@ -1480,8 +1492,10 @@ class Phase1SemanticCoordinator(Node):
                     self._emit_restored_semantic_label(
                         external_track_id, frame, timestamp_sec
                     )
-                # Seen again: the ordinary heartbeat covers it from now on.
-                self._restored_presence_pending.discard(external_track_id)
+                # Presence is retired per slot in _publish_active_local_segments,
+                # not per track here: this stage runs before the publish stage,
+                # so discarding the track now would strand every segment of it
+                # that has not been re-observed yet.
 
             # Extract crop for diagnostic inspection
             try:
@@ -2410,8 +2424,11 @@ class Phase1SemanticCoordinator(Node):
         keyed by semantic slot, not by internal object, so revisiting section B
         of a long object resets only section B.
         """
-        if not track_records:
-            return
+        # No early return on an empty track_records: a resumed session has
+        # restored slots to republish before anything has been re-observed,
+        # and those frames are exactly when the fuser needs them. The
+        # "nothing to send" case is handled by the `if not segments` check
+        # once the restored entries have had their chance to contribute.
         segments: List[Dict[str, Any]] = []
         seen_slots = set()
         for record in track_records:
@@ -2546,25 +2563,29 @@ class Phase1SemanticCoordinator(Node):
         self._safe_publish(self.active_segments_pub, String(data=safe_json_dumps(payload)))
 
     def _restored_presence_segments(self, seen_slots: set) -> List[Dict[str, Any]]:
-        """Presence entries for restored tracks not yet re-observed this session.
+        """Presence entries for restored slots not yet re-observed this session.
 
         Carries only identity and geometry the fuser needs to group a physical
-        object's segments; a track drops out of here as soon as it is seen
-        again, at which point the ordinary heartbeat covers it.
+        object's segments. A *slot* drops out of here once that slot itself is
+        re-observed, at which point the ordinary heartbeat covers it. Retiring
+        at track granularity instead would strand a multi-segment object's
+        other segments, since the heartbeat only ever republishes the segment
+        observed in the current frame.
         """
         pending = getattr(self, "_restored_presence_pending", None)
         if not pending:
             return []
 
+        # A slot observed this frame is now covered by the heartbeat.
+        pending -= seen_slots
+        if not pending:
+            return []
+
         out: List[Dict[str, Any]] = []
-        for track_id in list(pending):
-            track = self.persistent_tracker._tracks.get(track_id)
-            if track is None:
-                pending.discard(track_id)
-                continue
+        for track_id, track in self.persistent_tracker._tracks.items():
             for slot_id, segment in track.segments.items():
                 slot = int(slot_id)
-                if slot <= 0 or slot in seen_slots:
+                if slot <= 0 or slot in seen_slots or slot not in pending:
                     continue
                 seen_slots.add(slot)
                 out.append({
