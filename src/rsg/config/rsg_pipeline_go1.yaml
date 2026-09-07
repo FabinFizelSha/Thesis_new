@@ -86,7 +86,7 @@ preprocessing:                                                                  
       rotation_rpy_rad: [0.0, 0.0, 0.0]                                                               # Measured Go1-body -> D455-color-optical rotation.
 
   tf_output:
-    publish_camera_tf: true                                                                          # This bag carries no /tf; the preprocessor must publish odom -> base -> camera itself.
+    publish_camera_tf: false                                                                         # Verified 2026-09-07: this method publishes odom -> camera_color_optical_frame directly (not via base), which would give that frame two TF parents once the required static base -> camera_color_optical_frame transform is published separately (Hydra's ros_sensors.cpp does a one-time TF lookup for exactly that static extrinsic; it does not consume this dynamic one). Publish the static transform instead: `ros2 run tf2_ros static_transform_publisher --x 0.10 --y 0.00 --z 0.159 --roll 0 --pitch 0 --yaw 0 --frame-id base --child-frame-id camera_color_optical_frame`.
 
   frame_id:
     prefix: rsg                                                                                      # Prefix for generated RSG frame identifiers.
