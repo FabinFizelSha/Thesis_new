@@ -53,13 +53,17 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("labelspace", default_value="rsg_slot_only_frozen"),
         # Where Hydra writes its shutdown artifacts. See default_log_path above.
         DeclareLaunchArgument("hydra_log_path", default_value=default_log_path),
-        # Multi-session resume: point this at a previous run's
-        # <log_path>/backend/dsg_with_mesh.json to restore that session's DSG
-        # and mesh at startup. "none" (the default) disables resume, so
-        # behaviour is unchanged unless it is set explicitly. Must not be empty:
-        # the launch frontend renders an empty arg as YAML null, which
-        # config-utilities cannot convert to a string and throws on.
-        DeclareLaunchArgument("hydra_load_state_path", default_value="none"),
+        # Multi-session resume. ON by default and pointed at where
+        # hydra_log_path saves, so runs chain automatically: the first run finds
+        # no file and starts fresh, saves at shutdown, and the next one resumes
+        # from it. A missing file is handled as a normal first run, not an error.
+        # Pass "none" to disable. Must not be empty -- the launch frontend
+        # renders an empty arg as YAML null, which config-utilities cannot
+        # convert to a string and throws on.
+        DeclareLaunchArgument(
+            "hydra_load_state_path",
+            default_value="/home/student/Thesis_new/memory/hydra/backend/dsg_with_mesh.json",
+        ),
         DeclareLaunchArgument("use_sim_time", default_value="true"),
         DeclareLaunchArgument("sensor_frame", default_value="left_cam"),
         DeclareLaunchArgument("robot_frame", default_value="base_link_gt"),

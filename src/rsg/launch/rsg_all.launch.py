@@ -100,7 +100,7 @@ sleep 1
         # a launch argument not declared at this level cannot be set from the
         # command line when launching rsg_all.
         DeclareLaunchArgument("hydra_log_path", default_value="/home/student/Thesis_new/memory/hydra"),
-        DeclareLaunchArgument("hydra_load_state_path", default_value="none"),
+        DeclareLaunchArgument("hydra_load_state_path", default_value="/home/student/Thesis_new/memory/hydra/backend/dsg_with_mesh.json"),
         DeclareLaunchArgument("glog_level", default_value="0"),
         DeclareLaunchArgument("glog_verbosity", default_value="0"),
         clear_hydra_cache,

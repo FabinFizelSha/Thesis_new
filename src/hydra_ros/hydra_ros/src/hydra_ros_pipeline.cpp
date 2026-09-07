@@ -48,6 +48,7 @@
 #include <pose_graph_tools_ros/conversions.h>
 
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 
 #include "hydra_ros/backend/ros_backend_publisher.h"
@@ -103,25 +104,48 @@ void HydraRosPipeline::init() {
   // every process, and emplaceNode on an existing id is a SILENT no-op that
   // discards the new cluster's geometry, so seeding the frontend graph would
   // quietly drop every new object in the resumed session.
-  // Logged unconditionally on purpose. If load_state_path were ever not parsed
-  // (a config key silently reaching no field is a mistake this codebase has
-  // made before), it would read as empty and be indistinguishable from "resume
-  // deliberately off". This line makes the difference visible in the log.
   // "none" is the launch-file sentinel for "disabled". It cannot be an empty
   // string: the launch frontend renders an empty arg as `{load_state_path: }`,
   // which is YAML null, and config-utilities throws converting null to a
   // std::string -- that would break every ordinary launch, not just resume.
-  const bool resuming =
+  const bool enabled =
       !config.load_state_path.empty() && config.load_state_path != "none";
-  LOG(WARNING) << "[Hydra] multi-session resume: "
-               << (resuming ? config.load_state_path : std::string("disabled"));
 
-  if (resuming) {
-    const auto restored = spark_dsg::DynamicSceneGraph::load(config.load_state_path);
+  // Resume is meant to be left on: the first run has nothing to load and must
+  // start fresh without complaint, the next one picks up what it saved. So a
+  // missing file is a normal first run, not an error.
+  //
+  // This has to be an existence check rather than a null check on the result:
+  // DynamicSceneGraph::load THROWS on a missing path, it does not return null,
+  // so an unguarded call would abort the node on every first run.
+  const bool have_state =
+      enabled && std::filesystem::exists(config.load_state_path);
+  // Logged unconditionally on purpose. If load_state_path were ever not parsed
+  // (a config key silently reaching no field is a mistake this codebase has
+  // made before), it would read as empty and be indistinguishable from resume
+  // being deliberately off. This line makes the difference visible in the log.
+  LOG(WARNING) << "[Hydra] multi-session resume: "
+               << (!enabled ? std::string("disabled")
+                            : have_state ? config.load_state_path
+                                         : config.load_state_path +
+                                               " (no saved state yet, starting fresh)");
+
+  bool resuming = false;
+  if (have_state) {
+    spark_dsg::DynamicSceneGraph::Ptr restored;
+    try {
+      restored = spark_dsg::DynamicSceneGraph::load(config.load_state_path);
+    } catch (const std::exception& e) {
+      // A corrupt or truncated save (e.g. a run killed mid-write) must not
+      // stop the pipeline from starting.
+      LOG(ERROR) << "[Hydra] resume: could not load '" << config.load_state_path
+                 << "' (" << e.what() << "); starting from an empty map";
+    }
     if (!restored) {
-      LOG(ERROR) << "[Hydra] resume requested but could not load '"
-                 << config.load_state_path << "'; starting from an empty map";
+      LOG(ERROR) << "[Hydra] resume: '" << config.load_state_path
+                 << "' produced no graph; starting from an empty map";
     } else {
+      resuming = true;
       LOG(WARNING) << "[Hydra] resuming from " << config.load_state_path << " ("
                    << restored->numNodes() << " nodes, "
                    << (restored->hasMesh() ? restored->mesh()->numVertices() : 0)
