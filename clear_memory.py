@@ -49,7 +49,10 @@ STORES = {
 # server does not block clearing the tracker, which it has nothing to do with.
 STORE_PROCESSES = {
     "tracker": ["phase1"],
-    "hydra": ["hydra_node"],
+    # The actual binary is hydra_ros_node -- "hydra_node" is not a substring of
+    # that (the "_ros_" in the middle breaks it), so pgrep -f never matched it
+    # and this guard silently never fired for a live Hydra process.
+    "hydra": ["hydra_ros_node"],
     "rap": ["chroma"],
 }
 
