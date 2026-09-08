@@ -103,12 +103,17 @@ sleep 1
         # command line when launching rsg_all.
         DeclareLaunchArgument("hydra_log_path", default_value="/home/student/Thesis_new/memory/hydra"),
         DeclareLaunchArgument("hydra_load_state_path", default_value="/home/student/Thesis_new/memory/hydra/backend/dsg_with_mesh.json"),
-        # Defaulted off 2026-09-08 to test trajectory continuity across a
-        # pipeline restart (pause the bag, restart hydra/phase1/fuser, resume
-        # the same paused bag). Set true for the other tested path: replaying
-        # the same bag from its own beginning, where the trajectory really is
-        # stale and should reset to the map origin.
-        DeclareLaunchArgument("hydra_resume_reset_trajectory", default_value="false"),
+        # This flag ONLY controls whether Hydra's restored agent/trajectory
+        # nodes are kept (false) or dropped (true, default) -- it has no
+        # effect on the robot's actual position, which comes entirely from
+        # whatever /tf the bag or live sensor is currently publishing. Keeping
+        # the old nodes (false) risks a NEW pose silently failing to insert if
+        # its id collides with a retained one (graph.hasNode -> skip), which
+        # is what "trace stops updating after resume" looks like -- confirmed
+        # 2026-09-08. Default true: drop them, so each run's visible trace is
+        # just its own, with no collision risk, while a properly paused (not
+        # restarted) bag still continues the real position seamlessly.
+        DeclareLaunchArgument("hydra_resume_reset_trajectory", default_value="true"),
         # datasets/uhumans2.yaml sets backend.enable_node_merging: false. See the
         # comment at rsg_hydra_from_phase1.launch.py's declaration of this arg.
         DeclareLaunchArgument("hydra_enable_object_merging", default_value="true"),

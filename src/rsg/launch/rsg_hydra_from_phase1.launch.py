@@ -63,9 +63,12 @@ def generate_launch_description() -> LaunchDescription:
         # On resume, start the trajectory at the map origin (correct when
         # replaying the same bag). Set false to continue the previous run's
         # trajectory, which is what you want when genuinely exploring onward.
-        # Defaulted off 2026-09-08 to test trajectory continuity across a
-        # pipeline restart -- see rsg_all.launch.py's comment on this same arg.
-        DeclareLaunchArgument("hydra_resume_reset_trajectory", default_value="false"),
+        # See rsg_all.launch.py's comment on this same arg: controls only
+        # whether restored agent/trajectory nodes are kept or dropped, not the
+        # robot's actual position. Default true avoids a real bug where a
+        # kept old node can silently block a new pose with the same id from
+        # ever being inserted.
+        DeclareLaunchArgument("hydra_resume_reset_trajectory", default_value="true"),
         # datasets/uhumans2.yaml sets backend.enable_node_merging: false. True is
         # required for a resumed run to reconcile a freshly re-observed object
         # with the one restored from the previous session (bbox-overlap match
