@@ -27,6 +27,7 @@ launch:
   - arg: {name: log_path, default: $(env HOME)/.hydra/$(var log_name), description: Directory to output to}
   - arg: {name: load_state_path, default: none, description: Multi-session resume - path to a saved backend/dsg_with_mesh.json from an earlier run. 'none' disables. Must not be empty - an empty value renders as YAML null and fails to parse as a string}
   - arg: {name: resume_reset_trajectory, default: 'true', description: Drop the restored trajectory on resume so the new run starts at the map origin - set false to continue the previous trajectory instead}
+  - arg: {name: enable_object_merging, default: 'true', description: Backend UpdateObjectsFunctor - merge an active object node into an archived one of the same label when their boxes overlap. datasets/uhumans2.yaml sets this false; true is required for a resumed session to reconcile a freshly re-observed object with the one restored from the previous run instead of duplicating it}
   - arg: {name: exit_after_clock, default: 'false', description: Shutdown hydra node after a rosbag finishes playing}
   - arg: {name: enable_zmq, default: 'false', description: Turn on zmq-based publishing for scene graph}
   - arg: {name: zmq_url, default: 'tcp://127.0.0.1:8001', description: ZMQ publish url}
@@ -52,6 +53,7 @@ launch:
         --config-utilities-yaml {exit_after_clock: $(var exit_after_clock), log_path: $(var log_path)}
         --config-utilities-yaml {load_state_path: $(var load_state_path)}
         --config-utilities-yaml {resume_reset_trajectory: $(var resume_reset_trajectory)}
+        --config-utilities-yaml {backend: {enable_node_merging: $(var enable_object_merging)}}
         --config-utilities-yaml {print_missing: $(var print_missing), glog_level: $(var glog_level), glog_verbosity: $(var glog_verbosity)}
         --config-utilities-yaml {robot_id: $(var robot_id), odom_frame: $(var odom_frame), robot_frame: $(var robot_frame), map_frame: $(var map_frame)}
         --config-utilities-yaml {enable_zmq: $(var enable_zmq), backend: {zmq_sink: {url: $(var zmq_url), send_mesh: $(var zmq_send_mesh)}}}
