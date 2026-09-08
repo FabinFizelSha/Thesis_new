@@ -103,7 +103,12 @@ sleep 1
         # command line when launching rsg_all.
         DeclareLaunchArgument("hydra_log_path", default_value="/home/student/Thesis_new/memory/hydra"),
         DeclareLaunchArgument("hydra_load_state_path", default_value="/home/student/Thesis_new/memory/hydra/backend/dsg_with_mesh.json"),
-        DeclareLaunchArgument("hydra_resume_reset_trajectory", default_value="true"),
+        # Defaulted off 2026-09-08 to test trajectory continuity across a
+        # pipeline restart (pause the bag, restart hydra/phase1/fuser, resume
+        # the same paused bag). Set true for the other tested path: replaying
+        # the same bag from its own beginning, where the trajectory really is
+        # stale and should reset to the map origin.
+        DeclareLaunchArgument("hydra_resume_reset_trajectory", default_value="false"),
         # datasets/uhumans2.yaml sets backend.enable_node_merging: false. See the
         # comment at rsg_hydra_from_phase1.launch.py's declaration of this arg.
         DeclareLaunchArgument("hydra_enable_object_merging", default_value="true"),
