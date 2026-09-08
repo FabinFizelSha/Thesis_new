@@ -150,6 +150,22 @@
     object_slot_collapse_enabled: true                                                                          # Master switch. Off = one node per Hydra cluster, duplicates included.
     object_slot_collapse_max_distance_m: 2.0                                                                    # Centroid fallback. Nodes also collapse when either bbox contains the other's centroid, which is what carries large objects whose centroid shifts as more surface is seen.
 
+    # In-view highlight: a translucent cyan halo around anything currently at
+    # high presence confidence -- i.e. recently observed. Driven by the same
+    # confidence value that sets alpha, not a separate age cutoff: confidence
+    # is exactly 1.0 while inside presence_observed_epsilon_sec and clears
+    # 0.99 for a further ~8.7s (static half-life) / ~1.7s (dynamic half-life)
+    # after, so it reads as "in view right now" without its own parameter.
+    # A restored-but-not-yet-reobserved slot's true confidence stays
+    # vanishingly small (its day-plus save-time shift), so it renders fully
+    # opaque (see minimum_object_alpha above) but does NOT glow until it is
+    # genuinely reobserved this session.
+    highlight_active_objects: true                                                                              # Master switch. Hide in RViz by unticking the "rsg_active_objects" marker namespace instead, if you just want it off visually without restarting.
+    active_object_halo_min_confidence: 0.99                                                                     # Presence confidence threshold to glow. Lower it to keep the halo lit longer after an object leaves view.
+    active_object_halo_scale: 1.7                                                                               # Halo diameter as a multiple of the object's own sphere.
+    active_object_halo_alpha: 0.30                                                                              # Raise for a stronger glow; the halo is drawn over the object sphere.
+    active_object_halo_min_margin_m: 0.12                                                                       # Floor on the halo's extra diameter, so small objects still show a visible ring.
+
     # Object-segment relationships (blue dotted lines): local segments phase 1
     # split off from one physical object too large to track as a single
     # segment. Chained in ascending NodeId order (a proxy for formation

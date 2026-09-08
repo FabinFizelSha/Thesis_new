@@ -783,6 +783,14 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     object_slot_collapse_enabled_ = declare_parameter<bool>("object_slot_collapse_enabled", true);
     object_slot_collapse_max_distance_m_ =
         declare_parameter<double>("object_slot_collapse_max_distance_m", 2.0);
+    // In-view halo: lit for anything currently at high presence confidence.
+    highlight_active_objects_ = declare_parameter<bool>("highlight_active_objects", true);
+    active_object_halo_min_confidence_ = clampValue(
+        declare_parameter<double>("active_object_halo_min_confidence", 0.99), 0.0, 1.0);
+    active_object_halo_scale_ = declare_parameter<double>("active_object_halo_scale", 1.7);
+    active_object_halo_alpha_ = declare_parameter<double>("active_object_halo_alpha", 0.30);
+    active_object_halo_min_margin_m_ =
+        declare_parameter<double>("active_object_halo_min_margin_m", 0.12);
     object_segment_write_dsg_edges_ =
         declare_parameter<bool>("object_segment_write_dsg_edges", true);
     object_segment_max_group_size_ = static_cast<size_t>(
@@ -3282,25 +3290,17 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     const double now_sec = currentReferenceTimeSec();
     resolved.age_sec = std::max(0.0, now_sec - it->second.last_observed_timestamp_sec);
 
-    // A restored-but-not-yet-reobserved slot carries phase1's saved timestamp,
-    // deliberately shifted a day-plus into the past so phase1's own revisit
-    // logic treats it as stale (see memory/README.md). That same timestamp fed
-    // through the exponential decay below is catastrophic here: at a 600s
-    // static half-life, one day of age is ~144 half-lives, so confidence
-    // underflows to the minimum-alpha floor (0.03) and the object renders as
-    // functionally invisible in RViz -- even though the node and its edges are
-    // published and present, which is what made this look like a publish
-    // problem rather than a rendering one. Report it as freshly confirmed
-    // instead: it's known map content from the previous session, not a stale
-    // same-run object that's actually been out of view for a day.
-    if (it->second.is_restored) {
-      resolved.state = "RESTORED";
-      resolved.confidence = 1.0;
-      return resolved;
-    }
-
+    // This is the TRUE, honest recency signal: for a restored-but-not-yet
+    // -reobserved slot, age_sec reflects phase1's deliberate day-plus save-time
+    // shift (see memory/README.md), so confidence correctly comes out
+    // vanishingly small here. That is exactly what the halo in
+    // appendObjectMarkers needs -- a restored object hasn't actually been seen
+    // this session, so it must not glow just because it's known map content.
+    // Rendering it as fully opaque anyway (not invisible) is handled
+    // separately in objectDisplayColor, which is the only place this value
+    // gets used for alpha rather than recency.
     const bool observed = resolved.age_sec <= presence_observed_epsilon_sec_;
-    resolved.state = observed ? "OBSERVED" : "DECAYING";
+    resolved.state = it->second.is_restored ? "RESTORED" : (observed ? "OBSERVED" : "DECAYING");
     const double decay_age_sec = std::max(0.0, resolved.age_sec - presence_observed_epsilon_sec_);
     resolved.confidence = observed
                               ? 1.0
@@ -3345,8 +3345,10 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
         std::ostringstream line;
         line.setf(std::ios::fixed);
         line.precision(2);
-        line << "presence " << (presence_state.state == "OBSERVED" ? "obs " : "dec ")
-             << presence_state.confidence;
+        const char* presence_tag = presence_state.state == "OBSERVED" ? "obs "
+                                   : presence_state.state == "RESTORED" ? "rst "
+                                                                        : "dec ";
+        line << "presence " << presence_tag << presence_state.confidence;
         label += "\n" + line.str();
       }
     }
@@ -3368,9 +3370,17 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     const uint32_t slot_id = overlay ? overlay->slot_id : node.semantic_slot;
     const ResolvedPresence presence_state = resolvePresenceForSlot(slot_id, presence, mobility_class);
     if (presence_state.observation.slot_id > 0U) {
+      // A restored-but-not-yet-reobserved slot's confidence is deliberately
+      // near-zero (see resolvePresenceForSlot) -- correct for recency, wrong
+      // for opacity. Its day-plus save-time shift is not a session's worth of
+      // real inactivity; it just hasn't been checked yet this run. Render it
+      // fully opaque instead of applying the same alpha the decay curve would
+      // give an object that has genuinely sat unseen this long.
+      const double alpha_confidence =
+          presence_state.observation.is_restored ? 1.0 : presence_state.confidence;
       color.a = std::max(
           minimum_object_alpha_,
-          static_cast<float>(static_cast<double>(color.a) * presence_state.confidence));
+          static_cast<float>(static_cast<double>(color.a) * alpha_confidence));
     }
     return color;
   }
@@ -3507,6 +3517,52 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     marker.scale.y = marker_diameter;
     marker.scale.z = marker_diameter;
     addMarker(markers, next_keys, std::move(marker));
+
+    // Halo: a translucent ring around anything recently observed. Driven by
+    // the same presence confidence that sets alpha above, thresholded high
+    // (default 0.99) rather than gated on a separate age cutoff. This falls
+    // out of the decay formula almost for free: confidence is exactly 1.0
+    // while inside presence_observed_epsilon_sec (freshly seen this frame),
+    // and clears 0.99 for only a few seconds after -- roughly 8.7s at the
+    // 600s static half-life, ~1.7s at the 120s dynamic one -- so it reads as
+    // "in view right now" without needing its own age parameter.
+    //
+    // Deliberately uses the RAW confidence, not objectDisplayColor's alpha
+    // value: a restored-but-not-yet-reobserved slot is rendered fully opaque
+    // (see objectDisplayColor) so it isn't invisible, but its true recency is
+    // still near zero -- it must not glow just because it's known map
+    // content that hasn't actually been checked yet this session.
+    if (highlight_active_objects_) {
+      const SemanticOverlay* halo_overlay = overlayForNode(node, resolved);
+      const uint32_t halo_slot = halo_overlay ? halo_overlay->slot_id : node.semantic_slot;
+      const std::string halo_mobility = halo_overlay ? halo_overlay->mobility_class : "unknown";
+      const ResolvedPresence halo_presence = resolvePresenceForSlot(halo_slot, presence, halo_mobility);
+      if (halo_presence.observation.slot_id > 0U &&
+          halo_presence.confidence > active_object_halo_min_confidence_) {
+        Marker halo;
+        halo.header.frame_id = frame;
+        halo.header.stamp = stamp;
+        halo.ns = "rsg_active_objects";
+        halo.id = id;
+        halo.type = Marker::SPHERE;
+        halo.action = Marker::ADD;
+        halo.pose.position.x = display_position.x();
+        halo.pose.position.y = display_position.y();
+        halo.pose.position.z = display_position.z();
+        halo.pose.orientation.w = 1.0;
+        const double halo_diameter =
+            std::max(marker_diameter * active_object_halo_scale_,
+                     marker_diameter + active_object_halo_min_margin_m_);
+        halo.scale.x = halo_diameter;
+        halo.scale.y = halo_diameter;
+        halo.scale.z = halo_diameter;
+        halo.color.r = 0.15F;
+        halo.color.g = 1.0F;
+        halo.color.b = 0.95F;
+        halo.color.a = static_cast<float>(active_object_halo_alpha_);
+        addMarker(markers, next_keys, std::move(halo));
+      }
+    }
 
     if (!show_object_labels_) {
       return;
@@ -4477,6 +4533,11 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   mutable size_t collapse_log_countdown_ = 0;
   bool object_slot_collapse_enabled_ = true;
   double object_slot_collapse_max_distance_m_ = 2.0;
+  bool highlight_active_objects_ = true;
+  double active_object_halo_min_confidence_ = 0.99;
+  double active_object_halo_scale_ = 1.7;
+  double active_object_halo_alpha_ = 0.30;
+  double active_object_halo_min_margin_m_ = 0.12;
   std::string input_dsg_topic_;
   std::string semantic_label_topic_;
   std::string active_segments_topic_;
