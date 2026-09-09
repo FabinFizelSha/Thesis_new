@@ -1,19 +1,28 @@
 # Revisit / FPS Experiment — Diagnostic Setup
 
-Status: 2026-09-09, two informal runs done (before the archive step was
-followed correctly — see "Lessons from the first two runs" below) plus one
-metric added since. The 4-run controlled test has not been run yet.
+Status: **Part 1 (revisit accuracy) is complete** — 5 sessions run
+2026-09-09, results and analysis in `EXPERIMENT_PART1_REVISIT_ACCURACY.md`.
+Part 2 (frame-throughput / FPS at a higher bag rate) has not been run yet;
+this document's tooling and procedure sections still apply to it.
 
 ## What this measures
 
-Four consecutive runs of the same fixed-duration bag segment, each resuming
-from the previous run's saved state (`resume_reset_trajectory` at its default
-`true` — see `IMPLEMENTATION.md` Section 5, "Scenario B: next-day revisit").
-The hypothesis under test: as the pipeline re-encounters objects it has
-already mapped, it should stop minting new tracks for them (object count
-plateaus), which means fewer objects need a VLM call for labelling (VLM call
-count drops), which frees GPU time for SAM (Phase 1's own frame throughput —
-FPS — should rise).
+Consecutive sessions of the same fixed-duration bag segment, each resuming
+from the previous session's saved state (`resume_reset_trajectory` at its
+default `true` — see `IMPLEMENTATION.md` Section 5, "Scenario B: next-day
+revisit"). The full hypothesis has two parts, split into two experiments:
+
+- **Part 1 (done — see `EXPERIMENT_PART1_REVISIT_ACCURACY.md`)**: as the
+  pipeline re-encounters objects it has already mapped, it should stop
+  minting new tracks for them, resolving them as revisits instead.
+- **Part 2 (not yet run)**: fewer not-yet-labelled objects means fewer VLM
+  calls, which frees GPU time for SAM, so frame throughput (FPS) should rise
+  on later sessions. Part 1's data showed VLM calls falling sharply without
+  FPS moving, at `--rate 0.1` — Part 1's Section 6/7 argues this is because
+  Phase 1 is input-bound at that rate, and Part 2 should test at a higher
+  rate rather than treat the FPS half of the hypothesis as already settled.
+
+This document's tooling and per-session procedure apply to both parts.
 
 Per run, this setup captures:
 
@@ -195,36 +204,19 @@ under `debug/revisit_experiment/runs/<label>/`. Same file layout either way:
 Neither directory is tracked in git (see `.gitignore`) — large and
 regeneratable by re-running the bag with the same tooling.
 
-## Ideal outcome, restated precisely
+## Results
 
-- `track_count` and `hydra_object_node_count`: run 1 establishes the map;
-  runs 2-4 should show **no growth** (per `IMPLEMENTATION.md` Section 6 — this
-  is the same revisit-accuracy question, measured here as a side effect while
-  measuring FPS).
-- `vlm_call_count`: high on run 1 (everything is new), falling toward run 4
-  (most objects already labelled from a previous run and never re-dispatched
-  — see `IMPLEMENTATION.md` Section 2.3, restored tracks are never re-sent to
-  the VLM).
-- `avg_fps` and `avg_frame_latency_ms`: FPS rising / latency falling run 1 ->
-  run 4, inversely tracking `vlm_call_count` and `avg_gpu_pct` — less VLM
-  inference contending for the GPU should leave more of it for SAM, so a
-  frame should both arrive-to-Hydra faster and arrive more often.
-- `frame_drop_count`: should fall alongside `avg_gpu_pct`, as a second,
-  independent signal of the same effect.
+**Part 1 (revisit accuracy) is complete.** Full results, the five-session
+data table, the recurring-miss analysis, and the conclusion are in
+`EXPERIMENT_PART1_REVISIT_ACCURACY.md` — not duplicated here. Headline: 97.5%
+of re-encountered objects across sessions 2-5 correctly resolved as revisits
+rather than new tracks, and `vlm_call_count` fell monotonically (28→11→5→2→1)
+while FPS/latency stayed flat, pointing at Phase 1 being input-bound at
+`--rate 0.1` rather than GPU-bound.
 
-**What the first two informal runs actually showed, worth carrying into the
-4-run test:** `avg_fps` was flat (0.496 -> 0.492) and `avg_frame_latency_ms`
-was flat-to-slightly-up (3286ms -> 3319ms) despite `vlm_call_count` dropping
-32 -> 12. `avg_classifier_delay_ms` (~93% of total latency) and
-`avg_sam_inference_ms` (~65% of classifier time, ~2000ms on its own) were
-also flat. At `--rate 0.1`, SAM inference time itself may simply dominate
-enough that 20 fewer VLM calls over 300s doesn't move it — i.e. Phase 1 may
-not be GPU-contention-bound at this playback rate in the first place. A
-longer run (or one at a higher bag rate) is needed before concluding the FPS
-side of the hypothesis doesn't hold; the object/VLM-count side of it is
-unaffected by this and is the priority to confirm first.
-
-Any run where `track_count` grows is evidence against the object-recognition
-half of the hypothesis and should be looked at first — cross-reference
-against `debug/revisit_experiment/IMPLEMENTATION.md` Section 6's discussion
-of the `global_centroid_pass_m` gate as the leading suspect.
+**Part 2 (FPS at a higher bag rate) has not been run yet.** When it is, its
+own results document should sit alongside
+`EXPERIMENT_PART1_REVISIT_ACCURACY.md` in this same directory, following the
+same structure (objective, hypothesis, setup, results, analysis,
+conclusion) so both are ready to drop into a thesis experiments chapter with
+minimal rewriting.
