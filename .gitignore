@@ -67,6 +67,7 @@ debug/object_tracking_experiment_part2/tracking_quality/*
 # each run's archived tracker/DSG/timing/resource data -- large, and
 # regeneratable by re-running the bag with the same tooling.
 debug/revisit_experiment/runs/*
+debug/revisit_experiment/sessions/*
 
 # --- Cross-run memory ------------------------------------------------------
 # memory/ holds everything that survives a run: the RAP Chroma store, its

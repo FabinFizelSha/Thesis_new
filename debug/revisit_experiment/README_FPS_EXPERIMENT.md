@@ -61,40 +61,52 @@ config — saves it competing for GPU memory at all:
 ros2 launch rsg rsg_all.launch.py start_risk_vlm:=false
 ```
 
-## Lessons from the first two informal runs
+## Lessons from the manual-label attempts, and the fix
 
-Two runs were done back to back without `monitor_resources.py` or
-`snapshot_run.py` in the loop. Consequence: `memory/tracker/` and
-`memory/hydra/backend/dsg.json` get overwritten by every run, so by the time
-`snapshot_run.py` was run afterward, only run 2's track/object counts were
-recoverable — run 1's were already gone. Its timing CSV survived only because
-Phase 1 gives it a unique per-launch filename in a different directory; that
-is what let `avg_frame_latency_ms` etc. be recovered for run 1 after the fact.
-GPU/CPU load is missing for both runs since the monitor was never started.
+Three attempts hit the same class of problem, in order: (1) two runs done
+back to back with no archiving at all -- run 1's track/object counts were
+gone by the time anyone thought to check, since `memory/tracker/` and
+`memory/hydra/backend/dsg.json` get overwritten every run; (2) a
+`--run-label runN` typed literally instead of a real number, twice, because
+the checklist's placeholder text got copy-pasted as-is. Every case is the
+same root cause: a manual step, at a specific moment, easy to forget or
+mistype.
 
-**The fix is procedural, not a code gap: run the four commands in the
-checklist below, in order, every single run.** Skipping the archive step is
-the one mistake that cannot be undone afterward — everything else is
-recoverable from logs.
+**`run_session.py` removes the manual step.** One command, no label to
+choose, run once per launch. It waits for the pipeline to be up, samples
+resources the whole time, detects the pipeline exiting on its own (instead of
+requiring a manually-timed follow-up command), waits for the shutdown save to
+settle, and archives automatically into its own auto-generated, never-reused
+`session_<timestamp>` directory. This is the primary way to run this
+experiment now; `monitor_resources.py` and `snapshot_run.py` still work
+standalone (documented further below) if you want to run either step by hand.
 
-## Quick checklist — do this exactly, every run
+## Quick checklist — the recommended way
 
 ```
-[ ] (run 1 only) python3 clear_memory.py
+[ ] (first run of a fresh baseline only) python3 clear_memory.py
 [ ] terminal A:  ros2 launch rsg rsg_all.launch.py start_risk_vlm:=false
-[ ] terminal B:  python3 debug/revisit_experiment/monitor_resources.py --run-label runN
+[ ] terminal B:  python3 debug/revisit_experiment/run_session.py
+[ ]              -- note the printed session id, or read it back later --
 [ ] terminal C:  <your bag-play command with the 300s timeout>
-[ ]              -- wait for the bag to stop, then a few more seconds --
-[ ] Ctrl+C terminal B
-[ ] Ctrl+C terminal A, WAIT for the shell prompt to return
-[ ] python3 debug/revisit_experiment/snapshot_run.py --run-label runN
+[ ]              -- when the bag stops, Ctrl+C terminal A and wait --
+[ ]              -- terminal B detects the exit and archives on its own --
 [ ] confirm the printed summary has real numbers, not blank/None, before starting the next run
 ```
 
-Swap `runN` for `run1`/`run2`/`run3`/`run4` each time. The full explanation
-of each step follows below.
+Terminal B does not need a Ctrl+C at all in the normal case -- it stops
+itself once it sees both `hydra_ros_node` and `rsg_phase1_semantic_coordinator`
+have exited. Repeat for as many runs as the test calls for; give me the
+printed session ids (or point at
+`debug/revisit_experiment/sessions/summary_all_sessions.csv`, which has all
+of them) for a full test cycle.
 
-## Per-run procedure
+## Per-run procedure (manual fallback, one script per step)
+
+The section below documents `monitor_resources.py` + `snapshot_run.py` run by
+hand, kept for reference and for anyone who wants to control each step
+themselves. `run_session.py` above does the same thing automatically and is
+the recommended path.
 
 Repeat this block **four times**. Two terminals per run (three if you also
 watch logs live), the same each time except the memory-clear step, which is
@@ -161,20 +173,27 @@ is that each one resumes from the previous run's save.
 Back to terminal A, same launch command, same `run2`/`run3`/`run4` label in
 the other two scripts.
 
-## What you'll have after 4 runs
+## What you'll have after N runs
 
-- `debug/revisit_experiment/runs/summary_all_runs.csv` — one row per run,
-  every headline metric in one file. This is what a track-count-vs-run,
-  VLM-calls-vs-run, or FPS-vs-run plot reads directly.
-- `debug/revisit_experiment/runs/run<N>/resource_usage.csv` — one row per
-  second of GPU%/CPU%/RAM/temperature/power for that run, for a
-  load-over-time plot within or across runs.
-- `debug/revisit_experiment/runs/run<N>/phase1_timing.csv` — full per-frame
-  and per-VLM-call detail (SAM inference ms, classifier delay, etc.) if the
-  headline numbers need to be broken down further.
-- `debug/revisit_experiment/runs/run<N>/{phase1_tracker_state.json,hydra_dsg.json}`
-  — the raw state each run actually produced, in case a specific object needs
-  tracing back by hand.
+Using `run_session.py` (recommended), everything lands under
+`debug/revisit_experiment/sessions/<session_id>/`; using the manual scripts,
+under `debug/revisit_experiment/runs/<label>/`. Same file layout either way:
+
+- `sessions/summary_all_sessions.csv` (or `runs/summary_all_runs.csv`) — one
+  row per run, every headline metric in one file. This is what a
+  track-count-vs-run, VLM-calls-vs-run, or FPS-vs-run plot reads directly.
+- `<session_id>/resource_usage.csv` — one row per second of
+  GPU%/CPU%/RAM/temperature/power for that run, for a load-over-time plot
+  within or across runs.
+- `<session_id>/phase1_timing.csv` — full per-frame and per-VLM-call detail
+  (SAM inference ms, classifier delay, etc.) if the headline numbers need to
+  be broken down further.
+- `<session_id>/{phase1_tracker_state.json,hydra_dsg.json}` — the raw state
+  each run actually produced, in case a specific object needs tracing back
+  by hand.
+
+Neither directory is tracked in git (see `.gitignore`) — large and
+regeneratable by re-running the bag with the same tooling.
 
 ## Ideal outcome, restated precisely
 

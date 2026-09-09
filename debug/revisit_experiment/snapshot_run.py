@@ -279,8 +279,8 @@ def _read_resource_summary(out_dir: Path) -> dict:
     }
 
 
-def _append_summary_csv(row: dict) -> Path:
-    csv_path = RUNS_DIR / "summary_all_runs.csv"
+def _append_summary_csv(row: dict, csv_path: Path | None = None) -> Path:
+    csv_path = csv_path if csv_path is not None else RUNS_DIR / "summary_all_runs.csv"
     is_new = not csv_path.exists()
     with csv_path.open("a", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=SUMMARY_CSV_FIELDS)
