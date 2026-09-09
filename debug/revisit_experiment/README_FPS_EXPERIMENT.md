@@ -1,8 +1,8 @@
 # Revisit / FPS Experiment — Diagnostic Setup
 
-Status: implementation ready, 2026-09-09. No runs have been executed yet — this
-is the setup and runbook. Results and analysis are a separate document once
-the 4 runs are done.
+Status: 2026-09-09, two informal runs done (before the archive step was
+followed correctly — see "Lessons from the first two runs" below) plus one
+metric added since. The 4-run controlled test has not been run yet.
 
 ## What this measures
 
@@ -24,7 +24,16 @@ Per run, this setup captures:
 3. **Frame throughput (FPS)** — Phase 1's real per-frame processing rate,
    plus its frame-drop count (a second, independent signal of GPU contention:
    drops rise when Phase 1 falls behind).
-4. **CPU/GPU load** — sampled directly from this Jetson's own `tegrastats`
+4. **Per-frame latency (input to Hydra output)** — average/median/max
+   milliseconds from a frame arriving at Phase 1 to Phase 1 finishing
+   publishing it to Hydra (`total_delay_ms` on the existing `frame_trace`
+   row), plus how much of that is spent in the classifier stage
+   (SAM + association) versus pure SAM inference. This is the more direct
+   answer to "does a frame move through Phase 1 faster on a later run" —
+   FPS can be flat while this still moves, or vice versa, if frame arrival
+   is the bottleneck rather than processing time (see the note on the first
+   two runs below).
+5. **CPU/GPU load** — sampled directly from this Jetson's own `tegrastats`
    (not `nvidia-smi` — confirmed on this hardware that reports no usable
    figures on Jetson/Tegra).
 
@@ -51,6 +60,39 @@ config — saves it competing for GPU memory at all:
 ```bash
 ros2 launch rsg rsg_all.launch.py start_risk_vlm:=false
 ```
+
+## Lessons from the first two informal runs
+
+Two runs were done back to back without `monitor_resources.py` or
+`snapshot_run.py` in the loop. Consequence: `memory/tracker/` and
+`memory/hydra/backend/dsg.json` get overwritten by every run, so by the time
+`snapshot_run.py` was run afterward, only run 2's track/object counts were
+recoverable — run 1's were already gone. Its timing CSV survived only because
+Phase 1 gives it a unique per-launch filename in a different directory; that
+is what let `avg_frame_latency_ms` etc. be recovered for run 1 after the fact.
+GPU/CPU load is missing for both runs since the monitor was never started.
+
+**The fix is procedural, not a code gap: run the four commands in the
+checklist below, in order, every single run.** Skipping the archive step is
+the one mistake that cannot be undone afterward — everything else is
+recoverable from logs.
+
+## Quick checklist — do this exactly, every run
+
+```
+[ ] (run 1 only) python3 clear_memory.py
+[ ] terminal A:  ros2 launch rsg rsg_all.launch.py start_risk_vlm:=false
+[ ] terminal B:  python3 debug/revisit_experiment/monitor_resources.py --run-label runN
+[ ] terminal C:  <your bag-play command with the 300s timeout>
+[ ]              -- wait for the bag to stop, then a few more seconds --
+[ ] Ctrl+C terminal B
+[ ] Ctrl+C terminal A, WAIT for the shell prompt to return
+[ ] python3 debug/revisit_experiment/snapshot_run.py --run-label runN
+[ ] confirm the printed summary has real numbers, not blank/None, before starting the next run
+```
+
+Swap `runN` for `run1`/`run2`/`run3`/`run4` each time. The full explanation
+of each step follows below.
 
 ## Per-run procedure
 
@@ -144,13 +186,26 @@ the other two scripts.
   (most objects already labelled from a previous run and never re-dispatched
   — see `IMPLEMENTATION.md` Section 2.3, restored tracks are never re-sent to
   the VLM).
-- `avg_fps`: rising run 1 -> run 4, inversely tracking `vlm_call_count` and
-  `avg_gpu_pct` — less VLM inference contending for the GPU should leave more
-  of it for SAM.
+- `avg_fps` and `avg_frame_latency_ms`: FPS rising / latency falling run 1 ->
+  run 4, inversely tracking `vlm_call_count` and `avg_gpu_pct` — less VLM
+  inference contending for the GPU should leave more of it for SAM, so a
+  frame should both arrive-to-Hydra faster and arrive more often.
 - `frame_drop_count`: should fall alongside `avg_gpu_pct`, as a second,
   independent signal of the same effect.
 
-Any run where `track_count` grows is evidence against the hypothesis and
-should be looked at first — cross-reference against
-`debug/revisit_experiment/IMPLEMENTATION.md` Section 6's discussion of the
-`global_centroid_pass_m` gate as the leading suspect.
+**What the first two informal runs actually showed, worth carrying into the
+4-run test:** `avg_fps` was flat (0.496 -> 0.492) and `avg_frame_latency_ms`
+was flat-to-slightly-up (3286ms -> 3319ms) despite `vlm_call_count` dropping
+32 -> 12. `avg_classifier_delay_ms` (~93% of total latency) and
+`avg_sam_inference_ms` (~65% of classifier time, ~2000ms on its own) were
+also flat. At `--rate 0.1`, SAM inference time itself may simply dominate
+enough that 20 fewer VLM calls over 300s doesn't move it — i.e. Phase 1 may
+not be GPU-contention-bound at this playback rate in the first place. A
+longer run (or one at a higher bag rate) is needed before concluding the FPS
+side of the hypothesis doesn't hold; the object/VLM-count side of it is
+unaffected by this and is the priority to confirm first.
+
+Any run where `track_count` grows is evidence against the object-recognition
+half of the hypothesis and should be looked at first — cross-reference
+against `debug/revisit_experiment/IMPLEMENTATION.md` Section 6's discussion
+of the `global_centroid_pass_m` gate as the leading suspect.
