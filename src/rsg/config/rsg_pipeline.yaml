@@ -560,7 +560,7 @@ phase1:                                                                         
   # process, launched independently). See
   # debug/risk_assessment_feature/DESIGN.md for the full design writeup.
   risk_vlm:
-    enabled: true                                                                                      # Re-enabled 2026-09-06 after the object-tracking optimisation closed. Note this adds a second concurrent VLM server (4B on port 8100) alongside phase1.vlm, sharing the same GPU -- `yield_to_object_vlm` below is the only thing keeping classification from being starved.
+    enabled: false                                                                                     # Turned off 2026-09-09 for the revisit/FPS experiment (debug/revisit_experiment) -- a second concurrent VLM server sharing the same GPU as phase1.vlm would confound the "object-VLM calls decline, so GPU load drops and SAM speeds up" measurement. Re-enable for the risk-VLM experiment that follows this one.
     mode: qwen_http                                                                                    # Query an OpenAI-compatible local VLM endpoint, same protocol as phase1.vlm.
     endpoint: http://127.0.0.1:8100/v1/chat/completions                                                # Different port from phase1.vlm's 8000 -- a genuinely separate server, auto-launched by rsg_risk_vlm_server (see `server:` below and rsg_full_stack.launch.py's start_risk_vlm argument).
     model: Qwen3.5-VL-4B-Instruct-GGUF                                                                 # Whatever model `server:` below is actually serving.

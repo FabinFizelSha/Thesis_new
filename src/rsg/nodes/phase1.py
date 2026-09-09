@@ -922,6 +922,14 @@ class Phase1SemanticCoordinator(Node):
             self.timing_recorder.add_sample(
                 node="rsg_object_detection",
                 event="frame_trace",
+                # Wall-clock (not bag/sim time). This is the real one-row
+                # -per-processed-frame event -- added for the revisit/FPS
+                # experiment (debug/revisit_experiment): frame throughput
+                # over a run is (count of event=="frame_trace" rows) /
+                # (max - min of this column among them), and it lines up
+                # against monitor_resources.py's tegrastats samples, which
+                # are also real wall-clock time.
+                wall_clock_unix_sec=time.time(),
                 sequence=int(result.sequence),
                 frame_id=result.rsg_frame_id,
                 status=hydra_status,
@@ -3245,6 +3253,12 @@ class Phase1SemanticCoordinator(Node):
         if not self.config.timing_enabled:
             return
         self.timing_recorder.add_sample(
+            # Wall-clock -- see the matching comment in publish_timing_event.
+            # This is the row the revisit/FPS experiment counts VLM calls
+            # from (event == "completed"), so its own timestamp avoids having
+            # to cross-reference the publish_vlm_timing row from the same
+            # call for a VLM-calls-over-time plot.
+            wall_clock_unix_sec=time.time(),
             node="rsg_object_detection",
             event=event,
             sequence=int(task.get("sequence", 0) or 0),
@@ -3608,6 +3622,10 @@ class Phase1SemanticCoordinator(Node):
             self._safe_publish(self.timing_pub, msg)
 
         self.timing_recorder.add_sample(
+            # Wall-clock (not bag/sim time), added for the revisit/FPS
+            # experiment (debug/revisit_experiment) so this row can be lined
+            # up against monitor_resources.py's tegrastats samples.
+            wall_clock_unix_sec=time.time(),
             node="rsg_object_detection",
             sequence=int(result.sequence),
             frame_id=result.rsg_frame_id,
@@ -3643,6 +3661,8 @@ class Phase1SemanticCoordinator(Node):
             return
         vlm_meta = safe_json_loads(result.vlm_metadata_json, default={})
         self.timing_recorder.add_sample(
+            # Wall-clock -- see the matching comment in publish_timing_event.
+            wall_clock_unix_sec=time.time(),
             node="rsg_object_detection",
             sequence=int(result.sequence),
             frame_id=result.rsg_frame_id,
