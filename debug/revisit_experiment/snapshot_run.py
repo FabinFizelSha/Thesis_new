@@ -46,6 +46,8 @@ SUMMARY_CSV_FIELDS = [
     "run_label", "track_count", "allocated_slot_count",
     "hydra_object_node_count", "hydra_duplicate_slot_count",
     "frame_count", "avg_fps", "recorded_span_sec", "frame_drop_count",
+    "avg_frame_latency_ms", "median_frame_latency_ms", "max_frame_latency_ms",
+    "avg_classifier_delay_ms", "avg_sam_inference_ms",
     "vlm_call_count", "vlm_success_count", "vlm_failed_count",
     "avg_gpu_pct", "peak_gpu_pct", "avg_cpu_pct", "peak_ram_used_mb",
 ]
@@ -142,6 +144,8 @@ def _read_timing_summary(out_dir: Path) -> dict:
     if not path.exists():
         return {
             "frame_count": None, "avg_fps": None, "recorded_span_sec": None,
+            "avg_frame_latency_ms": None, "median_frame_latency_ms": None, "max_frame_latency_ms": None,
+            "avg_classifier_delay_ms": None, "avg_sam_inference_ms": None,
             "vlm_call_count": None, "vlm_success_count": None, "vlm_failed_count": None,
             "frame_drop_count": None,
         }
@@ -158,6 +162,9 @@ def _read_timing_summary(out_dir: Path) -> dict:
     # simply won't have it, and span/fps come back None for those.
     frame_count = 0
     frame_times = []
+    frame_latencies_ms = []      # total_delay_ms: input (frame received) -> published to Hydra
+    classifier_delays_ms = []    # subset of that spent in SAM + association ("classifier")
+    sam_inference_ms_vals = []   # subset of that spent purely in SAM inference
     vlm_count = 0
     vlm_success = 0
     vlm_failed = 0
@@ -177,6 +184,23 @@ def _read_timing_summary(out_dir: Path) -> dict:
                         frame_times.append(float(wc))
                     except ValueError:
                         pass
+                # total_delay_ms is computed in _publish_hydra_from_result as
+                # hydra_publish_complete - cached.received_monotonic -- exactly
+                # "time from this frame entering phase1 to phase1 finishing
+                # publishing it to Hydra." classifier_delay_ms/sam_inference_ms
+                # are the two biggest contributors and explain *why* latency
+                # moves, not just that it did.
+                for target, key in (
+                    (frame_latencies_ms, "total_delay_ms"),
+                    (classifier_delays_ms, "classifier_delay_ms"),
+                    (sam_inference_ms_vals, "sam_inference_ms"),
+                ):
+                    value = row.get(key)
+                    if value:
+                        try:
+                            target.append(float(value))
+                        except ValueError:
+                            pass
             elif event == "completed":
                 vlm_count += 1
                 reason = str(row.get("reason", "")).lower()
@@ -198,10 +222,30 @@ def _read_timing_summary(out_dir: Path) -> dict:
         span = None
         avg_fps = None
 
+    def _stats(values):
+        if not values:
+            return None, None, None
+        ordered = sorted(values)
+        mid = len(ordered) // 2
+        median = ordered[mid] if len(ordered) % 2 else (ordered[mid - 1] + ordered[mid]) / 2
+        return round(sum(values) / len(values), 2), round(median, 2), round(max(values), 2)
+
+    avg_latency_ms, median_latency_ms, max_latency_ms = _stats(frame_latencies_ms)
+    avg_classifier_ms, _, _ = _stats(classifier_delays_ms)
+    avg_sam_inference_ms, _, _ = _stats(sam_inference_ms_vals)
+
     return {
         "frame_count": frame_count,
         "avg_fps": round(avg_fps, 4) if avg_fps is not None else None,
         "recorded_span_sec": round(span, 2) if span is not None else None,
+        # Input (frame received by phase1) -> output (published to Hydra).
+        "avg_frame_latency_ms": avg_latency_ms,
+        "median_frame_latency_ms": median_latency_ms,
+        "max_frame_latency_ms": max_latency_ms,
+        # Breakdown: how much of that latency is SAM/association vs. pure
+        # SAM inference -- explains a latency change, doesn't just report one.
+        "avg_classifier_delay_ms": avg_classifier_ms,
+        "avg_sam_inference_ms": avg_sam_inference_ms,
         "vlm_call_count": vlm_count,
         "vlm_success_count": vlm_success,
         "vlm_failed_count": vlm_failed,

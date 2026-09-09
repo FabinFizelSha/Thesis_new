@@ -62,6 +62,12 @@ debug/rap_accuracy_test/session_*/
 debug/object_tracking_experiment_part2/periodic_crop_diagnostics/session_*/
 debug/object_tracking_experiment_part2/tracking_quality/*
 
+# --- Revisit/FPS experiment run outputs ------------------------------------
+# Keep IMPLEMENTATION.md, README_FPS_EXPERIMENT.md, and the scripts; ignore
+# each run's archived tracker/DSG/timing/resource data -- large, and
+# regeneratable by re-running the bag with the same tooling.
+debug/revisit_experiment/runs/*
+
 # --- Cross-run memory ------------------------------------------------------
 # memory/ holds everything that survives a run: the RAP Chroma store, its
 # audit log, and the phase-1 tracker state used to exercise revisit
