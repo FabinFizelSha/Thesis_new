@@ -22,11 +22,9 @@ at 97.5% accuracy across four resumed sessions.
 A second question — whether fewer not-yet-labelled objects (fewer VLM
 calls) frees GPU time for SAM and raises frame throughput on later sessions
 — was tracked by the same tooling but is **not concluded here**. This
-dataset showed VLM calls falling sharply without FPS moving, at `--rate
-0.1`; `EXPERIMENT_PART1_REVISIT_ACCURACY.md` Section 6 found the pipeline
-was already compute-saturated (not input-starved) even at that rate, so the
-flat FPS result doesn't confirm or disprove the throughput question either
-way. That question is left to the separate follow-up experiment mentioned
+dataset showed VLM calls falling sharply without FPS moving at `--rate
+0.1`, which does not confirm or disprove the throughput question either
+way — that question is left to the separate follow-up experiment mentioned
 above.
 
 Per run, this setup captures:
@@ -35,18 +33,14 @@ Per run, this setup captures:
    count, so a flat count across runs 2-4 is directly visible.
 2. **VLM call count** — every completed call to the object-labelling VLM,
    split success/fail.
-3. **Frame throughput (FPS)** — Phase 1's real per-frame processing rate,
-   plus its frame-drop count (a second, independent signal of GPU contention:
-   drops rise when Phase 1 falls behind).
+3. **Frame throughput (FPS)** — Phase 1's real per-frame processing rate.
 4. **Per-frame latency (input to Hydra output)** — average/median/max
    milliseconds from a frame arriving at Phase 1 to Phase 1 finishing
    publishing it to Hydra (`total_delay_ms` on the existing `frame_trace`
    row), plus how much of that is spent in the classifier stage
    (SAM + association) versus pure SAM inference. This is the more direct
    answer to "does a frame move through Phase 1 faster on a later run" —
-   FPS can be flat while this still moves, or vice versa, if frame arrival
-   is the bottleneck rather than processing time (see the note on the first
-   two runs below).
+   FPS can be flat while this still moves, or vice versa.
 5. **CPU/GPU load** — sampled directly from this Jetson's own `tegrastats`
    (not `nvidia-smi` — confirmed on this hardware that reports no usable
    figures on Jetson/Tegra).
@@ -217,9 +211,8 @@ the recurring-miss analysis, and the closing notes are in
 97.5% of re-encountered objects across sessions 2-5 correctly resolved as
 revisits rather than new tracks. `vlm_call_count` fell monotonically
 (28→11→5→2→1) while FPS/latency stayed flat; that flat result does not
-confirm or disprove the throughput half of the original hypothesis — see
-that document's Section 6 for why (the pipeline was already
-compute-saturated at `--rate 0.1`, not input-starved as first assumed).
+confirm or disprove the throughput half of the original hypothesis, which
+this experiment does not attempt to explain.
 
 **The frame-throughput question is a separate future experiment**, at a
 higher bag rate, not a "Part 2" of this one. If and when it happens, its own

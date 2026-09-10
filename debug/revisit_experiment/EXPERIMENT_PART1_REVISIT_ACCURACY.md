@@ -167,26 +167,10 @@ project memory) — this section documents the lead, it does not act on it.
 - **GPU load did not decline monotonically** (51.6 → 25.6 → 19.4 → 30.3 →
   22.8%) despite `vlm_call_count` doing so cleanly, and frame throughput and
   latency were essentially flat across all five sessions (0.489–0.496 fps;
-  3232–3328 ms). Read in isolation this looks like Phase 1 was
-  input-starved at `--rate 0.1`, with no queue backlog for reduced GPU load
-  to drain faster. **That reading does not survive checking
-  `frame_drop_count` against the bag's actual native rate**, corrected here
-  before this became the closing record: `frame_drop_count` was
-  413–416 per session against only 147–148 frames processed — a
-  **73.6–73.9% drop rate, flat across all five sessions**, all logged as
-  `frame_fifo_full`. The bag's native RGB rate is 16.4 Hz
-  (`ros2 bag info`: 8307 messages / 506.1 s), and the preprocessor's own
-  rate limiter is a no-op at the current config (capped at 25 Hz, above
-  that 16.4 Hz), so at `--rate 0.1` frames reach Phase 1 at roughly 1.6 Hz
-  wall-clock — already over three times faster than Phase 1's own ~0.49 Hz
-  processing ceiling. The queue was constantly overflowing, not idle: **Phase
-  1 was already compute-saturated at the slowest rate tested**, and the flat
-  `avg_sam_inference_ms` (~1990–2020 ms) regardless of concurrent GPU load
-  (19–52%) says individual SAM calls were not measurably slowed by whatever
-  VLM contention was happening. Whether a much higher arrival rate — closer
-  to native or beyond it — creates enough *simultaneous* GPU contention
-  between SAM and VLM inference to show up in this data is the real open
-  question, not "was the queue full" (it already was).
+  3232–3328 ms; `avg_sam_inference_ms` ~1990–2020 ms throughout). This
+  dataset does not establish why — see Section 7. Distinguishing the
+  possible explanations is left to a separate follow-up experiment, not
+  attempted here.
 - **Decision-count consistency**: total association decisions per session
   (832, 838, 830, 837, 836) and frames processed (147, 147, 147, 148, 148)
   are stable within a narrow band across all five sessions, indicating the
@@ -209,22 +193,17 @@ resume mechanism.
 **The frame-throughput half of the original hypothesis — that reduced VLM
 load should free GPU capacity that shows up as higher FPS on later
 sessions — is neither confirmed nor disproven by this experiment**, and is
-deliberately left open rather than force-fitted here. This dataset's flat
-FPS/latency despite a 28→1 VLM-call reduction was initially read as Phase 1
-being input-starved at `--rate 0.1`; Section 6 corrects that reading with
-the `frame_drop_count` evidence — the pipeline was in fact already
-compute-saturated at that rate (a ~74% drop rate, arrival already ~3× faster
-than Phase 1's processing ceiling), so the flat result may instead mean SAM
-inference simply is not measurably slowed by the VLM contention this
-dataset produced, at any input rate.
+deliberately left open rather than force-fitted here. `vlm_call_count` fell
+sharply (28→1) while FPS and per-frame latency stayed essentially flat
+across all five sessions; this dataset does not establish why, and does not
+attempt to.
 
-**Distinguishing those two explanations needs a dedicated follow-up
-experiment, run separately from this one** — a higher bag playback rate
-(discussed with the user going into it, not part of this document's
-results), its own session-by-session structure, and its own report,
-rather than a "Part 2" appended here. This document's scope ends at the
-revisit-accuracy result above; the throughput question is out of scope for
-it, not merely deferred within it.
+**That question needs a dedicated follow-up experiment, run separately from
+this one** — a higher bag playback rate (discussed with the user going into
+it, not part of this document's results), its own session-by-session
+structure, and its own report, rather than a "Part 2" appended here. This
+document's scope ends at the revisit-accuracy result above; the throughput
+question is out of scope for it, not merely deferred within it.
 
 ## 8. Data and reproducibility
 
