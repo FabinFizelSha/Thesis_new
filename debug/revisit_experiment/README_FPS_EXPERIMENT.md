@@ -1,28 +1,33 @@
-# Revisit / FPS Experiment — Diagnostic Setup
+# Revisit Experiment — Diagnostic Setup
 
-Status: **Part 1 (revisit accuracy) is complete** — 5 sessions run
+Status: **closed, at the revisit-accuracy result only** — 5 sessions run
 2026-09-09, results and analysis in `EXPERIMENT_PART1_REVISIT_ACCURACY.md`.
-Part 2 (frame-throughput / FPS at a higher bag rate) has not been run yet;
-this document's tooling and procedure sections still apply to it.
+The frame-throughput/FPS question this tooling could also measure (see
+below) is explicitly **not** part of this experiment or its conclusion — it
+will be its own separate experiment, run and reported independently, at a
+higher bag playback rate than the 0.1x used here. This document's tooling
+and per-session procedure remain valid for that future experiment; nothing
+here implies it is scheduled or in progress.
 
 ## What this measures
 
 Consecutive sessions of the same fixed-duration bag segment, each resuming
 from the previous session's saved state (`resume_reset_trajectory` at its
 default `true` — see `IMPLEMENTATION.md` Section 5, "Scenario B: next-day
-revisit"). The full hypothesis has two parts, split into two experiments:
+revisit"). This experiment's result (`EXPERIMENT_PART1_REVISIT_ACCURACY.md`):
+as the pipeline re-encounters objects it has already mapped, it stops
+minting new tracks for them, resolving them as revisits instead — confirmed
+at 97.5% accuracy across four resumed sessions.
 
-- **Part 1 (done — see `EXPERIMENT_PART1_REVISIT_ACCURACY.md`)**: as the
-  pipeline re-encounters objects it has already mapped, it should stop
-  minting new tracks for them, resolving them as revisits instead.
-- **Part 2 (not yet run)**: fewer not-yet-labelled objects means fewer VLM
-  calls, which frees GPU time for SAM, so frame throughput (FPS) should rise
-  on later sessions. Part 1's data showed VLM calls falling sharply without
-  FPS moving, at `--rate 0.1` — Part 1's Section 6/7 argues this is because
-  Phase 1 is input-bound at that rate, and Part 2 should test at a higher
-  rate rather than treat the FPS half of the hypothesis as already settled.
-
-This document's tooling and per-session procedure apply to both parts.
+A second question — whether fewer not-yet-labelled objects (fewer VLM
+calls) frees GPU time for SAM and raises frame throughput on later sessions
+— was tracked by the same tooling but is **not concluded here**. This
+dataset showed VLM calls falling sharply without FPS moving, at `--rate
+0.1`; `EXPERIMENT_PART1_REVISIT_ACCURACY.md` Section 6 found the pipeline
+was already compute-saturated (not input-starved) even at that rate, so the
+flat FPS result doesn't confirm or disprove the throughput question either
+way. That question is left to the separate follow-up experiment mentioned
+above.
 
 Per run, this setup captures:
 
@@ -206,17 +211,19 @@ regeneratable by re-running the bag with the same tooling.
 
 ## Results
 
-**Part 1 (revisit accuracy) is complete.** Full results, the five-session
-data table, the recurring-miss analysis, and the conclusion are in
-`EXPERIMENT_PART1_REVISIT_ACCURACY.md` — not duplicated here. Headline: 97.5%
-of re-encountered objects across sessions 2-5 correctly resolved as revisits
-rather than new tracks, and `vlm_call_count` fell monotonically (28→11→5→2→1)
-while FPS/latency stayed flat, pointing at Phase 1 being input-bound at
-`--rate 0.1` rather than GPU-bound.
+**This experiment is closed.** Full results, the five-session data table,
+the recurring-miss analysis, and the closing notes are in
+`EXPERIMENT_PART1_REVISIT_ACCURACY.md` — not duplicated here. Headline:
+97.5% of re-encountered objects across sessions 2-5 correctly resolved as
+revisits rather than new tracks. `vlm_call_count` fell monotonically
+(28→11→5→2→1) while FPS/latency stayed flat; that flat result does not
+confirm or disprove the throughput half of the original hypothesis — see
+that document's Section 6 for why (the pipeline was already
+compute-saturated at `--rate 0.1`, not input-starved as first assumed).
 
-**Part 2 (FPS at a higher bag rate) has not been run yet.** When it is, its
-own results document should sit alongside
-`EXPERIMENT_PART1_REVISIT_ACCURACY.md` in this same directory, following the
-same structure (objective, hypothesis, setup, results, analysis,
-conclusion) so both are ready to drop into a thesis experiments chapter with
-minimal rewriting.
+**The frame-throughput question is a separate future experiment**, at a
+higher bag rate, not a "Part 2" of this one. If and when it happens, its own
+results document should follow the same structure (objective, hypothesis,
+setup, results, analysis, conclusion) so it is ready to drop into a thesis
+experiments chapter with minimal rewriting — but it is independent of the
+result this experiment closed with.

@@ -1,8 +1,9 @@
 # Revisit Experiment — Part 1: Track Re-identification Accuracy
 
-**Status: complete.** Five sessions run 2026-09-09, evaluated below. Part 2
-(frame-throughput / FPS improvement across sessions, at a higher bag playback
-rate) is a separate, later experiment — see the note in Section 7.
+**Status: closed.** Five sessions run 2026-09-09, evaluated below. This
+experiment's scope is the revisit-accuracy result alone; the
+frame-throughput/FPS question is explicitly out of scope here and will be
+its own separate experiment, run and reported independently — see Section 7.
 
 ## 1. Objective
 
@@ -43,8 +44,8 @@ fresh `ros2 bag play` invocation, deliberately: this is Scenario B,
 
 **Config held fixed for all 5 sessions** (`rsg_pipeline.yaml` unless noted):
 - `phase1.risk_vlm.enabled: false` — a second VLM server on the same GPU
-  would confound any GPU-load reading; irrelevant to this Part but kept off
-  for consistency with Part 2.
+  would confound any GPU-load reading; not central to this experiment's
+  result but kept off throughout for a clean GPU baseline.
 - `phase1.persistent_tracking.session_persistence.enabled: true`,
   `time_shift_sec: 86400.0` — the mechanism that forces every resumed
   session's first re-observation of a track through revisit-mode
@@ -164,14 +165,28 @@ project memory) — this section documents the lead, it does not act on it.
   that specific case is deliberately left alone. Flat after session 2;
   not investigated further as part of this experiment.
 - **GPU load did not decline monotonically** (51.6 → 25.6 → 19.4 → 30.3 →
-  22.8%) despite `vlm_call_count` doing so cleanly. Frame throughput and
+  22.8%) despite `vlm_call_count` doing so cleanly, and frame throughput and
   latency were essentially flat across all five sessions (0.489–0.496 fps;
-  3232–3328 ms). Read together, this suggests Phase 1 was **input-bound**
-  at this bag's `--rate 0.1` — frames simply were not arriving fast enough
-  for GPU headroom freed up by fewer VLM calls to translate into more
-  frames processed per second. This is the reason Part 2 (Section 7) tests
-  at a higher playback rate rather than reusing this data for a
-  throughput claim.
+  3232–3328 ms). Read in isolation this looks like Phase 1 was
+  input-starved at `--rate 0.1`, with no queue backlog for reduced GPU load
+  to drain faster. **That reading does not survive checking
+  `frame_drop_count` against the bag's actual native rate**, corrected here
+  before this became the closing record: `frame_drop_count` was
+  413–416 per session against only 147–148 frames processed — a
+  **73.6–73.9% drop rate, flat across all five sessions**, all logged as
+  `frame_fifo_full`. The bag's native RGB rate is 16.4 Hz
+  (`ros2 bag info`: 8307 messages / 506.1 s), and the preprocessor's own
+  rate limiter is a no-op at the current config (capped at 25 Hz, above
+  that 16.4 Hz), so at `--rate 0.1` frames reach Phase 1 at roughly 1.6 Hz
+  wall-clock — already over three times faster than Phase 1's own ~0.49 Hz
+  processing ceiling. The queue was constantly overflowing, not idle: **Phase
+  1 was already compute-saturated at the slowest rate tested**, and the flat
+  `avg_sam_inference_ms` (~1990–2020 ms) regardless of concurrent GPU load
+  (19–52%) says individual SAM calls were not measurably slowed by whatever
+  VLM contention was happening. Whether a much higher arrival rate — closer
+  to native or beyond it — creates enough *simultaneous* GPU contention
+  between SAM and VLM inference to show up in this data is the real open
+  question, not "was the queue full" (it already was).
 - **Decision-count consistency**: total association decisions per session
   (832, 838, 830, 837, 836) and frames processed (147, 147, 147, 148, 148)
   are stable within a narrow band across all five sessions, indicating the
@@ -179,27 +194,37 @@ project memory) — this section documents the lead, it does not act on it.
   basic sanity check that the comparison in Section 4 is measuring the
   hypothesis and not run-to-run variability in workload.
 
-## 7. Conclusion and relationship to Part 2
+## 7. Conclusion and closing notes
 
-**The revisit-accuracy objective (Part 1) is met.** 97.5% of re-encountered
-objects across four resumed sessions were correctly identified as
-already-known tracks rather than duplicated, with one session achieving a
-perfect result (zero new tracks). The residual failures cluster at a single
-identifiable location rather than being spread randomly, which is itself
-informative: it points at a specific, boundable gap rather than a systemic
-failure of the resume mechanism.
+**Status: this experiment is closed at Part 1.** Its objective (Section 1)
+was the revisit-accuracy half of the original hypothesis, and that objective
+is met: **97.5% of re-encountered objects across four resumed sessions
+(199 of 204) were correctly identified as already-known tracks rather than
+duplicated**, with one session (4) achieving a perfect result — zero new
+tracks. The residual failures cluster at a single identifiable location
+(Section 5) rather than being spread randomly, which is itself informative:
+it points at a specific, boundable gap rather than a systemic failure of the
+resume mechanism.
 
-**Part 2** (not yet run) tests the second half of the original hypothesis:
-that reduced VLM load from successful revisit recognition frees GPU
-capacity that shows up as *increased frame throughput* on later sessions.
-This dataset's flat FPS/latency despite a 28→1 call reduction suggests that
-claim needs a bag played at a higher rate than 0.1x to have a chance of
-showing up — at 0.1x, Phase 1 appears limited by how fast frames arrive, not
-by GPU capacity. Part 2 will re-run this same session-by-session structure
-at a higher `--rate` and report frame throughput as the primary metric,
-using this document's Section 6 GPU-load observation as its starting
-hypothesis rather than assuming the FPS half of the original hypothesis is
-already disproven.
+**The frame-throughput half of the original hypothesis — that reduced VLM
+load should free GPU capacity that shows up as higher FPS on later
+sessions — is neither confirmed nor disproven by this experiment**, and is
+deliberately left open rather than force-fitted here. This dataset's flat
+FPS/latency despite a 28→1 VLM-call reduction was initially read as Phase 1
+being input-starved at `--rate 0.1`; Section 6 corrects that reading with
+the `frame_drop_count` evidence — the pipeline was in fact already
+compute-saturated at that rate (a ~74% drop rate, arrival already ~3× faster
+than Phase 1's processing ceiling), so the flat result may instead mean SAM
+inference simply is not measurably slowed by the VLM contention this
+dataset produced, at any input rate.
+
+**Distinguishing those two explanations needs a dedicated follow-up
+experiment, run separately from this one** — a higher bag playback rate
+(discussed with the user going into it, not part of this document's
+results), its own session-by-session structure, and its own report,
+rather than a "Part 2" appended here. This document's scope ends at the
+revisit-accuracy result above; the throughput question is out of scope for
+it, not merely deferred within it.
 
 ## 8. Data and reproducibility
 
