@@ -371,7 +371,7 @@ phase1:                                                                         
     target_contour_thickness_px: 2                                                                  # Thin contour; target pixels remain the primary evidence.
 
   vlm:
-    enabled: true                                                                                    # Use Qwen for objects not confidently resolved by RAP.
+    enabled: false                                                                                   # Use Qwen for objects not confidently resolved by RAP. Turned off 2026-09-11 to isolate SAM inference from any object-VLM GPU contention while verifying the NanoSAM engine fix -- launch with start_qwen:=false too, or the server still loads onto the GPU idle even with no calls dispatched to it (same reasoning as risk_vlm.enabled + start_risk_vlm:=false above). Re-enable both once sam_inference_ms is confirmed fixed in isolation.
     mode: qwen_http                                                                                  # Query the selected local Qwen OpenAI-compatible HTTP endpoint.
     active_profile: qwen3_5_4b_q4                                                                     # Winner of the prompt-optimisation experiment: qwen3_5_4b_q4 x P3 (format-hardened) = 88% (44/50), fastest (~2.9s/call), least memory. See debug/prompt_optimisation_experiment/EXPERIMENT_REPORT.md §13. (Switched from qwen3_5_9b_q4 2026-09-05 -- that was R9, the last run in the sweep, not the winner; the prompt below was already P3 and needed no change.)
     async: true                                                                                      # Keep VLM calls off the Hydra mapping path.
