@@ -195,6 +195,88 @@ $V/bin/pip install --no-build-isolation -e /home/student/nanosam
 | `nanosam` | 0.0 (`6536336`, editable at `/home/student/nanosam`) |
 | `tensorrt` (py) | 10.3.0 — from apt `python3-libnvinfer`, visible via `--system-site-packages` |
 
+### 4d-i. Getting the *correct* NanoSAM ONNX/engine pair (the official Google Drive links are dead)
+
+The `nanosam` repo itself (§4d) only carries code, `assets/mobile_sam.pt`, and a
+few sample images — it does **not** ship the ONNX files. NanoSAM's own
+`README.md` documents two components with different sourcing:
+
+- **Mask decoder** — has a genuine local export path from the tracked
+  `assets/mobile_sam.pt` checkpoint:
+  ```bash
+  python3 -m nanosam.tools.export_sam_mask_decoder_onnx \
+      --model-type=vit_t --checkpoint=assets/mobile_sam.pt \
+      --output=data/mobile_sam_mask_decoder.onnx
+  ```
+- **Image encoder** — **has no local export path at all.** It is NanoSAM's own
+  distilled ResNet18, produced by a full knowledge-distillation training run
+  (`nanosam.tools.train`) that nobody here has data/infra for. The README's
+  *only* setup instruction for it is to download the pre-exported
+  `resnet18_image_encoder.onnx` from NVIDIA's Google Drive.
+
+**As of 2026-09, both of NanoSAM's README Google Drive links
+(`14-SsvoaTl-...` encoder, `1jYNvnseTL...` decoder) are dead** — not a quota
+warning, an actual "Google Drive: Sign-in" page (confirmed via raw `curl` and
+`gdown`, both anonymous-download paths). The sharing permission on these files
+has changed; there is no way to fetch them anonymously from this environment.
+
+**Working alternative: pull them out of a jetson-containers Docker image**,
+which bundles NVIDIA's own official build artifacts (dated Dec 2023 inside the
+image — predating any local re-export):
+
+```bash
+sudo docker pull dustynv/nanosam:r36.2.0
+sudo docker create --name nanosam_tmp dustynv/nanosam:r36.2.0
+sudo docker cp nanosam_tmp:/opt/nanosam/data/resnet18_image_encoder.onnx \
+    ~/rsg_models/nanosam/resnet18_image_encoder.onnx
+sudo docker cp nanosam_tmp:/opt/nanosam/data/mobile_sam_mask_decoder.onnx \
+    ~/rsg_models/nanosam/mobile_sam_mask_decoder.onnx
+sudo docker rm nanosam_tmp
+sudo chown "$USER:$USER" ~/rsg_models/nanosam/*.onnx
+```
+
+(Do **not** use the image's own `.engine` files — TensorRT engines are
+device/TRT-version-specific, per the note in §8 below; only the `.onnx` files
+are portable.)
+
+Then build engines on-device, exactly per the NanoSAM README:
+```bash
+# mask decoder — dynamic point count, up to 10 points/call
+trtexec --onnx=mobile_sam_mask_decoder.onnx --saveEngine=mobile_sam_mask_decoder.engine \
+    --minShapes=point_coords:1x1x2,point_labels:1x1 \
+    --optShapes=point_coords:1x1x2,point_labels:1x1 \
+    --maxShapes=point_coords:1x10x2,point_labels:1x10
+
+# image encoder — --fp16 required (README: FP16 has no notable accuracy loss;
+# FP32 is only needed for the *original* un-distilled MobileSAM encoder)
+trtexec --onnx=resnet18_image_encoder.onnx --saveEngine=resnet18_image_encoder.engine --fp16
+```
+
+**Verified artifacts (2026-09-11), for future integrity checks:**
+
+| File | Size | MD5 |
+|---|---:|---|
+| `resnet18_image_encoder.onnx` | 63,321,621 B | `7ebbeda13ba8f32327599978b0d892ae` |
+| `mobile_sam_mask_decoder.onnx` | 16,504,875 B | `39b1885fcb4d281bf7c0f257ac4ea2e9` |
+
+Both confirmed valid via `onnx.checker.check_model()` (encoder: static
+`[1,3,1024,1024]` → `[1,256,64,64]`, opset 16; decoder: dynamic `num_points`
+axis, opset matching NanoSAM's exporter). The decoder ONNX independently
+re-exported locally from `assets/mobile_sam.pt` via the command above
+reproduced this **exact same MD5** — confirming the local export path and the
+official Drive artifact are bit-identical, i.e. the checkpoint-based export is
+a legitimate substitute if this Docker route ever stops working too.
+`.engine` files are rebuilt fresh per-device via the `trtexec` commands above;
+do not copy `.engine` files between machines.
+
+A prior, now-superseded attempt (2026-08-31) locally re-exported both ONNX
+files with two hand-patched exporter scripts (`dynamo=False`, and a static
+single-point shape for the decoder, to route around a suspected TensorRT 10.3
+"dynamic OneHot" parser rejection). That rejection **did not reproduce**
+against the real official decoder graph — TensorRT 10.3.0 builds the genuine
+dynamic-shape decoder ONNX above without issue — so the patches were
+unnecessary and are no longer applied.
+
 ---
 
 ## 5. llama.cpp — CUDA VLM server (built from source)
@@ -253,8 +335,8 @@ Referenced by `src/rsg/config/rsg_pipeline.yaml`:
 |---|---|---|
 | Qwen3.5-4B GGUF | `~/rsg_models/qwen3_5_4b/Qwen3.5-4B-Q4_K_M.gguf` | ✅ present |
 | Qwen3.5-4B vision projector | `~/rsg_models/qwen3_5_4b/mmproj-BF16.gguf` | ✅ present |
-| NanoSAM image encoder engine | `~/rsg_models/nanosam/resnet18_image_encoder.engine` | ❌ build with `trtexec` from NanoSAM ONNX |
-| NanoSAM mask decoder engine | `~/rsg_models/nanosam/mobile_sam_mask_decoder.engine` | ❌ build with `trtexec` |
+| NanoSAM image encoder engine | `~/rsg_models/nanosam/resnet18_image_encoder.engine` | ❌ build with `trtexec` — see §4d-i for how to get the correct ONNX (README's Google Drive links are dead) |
+| NanoSAM mask decoder engine | `~/rsg_models/nanosam/mobile_sam_mask_decoder.engine` | ❌ build with `trtexec` — see §4d-i |
 | SAM fallback checkpoint | `~/rsg_models/sam/sam_vit_b_01ec64.pth` | ❌ optional fallback (`vit_b`) |
 | uHumans2 TESSE rosbag | `~/datasets/…` | ❌ dataset |
 
