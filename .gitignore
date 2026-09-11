@@ -69,6 +69,12 @@ debug/object_tracking_experiment_part2/tracking_quality/*
 debug/revisit_experiment/runs/*
 debug/revisit_experiment/sessions/*
 
+# --- Memory/FPS scaling experiment run outputs ------------------------------
+# Keep EXPERIMENT_PLAN.md and snapshot_session.py; ignore each session's
+# archived tracker/DSG/timing/resource data -- large, and regeneratable by
+# re-running the bag with the same tooling.
+debug/fps_scaling_experiment/sessions/*
+
 # --- Cross-run memory ------------------------------------------------------
 # memory/ holds everything that survives a run: the RAP Chroma store, its
 # audit log, and the phase-1 tracker state used to exercise revisit
