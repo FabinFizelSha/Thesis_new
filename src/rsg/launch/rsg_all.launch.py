@@ -8,49 +8,55 @@ The helper defaults to the external dataset at ``/home/student/datasets``.
 """
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
+DEFAULT_HYDRA_LOAD_STATE_PATH = "/home/student/Thesis_new/memory/hydra/backend/dsg_with_mesh.json"
 
-def generate_launch_description() -> LaunchDescription:
-    """Create the complete RSG + Hydra launch description."""
-    share = FindPackageShare("rsg")
-    start_hydra = LaunchConfiguration("start_hydra")
 
-    # Clear Hydra cache before launch so maps don't load from previous session
-    # This must complete before Hydra initializes, so we explicitly wait
-    clear_hydra_cache = ExecuteProcess(
-        cmd=['bash', '-c', '''
-set -e
-echo "Clearing all Hydra persistent state..."
-rm -rf /home/student/.hydra/* 2>/dev/null || true
-rm -rf /tmp/hydra_* 2>/dev/null || true
-rm -rf ~/.local/share/hydra* 2>/dev/null || true
-echo "✓ All Hydra persistent state cleared"
-sleep 1
-'''],
-        output='screen',
-    )
+def _launch_hydra_stack(context, share, rsg_stack_include_source):
+    """Build the Hydra IncludeLaunchDescription with hydra_load_state_path
+    corrected for phase1.persistent_tracking.session_persistence.enabled.
 
-    rsg_stack = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitution([share, "launch", "rsg_full_stack.launch.py"])
-        ),
-        launch_arguments={
-            "pipeline_config": LaunchConfiguration("pipeline_config"),
-            "start_chroma": LaunchConfiguration("start_chroma"),
-            "start_qwen": LaunchConfiguration("start_qwen"),
-            "start_risk_vlm": LaunchConfiguration("start_risk_vlm"),
-        }.items(),
-    )
+    Without this, hydra_load_state_path always defaults to the real state
+    file's path, and Hydra resumes from it whenever that file exists on disk
+    -- completely independent of the persistence config. There was no way to
+    turn resume off short of deleting memory/hydra/ before every single
+    launch. This reads the actual pipeline config being used and disables
+    resume (the documented "none" sentinel -- see hydra.launch.yaml and
+    hydra_ros_pipeline.cpp's load_state_path check) whenever persistence is
+    configured off, unless the caller explicitly passed a non-default
+    hydra_load_state_path (a deliberate one-off resume for testing, which is
+    still honoured either way).
+    """
+    import yaml
+
+    pipeline_config_path = LaunchConfiguration("pipeline_config").perform(context)
+    requested_state_path = LaunchConfiguration("hydra_load_state_path").perform(context)
+
+    persistence_enabled = True
+    try:
+        with open(pipeline_config_path) as f:
+            cfg = yaml.safe_load(f) or {}
+        persistence_enabled = bool(
+            cfg.get("phase1", {})
+            .get("persistent_tracking", {})
+            .get("session_persistence", {})
+            .get("enabled", True)
+        )
+    except Exception:
+        pass  # config unreadable -- fail open to the previous always-resume behaviour
+
+    if not persistence_enabled and requested_state_path == DEFAULT_HYDRA_LOAD_STATE_PATH:
+        effective_state_path = "none"
+    else:
+        effective_state_path = requested_state_path
 
     hydra_stack = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitution([share, "launch", "rsg_hydra_from_phase1.launch.py"])
-        ),
+        rsg_stack_include_source,
         launch_arguments={
             "dataset": LaunchConfiguration("dataset"),
             "labelspace": LaunchConfiguration("labelspace"),
@@ -66,12 +72,39 @@ sleep 1
             ),
             "hydra_extra_yaml": LaunchConfiguration("hydra_extra_yaml"),
             "hydra_log_path": LaunchConfiguration("hydra_log_path"),
-            "hydra_load_state_path": LaunchConfiguration("hydra_load_state_path"),
+            "hydra_load_state_path": effective_state_path,
             "hydra_resume_reset_trajectory": LaunchConfiguration("hydra_resume_reset_trajectory"),
             "hydra_enable_object_merging": LaunchConfiguration("hydra_enable_object_merging"),
             "glog_level": LaunchConfiguration("glog_level"),
             "glog_verbosity": LaunchConfiguration("glog_verbosity"),
         }.items(),
+    )
+    return [hydra_stack]
+
+
+def generate_launch_description() -> LaunchDescription:
+    """Create the complete RSG + Hydra launch description."""
+    share = FindPackageShare("rsg")
+    start_hydra = LaunchConfiguration("start_hydra")
+
+    rsg_stack = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([share, "launch", "rsg_full_stack.launch.py"])
+        ),
+        launch_arguments={
+            "pipeline_config": LaunchConfiguration("pipeline_config"),
+            "start_chroma": LaunchConfiguration("start_chroma"),
+            "start_qwen": LaunchConfiguration("start_qwen"),
+            "start_risk_vlm": LaunchConfiguration("start_risk_vlm"),
+        }.items(),
+    )
+
+    hydra_stack_source = PythonLaunchDescriptionSource(
+        PathJoinSubstitution([share, "launch", "rsg_hydra_from_phase1.launch.py"])
+    )
+    hydra_stack = OpaqueFunction(
+        function=_launch_hydra_stack,
+        args=[share, hydra_stack_source],
         condition=IfCondition(start_hydra),
     )
 
@@ -102,7 +135,13 @@ sleep 1
         # a launch argument not declared at this level cannot be set from the
         # command line when launching rsg_all.
         DeclareLaunchArgument("hydra_log_path", default_value="/home/student/Thesis_new/memory/hydra"),
-        DeclareLaunchArgument("hydra_load_state_path", default_value="/home/student/Thesis_new/memory/hydra/backend/dsg_with_mesh.json"),
+        # Default kept as the real state-file path for backward compatibility
+        # (an explicit override here is always honoured) -- but _launch_hydra_stack
+        # above forces this to "none" (disabled) whenever
+        # phase1.persistent_tracking.session_persistence.enabled is false in the
+        # active pipeline_config, regardless of what is sitting on disk at this
+        # path. See that function's docstring.
+        DeclareLaunchArgument("hydra_load_state_path", default_value=DEFAULT_HYDRA_LOAD_STATE_PATH),
         # This flag ONLY controls whether Hydra's restored agent/trajectory
         # nodes are kept (false) or dropped (true, default) -- it has no
         # effect on the robot's actual position, which comes entirely from
@@ -119,7 +158,6 @@ sleep 1
         DeclareLaunchArgument("hydra_enable_object_merging", default_value="true"),
         DeclareLaunchArgument("glog_level", default_value="0"),
         DeclareLaunchArgument("glog_verbosity", default_value="0"),
-        clear_hydra_cache,
         rsg_stack,
         hydra_stack,
     ])

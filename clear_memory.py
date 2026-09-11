@@ -29,6 +29,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent
@@ -166,6 +167,18 @@ def main():
             print(f"refusing to clear: {', '.join(busy)} still running.", file=sys.stderr)
             print("Phase 1 rewrites its state at shutdown and would undo this; "
                   "Chroma holds its directory open.", file=sys.stderr)
+            print("Stop the pipeline first, or pass --force.", file=sys.stderr)
+            return 1
+        # A process caught mid-shutdown (e.g. just Ctrl+C'd) can pass the check
+        # above and then still write its state a moment later, silently
+        # undoing the clear before the next run ever starts -- exactly the
+        # "deleted memory, but the old map came back" symptom this guards
+        # against. Settle briefly and recheck once before actually deleting.
+        time.sleep(2.0)
+        busy = running_processes(selected)
+        if busy:
+            print(f"refusing to clear: {', '.join(busy)} still running "
+                  "(caught on recheck after a 2s settle).", file=sys.stderr)
             print("Stop the pipeline first, or pass --force.", file=sys.stderr)
             return 1
 
