@@ -1076,7 +1076,18 @@ class Phase1SemanticCoordinator(Node):
             0.0,
             sam_delay_ms - sam_prepare_delay_ms - sam_inference_delay_ms - sam_restore_delay_ms,
         )
-        sam_prep_summary = {k: v for k, v in sam_prep.items() if k != "valid_depth_mask_sam"}
+        # Keep only lightweight scalar metadata here -- this dict is JSON-serialized
+        # into every per-frame Hydra message (metadata["sam_input_processing"]).
+        # _prepare_input returns the full processed rgb/depth/valid-mask arrays in
+        # the same dict; serializing those was ~8 MB and ~1 s of GIL-held json.dumps
+        # per frame on the tracking/publish thread, which starved the segmentation
+        # thread's SAM calls (see the SAM-throughput investigation).
+        _sam_prep_drop = {"rgb", "depth", "valid_depth_mask_sam"}
+        sam_prep_summary = {
+            k: v
+            for k, v in sam_prep.items()
+            if k not in _sam_prep_drop and not isinstance(v, np.ndarray)
+        }
 
         return {
             "frame": frame,
