@@ -40,8 +40,8 @@
     show_place_labels: false                                                                                    # Enable only for small maps; place labels can become dense.
     show_building_labels: true
     show_slot_ids: false
-    show_label_confidence: true                                                                                # Put label confidence on its own short line.
-    show_mobility_metadata: true                                                                               # Put static/dynamic/unknown and confidence on a separate line.
+    show_label_confidence: true                                                                                # Fold into the label's own line as "label(confidence)", e.g. "floor(0.95)".
+    show_mobility_metadata: true                                                                               # Second line, "mobility_class(confidence)", e.g. "static(1.00)".
 
     # Display-layer offsets. XY stays at Hydra's original spatial position.
     object_z_offset_m: 0.0                                                                                      # Object display height relative to Hydra source geometry.
@@ -88,7 +88,7 @@
     require_centroid_frame_match: true
     allow_unframed_centroid: false
     max_label_candidates_per_slot: 8          # Retain up to eight distinct class candidates per slot for conflict resolution.
-    unlabeled_object_display_label: unknown object  # Display-only fallback when Phase 1 has not produced a result yet.
+    unlabeled_object_display_label: object_unknown  # Display-only fallback when Phase 1 has not produced a result yet. Not passed through label normalisation, so the underscore stays literal (a real semantic label's underscores would otherwise become spaces).
 
     # Marker geometry and presentation. Static/unknown nodes remain spheres;
     # validated dynamic-capable objects can use cubes as a visual cue.
@@ -109,7 +109,7 @@
     edge_width_m: 0.025                                                                                         # Line width for all fused edges; every edge category is rendered black.
     # Local-segment presence overlay. These are additional to the working reference visualisation path.
     active_segments_topic: /rsg/objects/active_local_segments
-    show_presence_confidence: true
+    show_presence_confidence: false                                                                              # Off 2026-09-11 to keep the object label to exactly two lines (name(confidence) + mobility(confidence)). Turn on for a 3rd diagnostic line with the raw presence state/confidence.
     static_presence_half_life_sec: 600.0                                                                       # Ten-minute half-life for static and unknown-mobility objects.
     dynamic_presence_half_life_sec: 120.0                                                                      # Two-minute half-life for humans, animals, and mobile robots.
     presence_observed_epsilon_sec: 1.5
@@ -131,8 +131,10 @@
     object_contact_grid_cell_size_m: 0.0                                                                        # 0.0 = auto-size the spatial-hash cell each cycle from the largest object reach seen.
     object_contact_grid_min_cell_size_m: 0.05                                                                   # Floor for the auto-sized cell, so a scene of tiny objects doesn't produce a degenerate grid.
     show_object_contact_edges: true                                                                             # RViz double-arrow markers for contact edges.
-    show_object_contact_labels: true                                                                            # Small floating label per contact edge: centroid distance + max(iou_xz, iou_yz).
+    show_object_contact_labels: true                                                                            # Small floating label per contact edge: centroid distance only (dropped max(iou_xz, iou_yz) 2026-09-11).
     object_contact_text_height_m: 0.16
+    object_contact_arrow_head_length_m: 0.20                                                                    # Added 2026-09-11. Fixed absolute size, same on every contact arrow regardless of edge length (previously scaled down on short edges).
+    object_contact_arrow_head_diameter_m: 0.11                                                                  # Added 2026-09-11. Fixed absolute size, same on every contact arrow regardless of edge length.
 
     # Duplicate-object collapse. A semantic slot is allocated per physical
     # object by phase 1, so two object nodes on the same slot ARE one object --
@@ -150,20 +152,21 @@
     object_slot_collapse_enabled: true                                                                          # Master switch. Off = one node per Hydra cluster, duplicates included.
     object_slot_collapse_max_distance_m: 2.0                                                                    # Centroid fallback. Nodes also collapse when either bbox contains the other's centroid, which is what carries large objects whose centroid shifts as more surface is seen.
 
-    # In-view highlight: a translucent cyan halo around anything currently at
-    # high presence confidence -- i.e. recently observed. Driven by the same
-    # confidence value that sets alpha, not a separate age cutoff: confidence
-    # is exactly 1.0 while inside presence_observed_epsilon_sec and clears
-    # 0.99 for a further ~8.7s (static half-life) / ~1.7s (dynamic half-life)
-    # after, so it reads as "in view right now" without its own parameter.
-    # A restored-but-not-yet-reobserved slot's true confidence stays
-    # vanishingly small (its day-plus save-time shift), so it renders fully
-    # opaque (see minimum_object_alpha above) but does NOT glow until it is
-    # genuinely reobserved this session.
+    # In-view highlight: a translucent grey sphere around anything currently
+    # at high presence confidence -- i.e. recently observed. Grey rather than
+    # the original cyan so it reads as a neutral highlight instead of tinting
+    # the object's own color. Driven by the same confidence value that sets
+    # alpha, not a separate age cutoff: confidence is exactly 1.0 while
+    # inside presence_observed_epsilon_sec and clears the threshold for a
+    # further few seconds after, so it reads as "in view right now" without
+    # its own parameter. A restored-but-not-yet-reobserved slot's true
+    # confidence stays vanishingly small (its day-plus save-time shift), so
+    # it renders fully opaque (see minimum_object_alpha above) but does NOT
+    # glow until it is genuinely reobserved this session.
     highlight_active_objects: true                                                                              # Master switch. Hide in RViz by unticking the "rsg_active_objects" marker namespace instead, if you just want it off visually without restarting.
-    active_object_halo_min_confidence: 0.99                                                                     # Presence confidence threshold to glow. Lower it to keep the halo lit longer after an object leaves view.
+    active_object_halo_min_confidence: 0.995                                                                    # Presence confidence threshold to glow. Raised from 0.99 2026-09-11 for a stricter "in view right now" cutoff. Lower it to keep the halo lit longer after an object leaves view.
     active_object_halo_scale: 1.7                                                                               # Halo diameter as a multiple of the object's own sphere.
-    active_object_halo_alpha: 0.30                                                                              # Raise for a stronger glow; the halo is drawn over the object sphere.
+    active_object_halo_alpha: 0.45                                                                              # Raised from 0.30 2026-09-11 for a slightly more visible grey. Raise further for a stronger glow; the halo is drawn over the object sphere.
     active_object_halo_min_margin_m: 0.12                                                                       # Floor on the halo's extra diameter, so small objects still show a visible ring.
 
     # Object-segment relationships (blue dotted lines): local segments phase 1

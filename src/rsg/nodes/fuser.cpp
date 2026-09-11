@@ -770,6 +770,14 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     show_object_contact_labels_ = declare_parameter<bool>("show_object_contact_labels", true);
     object_contact_text_height_m_ =
         std::max(0.05, declare_parameter<double>("object_contact_text_height_m", 0.16));
+    // Fixed absolute size, deliberately NOT derived from segment length --
+    // every contact arrowhead is the same size regardless of how long or
+    // short the edge is. (Previously scaled down on short segments to avoid
+    // overshoot; the fixed size is used unconditionally now, per direction.)
+    object_contact_arrow_head_length_m_ =
+        std::max(0.01, declare_parameter<double>("object_contact_arrow_head_length_m", 0.20));
+    object_contact_arrow_head_diameter_m_ =
+        std::max(0.01, declare_parameter<double>("object_contact_arrow_head_diameter_m", 0.11));
 
     // Object-segment relationships: connect local segments phase1 split off
     // from one physical object that was too large to track as a single
@@ -783,12 +791,14 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     object_slot_collapse_enabled_ = declare_parameter<bool>("object_slot_collapse_enabled", true);
     object_slot_collapse_max_distance_m_ =
         declare_parameter<double>("object_slot_collapse_max_distance_m", 2.0);
-    // In-view halo: lit for anything currently at high presence confidence.
+    // In-view halo: a translucent filled sphere around anything currently at
+    // high presence confidence. Grey rather than cyan so it reads as a
+    // neutral highlight instead of tinting the object's own color.
     highlight_active_objects_ = declare_parameter<bool>("highlight_active_objects", true);
     active_object_halo_min_confidence_ = clampValue(
-        declare_parameter<double>("active_object_halo_min_confidence", 0.99), 0.0, 1.0);
+        declare_parameter<double>("active_object_halo_min_confidence", 0.995), 0.0, 1.0);
     active_object_halo_scale_ = declare_parameter<double>("active_object_halo_scale", 1.7);
-    active_object_halo_alpha_ = declare_parameter<double>("active_object_halo_alpha", 0.30);
+    active_object_halo_alpha_ = declare_parameter<double>("active_object_halo_alpha", 0.45);
     active_object_halo_min_margin_m_ =
         declare_parameter<double>("active_object_halo_min_margin_m", 0.12);
     object_segment_write_dsg_edges_ =
@@ -818,7 +828,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     show_place_labels_ = declare_parameter<bool>("show_place_labels", false);
     show_building_labels_ = declare_parameter<bool>("show_building_labels", true);
     show_slot_ids_ = declare_parameter<bool>("show_slot_ids", false);
-    show_presence_confidence_ = declare_parameter<bool>("show_presence_confidence", true);
+    show_presence_confidence_ = declare_parameter<bool>("show_presence_confidence", false);
     show_label_confidence_ = declare_parameter<bool>("show_label_confidence", true);
     show_mobility_metadata_ = declare_parameter<bool>("show_mobility_metadata", true);
     static_presence_half_life_sec_ = std::max(
@@ -900,10 +910,14 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
         "max_label_candidates_per_slot", 8);
     max_label_candidates_per_slot_ = static_cast<size_t>(
         std::max<int64_t>(1, max_label_candidates_per_slot));
-    unlabeled_object_display_label_ = normaliseLabel(declare_parameter<std::string>(
-        "unlabeled_object_display_label", "unknown object"));
+    // Deliberately NOT passed through normaliseLabel(): that helper converts
+    // underscores to spaces (for real semantic labels like "coffee_table"
+    // from a VLM/RAP source), which would turn this fixed placeholder back
+    // into "object unknown" and defeat the point of using an underscore here.
+    unlabeled_object_display_label_ =
+        declare_parameter<std::string>("unlabeled_object_display_label", "object_unknown");
     if (unlabeled_object_display_label_.empty()) {
-      unlabeled_object_display_label_ = "unknown object";
+      unlabeled_object_display_label_ = "object_unknown";
     }
 
     object_min_size_m_ = std::max(kSmallExtentM, declare_parameter<double>("object_min_size_m", 0.12));
@@ -3309,7 +3323,12 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     return resolved;
   }
 
-  /** Build compact multiline RViz text for one Hydra object node. */
+  /**
+   * Build compact multiline RViz text for one Hydra object node. Default
+   * format is exactly two lines, e.g.:
+   *   floor(0.95)
+   *   static(1.00)
+   */
   std::string objectDisplayLabel(
       const NodeView& node,
       const std::unordered_map<NodeId, ResolvedOverlay>& resolved,
@@ -3327,14 +3346,14 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
       std::ostringstream line;
       line.setf(std::ios::fixed);
       line.precision(2);
-      line << "label " << overlay->confidence;
-      label += "\n" + line.str();
+      line << label << "(" << overlay->confidence << ")";
+      label = line.str();
     }
     if (show_mobility_metadata_ && overlay) {
       std::ostringstream line;
       line.setf(std::ios::fixed);
       line.precision(2);
-      line << "mob " << mobility_class << " " << overlay->mobility_confidence;
+      line << mobility_class << "(" << overlay->mobility_confidence << ")";
       label += "\n" + line.str();
     }
     if (show_presence_confidence_ && slot_id > 0U) {
@@ -3518,14 +3537,14 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     marker.scale.z = marker_diameter;
     addMarker(markers, next_keys, std::move(marker));
 
-    // Halo: a translucent ring around anything recently observed. Driven by
-    // the same presence confidence that sets alpha above, thresholded high
-    // (default 0.99) rather than gated on a separate age cutoff. This falls
-    // out of the decay formula almost for free: confidence is exactly 1.0
-    // while inside presence_observed_epsilon_sec (freshly seen this frame),
-    // and clears 0.99 for only a few seconds after -- roughly 8.7s at the
-    // 600s static half-life, ~1.7s at the 120s dynamic one -- so it reads as
-    // "in view right now" without needing its own age parameter.
+    // Halo: a translucent grey sphere around anything recently observed.
+    // Driven by the same presence confidence that sets alpha above,
+    // thresholded high (default 0.995) rather than gated on a separate age
+    // cutoff. This falls out of the decay formula almost for free:
+    // confidence is exactly 1.0 while inside presence_observed_epsilon_sec
+    // (freshly seen this frame), and clears the threshold for only a few
+    // seconds after -- so it reads as "in view right now" without needing
+    // its own age parameter.
     //
     // Deliberately uses the RAW confidence, not objectDisplayColor's alpha
     // value: a restored-but-not-yet-reobserved slot is rendered fully opaque
@@ -3556,9 +3575,9 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
         halo.scale.x = halo_diameter;
         halo.scale.y = halo_diameter;
         halo.scale.z = halo_diameter;
-        halo.color.r = 0.15F;
-        halo.color.g = 1.0F;
-        halo.color.b = 0.95F;
+        halo.color.r = 0.6F;
+        halo.color.g = 0.6F;
+        halo.color.b = 0.6F;
         halo.color.a = static_cast<float>(active_object_halo_alpha_);
         addMarker(markers, next_keys, std::move(halo));
       }
@@ -3828,23 +3847,47 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
    * Contact edges are a symmetric relation, so they render as a shaft with an
    * arrowhead at each end rather than a plain undirected line: two overlapping
    * ARROW markers along the same segment, one per direction.
+   *
+   * `start`/`end` are the two objects' own center positions; source_radius_m/
+   * target_radius_m are their sphere radii, so the drawn segment can be
+   * pulled back to start at each object's own outer surface instead of its
+   * center -- otherwise the arrow visibly disappears into the sphere at
+   * both ends rather than appearing to originate from it.
    */
   void appendObjectContactArrows(MarkerArray& markers, MarkerSet& next_keys, const std::string& frame,
                                  const builtin_interfaces::msg::Time& stamp, NodeId source, NodeId target,
                                  const geometry_msgs::msg::Point& start,
-                                 const geometry_msgs::msg::Point& end) const {
+                                 const geometry_msgs::msg::Point& end,
+                                 double source_radius_m, double target_radius_m) const {
     if (!show_object_contact_edges_) {
       return;
     }
-    const Color color = objectContactEdgeColor(0.95F);
+    const Color color = objectContactEdgeColor(1.0F);  // Fully solid, not translucent.
     const double dx = end.x - start.x;
     const double dy = end.y - start.y;
     const double dz = end.z - start.z;
     const double segment_length_m = std::sqrt(dx * dx + dy * dy + dz * dz);
-    // Fixed small head size (not auto-scaled off segment length, which would
-    // otherwise make longer contact edges sprout disproportionately large
-    // heads), capped so it never overshoots a very short segment.
-    const double head_length_m = std::min(edge_width_m_ * 3.0, 0.4 * segment_length_m);
+    constexpr double kMinSegmentLengthM = 1e-6;
+    // Fraction of the segment to trim off each end so it starts/ends at the
+    // object's own surface. Clamped to 0.5 each so the two trims can never
+    // cross past the segment's midpoint (objects already touching or
+    // overlapping) -- otherwise the "surface" points would invert past one
+    // another and the shaft would point the wrong way.
+    geometry_msgs::msg::Point surface_start = start;
+    geometry_msgs::msg::Point surface_end = end;
+    if (segment_length_m > kMinSegmentLengthM) {
+      const double source_frac = std::min(0.5, source_radius_m / segment_length_m);
+      const double target_frac = std::min(0.5, target_radius_m / segment_length_m);
+      surface_start.x = start.x + dx * source_frac;
+      surface_start.y = start.y + dy * source_frac;
+      surface_start.z = start.z + dz * source_frac;
+      surface_end.x = end.x - dx * target_frac;
+      surface_end.y = end.y - dy * target_frac;
+      surface_end.z = end.z - dz * target_frac;
+    }
+    // Fixed absolute head size for every contact arrow, regardless of this
+    // segment's own length -- deliberately not derived from segment_length_m,
+    // so a short edge and a long edge sprout the same-looking arrowhead.
     const auto make_arrow = [&](int32_t id, const geometry_msgs::msg::Point& tail,
                                 const geometry_msgs::msg::Point& head) {
       Marker arrow;
@@ -3856,29 +3899,29 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
       arrow.action = Marker::ADD;
       arrow.pose.orientation.w = 1.0;
       arrow.points = {tail, head};
-      arrow.scale.x = edge_width_m_;        // shaft diameter
-      arrow.scale.y = edge_width_m_ * 1.5;  // head diameter
-      arrow.scale.z = head_length_m;
+      arrow.scale.x = edge_width_m_;                          // shaft diameter
+      arrow.scale.y = object_contact_arrow_head_diameter_m_;  // head diameter
+      arrow.scale.z = object_contact_arrow_head_length_m_;    // head length
       arrow.color.r = color.r;
       arrow.color.g = color.g;
       arrow.color.b = color.b;
       arrow.color.a = color.a;
       addMarker(markers, next_keys, std::move(arrow));
     };
-    make_arrow(markerIdForPair(source, target), start, end);
-    make_arrow(markerIdForPair(target, source), end, start);
+    make_arrow(markerIdForPair(source, target), surface_start, surface_end);
+    make_arrow(markerIdForPair(target, source), surface_end, surface_start);
   }
 
   /**
-   * Small floating label at a contact edge's midpoint: centroid distance and
-   * 2D IoU (the larger of the XZ- and YZ-plane projections; volumetric 3D
-   * IoU is a poor summary here, e.g. for a small object against a large
-   * flat surface).
+   * Small floating label at a contact edge's midpoint: just the Euclidean
+   * centroid distance (e.g. "1.45m"). Used to show the 2D IoU here too
+   * (the larger of the XZ- and YZ-plane projections) but that was removed
+   * 2026-09-11 to keep the label to a single, simpler number.
    */
   void appendObjectContactLabel(MarkerArray& markers, MarkerSet& next_keys, const std::string& frame,
                                 const builtin_interfaces::msg::Time& stamp, NodeId source, NodeId target,
                                 const geometry_msgs::msg::Point& start,
-                                const geometry_msgs::msg::Point& end, double iou_2d_max,
+                                const geometry_msgs::msg::Point& end,
                                 double centroid_distance_m) const {
     if (!show_object_contact_labels_) {
       return;
@@ -3902,7 +3945,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     std::ostringstream line;
     line.setf(std::ios::fixed);
     line.precision(2);
-    line << centroid_distance_m << " m\n" << "iou_2d " << iou_2d_max;
+    line << centroid_distance_m << "m";
     text.text = line.str();
     addMarker(markers, next_keys, std::move(text));
   }
@@ -3947,9 +3990,11 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
           object_object_points.push_back(end);
           break;
         case DisplayEdgeType::kDerivedObjectContact:
-          appendObjectContactArrows(markers, next_keys, frame, stamp, edge.source, edge.target, start, end);
+          appendObjectContactArrows(markers, next_keys, frame, stamp, edge.source, edge.target, start, end,
+                                    0.5 * objectSphereDiameter(source_it->second),
+                                    0.5 * objectSphereDiameter(target_it->second));
           appendObjectContactLabel(markers, next_keys, frame, stamp, edge.source, edge.target, start,
-                                   end, edge.contact_iou_2d_max, edge.contact_centroid_distance_m);
+                                   end, edge.contact_centroid_distance_m);
           break;
         case DisplayEdgeType::kDerivedObjectSegment:
           if (show_object_segment_edges_) {
@@ -4534,9 +4579,9 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   bool object_slot_collapse_enabled_ = true;
   double object_slot_collapse_max_distance_m_ = 2.0;
   bool highlight_active_objects_ = true;
-  double active_object_halo_min_confidence_ = 0.99;
+  double active_object_halo_min_confidence_ = 0.995;
   double active_object_halo_scale_ = 1.7;
-  double active_object_halo_alpha_ = 0.30;
+  double active_object_halo_alpha_ = 0.45;
   double active_object_halo_min_margin_m_ = 0.12;
   std::string input_dsg_topic_;
   std::string semantic_label_topic_;
@@ -4578,6 +4623,8 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   bool show_object_contact_edges_ = true;
   bool show_object_contact_labels_ = true;
   double object_contact_text_height_m_ = 0.16;
+  double object_contact_arrow_head_length_m_ = 0.20;
+  double object_contact_arrow_head_diameter_m_ = 0.11;
   bool object_segment_edges_enabled_ = true;
   bool object_segment_write_dsg_edges_ = true;
   size_t object_segment_max_group_size_ = 50;
@@ -4591,7 +4638,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   bool show_place_labels_ = false;
   bool show_building_labels_ = true;
   bool show_slot_ids_ = false;
-  bool show_presence_confidence_ = true;
+  bool show_presence_confidence_ = false;
   bool show_label_confidence_ = true;
   bool show_mobility_metadata_ = true;
   double static_presence_half_life_sec_ = 600.0;
@@ -4649,7 +4696,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   bool require_centroid_frame_match_ = true;
   bool allow_unframed_centroid_ = false;
   size_t max_label_candidates_per_slot_ = 8U;
-  std::string unlabeled_object_display_label_ = "unknown object";
+  std::string unlabeled_object_display_label_ = "object_unknown";
 
   double object_min_size_m_ = 0.12;
   double object_max_size_m_ = 0.60;
