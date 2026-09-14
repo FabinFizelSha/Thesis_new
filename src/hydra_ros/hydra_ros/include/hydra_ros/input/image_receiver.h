@@ -33,6 +33,7 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
+#include <glog/logging.h>
 #include <ianvs/node_handle.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
@@ -179,7 +180,18 @@ void ImageReceiverImpl<SemanticT>::callback(
   color_sub_.fillInput(*color, *packet);
   depth_sub_.fillInput(*depth, *packet);
   semantic_sub_.fillInput(*labels, *packet);
-  queue.push(packet);
+  // Non-blocking: this callback runs on the ROS executor thread, so a
+  // blocking push() (the default, with no ceiling when max_receiver_queue_size
+  // is 0) would stall ROS message processing itself -- not just this
+  // receiver -- whenever InputModule's consumer thread falls behind. Drop
+  // and log instead; see input_module.cpp's matching change for why bounding
+  // this queue is what keeps shutdown drain time from scaling with run length.
+  if (!queue.push(packet, /*blocking=*/false)) {
+    LOG_EVERY_N(WARNING, 30) << "[" << sensor_name_
+                             << "] receiver queue full (max=" << queue.max_size
+                             << "); dropped input @ " << timestamp_ns << " [ns] ("
+                             << google::COUNTER << " dropped total)";
+  }
 }
 
 class ClosedSetImageReceiver : public ImageReceiverImpl<LabelSubscriber> {

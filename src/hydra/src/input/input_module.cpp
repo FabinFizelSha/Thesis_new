@@ -126,7 +126,23 @@ void InputModule::dataSpin() {
       input->world_R_body = odom_T_body.target_R_source;
       VLOG(5) << "[Hydra Input] output queue state: size=" << queue_->size()
               << " (max=" << queue_->max_size << ") @ " << curr_time << " [ns]";
-      queue_->push(input);
+      // Non-blocking: if the active window is behind, drop rather than wait.
+      // Blocking here (the push() default) has no ceiling, so if
+      // reconstruction ever falls behind the input rate, this thread's own
+      // backlog grows for the rest of the run -- and ActiveWindowModule::
+      // spin() drains its ENTIRE queue before it will even check whether to
+      // stop, so that backlog is exactly what makes shutdown take longer the
+      // longer/faster a run went. Bounding this queue (max_input_queue_size
+      // in the dataset config) only helps if full queues actually shed load
+      // instead of blocking; the LOG_EVERY_N surfaces it if this ever
+      // actually fires, since data is genuinely being discarded, not merely
+      // delayed.
+      if (!queue_->push(input, /*blocking=*/false)) {
+        LOG_EVERY_N(WARNING, 30)
+            << "[Hydra Input] active window queue full (max=" << queue_->max_size
+            << "); dropped input @ " << curr_time << " [ns] (" << google::COUNTER
+            << " dropped total)";
+      }
     }
   }
 }

@@ -4,6 +4,7 @@ input:
   type: RosInput                                                                                     # Stock Hydra ROS input adapter.
   tf_verbosity: 1                                                                                    # Concise TF diagnostics.
   clear_queue_on_fail: true                                                                          # Drop unusable frames rather than integrating them with a bad pose.
+  max_receiver_queue_size: 5                                                                         # Bounded for the same reason as active_window.max_input_queue_size in the dataset config: paired with the non-blocking push in image_receiver.h, caps worst-case shutdown drain time instead of letting it scale with total run length.
   tf_lookup:
     wait_duration_s: 0.50                                                                            # Allow rosbag world -> base_link_gt TF to be available at each RGB timestamp.
     buffer_size_s: 180.0                                                                             # Retain rosbag TF history while Phase 1 asynchronously publishes semantic images.

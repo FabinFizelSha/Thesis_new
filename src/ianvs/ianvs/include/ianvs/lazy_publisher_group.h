@@ -33,6 +33,7 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
+#include <exception>
 #include <map>
 #include <string>
 
@@ -56,7 +57,21 @@ class LazyPublisherGroup {
     const auto derived = static_cast<const Derived*>(this);
     auto iter = pubs_.find(topic);
     if (iter == pubs_.end()) {
-      iter = pubs_.emplace(topic, derived->make_publisher(topic)).first;
+      // Lazily creating a publisher for a topic seen here for the first time
+      // can race rclcpp's SIGINT handler, which invalidates the node's
+      // context process-wide the instant a signal arrives -- before whatever
+      // thread called publish() (e.g. an active-window worker mid-frame) has
+      // any chance to notice. Observed in practice as
+      // rclcpp::exceptions::RCLError: "could not create publisher: rcl
+      // node's context is invalid", uncaught, aborting the whole process.
+      // Publishing here is always a cosmetic visualization (RViz markers/
+      // point clouds), never scene-graph data that gets saved to disk, so
+      // silently skipping this one publish during shutdown is safe.
+      try {
+        iter = pubs_.emplace(topic, derived->make_publisher(topic)).first;
+      } catch (const std::exception&) {
+        return;
+      }
     }
 
     if (!derived->should_publish(iter->second)) {

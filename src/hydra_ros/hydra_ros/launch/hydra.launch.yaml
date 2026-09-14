@@ -38,6 +38,22 @@ launch:
       exec: hydra_ros_node
       name: hydra
       on_exit: shutdown
+      # Default sigterm_timeout (5s) fires before ActiveWindowModule::stopImpl()'s
+      # thread join finishes, so launch escalates to SIGTERM mid-shutdown and the
+      # process is killed before it reaches the save-to-disk step -- backend/
+      # dsg_with_mesh.json (and everything else under memory/hydra/) never gets
+      # written. HydraPipeline::save() only ever runs once, at shutdown -- there
+      # is no periodic/incremental checkpoint -- so its duration is proportional
+      # to everything accumulated in the run so far (mesh, objects, rooms).
+      # 30s measured sufficient for a short smoke test (5-12 objects) but NOT
+      # for a longer run (26 objects / 660 frames still got killed mid-save).
+      # On faster hardware a given wall-clock run accumulates more state per
+      # second (more frames processed, more objects detected), so this needs
+      # to scale with expected run length, not just be bumped once. 120s
+      # covers every run tried here with real margin; raise further for
+      # longer sessions. Must be a bare YAML float literal (not quoted, not a
+      # bare int) -- ExecuteProcess.parse() requires data_type=float exactly.
+      sigterm_timeout: 120.0
       launch-prefix: $(if $(var debug) 'gdbserver localhost:3000')
       param:
         - {name: use_sim_time, value: $(var use_sim_time)}

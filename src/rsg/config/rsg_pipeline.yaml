@@ -331,7 +331,7 @@ phase1:                                                                         
     auto_start_server: false                                                                         # Chroma is launched by the full-stack launch file.
     confidence_threshold: 0.90                                                                        # Minimum RAP confidence for an accepted retrieval label.
     distance_threshold: 0.10                                                                          # 0.15 -> 0.30 -> 0.40 -> 0.20 -> 0.15 -> 0.10 2026-09-05.
-    update_memory_from_vlm: true                                                                     # Freeze the learned RAP collection during this evaluation run.
+    update_memory_from_vlm: false                                                                    # Freeze the learned RAP collection during this evaluation run.
     update_min_confidence: 0.90                                                                      # Avoid storing weak VLM classifications.
     memory_update_path: ${WORKSPACE_ROOT}/memory/rap/phase1_rap_memory.jsonl                   # Audit log of memory additions. Moved into the workspace memory/ folder 2026-09-06.
 

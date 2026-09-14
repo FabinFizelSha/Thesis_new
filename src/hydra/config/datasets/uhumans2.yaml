@@ -4,6 +4,15 @@ map_window:
   max_radius_m: 8.0
 active_window:
   full_update_separation_s: 0.2
+  # Bounded so a run that outpaces reconstruction can never build an unbounded
+  # backlog: ActiveWindowModule::spin() drains its ENTIRE input queue before it
+  # even checks whether it should stop, so an unbounded queue (the default,
+  # max_input_queue_size: 0) means shutdown time scales with total accumulated
+  # backlog over the whole run, not just what's pending right now. Paired with
+  # the non-blocking push in input_module.cpp -- excess frames are dropped
+  # (logged) rather than piling up, so worst-case shutdown drain time is now
+  # bounded by this queue size, not by run length.
+  max_input_queue_size: 5
   volumetric_map:
     voxels_per_side: 16
     voxel_size: 0.10
