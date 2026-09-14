@@ -45,10 +45,10 @@ A future fusion node can match `adapter_object_id` to a Hydra object node using 
 ## Install
 
 ```bash
-cd ~/rsg_ros2_ws/src
+cd ~/Thesis_pipeline_split_lean/src
 unzip /path/to/rsg_semantic_adapter_async_unknown_package.zip
 
-cd ~/rsg_ros2_ws
+cd ~/Thesis_pipeline_split_lean
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select rsg_semantic_adapter
 source install/setup.bash
@@ -57,7 +57,7 @@ source install/setup.bash
 ## Run adapter + Hydra
 
 ```bash
-cd ~/rsg_ros2_ws
+cd ~/Thesis_pipeline_split_lean
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 
@@ -148,7 +148,7 @@ python3 -m pip install --user --break-system-packages pdoc
 Generate documentation from the source package:
 
 ```bash
-cd ~/rsg_ros2_ws/src/rsg_semantic_adapter_package/rsg_semantic_adapter
+cd ~/Thesis_pipeline_split_lean/src/rsg_semantic_adapter_package/rsg_semantic_adapter
 python3 -m pdoc ./rsg_semantic_adapter -o docs
 ```
 

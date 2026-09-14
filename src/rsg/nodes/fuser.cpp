@@ -14,6 +14,7 @@
 #include <cmath>
 #include <cctype>
 #include <cstdint>
+#include <cstdlib>
 #include <ctime>
 #include <exception>
 #include <filesystem>
@@ -2292,9 +2293,18 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
         localtime_r(&now_time, &tm_buf);
         std::ostringstream stamp;
         stamp << std::put_time(&tm_buf, "%Y%m%d_%H%M%S");
+        // No portable C++ equivalent of Python's __file__-based workspace-root
+        // lookup (see nodes/support/workspace_paths.py for that approach), so
+        // this off-by-default debug fallback assumes the conventional
+        // $HOME/Thesis_pipeline_split_lean layout. Pass
+        // object_contact_diagnostics_path explicitly (a real declared
+        // parameter, see above) if this diagnostic is enabled on a workspace
+        // cloned somewhere else -- no rebuild required.
+        const char* home_env = std::getenv("HOME");
+        const std::filesystem::path home_dir =
+            home_env ? std::filesystem::path(home_env) : std::filesystem::path("/tmp");
         const std::filesystem::path run_dir =
-            std::filesystem::path(
-                "/home/student/Thesis_new/debug/fuser_object_relation_experiment/results") /
+            home_dir / "Thesis_pipeline_split_lean" / "debug" / "fuser_object_relation_experiment" / "results" /
             ("run_" + stamp.str());
         std::error_code mkdir_error;
         std::filesystem::create_directories(run_dir, mkdir_error);

@@ -45,6 +45,7 @@ from nodes.support.phase1.persistent_object_tracker import _as_list
 from nodes.support.phase1.tracker_state_store import load_tracker_state, save_tracker_state
 from nodes.support.phase1.tracking_quality_recorder import TrackingQualityRecorder
 from nodes.support.phase1.tracking_crop_manager import TrackingCropManager
+from nodes.support.workspace_paths import workspace_path
 from nodes.support.phase1.json_utils import safe_json_dumps, safe_json_loads
 from nodes.support.phase1.label_map_builder import ClassifiedMask, LabelMapBuilder
 from nodes.support.phase1.object_geometry import ObjectGeometryEstimator, filter_metadata
@@ -85,7 +86,7 @@ class Phase1SemanticCoordinator(Node):
         # Clear Hydra cache on startup for fresh session (no pre-existing maps)
         try:
             import shutil
-            hydra_cache = "/home/student/.hydra/uhumans2"
+            hydra_cache = os.path.expanduser("~/.hydra/uhumans2")
             if os.path.exists(hydra_cache):
                 shutil.rmtree(hydra_cache)
                 self.get_logger().info(f"Cleared Hydra cache at startup: {hydra_cache}")
@@ -128,7 +129,7 @@ class Phase1SemanticCoordinator(Node):
         self.diagnostics_enabled = bool(getattr(self.config, "diagnostics_enabled", False))
         self.bbox_diagnostics_logger = BboxDiagnosticsLogger(
             enabled=self.diagnostics_enabled,
-            output_dir=os.path.expanduser(getattr(self.config, 'bbox_log_dir', '~/rsg_ros2_ws/debug/bbox_diagnostics'))
+            output_dir=os.path.expanduser(getattr(self.config, 'bbox_log_dir', str(workspace_path('debug', 'bbox_diagnostics'))))
         )
 
         # Initialize modular pipeline stages
@@ -414,7 +415,7 @@ class Phase1SemanticCoordinator(Node):
             self.diagnostics_enabled
             and bool(getattr(self.config, "diagnostics_log_tracking", True))
         )
-        tracking_quality_dir = Path("/home/student/Thesis_new/debug/object_tracking_experiment_part2/tracking_quality")
+        tracking_quality_dir = workspace_path("debug/object_tracking_experiment_part2/tracking_quality")
         self.tracking_quality_recorder = TrackingQualityRecorder(
             enabled=self.tracking_diagnostics_enabled,
             output_dir=str(tracking_quality_dir),
@@ -424,7 +425,7 @@ class Phase1SemanticCoordinator(Node):
         # RAP-VLM diagnostic crops (best updates, RAP dequeues, VLM dequeues).
         # The manager's functional helpers (crop scoring, mask filtering,
         # contour highlighting) always run; only the disk writes are gated.
-        rap_vlm_crops_dir = Path("/home/student/rsg_ros2_ws/RAP-VLM crops")
+        rap_vlm_crops_dir = workspace_path("RAP-VLM crops")
         self.tracking_crop_manager = TrackingCropManager(
             output_dir=rap_vlm_crops_dir,
             enabled=self.diagnostics_enabled,
@@ -439,7 +440,7 @@ class Phase1SemanticCoordinator(Node):
                 self.config.vlm_prompt_opt_run_id or "unnamed_run"
             )
         else:
-            _vlm_diag_dir = Path("/home/student/rsg_ros2_ws/VLM-Test-Session")
+            _vlm_diag_dir = workspace_path("VLM-Test-Session")
         self.vlm_test_diagnostics = VLMTestDiagnostics(
             output_dir=_vlm_diag_dir,
             run_id=self.config.vlm_prompt_opt_run_id,
@@ -459,7 +460,7 @@ class Phase1SemanticCoordinator(Node):
         # otherwise this creates an empty session_<timestamp>/ folder on
         # every single run even while the feature itself is off.
         self.risk_vlm_diagnostics = RiskVlmDiagnostics(
-            output_dir=Path("/home/student/Thesis_new/debug/risk_assessment_feature"),
+            output_dir=workspace_path("debug/risk_assessment_feature"),
             enabled=self.diagnostics_enabled and self.config.risk_vlm_enabled,
         )
 
@@ -468,7 +469,7 @@ class Phase1SemanticCoordinator(Node):
         # accuracy in one complete, self-contained CSV. Gated on RAP
         # actually being enabled, for the same reason as risk_vlm above.
         self.rap_accuracy_diagnostics = RapAccuracyDiagnostics(
-            output_dir=Path("/home/student/Thesis_new/debug/rap_accuracy_test"),
+            output_dir=workspace_path("debug/rap_accuracy_test"),
             enabled=self.diagnostics_enabled and self.config.rap_enabled,
         )
 
@@ -478,7 +479,7 @@ class Phase1SemanticCoordinator(Node):
         # crop" selection -- for tracing exactly when/how a track's mask or
         # bounding box starts absorbing a different object over time.
         self.periodic_crop_diagnostics = PeriodicCropDiagnostics(
-            output_dir=Path("/home/student/Thesis_new/debug/object_tracking_experiment_part2/periodic_crop_diagnostics"),
+            output_dir=workspace_path("debug/object_tracking_experiment_part2/periodic_crop_diagnostics"),
             enabled=self.tracking_diagnostics_enabled,
             interval=self.config.periodic_crop_interval,
         )
@@ -3803,7 +3804,7 @@ class Phase1SemanticCoordinator(Node):
         # Clear Hydra cache on shutdown for fresh start on next launch
         try:
             import shutil
-            hydra_cache = "/home/student/.hydra/uhumans2"
+            hydra_cache = os.path.expanduser("~/.hydra/uhumans2")
             if os.path.exists(hydra_cache):
                 shutil.rmtree(hydra_cache)
                 print(f"Cleared Hydra cache: {hydra_cache}", flush=True)

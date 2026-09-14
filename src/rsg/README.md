@@ -14,7 +14,7 @@ Hydra, Chroma, and the Qwen server are external services.
 ## Build
 
 ```bash
-cd ~/rsg_ros2_ws
+cd ~/Thesis_pipeline_split_lean
 source /opt/ros/iron/setup.bash
 colcon build --symlink-install --packages-select rsg --cmake-args -DBUILD_TESTING=OFF
 source install/setup.bash

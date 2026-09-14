@@ -37,7 +37,7 @@
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/synchronizer.h>
 
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 
 #include "semantic_inference_ros/output_publisher.h"
 #include "semantic_inference_ros/ros_log_sink.h"

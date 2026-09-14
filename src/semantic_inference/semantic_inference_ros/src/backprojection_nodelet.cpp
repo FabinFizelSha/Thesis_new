@@ -9,7 +9,7 @@
 
 #include <string>
 
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 #include <rclcpp/node.hpp>
 #include <tf2_eigen/tf2_eigen.hpp>
 

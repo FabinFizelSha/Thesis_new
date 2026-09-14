@@ -25,7 +25,7 @@ This setup uses:
 ```text
 Ubuntu: 24.04
 ROS 2: Jazzy
-Workspace: ~/rsg_ros2_ws
+Workspace: ~/Thesis_pipeline_split_lean
 ```
 
 ROS 2 Jazzy is the correct ROS 2 distribution for Ubuntu 24.04.
@@ -92,8 +92,8 @@ Purpose of these packages:
 The new ROS 2 workspace was created as:
 
 ```bash
-mkdir -p ~/rsg_ros2_ws/src
-cd ~/rsg_ros2_ws/src
+mkdir -p ~/Thesis_pipeline_split_lean/src
+cd ~/Thesis_pipeline_split_lean/src
 ```
 
 Two ROS 2 Python packages were created.
@@ -124,7 +124,7 @@ This package stores the ROS 2 node wrappers, launch files, and ROS-specific conf
 The intended structure is:
 
 ```text
-~/rsg_ros2_ws/
+~/Thesis_pipeline_split_lean/
 ├── src/
 │   ├── risk_scene_graph_core/
 │   │   ├── risk_scene_graph_core/
@@ -165,13 +165,13 @@ Set environment variables:
 
 ```bash
 export OLD_RSG=~/PycharmProjects/Risk-Annotated-Scene-Graph/Risk-Annotated-Scene-Graph-main
-export NEW_CORE=~/rsg_ros2_ws/src/risk_scene_graph_core/risk_scene_graph_core
+export NEW_CORE=~/Thesis_pipeline_split_lean/src/risk_scene_graph_core/risk_scene_graph_core
 ```
 
 Create folders inside the new core package:
 
 ```bash
-cd ~/rsg_ros2_ws/src/risk_scene_graph_core
+cd ~/Thesis_pipeline_split_lean/src/risk_scene_graph_core
 
 mkdir -p risk_scene_graph_core/scripts
 mkdir -p risk_scene_graph_core/config
@@ -232,7 +232,7 @@ from risk_scene_graph_core.config.parameters import *
 To find old import patterns:
 
 ```bash
-cd ~/rsg_ros2_ws/src/risk_scene_graph_core/risk_scene_graph_core
+cd ~/Thesis_pipeline_split_lean/src/risk_scene_graph_core/risk_scene_graph_core
 
 grep -R "from scripts\|import scripts\|from config\|import config" -n .
 ```
@@ -287,7 +287,7 @@ risk_scene_graph_ros/
 Create the files:
 
 ```bash
-cd ~/rsg_ros2_ws/src/risk_scene_graph_ros/risk_scene_graph_ros
+cd ~/Thesis_pipeline_split_lean/src/risk_scene_graph_ros/risk_scene_graph_ros
 
 touch rsg_pipeline_node.py
 touch ros_frame_converter.py
@@ -434,8 +434,8 @@ setup(
 Create the parameter file:
 
 ```bash
-mkdir -p ~/rsg_ros2_ws/src/risk_scene_graph_ros/config
-nano ~/rsg_ros2_ws/src/risk_scene_graph_ros/config/rsg_ros_params.yaml
+mkdir -p ~/Thesis_pipeline_split_lean/src/risk_scene_graph_ros/config
+nano ~/Thesis_pipeline_split_lean/src/risk_scene_graph_ros/config/rsg_ros_params.yaml
 ```
 
 Content:
@@ -468,8 +468,8 @@ This allows the ROS wrapper to be tested without immediately running SAM, Visual
 Create:
 
 ```bash
-mkdir -p ~/rsg_ros2_ws/src/risk_scene_graph_ros/launch
-nano ~/rsg_ros2_ws/src/risk_scene_graph_ros/launch/rsg_live.launch.py
+mkdir -p ~/Thesis_pipeline_split_lean/src/risk_scene_graph_ros/launch
+nano ~/Thesis_pipeline_split_lean/src/risk_scene_graph_ros/launch/rsg_live.launch.py
 ```
 
 Content:
@@ -556,7 +556,7 @@ python3 -m pip install pyquaternion transforms3d
 From the workspace root:
 
 ```bash
-cd ~/rsg_ros2_ws
+cd ~/Thesis_pipeline_split_lean
 
 rosdep install --from-paths src --ignore-src -r -y
 
@@ -572,7 +572,7 @@ source install/setup.bash
 Optional: add workspace sourcing to `.bashrc`:
 
 ```bash
-echo "source ~/rsg_ros2_ws/install/setup.bash" >> ~/.bashrc
+echo "source ~/Thesis_pipeline_split_lean/install/setup.bash" >> ~/.bashrc
 ```
 
 ---
@@ -583,7 +583,7 @@ Terminal 1:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-source ~/rsg_ros2_ws/install/setup.bash
+source ~/Thesis_pipeline_split_lean/install/setup.bash
 
 ros2 launch risk_scene_graph_ros rsg_live.launch.py
 ```
@@ -592,7 +592,7 @@ Terminal 2:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-source ~/rsg_ros2_ws/install/setup.bash
+source ~/Thesis_pipeline_split_lean/install/setup.bash
 
 ros2 topic echo /rsg/status
 ```

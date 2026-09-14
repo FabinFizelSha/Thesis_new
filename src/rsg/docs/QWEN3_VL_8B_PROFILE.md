@@ -23,7 +23,7 @@ selected VLM receives the same crop for a given track.
 Edit the source configuration:
 
 ```bash
-nano ~/rsg_ros2_ws/src/rsg/config/rsg_pipeline.yaml
+nano ~/Thesis_pipeline_split_lean/src/rsg/config/rsg_pipeline.yaml
 ```
 
 For the 8B FP16 model:
@@ -45,7 +45,7 @@ phase1:
 Rebuild and source after any source-YAML change:
 
 ```bash
-cd ~/rsg_ros2_ws
+cd ~/Thesis_pipeline_split_lean
 colcon build --packages-select rsg --symlink-install
 source install/setup.bash
 ```
@@ -84,8 +84,8 @@ profile; do not run both models simultaneously.
 After rebuilding, print the exact server command without launching ROS nodes:
 
 ```bash
-python3 ~/rsg_ros2_ws/install/rsg/share/rsg/scripts/rsg_vlm_server \
-  --config ~/rsg_ros2_ws/install/rsg/share/rsg/config/rsg_pipeline.yaml \
+python3 ~/Thesis_pipeline_split_lean/install/rsg/share/rsg/scripts/rsg_vlm_server \
+  --config ~/Thesis_pipeline_split_lean/install/rsg/share/rsg/config/rsg_pipeline.yaml \
   --dry-run
 ```
 

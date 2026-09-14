@@ -34,6 +34,7 @@ import csv
 import time
 from datetime import datetime
 from pathlib import Path
+from nodes.support.workspace_paths import workspace_path
 from typing import Any, Dict, Optional
 
 import cv2
@@ -81,7 +82,7 @@ class PeriodicCropDiagnostics:
                 21st, ... observation of each track is saved.
         """
         if output_dir is None:
-            output_dir = Path("/home/student/rsg_ros2_ws/Periodic-Crop-Diagnostics")
+            output_dir = workspace_path("Periodic-Crop-Diagnostics")
 
         self.enabled = bool(enabled)
         self.interval = max(1, int(interval))

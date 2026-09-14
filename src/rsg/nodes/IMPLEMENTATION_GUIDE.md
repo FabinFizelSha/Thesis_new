@@ -45,7 +45,7 @@ self.pub_stage = PublishingStage(self.config, self.get_logger())
 
 #### Find all calls to `self.run_sam()`
 ```bash
-grep -n "self.run_sam" ~/rsg_ros2_ws/src/rsg/nodes/phase1.py
+grep -n "self.run_sam" ~/Thesis_pipeline_split_lean/src/rsg/nodes/phase1.py
 ```
 
 #### Replace with stage call

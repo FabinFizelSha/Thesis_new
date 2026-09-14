@@ -11,6 +11,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+from nodes.support.workspace_paths import workspace_path
 from typing import Any, Dict, List, Optional
 
 
@@ -31,7 +32,7 @@ class BboxDiagnosticsLogger:
     def __init__(self, enabled: bool = True, output_dir: Optional[str] = None):
         self.enabled = enabled
         self.frames: List[Dict[str, Any]] = []
-        self.output_dir = output_dir or os.path.expanduser("~/rsg_ros2_ws/debug/bbox_diagnostics")
+        self.output_dir = output_dir or str(workspace_path("debug/bbox_diagnostics"))
         self.frame_count = 0
         self.track_count_per_frame: Dict[int, int] = {}
 

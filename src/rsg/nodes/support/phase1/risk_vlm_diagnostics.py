@@ -16,6 +16,7 @@ import csv
 import time
 from datetime import datetime
 from pathlib import Path
+from nodes.support.workspace_paths import workspace_path
 from typing import Any, Dict, Optional
 
 import cv2
@@ -53,7 +54,7 @@ class RiskVlmDiagnostics:
                 ``log_risk_result`` is a no-op.
         """
         if output_dir is None:
-            output_dir = Path("/home/student/rsg_ros2_ws/Risk-VLM-Test-Session")
+            output_dir = workspace_path("Risk-VLM-Test-Session")
 
         self.enabled = bool(enabled)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

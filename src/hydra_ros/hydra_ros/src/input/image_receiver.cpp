@@ -37,7 +37,7 @@
 #include <config_utilities/config.h>
 #include <glog/logging.h>
 
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 
 namespace hydra {
 

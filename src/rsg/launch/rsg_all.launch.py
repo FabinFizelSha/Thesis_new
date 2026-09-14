@@ -14,7 +14,9 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
-DEFAULT_HYDRA_LOAD_STATE_PATH = "/home/student/Thesis_new/memory/hydra/backend/dsg_with_mesh.json"
+from nodes.support.workspace_paths import workspace_path
+
+DEFAULT_HYDRA_LOAD_STATE_PATH = str(workspace_path("memory", "hydra", "backend", "dsg_with_mesh.json"))
 
 
 def _launch_hydra_stack(context, share, rsg_stack_include_source):
@@ -134,7 +136,7 @@ def generate_launch_description() -> LaunchDescription:
         # Forwarded to rsg_hydra_from_phase1.launch.py. Declared here too because
         # a launch argument not declared at this level cannot be set from the
         # command line when launching rsg_all.
-        DeclareLaunchArgument("hydra_log_path", default_value="/home/student/Thesis_new/memory/hydra"),
+        DeclareLaunchArgument("hydra_log_path", default_value=str(workspace_path("memory", "hydra"))),
         # Default kept as the real state-file path for backward compatibility
         # (an explicit override here is always honoured) -- but _launch_hydra_stack
         # above forces this to "none" (disabled) whenever

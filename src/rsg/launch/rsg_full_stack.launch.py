@@ -14,6 +14,8 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
+from nodes.support.workspace_paths import workspace_path
+
 
 def _python_node(name, script, config_file, python_executable):
     """Launch an installed Python ROS node with the configured RSG environment."""
@@ -56,7 +58,7 @@ def generate_launch_description() -> LaunchDescription:
         Path(
             os.environ.get(
                 "RSG_RAP_STORAGE_PATH",
-                "/home/student/Thesis_new/memory/rap/chroma",
+                str(workspace_path("memory", "rap", "chroma")),
             )
         ).expanduser()
     )

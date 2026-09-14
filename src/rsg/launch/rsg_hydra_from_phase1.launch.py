@@ -7,6 +7,8 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
+from nodes.support.workspace_paths import workspace_path
+
 
 def generate_launch_description() -> LaunchDescription:
     """Build the ROS 2 launch description for this component."""
@@ -33,7 +35,7 @@ def generate_launch_description() -> LaunchDescription:
     # Note this only controls where Hydra SAVES. Loading is opt-in and separate
     # (hydra_load_state_path below), so a stable log_path on its own cannot
     # resurrect old state -- it only stops it from being thrown away.
-    default_log_path = "/home/student/Thesis_new/memory/hydra"
+    default_log_path = str(workspace_path("memory", "hydra"))
 
     visualization_odom_bridge = Node(
         package="tf2_ros",
@@ -77,7 +79,7 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("hydra_enable_object_merging", default_value="true"),
         DeclareLaunchArgument(
             "hydra_load_state_path",
-            default_value="/home/student/Thesis_new/memory/hydra/backend/dsg_with_mesh.json",
+            default_value=str(workspace_path("memory", "hydra", "backend", "dsg_with_mesh.json")),
         ),
         DeclareLaunchArgument("use_sim_time", default_value="true"),
         DeclareLaunchArgument("sensor_frame", default_value="left_cam"),

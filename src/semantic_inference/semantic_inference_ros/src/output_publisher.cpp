@@ -37,7 +37,7 @@
 #include <semantic_inference/image_utilities.h>
 #include <semantic_inference/logging.h>
 
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 
 namespace semantic_inference {
 

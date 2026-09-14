@@ -14,6 +14,8 @@ from typing import Any, Dict, List, Tuple
 
 import yaml
 
+from nodes.support.workspace_paths import expand_paths_in_yaml, workspace_path
+
 
 def _as_bool(value: Any, default: bool = False) -> bool:
     """Return a robust bool from YAML values."""
@@ -160,10 +162,10 @@ class Phase1Config:
     rap_dummy_known_labels: List[str] = field(default_factory=list)
     rap_update_enabled: bool = True
     rap_update_min_confidence: float = 0.50
-    rap_memory_path: str = "~/rsg_ros2_ws/debug/phase1_rap_memory.jsonl"
+    rap_memory_path: str = "~/Thesis_pipeline_split_lean/debug/phase1_rap_memory.jsonl"
     rap_model_name: str = "openai/clip-vit-base-patch32"
     rap_device: str = ""
-    rap_storage_path: str = "~/rsg_ros2_ws/visual_memory"
+    rap_storage_path: str = "~/Thesis_pipeline_split_lean/visual_memory"
     rap_chroma_host: str = "localhost"
     rap_chroma_port: int = 8001
     rap_collection_name: str = "visual_rag"
@@ -568,6 +570,7 @@ class Phase1Config:
 
         with config_path.open("r", encoding="utf-8") as stream:
             root = yaml.safe_load(stream) or {}
+        root = expand_paths_in_yaml(root)
 
         preprocessing = root.get("preprocessing", {}) or {}
         phase1 = root.get("phase1", {}) or {}
@@ -680,7 +683,7 @@ class Phase1Config:
                 "timing_csv_path",
                 performance.get(
                     "timing_excel_path",
-                    f"~/rsg_ros2_ws/debug/{node_key}_debug_{{session_date}}_{{creation_time}}.csv",
+                    f"~/Thesis_pipeline_split_lean/debug/{node_key}_debug_{{session_date}}_{{creation_time}}.csv",
                 ),
             )
         ).format(session_date=session_date, creation_time=creation_time, node_name=node_key)
@@ -792,10 +795,10 @@ class Phase1Config:
             rap_dummy_known_labels=list(rap.get("dummy_known_labels", [])),
             rap_update_enabled=bool(rap.get("update_memory_from_vlm", True)),
             rap_update_min_confidence=float(rap.get("update_min_confidence", 0.50)),
-            rap_memory_path=str(rap.get("memory_update_path", "~/rsg_ros2_ws/debug/phase1_rap_memory.jsonl")),
+            rap_memory_path=str(rap.get("memory_update_path", "~/Thesis_pipeline_split_lean/debug/phase1_rap_memory.jsonl")),
             rap_model_name=str(rap.get("model_name", "openai/clip-vit-base-patch32")),
             rap_device=str(rap.get("device", "")),
-            rap_storage_path=str(rap.get("storage_path", "~/rsg_ros2_ws/visual_memory")),
+            rap_storage_path=str(rap.get("storage_path", "~/Thesis_pipeline_split_lean/visual_memory")),
             rap_chroma_host=str(rap.get("chroma_host", "localhost")),
             rap_chroma_port=int(rap.get("chroma_port", 8001)),
             rap_collection_name=str(rap.get("collection_name", "visual_rag")),

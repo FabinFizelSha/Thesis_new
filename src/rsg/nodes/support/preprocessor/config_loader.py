@@ -9,6 +9,8 @@ from typing import Tuple
 
 import yaml
 
+from nodes.support.workspace_paths import expand_paths_in_yaml, workspace_path
+
 
 @dataclass
 class PreprocessorConfig:
@@ -109,6 +111,7 @@ class PreprocessorConfig:
 
         with config_path.open("r", encoding="utf-8") as stream:
             root = yaml.safe_load(stream)
+        root = expand_paths_in_yaml(root)
 
         preprocessing = root["preprocessing"]
         runtime = preprocessing.get("runtime", {}) or {}
@@ -137,7 +140,7 @@ class PreprocessorConfig:
         timing_excel_path = str(
             performance.get(
                 "timing_excel_path",
-                "~/rsg_ros2_ws/debug/RSG_pre_processor_debug_{session_date}_{creation_time}.xlsx",
+                "~/Thesis_pipeline_split_lean/debug/RSG_pre_processor_debug_{session_date}_{creation_time}.xlsx",
             )
         ).format(session_date=session_date, creation_time=creation_time)
 

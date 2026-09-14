@@ -16,13 +16,13 @@ The package does **not** deserialize `DsgUpdate.layer_contents` in Python. Actua
 Copy this package into:
 
 ```bash
-~/rsg_ros2_ws/src/rsg_dsg_visualizer
+~/Thesis_pipeline_split_lean/src/rsg_dsg_visualizer
 ```
 
 Then build:
 
 ```bash
-cd ~/rsg_ros2_ws
+cd ~/Thesis_pipeline_split_lean
 deactivate 2>/dev/null || true
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select rsg_dsg_visualizer
