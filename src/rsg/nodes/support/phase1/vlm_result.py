@@ -34,10 +34,14 @@ NO_RESULT_LABELS = {
     "vlm_unknown",
     "no_result",
 }
-# Placeholder used while the VLM prompt does not yet request a description.
-# Once the prompt is updated to ask for ``object_detail``, a real value from
-# the model's response simply takes over -- see validate_vlm_response.
-DEFAULT_OBJECT_DETAIL = "This_is_a_sample_sentence"
+# Fallback when the active prompt does not (yet) request a description, or
+# the model omits the key. Empty rather than a placeholder sentence: the
+# fuser only appends an object_detail line to the RViz label when the value
+# is non-empty (see fuser.cpp's objectDisplayLabel), so "no value" means no
+# extra line instead of a fake sentence sitting on every object. Once the
+# prompt asks for object_detail, a real value from the model's response
+# simply takes over -- see validate_vlm_response.
+DEFAULT_OBJECT_DETAIL = ""
 VALID_MOBILITY_CLASSES = {"static", "dynamic", "unknown"}
 _MOBILITY_ALIASES = {
     "stationary": "static",

@@ -12,8 +12,10 @@ label-prompt experiment.**
   object?"*. This one answers *"can one short, appended section make the same
   frozen prompt also report the object's current visible state, without
   breaking the identification it already does well?"*
-- **Status:** SCAFFOLD READY — V1 written, not yet run against the live
-  pipeline.
+- **Status:** V1 ACTIVATED 2026-09-18 — `phase1.vlm.prompt` in
+  `rsg_pipeline.yaml` is now `BASELINE_FROZEN` + `V1_basic_addition`
+  (byte-verified), `object_detail_experiment.enabled: true`. Awaiting the
+  first graded test run (§11/§12 still empty).
 
 ---
 
@@ -507,7 +509,7 @@ folder.
 
 | Version | Model | Addition | Folder | Status | Verified N | Label accuracy | object_detail usefulness | format_break count |
 |---|---|---|---|---|---|---|---|---|
-| V1 | qwen35_4b | basic_addition | `runs/V1__qwen35_4b__basic_addition/session_<ts>/` | ☐ not started | — | — | — | — |
+| V1 | qwen35_4b | basic_addition | `runs/V1__qwen35_4b__basic_addition/session_<ts>/` | ◐ activated, awaiting graded run | — | — | — | — |
 
 Add V2+ rows here as they're wired, following the label experiment's
 convention (§7 there) exactly.
@@ -520,7 +522,13 @@ convention (§7 there) exactly.
 CSV cannot show on its own — this is exactly the material for the thesis
 experiment chapter.)*
 
-### V1 — qwen35_4b × basic_addition — ☐ NOT STARTED
+### V1 — qwen35_4b × basic_addition — ◐ ACTIVATED, AWAITING GRADED RUN
+
+Activated 2026-09-18 in `rsg_pipeline.yaml` (prompt + `object_detail_experiment`
+flag) and rebuilt. An initial ungraded test run already showed the pipeline
+producing *something* other than the removed dummy placeholder (see §15) —
+this section will be filled once a full session is collected and manually
+graded per §9/§5.
 
 ---
 
@@ -581,3 +589,5 @@ experiment chapter.)*
 | Date | Change |
 |---|---|
 | 2026-09-18 | **Scaffold created.** Folder tree (`runs/V1__qwen35_4b__basic_addition/{crops/.gitkeep,vlm_results.csv}`), `object_detail_prompts_under_test.yaml` (`BASELINE_FROZEN` verified byte-identical to the live `rsg_pipeline.yaml` prompt via the YAML parser; `V1_basic_addition` = baseline + appended section, `active: true`), `vlm_results_TEMPLATE.csv` (generated from `CSV_HEADERS`, not hand-typed, so it can't drift from the code), this report. Diagnostic infrastructure extended rather than duplicated: `vlm_test_diagnostics.py` gained the `object_detail` column, two manual-grading columns (§5), and a `crop_format` parameter (`png` for this experiment, `jpg` preserved as the label experiment's default so its own frozen sessions are unaffected); `phase1_config.py` gained a parallel `vlm_object_detail_experiment_*` config block (mirrors but does not touch the existing `vlm_prompt_opt_*` fields); `rsg_pipeline.yaml` gained the matching `object_detail_experiment:` block, disabled by default; `phase1.py`'s diagnostics-directory selection now checks it first, ahead of the (frozen) label experiment's own flag. `.gitignore` extended with the matching `runs/*/session_*/` rule. V1 not yet run — the `OUTPUT`/`GOOD`-restatement conflict (§14) is flagged *before* the first run specifically so it's judged as a predicted risk being tested, not a surprise discovered after the fact. |
+| 2026-09-18 | **First live test run — dummy placeholder discovered, not a bug in the field itself.** The pipeline-compatibility work (before this experiment folder existed) shipped `DEFAULT_OBJECT_DETAIL = "This_is_a_sample_sentence"` as a fallback for when the prompt doesn't request the field yet. A test run against the still-unmodified baseline prompt (V1 not yet wired at that point) correctly showed that placeholder on every object in RViz — expected, but easy to mistake for a broken feature since it looks identical on every object regardless of what the VLM actually said. **Fix:** `DEFAULT_OBJECT_DETAIL` changed from a placeholder sentence to `""` (empty) in `vlm_result.py` — no fuser.cpp change needed, since `objectDisplayLabel()` already only appends the object_detail line when non-empty (written defensively in the original pipeline-compatibility pass). Effect: an object with no real `object_detail` now simply shows no extra line, instead of a fake one. Pure Python constant, symlinked install, live immediately without a rebuild. |
+| 2026-09-18 | **V1 activated.** `phase1.vlm.prompt` in `rsg_pipeline.yaml` replaced with `object_detail_prompts_under_test.yaml`'s `V1_basic_addition` template (byte-verified equal via the YAML parser: `BASELINE_FROZEN` text + the §4 addition, 9109 chars). `phase1.vlm.object_detail_experiment` flipped to `enabled: true`, `run_id: V1__qwen35_4b__basic_addition`, `prompt_version: V1_basic_addition` (`prompt_optimisation.enabled` confirmed still `false` — the two routes stay mutually exclusive per §7). Rebuilt (`colcon build --packages-select rsg --symlink-install`). Memory was **not** cleared as part of this activation — do that (`python3 clear_memory.py`) before the graded run in §9 step 3, so old dummy-era tracker/RAP state doesn't leak into V1's numbers. §11/§12 status updated to "activated, awaiting graded run"; still pending: a full session collected and manually graded end-to-end per §5/§9/§10. |

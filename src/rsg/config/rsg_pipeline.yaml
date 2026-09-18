@@ -465,6 +465,33 @@ phase1:                                                                         
 
       Return only the JSON object - nothing before "{", nothing after "}". No markdown, no explanation, no numbered analysis.
 
+      ADDITIONAL FIELD - object_detail (experimental addition, V1_basic_addition)
+
+      Everything above is unchanged: still decide "label", "label_confidence",
+      "mobility_class" and "mobility_confidence" exactly as instructed.
+
+      Now also add a fifth key, "object_detail": a short phrase describing the
+      object's CURRENT VISIBLE STATE - not its identity, material or colour (the
+      label already covers that). Describe what is different about this specific
+      instance right now: items on or with it, its condition, or whether it looks
+      active or in use.
+
+      Examples:
+      - a table with a monitor and keyboard on it, tidily arranged -> "monitor and keyboard on table, organized properly"
+      - a floor with a wet patch -> "water on floor"
+      - a floor covered by a rug -> "carpet covering floor"
+      - a monitor showing an image -> "display on"
+      - a monitor with a black, blank screen -> "display off"
+      - nothing notable to report -> "no notable detail"
+
+      Keep object_detail to 10 words or fewer. Do not repeat the label inside it.
+
+      OUTPUT - exactly one JSON object, with nothing before it or after it:
+      {"label": "<label>", "label_confidence": <0-1>, "mobility_class": "<static|dynamic|unknown>", "mobility_confidence": <0-1>, "object_detail": "<short phrase>"}
+
+      GOOD - this is the whole reply:
+      {"label": "table", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99, "object_detail": "monitor and keyboard on table, organized properly"}
+
     prompt_optimisation:                                                                             # VLM prompt-optimisation experiment (debug/prompt_optimisation_experiment/). Set enabled: false for normal runs.
       enabled: false                                                                                 # Experiment complete (all 9 runs); switched off 2026-09-05 for normal production use. Route VLM crop + per-call CSV into the experiment run folder only while re-running the matrix.
       run_id: R6__qwen35_4b__v6_structural_priority                                                        # Experiment matrix row this config now matches (the winner); inert while enabled is false.
@@ -472,9 +499,9 @@ phase1:                                                                         
       output_root: ${WORKSPACE_ROOT}/debug/prompt_optimisation_experiment/runs                # <output_root>/<run_id>/session_<timestamp>/{crops,vlm_results.csv}
 
     object_detail_experiment:                                                                        # object_detail prompt-addition experiment (debug/object_detail_prompt_experiment/). Set enabled: false for normal runs. See that folder's EXPERIMENT_REPORT.md for the addition text to paste into `prompt` above before enabling.
-      enabled: false                                                                                  # Not yet started -- see debug/object_detail_prompt_experiment/EXPERIMENT_REPORT.md §6 for the activation procedure.
-      run_id: ""                                                                                      # e.g. V1__qwen35_4b__basic_addition. Set before enabling.
-      prompt_version: ""                                                                              # Which version from object_detail_prompts_under_test.yaml is pasted into `prompt` above.
+      enabled: true                                                                                   # V1 activated 2026-09-18 -- prompt above is BASELINE_FROZEN + V1_basic_addition. See debug/object_detail_prompt_experiment/EXPERIMENT_REPORT.md §9.
+      run_id: V1__qwen35_4b__basic_addition                                                                # Matches the pre-scaffolded folder under debug/object_detail_prompt_experiment/runs/.
+      prompt_version: V1_basic_addition                                                                    # Which version from object_detail_prompts_under_test.yaml is pasted into `prompt` above.
       output_root: ${WORKSPACE_ROOT}/debug/object_detail_prompt_experiment/runs                # <output_root>/<run_id>/session_<timestamp>/{crops,vlm_results.csv}
       crop_format: png                                                                                # Lossless -- object_detail grading depends on fine visual state cues jpeg compression can obscure.
 
