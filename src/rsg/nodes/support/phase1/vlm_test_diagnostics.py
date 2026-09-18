@@ -1,15 +1,19 @@
-"""VLM testing diagnostics - crops and per-call CSV for the prompt-optimisation experiment.
+"""VLM testing diagnostics - crops and per-call CSV for manual verification.
+
+Shared by two experiments: the (frozen) object-detection label/prompt
+experiment in debug/prompt_optimisation_experiment/ (CSV schema in its
+EXPERIMENT_REPORT.md §8, jpg crops) and the object_detail prompt-addition
+experiment in debug/object_detail_prompt_experiment/ (its EXPERIMENT_REPORT.md
+§7, png crops by default -- see ``crop_format``).
 
 Every VLM call saves the exact crop it was given and one CSV row. Output layout::
 
     <output_dir>/session_<YYYYmmdd_HHMMSS>/
-        crops/obj_NNNNNN_crop.jpg
+        crops/obj_NNNNNN_crop.<jpg|png>
         vlm_results.csv
 
 The session folder is unique per process start, so repeated runs (of the same
 experiment matrix row) never overwrite an earlier run's crops or CSV.
-
-CSV schema follows debug/prompt_optimisation_experiment/EXPERIMENT_REPORT.md §8.
 """
 
 import csv
@@ -33,6 +37,7 @@ CSV_HEADERS = [
     "label_confidence",
     "mobility_class",
     "mobility_confidence",
+    "object_detail",
     "vlm_inference_ms",
     "end_to_end_ms",
     "success",
@@ -42,6 +47,11 @@ CSV_HEADERS = [
     "manual_is_correct",
     "error_category",
     "manual_notes",
+    # object_detail-specific manual grading (debug/object_detail_prompt_experiment/
+    # EXPERIMENT_REPORT.md §8 rubric). Blank / unused for the label-prompt
+    # experiment's rows.
+    "manual_object_detail_rating",
+    "manual_object_detail_notes",
 ]
 
 
@@ -55,18 +65,24 @@ class VLMTestDiagnostics:
         model_profile: str = "",
         prompt_version: str = "",
         enabled: bool = True,
+        crop_format: str = "jpg",
     ):
         """Initialize diagnostics.
 
         Args:
-            output_dir: Parent directory. For the prompt-optimisation experiment
-                pass ``<output_root>/<run_id>``; a fresh ``session_<timestamp>/``
-                is created under it.
+            output_dir: Parent directory. For a prompt experiment pass
+                ``<output_root>/<run_id>``; a fresh ``session_<timestamp>/`` is
+                created under it.
             run_id: experiment matrix row id (e.g. ``R1__qwen3vl8b__v1_simplified``)
             model_profile: ``phase1.vlm.active_profile`` for the run
             prompt_version: which prompt is active (e.g. ``P1_v1_simplified``)
             enabled: when False, no directory or CSV is created and
                 ``log_vlm_result`` is a no-op.
+            crop_format: ``"jpg"`` (default, matches the label-prompt
+                experiment's existing archived sessions) or ``"png"``
+                (lossless -- used by the object_detail experiment, since
+                jpeg compression artifacts can obscure the fine visual state
+                cues that field depends on, e.g. a screen being on vs off).
         """
         if output_dir is None:
             output_dir = workspace_path("VLM-Test-Session")
@@ -75,6 +91,9 @@ class VLMTestDiagnostics:
         self.run_id = str(run_id or "")
         self.model_profile = str(model_profile or "")
         self.prompt_version = str(prompt_version or "")
+        self.crop_format = str(crop_format or "jpg").strip().lower()
+        if self.crop_format not in {"jpg", "jpeg", "png"}:
+            self.crop_format = "jpg"
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.session_dir = Path(output_dir) / f"session_{timestamp}"
@@ -121,7 +140,7 @@ class VLMTestDiagnostics:
             object_id = f"{self.object_counter:06d}"
 
             if crop_rgb is not None and getattr(crop_rgb, "size", 0) > 0:
-                crop_filename = f"obj_{object_id}_crop.jpg"
+                crop_filename = f"obj_{object_id}_crop.{self.crop_format}"
                 crop = crop_rgb
                 if crop.ndim == 3 and crop.shape[2] == 3:
                     crop = cv2.cvtColor(crop, cv2.COLOR_RGB2BGR)
@@ -143,6 +162,7 @@ class VLMTestDiagnostics:
                 "label_confidence": f"{float(vlm_output.get('label_confidence', 0.0)):.3f}",
                 "mobility_class": vlm_output.get("mobility_class", "unknown"),
                 "mobility_confidence": f"{float(vlm_output.get('mobility_confidence', 0.0)):.3f}",
+                "object_detail": vlm_output.get("object_detail", ""),
                 "vlm_inference_ms": f"{float(inference_ms):.2f}" if inference_ms else "",
                 "end_to_end_ms": f"{float(end_to_end_ms):.2f}",
                 "success": str(vlm_output.get("success", False)),
@@ -152,6 +172,8 @@ class VLMTestDiagnostics:
                 "manual_is_correct": "",
                 "error_category": "",
                 "manual_notes": "",
+                "manual_object_detail_rating": "",
+                "manual_object_detail_notes": "",
             }
             with open(self.log_file, "a", newline="") as f:
                 csv.DictWriter(f, fieldnames=CSV_HEADERS).writerow(row)

@@ -23,6 +23,10 @@ float32 label_confidence
 string mobility_class
 # Confidence in the mobility classification returned by the VLM.
 float32 mobility_confidence
+# Free-text description of the object. Dummy placeholder until the VLM
+# prompt is updated to request this field; see vlm_result.py's
+# DEFAULT_OBJECT_DETAIL.
+string object_detail
 string backend
 string model
 

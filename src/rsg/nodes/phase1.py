@@ -65,7 +65,7 @@ from nodes.support.phase1.semantic_crop import (
 )
 from nodes.support.phase1.time_utils import stamp_to_float
 from nodes.support.phase1.unknown_tracker import UnknownObjectTracker
-from nodes.support.phase1.vlm_result import infer_mobility_from_label
+from nodes.support.phase1.vlm_result import DEFAULT_OBJECT_DETAIL, infer_mobility_from_label
 from nodes.support.phase1.loop_closure import loop_closure_delta, quat_to_rot
 from nodes.phase1_pipeline import SegmentationStage, TrackingStage, SemanticsStage, PublishingStage
 
@@ -432,21 +432,38 @@ class Phase1SemanticCoordinator(Node):
         )
 
         # VLM testing diagnostics (crops + per-call CSV for manual verification).
-        # During the prompt-optimisation experiment, write under
-        # <output_root>/<run_id>/session_<timestamp>/ so repeated runs of the
-        # same matrix row never overwrite each other.
-        if self.config.vlm_prompt_opt_enabled and self.config.vlm_prompt_opt_output_root:
+        # During a prompt experiment, write under <output_root>/<run_id>/
+        # session_<timestamp>/ so repeated runs of the same matrix row never
+        # overwrite each other. The two experiment toggles are mutually
+        # exclusive in practice (object_detail_experiment checked first since
+        # it is the active one as of its introduction; the label-prompt
+        # experiment is frozen/complete -- see phase1_config.py).
+        if self.config.vlm_object_detail_experiment_enabled and self.config.vlm_object_detail_experiment_output_root:
+            _vlm_diag_dir = Path(self.config.vlm_object_detail_experiment_output_root) / (
+                self.config.vlm_object_detail_experiment_run_id or "unnamed_run"
+            )
+            _vlm_diag_run_id = self.config.vlm_object_detail_experiment_run_id
+            _vlm_diag_prompt_version = self.config.vlm_object_detail_experiment_prompt_version
+            _vlm_diag_crop_format = self.config.vlm_object_detail_experiment_crop_format
+        elif self.config.vlm_prompt_opt_enabled and self.config.vlm_prompt_opt_output_root:
             _vlm_diag_dir = Path(self.config.vlm_prompt_opt_output_root) / (
                 self.config.vlm_prompt_opt_run_id or "unnamed_run"
             )
+            _vlm_diag_run_id = self.config.vlm_prompt_opt_run_id
+            _vlm_diag_prompt_version = self.config.vlm_prompt_opt_prompt_version
+            _vlm_diag_crop_format = "jpg"
         else:
             _vlm_diag_dir = workspace_path("VLM-Test-Session")
+            _vlm_diag_run_id = self.config.vlm_prompt_opt_run_id
+            _vlm_diag_prompt_version = self.config.vlm_prompt_opt_prompt_version
+            _vlm_diag_crop_format = "jpg"
         self.vlm_test_diagnostics = VLMTestDiagnostics(
             output_dir=_vlm_diag_dir,
-            run_id=self.config.vlm_prompt_opt_run_id,
+            run_id=_vlm_diag_run_id,
             model_profile=self.config.vlm_active_profile,
-            prompt_version=self.config.vlm_prompt_opt_prompt_version,
+            prompt_version=_vlm_diag_prompt_version,
             enabled=self.diagnostics_enabled,
+            crop_format=_vlm_diag_crop_format,
         )
         if self.diagnostics_enabled:
             self.get_logger().info(
@@ -2212,6 +2229,7 @@ class Phase1SemanticCoordinator(Node):
             "mobility_class": track.mobility_class,
             "mobility_confidence": float(track.mobility_confidence or 0.0),
             "mobility_source": track.mobility_source,
+            "object_detail": track.object_detail,
             "semantic_segments": segments,
             "hydra_slot_id": int(track.hydra_label_id),
             "hydra_slot_name": str(track.hydra_label_name),
@@ -2279,6 +2297,7 @@ class Phase1SemanticCoordinator(Node):
                 "mobility_class": str(payload.get("mobility_class", "unknown") or "unknown"),
                 "mobility_confidence": float(payload.get("mobility_confidence", 0.0) or 0.0),
                 "mobility_source": str(payload.get("mobility_source", "none") or "none"),
+                "object_detail": str(payload.get("object_detail") or DEFAULT_OBJECT_DETAIL),
                 "crop_revision": int(task.get("crop_revision", 0) or 0),
                 "vlm_crop_quality_score": float(task.get("vlm_crop_quality_score", 0.0) or 0.0),
                 "vlm_crop_quality_eligible": bool(task.get("vlm_crop_quality_eligible", False)),
@@ -3011,6 +3030,7 @@ class Phase1SemanticCoordinator(Node):
             max(0.0, min(1.0, float(rap.confidence))),
         )
         mobility_source = "rap_memory" if mobility_class != "unknown" else "none"
+        object_detail = str(rap_metadata.get("object_detail") or DEFAULT_OBJECT_DETAIL)
         if is_known and mobility_class == "unknown" and not rap_has_mobility_metadata:
             mobility_class = infer_mobility_from_label(
                 label,
@@ -3031,6 +3051,7 @@ class Phase1SemanticCoordinator(Node):
                 mobility_class=mobility_class,
                 mobility_confidence=mobility_confidence,
                 mobility_source=mobility_source,
+                object_detail=object_detail,
             )
 
         vlm_status = "not_requested"
@@ -3406,6 +3427,7 @@ class Phase1SemanticCoordinator(Node):
                 "mobility_class": str(result.get("mobility_class", "unknown") or "unknown"),
                 "mobility_confidence": float(result.get("mobility_confidence", 0.0) or 0.0),
                 "mobility_source": "vlm",
+                "object_detail": str(result.get("object_detail") or DEFAULT_OBJECT_DETAIL),
             })
             rap_update_status = self.rap_memory_updater.update_from_vlm(result, memory_metadata)
             try:
@@ -3423,6 +3445,7 @@ class Phase1SemanticCoordinator(Node):
                             "mobility_class": memory_metadata["mobility_class"],
                             "mobility_confidence": memory_metadata["mobility_confidence"],
                             "mobility_source": "vlm",
+                            "object_detail": memory_metadata["object_detail"],
                         })
                         rap_update_status["rap_memory_live_update"] = "added_to_visual_rap"
                         rap_update_status["memory_slot_id"] = memory_metadata["rsg_slot_id"]
@@ -3470,6 +3493,7 @@ class Phase1SemanticCoordinator(Node):
             msg.label_confidence = float(result.get("label_confidence", msg.confidence)) if msg.success else 0.0
             msg.mobility_class = str(result.get("mobility_class", "unknown")) if msg.success else "unknown"
             msg.mobility_confidence = float(result.get("mobility_confidence", 0.0)) if msg.success else 0.0
+            msg.object_detail = str(result.get("object_detail", DEFAULT_OBJECT_DETAIL))
             msg.backend = str(result.get("backend", self.config.vlm_mode))
             msg.model = str(result.get("model", self.config.vlm_model))
             msg.vlm_delay_ms = float(vlm_delay_ms)
@@ -3494,6 +3518,7 @@ class Phase1SemanticCoordinator(Node):
                         msg.confidence,
                         msg.mobility_class,
                         msg.mobility_confidence,
+                        msg.object_detail,
                     )
                 semantic_task = memory_task if is_track_id_task else dict(task.get("semantic_label_task") or task)
                 completed = self.persistent_tracker.complete_semantic_labeling(

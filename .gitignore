@@ -39,6 +39,10 @@ __pycache__/
 # ignore the session_<timestamp>/ folders that each pipeline run writes.
 debug/prompt_optimisation_experiment/runs/*/session_*/
 
+# --- object_detail prompt-addition experiment run outputs ---------------
+# Same convention as above: keep the per-run scaffold, ignore raw sessions.
+debug/object_detail_prompt_experiment/runs/*/session_*/
+
 # --- Fuser object-relation experiment run outputs -----------------------
 # Keep the results/ scaffold (.gitkeep); ignore each run's raw JSONL log
 # and derived CSVs -- large, regeneratable by re-running with

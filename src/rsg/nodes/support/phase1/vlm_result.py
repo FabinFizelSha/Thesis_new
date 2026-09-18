@@ -34,6 +34,10 @@ NO_RESULT_LABELS = {
     "vlm_unknown",
     "no_result",
 }
+# Placeholder used while the VLM prompt does not yet request a description.
+# Once the prompt is updated to ask for ``object_detail``, a real value from
+# the model's response simply takes over -- see validate_vlm_response.
+DEFAULT_OBJECT_DETAIL = "This_is_a_sample_sentence"
 VALID_MOBILITY_CLASSES = {"static", "dynamic", "unknown"}
 _MOBILITY_ALIASES = {
     "stationary": "static",
@@ -60,6 +64,7 @@ class ValidatedVlmResult:
     validation_status: str
     validation_reason: str
     parsed_payload: Dict[str, Any]
+    object_detail: str = DEFAULT_OBJECT_DETAIL
 
     def as_dict(self) -> Dict[str, Any]:
         """Return a JSON-serialisable representation used by Phase 1."""
@@ -73,6 +78,7 @@ class ValidatedVlmResult:
             "validation_status": self.validation_status,
             "validation_reason": self.validation_reason,
             "parsed_payload": dict(self.parsed_payload),
+            "object_detail": self.object_detail,
         }
 
 
@@ -327,7 +333,17 @@ def validate_vlm_response(
             validation_status="rejected",
             validation_reason=parse_status,
             parsed_payload={},
+            object_detail=DEFAULT_OBJECT_DETAIL,
         )
+
+    # Not requested by the current prompt yet -- falls back to a placeholder
+    # until a prompt update asks the model for this field (see
+    # DEFAULT_OBJECT_DETAIL). Extracted unconditionally so a future prompt
+    # change needs no code change here. Spaces are normalised to underscores
+    # so the fuser's RViz label never wraps a multi-word sentence across
+    # separate whitespace-delimited tokens.
+    raw_object_detail = str(payload.get("object_detail") or "").strip()
+    object_detail = raw_object_detail.replace(" ", "_") if raw_object_detail else DEFAULT_OBJECT_DETAIL
 
     label = normalise_label(payload.get("label", payload.get("object_label", "unknown_object")))
     label_confidence = _normalise_confidence(
@@ -360,6 +376,7 @@ def validate_vlm_response(
             validation_status="rejected",
             validation_reason=";".join(reasons),
             parsed_payload=payload,
+            object_detail=object_detail,
         )
 
     mobility_is_confident = mobility_confidence >= float(min_mobility_confidence)
@@ -391,4 +408,5 @@ def validate_vlm_response(
         validation_status="accepted",
         validation_reason=";".join(reasons),
         parsed_payload=payload,
+        object_detail=object_detail,
     )

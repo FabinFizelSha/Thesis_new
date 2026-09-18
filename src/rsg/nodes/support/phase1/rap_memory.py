@@ -51,6 +51,7 @@ class RapMemoryUpdater:
             "mobility_class": str(vlm_result.get("mobility_class", "unknown")),
             "mobility_confidence": float(vlm_result.get("mobility_confidence", 0.0) or 0.0),
             "mobility_source": "vlm",
+            "object_detail": str(vlm_result.get("object_detail") or object_metadata.get("object_detail", "")),
             "vlm_validation_status": str(vlm_result.get("validation_status", "")),
             "vlm_validation_reason": str(vlm_result.get("validation_reason", "")),
             "centroid_3d": object_metadata.get("centroid_3d"),

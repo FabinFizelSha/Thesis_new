@@ -30,7 +30,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from nodes.support.phase1.vlm_result import validate_risk_response, validate_vlm_response
+from nodes.support.phase1.vlm_result import (
+    DEFAULT_OBJECT_DETAIL,
+    validate_risk_response,
+    validate_vlm_response,
+)
 
 
 def _effective_sam_min_mask_pixels(config: Any) -> int:
@@ -875,6 +879,7 @@ class OpenAICompatibleVlmBackend:
                 "label_confidence": 0.0,
                 "mobility_class": "unknown",
                 "mobility_confidence": 0.0,
+                "object_detail": DEFAULT_OBJECT_DETAIL,
                 "backend": self.config.vlm_mode,
                 "model": self.config.vlm_model,
                 "raw_response": "empty_crop",
@@ -920,6 +925,7 @@ class OpenAICompatibleVlmBackend:
                 "label_confidence": 0.0,
                 "mobility_class": "unknown",
                 "mobility_confidence": 0.0,
+                "object_detail": DEFAULT_OBJECT_DETAIL,
                 "backend": self.config.vlm_mode,
                 "model": self.model,
                 "raw_response": str(exc),

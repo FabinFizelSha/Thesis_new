@@ -38,6 +38,7 @@ from nodes.support.phase1.persistent_object_tracker import (
     _as_list,
     _as_xyz,
 )
+from nodes.support.phase1.vlm_result import DEFAULT_OBJECT_DETAIL
 
 SCHEMA_VERSION = 1
 
@@ -153,6 +154,7 @@ def _track_to_dict(track: PersistentObjectTrack, shift: float) -> Dict[str, Any]
         "mobility_class": track.mobility_class,
         "mobility_confidence": float(track.mobility_confidence),
         "mobility_source": track.mobility_source,
+        "object_detail": track.object_detail,
         "metadata": _json_safe(track.metadata),
         "slot_state": track.slot_state,
         "semantic_update_count": int(track.semantic_update_count),
@@ -217,6 +219,7 @@ def _track_from_dict(data: Dict[str, Any]) -> PersistentObjectTrack:
     track.mobility_class = str(data.get("mobility_class", "unknown"))
     track.mobility_confidence = float(data.get("mobility_confidence", 0.0))
     track.mobility_source = str(data.get("mobility_source", "none"))
+    track.object_detail = str(data.get("object_detail") or DEFAULT_OBJECT_DETAIL)
     track.metadata = dict(data.get("metadata") or {})
     track.slot_state = str(data.get("slot_state", "active"))
     semantic_ts = data.get("semantic_timestamp_sec")

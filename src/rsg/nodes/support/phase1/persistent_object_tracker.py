@@ -22,6 +22,8 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import numpy as np
 
+from nodes.support.phase1.vlm_result import DEFAULT_OBJECT_DETAIL
+
 
 def _as_xyz(value: Any) -> Optional[np.ndarray]:
     if not isinstance(value, (list, tuple, np.ndarray)) or len(value) != 3:
@@ -388,6 +390,7 @@ class PersistentObjectTrack:
     mobility_class: str = "unknown"
     mobility_confidence: float = 0.0
     mobility_source: str = "none"
+    object_detail: str = DEFAULT_OBJECT_DETAIL
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     # Semantic-label worker state. The live Hydra slot remains unchanged.
@@ -1344,6 +1347,7 @@ class PersistentObjectTracker:
         confidence: float,
         mobility_class: str = "unknown",
         mobility_confidence: float = 0.0,
+        object_detail: str = DEFAULT_OBJECT_DETAIL,
     ) -> Optional[Dict[str, Any]]:
         """Attach one validated VLM label and mobility decision to a slot."""
         normalised = self._canonicalise_label(label)
@@ -1354,6 +1358,7 @@ class PersistentObjectTracker:
             if track is None:
                 return None
             track.raw_vlm_label = normalised
+            track.object_detail = str(object_detail or DEFAULT_OBJECT_DETAIL)
             self._update_semantics(track, normalised, "vlm", float(confidence))
             self._update_mobility(
                 track,
@@ -1372,6 +1377,7 @@ class PersistentObjectTracker:
         mobility_class: str = "unknown",
         mobility_confidence: float = 0.0,
         mobility_source: str = "rap",
+        object_detail: str = DEFAULT_OBJECT_DETAIL,
     ) -> Optional[Dict[str, Any]]:
         """Attach one RAP label and stored mobility metadata to a slot."""
         with self._lock:
@@ -1387,6 +1393,7 @@ class PersistentObjectTracker:
                     confidence=mobility_confidence,
                     source=mobility_source,
                 )
+                track.object_detail = str(object_detail or DEFAULT_OBJECT_DETAIL)
             return self._track_record(
                 track,
                 "rap_semantic_update" if resolved else "rap_unknown",
@@ -2903,6 +2910,7 @@ class PersistentObjectTracker:
                 "mobility_class": track.mobility_class,
                 "mobility_confidence": float(track.mobility_confidence),
                 "mobility_source": track.mobility_source,
+                "object_detail": track.object_detail,
                 "slot_state": track.slot_state,
                 "labeling_dispatched": bool(track.labeling_dispatched),
                 "labeling_completed": bool(track.labeling_completed),
@@ -2984,6 +2992,7 @@ class PersistentObjectTracker:
             "mobility_class": track.mobility_class,
             "mobility_confidence": float(track.mobility_confidence),
             "mobility_source": track.mobility_source,
+            "object_detail": track.object_detail,
             "semantic_hydra_class_id": int(track.semantic_hydra_class_id),
             "semantic_reason": track.semantic_reason,
             "semantic_timestamp_sec": track.semantic_timestamp_sec,

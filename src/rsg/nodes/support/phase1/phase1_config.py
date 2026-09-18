@@ -228,6 +228,20 @@ class Phase1Config:
     vlm_prompt_opt_run_id: str = ""
     vlm_prompt_opt_prompt_version: str = ""
     vlm_prompt_opt_output_root: str = ""
+    # object_detail prompt-addition experiment (debug/object_detail_prompt_experiment/).
+    # Separate toggle from vlm_prompt_opt_* above: that experiment (the object
+    # -detection label prompt itself) is frozen/complete, this one only tests
+    # the additional object_detail field appended on top of the frozen prompt.
+    # Mutually exclusive in practice -- see _vlm_diag_dir selection in phase1.py.
+    vlm_object_detail_experiment_enabled: bool = False
+    vlm_object_detail_experiment_run_id: str = ""
+    vlm_object_detail_experiment_prompt_version: str = ""
+    vlm_object_detail_experiment_output_root: str = ""
+    # png (lossless) by default for this experiment -- object_detail grading
+    # depends on fine visual state cues (e.g. "display on" vs "display off")
+    # that jpeg compression artifacts could obscure. The label-prompt
+    # experiment above keeps its own jpg crops unaffected.
+    vlm_object_detail_experiment_crop_format: str = "png"
     vlm_result_min_label_confidence: float = 0.35
     vlm_result_min_mobility_confidence: float = 0.50
     vlm_dynamic_label_hints: List[str] = field(default_factory=list)
@@ -854,6 +868,11 @@ class Phase1Config:
             vlm_prompt_opt_run_id=str((vlm.get("prompt_optimisation", {}) or {}).get("run_id", "")),
             vlm_prompt_opt_prompt_version=str((vlm.get("prompt_optimisation", {}) or {}).get("prompt_version", "")),
             vlm_prompt_opt_output_root=str((vlm.get("prompt_optimisation", {}) or {}).get("output_root", "")),
+            vlm_object_detail_experiment_enabled=bool((vlm.get("object_detail_experiment", {}) or {}).get("enabled", False)),
+            vlm_object_detail_experiment_run_id=str((vlm.get("object_detail_experiment", {}) or {}).get("run_id", "")),
+            vlm_object_detail_experiment_prompt_version=str((vlm.get("object_detail_experiment", {}) or {}).get("prompt_version", "")),
+            vlm_object_detail_experiment_output_root=str((vlm.get("object_detail_experiment", {}) or {}).get("output_root", "")),
+            vlm_object_detail_experiment_crop_format=str((vlm.get("object_detail_experiment", {}) or {}).get("crop_format", "png")),
             vlm_result_min_label_confidence=max(0.0, min(1.0, float((vlm.get("result_validation", {}) or {}).get("min_label_confidence", 0.35)))),
             vlm_result_min_mobility_confidence=max(0.0, min(1.0, float((vlm.get("result_validation", {}) or {}).get("min_mobility_confidence", 0.50)))),
             vlm_dynamic_label_hints=list((vlm.get("result_validation", {}) or {}).get("dynamic_label_hints", [])),

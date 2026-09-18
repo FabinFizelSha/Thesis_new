@@ -239,6 +239,7 @@ struct SemanticOverlay {
   std::string mobility_class = "unknown";
   double mobility_confidence = 0.0;
   std::string mobility_source = "none";
+  std::string object_detail;
   std::string source;
   double timestamp_sec = 0.0;
   bool has_centroid = false;
@@ -832,6 +833,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     show_presence_confidence_ = declare_parameter<bool>("show_presence_confidence", false);
     show_label_confidence_ = declare_parameter<bool>("show_label_confidence", true);
     show_mobility_metadata_ = declare_parameter<bool>("show_mobility_metadata", true);
+    show_object_detail_ = declare_parameter<bool>("show_object_detail", true);
     static_presence_half_life_sec_ = std::max(
         0.1, declare_parameter<double>("static_presence_half_life_sec", 600.0));
     dynamic_presence_half_life_sec_ = std::max(
@@ -1203,6 +1205,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
       overlay.mobility_confidence = 0.0;
     }
     overlay.mobility_source = payload.value("mobility_source", std::string("none"));
+    overlay.object_detail = payload.value("object_detail", std::string());
     overlay.source = payload.value("source", std::string("none"));
     ++accepted_semantic_result_events_;
     try {
@@ -2451,6 +2454,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
             {"mobility_class", label.overlay.mobility_class},
             {"mobility_confidence", label.overlay.mobility_confidence},
             {"mobility_source", label.overlay.mobility_source},
+            {"object_detail", label.overlay.object_detail},
             {"source", label.overlay.source},
             {"timestamp_sec", label.overlay.timestamp_sec},
             {"association", label.association},
@@ -3366,6 +3370,9 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
       line << mobility_class << "(" << overlay->mobility_confidence << ")";
       label += "\n" + line.str();
     }
+    if (show_object_detail_ && overlay && !overlay->object_detail.empty()) {
+      label += "\n" + overlay->object_detail;
+    }
     if (show_presence_confidence_ && slot_id > 0U) {
       const ResolvedPresence presence_state = resolvePresenceForSlot(slot_id, presence, mobility_class);
       if (presence_state.observation.slot_id == 0U) {
@@ -4095,6 +4102,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
             {"mobility_class", overlay_it->second.overlay.mobility_class},
             {"mobility_confidence", overlay_it->second.overlay.mobility_confidence},
             {"mobility_source", overlay_it->second.overlay.mobility_source},
+            {"object_detail", overlay_it->second.overlay.object_detail},
             {"source", overlay_it->second.overlay.source},
             {"association", overlay_it->second.association},
             {"centroid_distance_m", overlay_it->second.centroid_distance_m},
@@ -4258,6 +4266,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
             {"mobility_class", overlay_it->second.overlay.mobility_class},
             {"mobility_confidence", overlay_it->second.overlay.mobility_confidence},
             {"mobility_source", overlay_it->second.overlay.mobility_source},
+            {"object_detail", overlay_it->second.overlay.object_detail},
             {"source", overlay_it->second.overlay.source},
             {"association", overlay_it->second.association},
             {"centroid_distance_m", overlay_it->second.centroid_distance_m},
@@ -4651,6 +4660,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   bool show_presence_confidence_ = false;
   bool show_label_confidence_ = true;
   bool show_mobility_metadata_ = true;
+  bool show_object_detail_ = true;
   double static_presence_half_life_sec_ = 600.0;
   double dynamic_presence_half_life_sec_ = 120.0;
   double presence_observed_epsilon_sec_ = 1.5;
