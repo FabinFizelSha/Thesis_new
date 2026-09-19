@@ -1,8 +1,19 @@
-# Shared RSG configuration for the Tesse ROS bag.
-# Authoritative geometry chain: world -> base_link_gt -> left_cam.
-# /tesse/odom provides the world -> base_link_gt pose; the calibrated static
-# base_link_gt -> left_cam transform is entered below. The rosbag TF tree remains
-# authoritative for Hydra. Do not publish a second direct world -> left_cam TF.
+# Shared RSG configuration for the OpenLoRIS-Scene office1-1 ROS 2 bag
+# (/home/student/datasets/openloris/office/office1-1_7-rosbag/office1-1_ros2).
+# Authoritative geometry chain: base_odom -> base_link -> camera_color_optical_frame.
+# /odom provides the base_odom -> base_link pose; the calibrated static
+# base_link -> camera_color_optical_frame transform (read from the bag's
+# /tf_static, base_link -> d400_color) is entered below. The bag has NO dynamic
+# /tf stream (only /tf_static), so RSG's own preprocessing must publish the
+# camera TF chain -- see preprocessing.tf_output.publish_camera_tf below.
+#
+# Source-bag facts this profile depends on (see evaluation notes):
+#   - RGB:   /d400/color/image_raw               848x480 rgb8   ~30 Hz
+#   - Depth: /d400/aligned_depth_to_color/image_raw 848x480 mono16 (16UC1) ~30 Hz, pre-registered to color geometry
+#   - Intrinsics: /d400/color/camera_info         single latched-style message, published before the image stream starts in the bag
+#   - Odom:  /odom (nav_msgs/Odometry)            base_odom -> base_link, ~20 Hz
+#   - Static extrinsics: /tf_static (1 message)   includes base_link -> d400_color
+#   - No /clock topic: play the bag with `ros2 bag play --clock` (see rsg_play_openloris).
 
 debug:                                                                                               # Per-node debug logging switches.
   global_debug: false                                                                                # Keep console output compact during normal runs.
@@ -16,11 +27,11 @@ preprocessing:                                                                  
     publish_debug_images: false                                                                      # Avoid extra image traffic and GPU/CPU overhead.
 
   topics:
-    rgb: /tesse/left_cam/rgb/image_raw                                                               # RGB image in the left_cam optical geometry.
-    depth: /tesse/depth_cam/mono/image_raw                                                           # Verified frame_id=left_cam; registered to RGB camera geometry.
-    camera_info: /tesse/left_cam/camera_info                                                         # Intrinsics for the RGB / left_cam image.
-    odom: /tesse/odom                                                                                # Pose source: world -> base_link_gt; compose calibrated camera extrinsic.
-    imu: /tesse/imu                                                                                  # Unused while preprocessing.imu.enabled is false; no Go1/D455 frame remains here.
+    rgb: /d400/color/image_raw                                                                       # RealSense D400 RGB image, 848x480 rgb8, frame_id=d400_color.
+    depth: /d400/aligned_depth_to_color/image_raw                                                    # D400 depth pre-registered to the color geometry, 848x480 mono16.
+    camera_info: /d400/color/camera_info                                                             # Intrinsics for the RGB/depth image; only one latched-style message in the bag.
+    odom: /odom                                                                                      # Pose source: base_odom -> base_link; compose calibrated camera extrinsic.
+    imu: /d400/gyro/sample                                                                            # Unused while preprocessing.imu.enabled is false.
     prepared_frame: /rsg/preprocessed/frame                                                          # Unified RGB-D-odom frame sent to Phase 1.
     status: /rsg/preprocessor/status                                                                 # Health and synchronization diagnostics.
 
@@ -28,7 +39,7 @@ preprocessing:                                                                  
     rgb_depth_slop_sec: 0.02                                                                         # Accept RGB-depth timestamps within 20 ms.
     sync_queue_size: 50                                                                              # Configurable RGB-depth message-filter queue; CameraInfo is cached separately.
     odom_buffer_size: 600                                                                            # Retain sufficient odometry history for delayed replay messages.
-    odom_tolerance_sec: 0.05                                                                         # Reject frames when no odometry lies within 150 ms.
+    odom_tolerance_sec: 0.10                                                                         # Reject frames when no odometry lies within 100 ms. The recorded bag data never exceeds ~25 ms of RGB-odom gap; the extra margin over TESSE's 0.05 absorbs live processing jitter observed on this machine (empirically, 0.05 rejected ~14% of frames as nearest_odom_outside_tolerance even though the source data is well synchronized).
     use_odom_interpolation: true                                                                     # Interpolate odometry to the RGB timestamp; reduces motion-induced mesh error.
     reject_unsynchronized_frames: true                                                               # Prefer dropping bad frames over integrating geometrically inconsistent data.
     assume_ordered_messages: true                                                                    # Safe for sequential rosbag playback; avoids unnecessary reordering work.
@@ -42,15 +53,15 @@ preprocessing:                                                                  
   image:
     output_rgb_encoding: rgb8                                                                        # Required passthrough RGB encoding; this optimized node performs no RGB conversion.
     output_depth_encoding: 32FC1                                                                     # Required passthrough depth encoding when optional processing is disabled.
-    depth_scale_to_meter: 0.001                                                                      # Used only by optional single-pass conversion of 16UC1 depth.
+    depth_scale_to_meter: 0.001                                                                      # RealSense D400 default depth unit; the bag has no explicit depth-scale topic to confirm this, verify on first run.
     min_depth_m: 0.30                                                                                # Used by Phase 1 and optional sampled invalid-depth analysis.
     max_depth_m: 5.0                                                                                 # Used by Phase 1 and optional sampled invalid-depth analysis.
     max_invalid_depth_ratio: 0.90                                                                    # Used only when optional invalid-depth checking is enabled.
     reject_resolution_mismatch: true                                                                 # Enforce identical RGB and depth dimensions for correct projection.
 
   validation:
-    check_resolution: true                                                                           # Confirm RGB and depth dimensions match.
-    single_pass_depth_processing_enabled: false                                                      # Default passthrough: no depth conversion, masking, or NumPy materialization.
+    check_resolution: true                                                                           # Confirm RGB and depth dimensions match (both 848x480 in this bag).
+    single_pass_depth_processing_enabled: true                                                       # Required: convert the bag's raw mono16 (16UC1) depth to metres/32FC1 before Phase 1.
     compute_invalid_depth_ratio: false                                                               # Disabled by default; enable only with optional single-pass depth processing.
     invalid_depth_ratio_every_n_frames: 5                                                            # When enabled, calculate validity only on every Nth synchronized frame.
     check_invalid_depth_ratio: false                                                                 # Disabled by default; Phase 1 performs the authoritative depth-range filtering.
@@ -71,22 +82,22 @@ preprocessing:                                                                  
     record_dropped_to_excel: false                                                                   # Avoid spreadsheet I/O during runtime.
 
   frames:
-    world_frame: world                                                                               # Confirmed /tesse/odom.header.frame_id; global pose reference.
-    base_frame: base_link_gt                                                                         # Confirmed /tesse/odom.child_frame_id; odometry is the robot-base pose.
-    camera_frame: left_cam                                                                           # Confirmed RGB, depth, and CameraInfo geometry frame.
+    world_frame: base_odom                                                                           # Confirmed /odom.header.frame_id; global pose reference.
+    base_frame: base_link                                                                            # Confirmed /odom.child_frame_id; odometry is the robot-base pose.
+    camera_frame: camera_color_optical_frame                                                         # Canonical Hydra-facing name; matches rsg_phase1_input.yaml's identity extrinsics frame. The bag calls this sensor "d400_color".
     base_to_camera:
-      translation_m: [0.0, 0.05, 0.0]                                                                # Measured bag TF: base_link_gt -> left_cam translation in metres.
-      rotation_rpy_rad: [-1.57079632679, 0.0, -1.57079632679]                                        # Measured bag TF optical-frame rotation: roll=-pi/2, pitch=0, yaw=-pi/2.
+      translation_m: [0.2264836849091656, -0.05114194035652147, 0.916]                                # Measured bag TF: base_link -> d400_color translation in metres, from /tf_static.
+      rotation_rpy_rad: [-1.5641001838011457, 0.0161279560717892, -1.560815583555602]                 # Measured bag TF: base_link -> d400_color rotation, decoded (extrinsic XYZ) from the same /tf_static quaternion.
 
   tf_output:
-    publish_camera_tf: false                                                                         # Rosbag publishes world -> base_link_gt -> left_cam; prevent duplicate TF authority.
+    publish_camera_tf: true                                                                          # The bag has no dynamic /tf stream; RSG must publish base_odom -> base_link -> camera TF itself from /odom + base_to_camera.
 
   frame_id:
     prefix: rsg                                                                                      # Prefix for generated RSG frame identifiers.
     session_date: ''                                                                                 # Empty value lets the node generate the date automatically.
 
   performance:
-    max_publish_frequency_hz: 25.0                                                                    # Upper timestamp-based output limit; above the 16.4 Hz bag camera rate.
+    max_publish_frequency_hz: 35.0                                                                    # Upper timestamp-based output limit; above this bag's ~30 Hz RGB rate (the TESSE profile's 25 Hz cap would throttle-drop frames here).
     measure_timing: false                                                                             # Retain in-memory timing measurements for diagnostics.
     publish_timing: false                                                                            # Avoid timing-topic overhead during mapping.
     write_timing_excel: false                                                                        # Avoid file I/O while processing the bag.
@@ -130,7 +141,7 @@ phase1:                                                                         
     debug_semantic_labels: /rsg/phase1/debug/semantic_labels                                         # Debug semantic label image topic.
     debug_instance_labels: /rsg/phase1/debug/instance_labels                                         # Debug instance label image topic.
     hydra_rgb: /rsg/hydra/rgb/image_raw                                                              # RGB delivered to Hydra.
-    hydra_depth: /rsg/hydra/depth_registered/image_rect                                              # Depth delivered to Hydra; must share left_cam geometry.
+    hydra_depth: /rsg/hydra/depth_registered/image_rect                                              # Depth delivered to Hydra; must share camera_color_optical_frame geometry.
     hydra_camera_info: /rsg/hydra/rgb/camera_info                                                    # Intrinsics delivered to Hydra.
     hydra_pose: /rsg/hydra/camera_pose                                                               # Camera pose diagnostic topic; Hydra still uses TF for lookup.
     hydra_semantic_labels: /rsg/hydra/semantic/image_raw                                             # Semantic slot-ID image for Hydra objects.
@@ -239,8 +250,8 @@ phase1:                                                                         
     local_segment_max_2d_iou_age_sec: 2.0                                                            # Keep local 2D fallback short-term so stale image positions are not reused.
     local_segment_min_2d_iou: 0.30                                                                   # Minimum local-segment 2D overlap; matches the physical-track fallback threshold.
     session_persistence:                                                                             # Carry tracker state across runs so the revisit-association branch actually gets exercised.
-      enabled: false                                                                                 # Disabled 2026-09-19 for clean per-run evaluation (each run starts fresh, no cross-run resume). rsg_all.launch.py's _launch_hydra_stack reads this same flag and auto-forces hydra_load_state_path to "none" when it's false, so this one switch also stops Hydra's own DSG resume -- no separate launch arg needed. Re-enable (true) to get revisit-association behavior back; see the original note this replaced for what it does when on.
-      state_path: ${WORKSPACE_ROOT}/memory/tracker/phase1_tracker_state.json                  # Single rolling state file, written atomically (.tmp then replace). Lives under the workspace's memory/ folder alongside the RAP store -- everything that survives a run is in one place.
+      enabled: true                                                                                  # Save tracker state at shutdown and restore it at startup. Confirmed working 2026-09-06: run 2 produced 18 global_revisit_association matches and only 1 new_track (vs 0 and 43 in run 1). Note a stale state file changes association behaviour for every object in the run -- delete state_path to start clean.
+      state_path: ${WORKSPACE_ROOT}/memory/tracker/phase1_tracker_state_openloris.json         # Dataset-specific rolling state file (kept separate from the TESSE profile's) so an OpenLoRIS run can never resume tracker state built from a different physical space.
       time_shift_sec: 86400.0                                                                        # Every stored timestamp is moved this far into the past on save. REQUIRED, not cosmetic: bag replay restarts at the bag's own start time, which is EARLIER than a saved last_seen_timestamp_sec, so the raw age is negative and _find_match's max(0.0, ...) clamps it to 0 -> recent mode, the opposite of the intent. One day makes age ~= 86400 - bag_duration, far past continuation_max_age_sec (8s) -> revisit mode.
     active_segments_topic: /rsg/objects/active_local_segments                                        # Per-frame slot observation heartbeat used by the fuser.
     require_known_label_match: false                                                                 # Permit tracking before a semantic label has been assigned.
@@ -324,7 +335,7 @@ phase1:                                                                         
     queue_drop_policy: defer_track_id                                                                # Full FIFO defers a unique track ID instead of dropping its semantic job.
     model_name: openai/clip-vit-base-patch32                                                         # CLIP embedding model used by RAP memory.
     device: cpu                                                                                      # CPU, not GPU: CLIP-ViT-B/32 is tiny and RAP is only called once per track, but on this Jetson its CUDA calls were silently losing GPU-memory contention against NanoSAM/VLM/Hydra (CUBLAS_STATUS_ALLOC_FAILED on every query() and add_image() call -- see phase1_rap_memory investigation 2026-09-05: 0 items ever reached the Chroma collection despite thousands of qualifying VLM results). CPU avoids that contention entirely.
-    storage_path: ${WORKSPACE_ROOT}/memory/rap/chroma                                          # Persistent Chroma/RAP memory directory. Moved into the workspace memory/ folder 2026-09-06; must match the --path the chroma server is launched with (rsg_full_stack.launch.py, overridable via RSG_RAP_STORAGE_PATH).
+    storage_path: ${WORKSPACE_ROOT}/memory/rap/chroma_openloris                                # Dataset-specific Chroma/RAP memory directory, kept separate from the TESSE profile's store. Must match the --path the chroma server is launched with (set RSG_RAP_STORAGE_PATH to the same path before starting rsg_full_stack.launch.py / rsg_all.launch.py for this profile).
     chroma_host: 127.0.0.1                                                                           # Local Chroma server.
     chroma_port: 8001                                                                                # Local Chroma server port.
     collection_name: visual_rag_orin_deploy_vlm                                                      # Persistent collection containing visual examples and labels.

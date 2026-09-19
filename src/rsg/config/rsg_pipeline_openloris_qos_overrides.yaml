@@ -1,0 +1,32 @@
+# QoS overrides for `ros2 bag play --qos-profile-overrides-path` when replaying
+# the OpenLoRIS office1-1 bag (see rsg_pipeline_openloris.yaml).
+#
+# The bag recorded no QoS profile for these topics (offered_qos_profiles: []
+# in metadata.yaml), so `ros2 bag play` republishes them as RELIABLE/VOLATILE.
+# Both topics carry only a single, latched-style message published at the very
+# start of the bag:
+#   - /tf_static: the tf2 convention is a TRANSIENT_LOCAL publisher, so a
+#     VOLATILE republish is a QoS *mismatch* -- tf2 listeners (RViz, the
+#     phase1 coordinator) never connect to it at all ("incompatible QoS,
+#     DURABILITY_QOS_POLICY" warnings).
+#   - /d400/color/camera_info: QoS is compatible either way, but VOLATILE
+#     means any subscriber that matches even slightly after this one message
+#     is gone misses it permanently -- this is what left Hydra stuck forever
+#     on "Waiting for CameraInfo on /rsg/hydra/rgb/camera_info".
+#
+# Overriding both to TRANSIENT_LOCAL here lets late-joining subscribers still
+# receive the one recorded sample. Verified against this exact bag: a
+# subscriber connecting several seconds after playback started still received
+# the correct /d400/color/camera_info message.
+
+/tf_static:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: transient_local
+
+/d400/color/camera_info:
+  history: keep_last
+  depth: 1
+  reliability: reliable
+  durability: transient_local

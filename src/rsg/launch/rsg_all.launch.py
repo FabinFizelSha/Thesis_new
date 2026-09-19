@@ -60,6 +60,7 @@ def _launch_hydra_stack(context, share, rsg_stack_include_source):
     hydra_stack = IncludeLaunchDescription(
         rsg_stack_include_source,
         launch_arguments={
+            "input_config": LaunchConfiguration("input_config"),
             "dataset": LaunchConfiguration("dataset"),
             "labelspace": LaunchConfiguration("labelspace"),
             "use_sim_time": LaunchConfiguration("use_sim_time"),
@@ -71,6 +72,9 @@ def _launch_hydra_stack(context, share, rsg_stack_include_source):
             "start_hydra_visualizer": LaunchConfiguration("start_hydra_visualizer"),
             "publish_visualization_odom_bridge": LaunchConfiguration(
                 "publish_visualization_odom_bridge"
+            ),
+            "visualization_odom_bridge_child_frame": LaunchConfiguration(
+                "visualization_odom_bridge_child_frame"
             ),
             "hydra_extra_yaml": LaunchConfiguration("hydra_extra_yaml"),
             "hydra_log_path": LaunchConfiguration("hydra_log_path"),
@@ -122,6 +126,13 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("start_qwen", default_value="true"),
         DeclareLaunchArgument("start_risk_vlm", default_value="true"),
         DeclareLaunchArgument("start_hydra", default_value="true"),
+        DeclareLaunchArgument(
+            "input_config",
+            default_value=PathJoinSubstitution(
+                [share, "config", "hydra", "rsg_phase1_input_tesse.yaml"]
+            ),
+            description="Hydra ROS input config; defaults to the official TESSE uHumans2 bag.",
+        ),
         DeclareLaunchArgument("dataset", default_value="uhumans2"),
         DeclareLaunchArgument("labelspace", default_value="rsg_slot_only_frozen"),
         DeclareLaunchArgument("use_sim_time", default_value="true"),
@@ -132,6 +143,7 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("start_rviz", default_value="true"),
         DeclareLaunchArgument("start_hydra_visualizer", default_value="true"),
         DeclareLaunchArgument("publish_visualization_odom_bridge", default_value="false"),
+        DeclareLaunchArgument("visualization_odom_bridge_child_frame", default_value="odom"),
         DeclareLaunchArgument("hydra_extra_yaml", default_value="{show_run_settings: false, config_verbosity: 0}"),
         # Forwarded to rsg_hydra_from_phase1.launch.py. Declared here too because
         # a launch argument not declared at this level cannot be set from the

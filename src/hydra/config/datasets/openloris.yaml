@@ -1,0 +1,135 @@
+---
+# Hydra core mapping tuning for the OpenLoRIS-Scene office1-1 bag.
+# Based on d455_outdoor.yaml (the closest existing preset for a real,
+# noisy RealSense depth stream), with two changes:
+#   - Spatial scale brought in from outdoor (15m/7m) to a small indoor office.
+#   - Object clustering pushed further so small/sparsely-observed real objects
+#     aren't discarded before they ever reach the scene graph. See
+#     frontend.objects below for the reasoning on each field.
+map_window:
+  type: spatial
+  max_radius_m: 8.0
+active_window:
+  volumetric_map:
+    voxels_per_side: 16
+    voxel_size: 0.1
+    truncation_distance: 0.3
+  tsdf:
+    semantic_integrator:
+      type: MLESemanticIntegrator
+frontend:
+  pgmo:
+    time_horizon: 100.0
+    d_graph_resolution: 2.5
+    # Finer than d455_outdoor's 0.005 -- more mesh vertices per unit surface
+    # area gives small objects more material to reach min_cluster_size on,
+    # independent of the clustering thresholds below. Raises frontend compute
+    # cost (roughly the square of the resolution reduction); watch CPU load.
+    mesh_resolution: 0.003
+  objects:
+    # This profile assigns each tracked object its own unique
+    # unknown_slot_* semantic label (see rsg_pipeline_openloris.yaml's
+    # persistent_tracking.mode: hydra_slots), so a label essentially already
+    # means "one specific tracked object", not a shared class like "chair".
+    # min_cluster_size (mesh_segmenter.cpp: rejects any label's vertex count
+    # below this before clustering even runs) is the direct small-object
+    # rejection threshold. Pushed further below d455_outdoor's 25 (default/
+    # uhumans2 dataset: 40); 5 is close to the floor before pure sensor-noise
+    # specks risk being counted as objects -- if that starts happening
+    # (single-vertex/flickering spurious nodes), this is the value to raise
+    # back up first.
+    min_cluster_size: 5
+    # cluster_tolerance is the Euclidean neighbor-distance radius used to
+    # decide whether a label's vertices form one connected cluster
+    # (PCL EuclideanClusterExtraction, mesh_delta_clustering.cpp). Because
+    # each label is already effectively one tracked instance here, this
+    # mostly governs whether one sparse/noisy small object's own points stay
+    # connected -- not whether distinct objects get wrongly merged. Loosened
+    # further still (uhumans2's simulation-only default is 0.25) so a small
+    # object's gappy real-depth points don't fragment into several
+    # sub-threshold pieces that each individually fail min_cluster_size.
+    cluster_tolerance: 0.28
+  freespace_places:
+    type: gvd
+    gvd:
+      max_distance_m: 4.5
+      min_distance_m: 0.2
+      min_diff_m: 0.1
+      voronoi_config:
+        mode: L1_THEN_ANGLE
+        min_distance_m: 0.30
+        parent_l1_separation: 20
+        parent_cos_angle_separation: 0.2
+    graph:
+      type: CompressionGraphExtractor
+      compression_distance_m: 1.0
+      min_node_distance_m: 0.4
+      min_edge_distance_m: 0.3
+      add_heuristic_edges: false
+  surface_places:
+    prefix: P
+    place_memory_radius_m: 30
+    active_place_radius_m: 16.0
+    mesh_active_window_m: 20.0
+    cluster_tolerance: 1
+    min_cluster_size: 100
+    max_cluster_size: 100000
+    min_final_place_size: 7
+    min_final_place_points: 10
+backend:
+  add_places_to_deformation_graph: true
+  optimize_on_lc: true
+  enable_node_merging: true
+  update_functors:
+    agents:
+      type: UpdateAgentsFunctor
+    objects:
+      type: UpdateObjectsFunctor
+    surface_places:
+      type: Update2dPlacesFunctor
+    places:
+      type: UpdatePlacesFunctor
+      pos_threshold_m: 0.35
+      distance_tolerance_m: 0.25
+    frontiers:
+      type: UpdateFrontiersFunctor
+    rooms:
+      type: UpdateRoomsFunctor
+      room_finder:
+        min_dilation_m: 0.5
+        max_dilation_m: 1.2
+        min_component_size: 10
+        min_room_size: 10
+        dilation_threshold_mode: PLATEAU
+        min_lifetime_length_m: 0.1
+        plateau_ratio: 0.25
+        clustering_mode: NEIGHBORS
+        dilation_diff_threshold_m: -1.0
+    buildings:
+      type: UpdateBuildingsFunctor
+    zmq_labels:
+      type: ZmqRoomLabelUpdater
+  pgmo:
+    run_mode: FULL  # kimera_pgmo run mode FULL is required
+    embed_trajectory_delta_t: 5.0
+    num_interp_pts: 3
+    interp_horizon: 10.0
+    optimizer:
+      type: KimeraRpgoOptimizer
+      solver: LM
+      gnc:
+        inlier_probability: 0.9
+        mu_step: 1.6
+        max_iterations: 100
+    add_initial_prior: true
+    covariance:
+      odom: 1.0e-02
+      loop_close: 5.0e-02
+      sg_loop_close: 1.0e-01
+      prior: 1.0e-02
+      mesh_mesh: 1.0e-01
+      pose_mesh: 1.0e-01
+      place_mesh: 1.0e-01
+      place_edge: 10.0
+      place_merge: 10.0
+      object_merge: 10.0

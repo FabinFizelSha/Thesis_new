@@ -57,6 +57,8 @@ set(RSG_PYTHON_EXECUTABLES
   "${CMAKE_CURRENT_SOURCE_DIR}/scripts/rsg_preprocessor"
   "${CMAKE_CURRENT_SOURCE_DIR}/scripts/rsg_phase1_semantic_coordinator"
   "${CMAKE_CURRENT_SOURCE_DIR}/scripts/rsg_play_uhumans2"
+  "${CMAKE_CURRENT_SOURCE_DIR}/scripts/rsg_play_openloris"
+  "${CMAKE_CURRENT_SOURCE_DIR}/scripts/rsg_camera_info_keepalive"
 )
 
 install(PROGRAMS ${RSG_PYTHON_EXECUTABLES}

@@ -80,7 +80,10 @@ class ImageConverter:
             return self._shallow_image_reference(depth_msg, self.config.camera_frame), -1.0
 
         depth_raw = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding="passthrough")
-        if depth_msg.encoding == "16UC1":
+        if depth_msg.encoding in ("16UC1", "mono16"):
+            # mono16 and 16UC1 are the same byte layout (unsigned 16-bit,
+            # single channel); different camera drivers name it differently
+            # (RealSense's ROS 2 wrapper publishes "mono16" for raw depth).
             depth_m = depth_raw.astype(np.float32)
             depth_m *= self.config.depth_scale_to_meter
         elif depth_msg.encoding == "32FC1":

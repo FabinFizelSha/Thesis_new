@@ -1,3 +1,15 @@
+# TEMPORARY DIAGNOSTIC COPY of rsg_pipeline.yaml -- 2026-09-19.
+# Purpose: isolate whether CPU/GPU contention from SAM+VLM is what's causing
+# Hydra's active-window/receiver queues (both max size 5, non-blocking
+# drop-on-full) to overflow and lose mesh detail, as opposed to the queue
+# size itself being the problem. This copy turns off phase1.sam.enabled and
+# phase1.vlm.enabled (RAP and risk_vlm are already off in the base file) so
+# frames flow through Phase 1 with minimal per-frame compute, while leaving
+# every queue size unchanged from the production baseline. No object nodes
+# will form with SAM off -- that's expected; judge only the raw mesh
+# (walls/floor/furniture geometry), not the semantic/object layer.
+# Delete this file once the test is done; do not use it for real evaluation.
+#
 # Shared RSG configuration for the Tesse ROS bag.
 # Authoritative geometry chain: world -> base_link_gt -> left_cam.
 # /tesse/odom provides the world -> base_link_gt pose; the calibrated static
@@ -282,7 +294,7 @@ phase1:                                                                         
     include_frame_relation_metadata: false                                                           # Avoid redundant per-frame relation metadata.
 
   sam:
-    enabled: true                                                                                    # Run NanoSAM instance segmentation.
+    enabled: false                                                                                   # TEST: disabled to remove SAM's CPU/GPU load and isolate whether contention (not queue size) explains Hydra's mesh-detail loss.
     backend: nanosam                                                                                 # Use TensorRT-accelerated NanoSAM on Jetson.
     input_scale_ratio: 0.85                                                                          # Segment at 65% resolution to improve small/thin-object recall.
     resize_interpolation: area                                                                       # Use area interpolation for downscaling.
@@ -371,7 +383,7 @@ phase1:                                                                         
     target_contour_thickness_px: 2                                                                  # Thin contour; target pixels remain the primary evidence.
 
   vlm:
-    enabled: true                                                                                    # Use Qwen for objects not confidently resolved by RAP. Re-enabled 2026-09-11 -- the SAM-throughput investigation that needed this off is closed (see the sam_prep_summary fix). risk_vlm.enabled turned off in the same edit so only one VLM server is doing dispatched work at a time.
+    enabled: false                                                                                   # TEST: disabled to remove VLM's CPU/GPU load and isolate whether contention (not queue size) explains Hydra's mesh-detail loss. (With sam.enabled also false above, there are no tracked objects to classify anyway.)
     mode: qwen_http                                                                                  # Query the selected local Qwen OpenAI-compatible HTTP endpoint.
     active_profile: qwen3_5_4b_q4                                                                     # Winner of the prompt-optimisation experiment: qwen3_5_4b_q4 x P3 (format-hardened) = 88% (44/50), fastest (~2.9s/call), least memory. See debug/prompt_optimisation_experiment/EXPERIMENT_REPORT.md §13. (Switched from qwen3_5_9b_q4 2026-09-05 -- that was R9, the last run in the sweep, not the winner; the prompt below was already P3 and needed no change.)
     async: true                                                                                      # Keep VLM calls off the Hydra mapping path.
@@ -662,4 +674,4 @@ phase1:                                                                         
     generate_plots_on_shutdown: false                                                                # Avoid plotting overhead during automated tests.
 
   deployment:
-    allow_dummy_fallback: false                                                                      # Fail clearly if required real models or services are unavailable.
+    allow_dummy_fallback: true                                                                       # TEST: make_rap_backend() constructs a Chroma-connected RealRapBackend regardless of rap.enabled (enabled only gates per-frame use, not construction) -- with start_chroma:=false this crashed Phase 1 at startup before it could process a single frame. This lets it fall back to DummyRapBackend (and DummySamBackend, same mechanism) instead of crashing, which is exactly the "dummy id" behavior wanted for this geometry-only test. Do not set true in the production profile -- that fail-loud default is deliberate.

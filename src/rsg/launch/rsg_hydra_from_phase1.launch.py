@@ -14,9 +14,7 @@ def generate_launch_description() -> LaunchDescription:
     """Build the ROS 2 launch description for this component."""
     rsg_share = FindPackageShare("rsg")
     hydra_ros_share = FindPackageShare("hydra_ros")
-    input_config = PathJoinSubstitution(
-        [rsg_share, "config", "hydra", "rsg_phase1_input_tesse.yaml"]
-    )
+    input_config = LaunchConfiguration("input_config")
     rviz_config = PathJoinSubstitution([rsg_share, "config", "rviz", "rsg_hydra_rap_fused_scene_graph.rviz"])
 
     # Hydra writes its save artifacts (backend/dsg_with_mesh.json, mesh.ply,
@@ -44,13 +42,29 @@ def generate_launch_description() -> LaunchDescription:
         arguments=[
             "--x", "0", "--y", "0", "--z", "0",
             "--roll", "0", "--pitch", "0", "--yaw", "0",
-            "--frame-id", "world", "--child-frame-id", "odom",
+            "--frame-id", "world", "--child-frame-id", LaunchConfiguration("visualization_odom_bridge_child_frame"),
         ],
         condition=IfCondition(LaunchConfiguration("publish_visualization_odom_bridge")),
         output="screen",
     )
 
     return LaunchDescription([
+        # Both bundled .rviz configs hardcode Fixed Frame: world. TESSE's own
+        # TF root really is named "world" so this bridge stays off by default.
+        # A profile whose odom_frame is a different name (e.g. OpenLoRIS's
+        # base_odom) has no "world" frame at all -- RViz then shows nothing,
+        # silently, with no error beyond its own "Fixed Frame does not exist"
+        # status. Set publish_visualization_odom_bridge:=true and this to
+        # that profile's actual root frame (e.g. base_odom) to fix it without
+        # editing the .rviz files.
+        DeclareLaunchArgument("visualization_odom_bridge_child_frame", default_value="odom"),
+        DeclareLaunchArgument(
+            "input_config",
+            default_value=PathJoinSubstitution(
+                [rsg_share, "config", "hydra", "rsg_phase1_input_tesse.yaml"]
+            ),
+            description="Hydra ROS input config; defaults to the official TESSE uHumans2 bag.",
+        ),
         DeclareLaunchArgument("dataset", default_value="uhumans2"),
         DeclareLaunchArgument("labelspace", default_value="rsg_slot_only_frozen"),
         # Where Hydra writes its shutdown artifacts. See default_log_path above.

@@ -3,19 +3,17 @@ map_window:
   type: spatial
   max_radius_m: 8.0
 active_window:
-  full_update_separation_s: 0.2
-  # Bounded so a run that outpaces reconstruction can never build an unbounded
-  # backlog: ActiveWindowModule::spin() drains its ENTIRE input queue before it
-  # even checks whether it should stop, so an unbounded queue (the default,
-  # max_input_queue_size: 0) means shutdown time scales with total accumulated
-  # backlog over the whole run, not just what's pending right now. Paired with
-  # the non-blocking push in input_module.cpp -- excess frames are dropped
-  # (logged) rather than piling up, so worst-case shutdown drain time is now
-  # bounded by this queue size, not by run length.
+  full_update_separation_s: 0.4                                                                       # 2026-09-19: settled here after the sweep at voxel_size 0.03, rate 0.4 -- all of 0.4/0.2/0.1 gave 1 dropped frame each (effectively tied), so 0.4 wins as the tie-breaker: fewest, least frequent expensive full-update stalls for the same drop count.
+  # Restored 2026-09-19: target use case is real-time operation, where
+  # falling behind and dropping stale frames to stay current is the correct
+  # behavior, not a bug -- this is what bounded this fork away from
+  # upstream's unbounded default in the first place. See input_module.cpp's
+  # non-blocking push: with a bound set, excess frames are dropped (logged
+  # as "active window queue full") rather than piling up into a backlog.
   max_input_queue_size: 5
   volumetric_map:
     voxels_per_side: 16
-    voxel_size: 0.10
+    voxel_size: 0.05                                                                                # 2026-09-19: set to 5cm, paired with objects.min_cluster_size raised to 100 below to compensate for the ~4x more vertices per surface this produces (keeps roughly the same real-world minimum object size as 10cm/40 did, while capturing finer detail).
     truncation_distance: 0.3
   tsdf:
     semantic_integrator:
@@ -24,9 +22,9 @@ frontend:
   pgmo:
     time_horizon: 15.0
     d_graph_resolution: 2.5
-    mesh_resolution: 0.02
+    mesh_resolution: 0.005                                                                          # Restored to match the upstream MIT-SPARK/Hydra default on 2026-09-19 (local copy had drifted to 0.02, 4x coarser, independent of voxel_size).
   objects:
-    min_cluster_size: 40
+    min_cluster_size: 100                                                                           # 2026-09-19: raised to 100 to pair with voxel_size 0.05 -- filters the extra noise/spurious clusters finer voxels pick up, while still admitting smaller real objects than the 10cm/40 baseline did.
     cluster_tolerance: 0.25
   surface_places:
     type: place_2d
