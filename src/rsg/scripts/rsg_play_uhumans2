@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-bag_path="${RSG_UHUMANS2_BAG:-/home/student/datasets/uhumans2/uHumans2_office_s1_00h_ros2}"
+bag_path="${RSG_UHUMANS2_BAG:-/home/student/datasets/uhumans2/office_s1_00h_v2}"
 
 if [[ ! -f "${bag_path}/metadata.yaml" ]]; then
   echo "ROS 2 bag is not ready at: ${bag_path}" >&2
@@ -9,4 +9,27 @@ if [[ ! -f "${bag_path}/metadata.yaml" ]]; then
   exit 1
 fi
 
-exec ros2 bag play "${bag_path}" --clock "$@"
+# The bag recorded no QoS profile for /tf_static, so a plain replay
+# republishes it as RELIABLE/VOLATILE. It carries only a single
+# latched-style message at the very start of the bag, so any tf2 listener
+# (hydra_ros's extrinsics lookup, RViz, the phase1 coordinator) that
+# connects even slightly late misses it forever -- this is what left
+# hydra_ros_node stuck on "Waiting for sensor extrinsics" (2026-09-19).
+# Override to TRANSIENT_LOCAL so late joiners still get it. See
+# rsg_pipeline_uhumans2_qos_overrides.yaml for detail.
+# Set RSG_UHUMANS2_QOS_OVERRIDES="" to disable.
+rsg_prefix="$(ros2 pkg prefix rsg)"
+default_qos_overrides="${rsg_prefix}/share/rsg/config/rsg_pipeline_uhumans2_qos_overrides.yaml"
+qos_overrides="${RSG_UHUMANS2_QOS_OVERRIDES-${default_qos_overrides}}"
+
+qos_args=()
+if [[ -n "${qos_overrides}" ]]; then
+  if [[ ! -f "${qos_overrides}" ]]; then
+    echo "QoS overrides file not found at: ${qos_overrides}" >&2
+    echo "Set RSG_UHUMANS2_QOS_OVERRIDES to the correct path, or to \"\" to disable." >&2
+    exit 1
+  fi
+  qos_args=(--qos-profile-overrides-path "${qos_overrides}")
+fi
+
+exec ros2 bag play "${bag_path}" --clock "${qos_args[@]}" "$@"

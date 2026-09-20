@@ -33,7 +33,13 @@ def generate_launch_description() -> LaunchDescription:
     # Note this only controls where Hydra SAVES. Loading is opt-in and separate
     # (hydra_load_state_path below), so a stable log_path on its own cannot
     # resurrect old state -- it only stops it from being thrown away.
-    default_log_path = str(workspace_path("memory", "hydra"))
+    #
+    # Namespaced by dataset (memory/hydra/<dataset>/...) so switching datasets
+    # can never silently resume another dataset's saved DSG/mesh -- confirmed
+    # 2026-09-19: an OpenLoRIS run loaded uhumans2's leftover mesh/objects
+    # because both shared this one fixed path.
+    hydra_memory_root = str(workspace_path("memory", "hydra"))
+    default_log_path = PathJoinSubstitution([hydra_memory_root, LaunchConfiguration("dataset")])
 
     visualization_odom_bridge = Node(
         package="tf2_ros",
@@ -45,6 +51,36 @@ def generate_launch_description() -> LaunchDescription:
             "--frame-id", "world", "--child-frame-id", LaunchConfiguration("visualization_odom_bridge_child_frame"),
         ],
         condition=IfCondition(LaunchConfiguration("publish_visualization_odom_bridge")),
+        output="screen",
+    )
+
+    # Cosmetic-only fixed rotation from sensor_frame (REP-103 optical:
+    # X=right, Y=down, Z=forward) to robot_frame (body convention: X=forward,
+    # Y=left, Z=up) -- confirmed 2026-09-19 on OpenLoRIS: with robot_frame set
+    # equal to sensor_frame (required so Hydra's one-time
+    # robot_frame_T_sensor_frame extrinsics cache is trivially identity,
+    # forever correct, while the real per-frame motion flows through the
+    # separate dynamic odom_frame_T_robot_frame TFLookup -- see
+    # hydra_ros/src/utils/tf_lookup.cpp's getBodyPose), the agent/pose-array
+    # arrow in RViz was drawn along the optical frame's local X (camera
+    # right) instead of forward, ~90 degrees off. This publishes robot_frame
+    # as a fixed child of sensor_frame instead, using the exact inverse of
+    # the standard ROS camera driver camera_link->*_optical_frame quaternion
+    # (-0.5, 0.5, -0.5, 0.5) -- does not touch sensor_frame itself, so voxel
+    # integration/TSDF geometry is unaffected either way. Off by default: a
+    # profile where robot_frame is already a real body frame (e.g. uhumans2's
+    # base_link_gt) does not need or want this.
+    sensor_body_frame_bridge = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        name="rsg_sensor_to_robot_body_frame_bridge",
+        arguments=[
+            "--x", "0", "--y", "0", "--z", "0",
+            "--qx", "0.5", "--qy", "-0.5", "--qz", "0.5", "--qw", "0.5",
+            "--frame-id", LaunchConfiguration("sensor_frame"),
+            "--child-frame-id", LaunchConfiguration("robot_frame"),
+        ],
+        condition=IfCondition(LaunchConfiguration("publish_sensor_body_frame_bridge")),
         output="screen",
     )
 
@@ -93,7 +129,9 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("hydra_enable_object_merging", default_value="true"),
         DeclareLaunchArgument(
             "hydra_load_state_path",
-            default_value=str(workspace_path("memory", "hydra", "backend", "dsg_with_mesh.json")),
+            default_value=PathJoinSubstitution(
+                [hydra_memory_root, LaunchConfiguration("dataset"), "backend", "dsg_with_mesh.json"]
+            ),
         ),
         DeclareLaunchArgument("use_sim_time", default_value="true"),
         DeclareLaunchArgument("sensor_frame", default_value="left_cam"),
@@ -103,11 +141,14 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("start_rviz", default_value="true"),
         DeclareLaunchArgument("start_hydra_visualizer", default_value="true"),
         DeclareLaunchArgument("publish_visualization_odom_bridge", default_value="false"),
+        # See sensor_body_frame_bridge's comment above.
+        DeclareLaunchArgument("publish_sensor_body_frame_bridge", default_value="false"),
         DeclareLaunchArgument("glog_level", default_value="0"),
         DeclareLaunchArgument("glog_verbosity", default_value="0"),
         DeclareLaunchArgument("hydra_extra_yaml", default_value="{show_run_settings: false, config_verbosity: 0}"),
 
         visualization_odom_bridge,
+        sensor_body_frame_bridge,
 
         IncludeLaunchDescription(
             AnyLaunchDescriptionSource(

@@ -93,6 +93,8 @@ class Phase1Config:
     # leaving the risk-VLM and RAP writers running.
     diagnostics_log_tracking: bool = True
     periodic_crop_interval: int = 10
+    frame_mask_overlay_enabled: bool = True
+    frame_mask_overlay_interval: int = 10
 
     # Hydra output.
     publish_hydra_combined: bool
@@ -744,6 +746,8 @@ class Phase1Config:
             diagnostics_enabled=bool(diagnostics.get("enabled", False)),
             diagnostics_log_tracking=bool(diagnostics.get("log_tracking", True)),
             periodic_crop_interval=max(1, int(diagnostics.get("periodic_crop_interval", 10))),
+            frame_mask_overlay_enabled=bool(diagnostics.get("frame_mask_overlay_enabled", True)),
+            frame_mask_overlay_interval=max(1, int(diagnostics.get("frame_mask_overlay_interval", 10))),
             timing_csv_path=timing_csv_path,
             timing_sheet_name=str(performance.get("timing_sheet_name", node_key[:31])),
             timing_excel_autosave_every=int(performance.get("timing_excel_autosave_every", 0)),

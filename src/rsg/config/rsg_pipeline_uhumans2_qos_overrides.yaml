@@ -1,0 +1,21 @@
+# QoS overrides for `ros2 bag play --qos-profile-overrides-path` when replaying
+# the uhumans2 office_s1_00h_v2 bag (see rsg_pipeline_openloris_qos_overrides.yaml
+# for the OpenLoRIS analogue this was copied from).
+#
+# The bag recorded no QoS profile for /tf_static (offered_qos_profiles: [] in
+# metadata.yaml), so `ros2 bag play` republishes it as RELIABLE/VOLATILE. tf2's
+# convention is a TRANSIENT_LOCAL publisher for /tf_static, so a VOLATILE
+# republish is a QoS *mismatch* -- late subscribers (hydra_ros's extrinsics
+# lookup, RViz, the phase1 coordinator) never connect at all ("incompatible
+# QoS, DURABILITY_QOS_POLICY" warning), which is what left hydra_ros_node
+# stuck forever on "Waiting for sensor extrinsics 'base_link_gt_T_left_cam'"
+# (2026-09-19).
+#
+# Overriding to TRANSIENT_LOCAL lets late-joining subscribers still receive
+# the one recorded /tf_static sample.
+
+/tf_static:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: transient_local

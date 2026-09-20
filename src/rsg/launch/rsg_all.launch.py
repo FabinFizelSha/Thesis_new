@@ -16,7 +16,22 @@ from launch_ros.substitutions import FindPackageShare
 
 from nodes.support.workspace_paths import workspace_path
 
-DEFAULT_HYDRA_LOAD_STATE_PATH = str(workspace_path("memory", "hydra", "backend", "dsg_with_mesh.json"))
+# Namespaced by dataset (memory/hydra/<dataset>/...) so switching datasets
+# can never silently resume another dataset's saved DSG/mesh -- confirmed
+# 2026-09-19: an OpenLoRIS run loaded uhumans2's leftover mesh/objects because
+# both shared one fixed path here. Phase1's own tracker state_path was
+# already namespaced per pipeline-config file (see
+# rsg_pipeline_openloris.yaml's phase1.persistent_tracking.session_persistence.state_path);
+# this was the one piece of resumable state that wasn't.
+_HYDRA_MEMORY_ROOT = str(workspace_path("memory", "hydra"))
+
+
+def _default_hydra_log_path(dataset: str) -> str:
+    return str(workspace_path("memory", "hydra", dataset))
+
+
+def _default_hydra_load_state_path(dataset: str) -> str:
+    return str(workspace_path("memory", "hydra", dataset, "backend", "dsg_with_mesh.json"))
 
 
 def _launch_hydra_stack(context, share, rsg_stack_include_source):
@@ -38,6 +53,7 @@ def _launch_hydra_stack(context, share, rsg_stack_include_source):
 
     pipeline_config_path = LaunchConfiguration("pipeline_config").perform(context)
     requested_state_path = LaunchConfiguration("hydra_load_state_path").perform(context)
+    dataset = LaunchConfiguration("dataset").perform(context)
 
     persistence_enabled = True
     try:
@@ -52,7 +68,7 @@ def _launch_hydra_stack(context, share, rsg_stack_include_source):
     except Exception:
         pass  # config unreadable -- fail open to the previous always-resume behaviour
 
-    if not persistence_enabled and requested_state_path == DEFAULT_HYDRA_LOAD_STATE_PATH:
+    if not persistence_enabled and requested_state_path == _default_hydra_load_state_path(dataset):
         effective_state_path = "none"
     else:
         effective_state_path = requested_state_path
@@ -75,6 +91,9 @@ def _launch_hydra_stack(context, share, rsg_stack_include_source):
             ),
             "visualization_odom_bridge_child_frame": LaunchConfiguration(
                 "visualization_odom_bridge_child_frame"
+            ),
+            "publish_sensor_body_frame_bridge": LaunchConfiguration(
+                "publish_sensor_body_frame_bridge"
             ),
             "hydra_extra_yaml": LaunchConfiguration("hydra_extra_yaml"),
             "hydra_log_path": LaunchConfiguration("hydra_log_path"),
@@ -99,6 +118,7 @@ def generate_launch_description() -> LaunchDescription:
         ),
         launch_arguments={
             "pipeline_config": LaunchConfiguration("pipeline_config"),
+            "fuser_config": LaunchConfiguration("fuser_config"),
             "start_chroma": LaunchConfiguration("start_chroma"),
             "start_qwen": LaunchConfiguration("start_qwen"),
             "start_risk_vlm": LaunchConfiguration("start_risk_vlm"),
@@ -122,6 +142,13 @@ def generate_launch_description() -> LaunchDescription:
             ),
             description="RSG pipeline profile; defaults to the official TESSE uHumans2 bag.",
         ),
+        DeclareLaunchArgument(
+            "fuser_config",
+            default_value=PathJoinSubstitution(
+                [share, "config", "rsg_scene_graph_fuser.yaml"]
+            ),
+            description="Scene graph fuser (marker/visualization) parameters; per-profile overrides (e.g. object marker/text size) live in their own file.",
+        ),
         DeclareLaunchArgument("start_chroma", default_value="true"),
         DeclareLaunchArgument("start_qwen", default_value="true"),
         DeclareLaunchArgument("start_risk_vlm", default_value="true"),
@@ -144,18 +171,29 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("start_hydra_visualizer", default_value="true"),
         DeclareLaunchArgument("publish_visualization_odom_bridge", default_value="false"),
         DeclareLaunchArgument("visualization_odom_bridge_child_frame", default_value="odom"),
+        # See rsg_hydra_from_phase1.launch.py's sensor_body_frame_bridge comment.
+        DeclareLaunchArgument("publish_sensor_body_frame_bridge", default_value="false"),
         DeclareLaunchArgument("hydra_extra_yaml", default_value="{show_run_settings: false, config_verbosity: 0}"),
         # Forwarded to rsg_hydra_from_phase1.launch.py. Declared here too because
         # a launch argument not declared at this level cannot be set from the
         # command line when launching rsg_all.
-        DeclareLaunchArgument("hydra_log_path", default_value=str(workspace_path("memory", "hydra"))),
-        # Default kept as the real state-file path for backward compatibility
-        # (an explicit override here is always honoured) -- but _launch_hydra_stack
-        # above forces this to "none" (disabled) whenever
+        # Namespaced by dataset -- see the _HYDRA_MEMORY_ROOT comment above.
+        DeclareLaunchArgument(
+            "hydra_log_path",
+            default_value=PathJoinSubstitution([_HYDRA_MEMORY_ROOT, LaunchConfiguration("dataset")]),
+        ),
+        # Default kept as the real per-dataset state-file path for backward
+        # compatibility (an explicit override here is always honoured) -- but
+        # _launch_hydra_stack above forces this to "none" (disabled) whenever
         # phase1.persistent_tracking.session_persistence.enabled is false in the
         # active pipeline_config, regardless of what is sitting on disk at this
         # path. See that function's docstring.
-        DeclareLaunchArgument("hydra_load_state_path", default_value=DEFAULT_HYDRA_LOAD_STATE_PATH),
+        DeclareLaunchArgument(
+            "hydra_load_state_path",
+            default_value=PathJoinSubstitution(
+                [_HYDRA_MEMORY_ROOT, LaunchConfiguration("dataset"), "backend", "dsg_with_mesh.json"]
+            ),
+        ),
         # This flag ONLY controls whether Hydra's restored agent/trajectory
         # nodes are kept (false) or dropped (true, default) -- it has no
         # effect on the robot's actual position, which comes entirely from

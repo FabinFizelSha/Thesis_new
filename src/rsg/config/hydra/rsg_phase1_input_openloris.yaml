@@ -1,0 +1,32 @@
+---
+# Hydra ROS input fed by Phase 1 separate RGB-D-semantic topics, for the
+# OpenLoRIS-Scene office1-1 bag. Structurally identical to
+# rsg_phase1_input_tesse.yaml -- Phase 1 always publishes to the same
+# /rsg/hydra/* namespace regardless of source bag, so only the TF wait/buffer
+# comment below differs (no /clock-driven rosbag TF history to wait on here;
+# RSG itself publishes the camera TF chain live, see
+# rsg_pipeline_openloris.yaml's preprocessing.tf_output.publish_camera_tf).
+input:
+  type: RosInput                                                                                     # Stock Hydra ROS input adapter.
+  tf_verbosity: 1                                                                                    # Concise TF diagnostics.
+  clear_queue_on_fail: true                                                                          # Drop unusable frames rather than integrating them with a bad pose.
+  max_receiver_queue_size: 5                                                                         # Bounded for the same reason as active_window.max_input_queue_size in the dataset config: paired with the non-blocking push in image_receiver.h, caps worst-case shutdown drain time instead of letting it scale with total run length.
+  tf_lookup:
+    wait_duration_s: 0.50                                                                            # Allow RSG's live-published base_odom -> base_link -> camera_color_optical_frame TF to be available at each RGB timestamp.
+    buffer_size_s: 180.0                                                                             # Retain TF history while Phase 1 asynchronously publishes semantic images.
+    max_tries: 20                                                                                    # Retry a bounded number of TF lookups before rejecting one frame.
+    verbosity: 3                                                                                     # Preserve useful TF diagnostics during validation.
+  inputs:
+    left_cam:
+      receiver:
+        type: ClosedSetImageReceiver                                                                 # Hydra RGB-D + semantic-label receiver.
+        ns: /rsg/hydra                                                                               # Phase 1 output namespace.
+        queue_size: 3                                                                                # Prevent stale frame accumulation at 1 Hz mapping input.
+        input_separation_s: 0.0                                                                      # Preprocessor already enforces the 1 Hz mapping rate.
+      sensor:
+        type: camera_info                                                                            # Build the camera model from Phase 1 CameraInfo.
+        ns: /rsg/hydra/rgb                                                                            # CameraInfo resolves to /rsg/hydra/rgb/camera_info.
+        min_range: 0.30                                                                              # Matches rsg_pipeline_openloris.yaml's preprocessing.depth_range_filter.min_range_m.
+        max_range: 5.00                                                                              # Matches rsg_pipeline_openloris.yaml's preprocessing.depth_range_filter.max_range_m.
+        extrinsics:
+          type: ros                                                                                  # Obtain base_link -> camera_color_optical_frame from RSG's live-published TF (see file header).

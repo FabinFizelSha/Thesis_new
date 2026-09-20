@@ -10,23 +10,42 @@ map_window:
   type: spatial
   max_radius_m: 8.0
 active_window:
+  # Added 2026-09-19, carried over from the uhumans2 real-time tuning sweep
+  # (see uhumans2.yaml) -- this file predates that investigation and was
+  # missing both settings, so Hydra was running with the upstream unbounded
+  # queue/full-update cadence here instead of this fork's real-time
+  # drop-stale-frames behavior. Architectural/real-time settings, not
+  # scene-specific -- applies the same way regardless of dataset.
+  full_update_separation_s: 0.4
+  max_input_queue_size: 5
   volumetric_map:
     voxels_per_side: 16
-    voxel_size: 0.1
+    voxel_size: 0.03                                                                                # 2026-09-20 TEST: pushed finer from 0.05 -- a small object (water can) physically overlapping a much larger, more-observed neighbor (door) was losing the per-voxel label vote entirely; finer voxels shrink the ambiguous shared-boundary zone (fewer voxels straddle both objects' true surfaces), so more of the can's real footprint should land in voxels the door never touches at all. Deliberately NOT going back to 0.02 -- that caused a confirmed OOM crash on this bag's map scale (journalctl, 17:16/17:35). 3cm is a middle point between the OOM-crashing 2cm and the label-competition-prone 5cm.
     truncation_distance: 0.3
   tsdf:
     semantic_integrator:
       type: MLESemanticIntegrator
+      # 2026-09-20: tried label_confidence: 0.7 here to fix a small object (water
+      # can) losing the per-voxel label vote to a much larger, more-observed
+      # overlapping neighbor (door). Reverted -- with total_semantic_labels: 10001
+      # (rsg_slot_only_frozen_label_space.yaml), the "penalize every other label"
+      # term is astronomically negative at both 0.7 and 0.9 (difference ~1 nat/obs),
+      # dwarfed by the ~4x observation-count gap (333 vs 75) actually driving this.
+      # Confirmed no visible effect. Back to the default (0.9, unset).
 frontend:
   pgmo:
     time_horizon: 100.0
     d_graph_resolution: 2.5
-    # Finer than d455_outdoor's 0.005 -- more mesh vertices per unit surface
-    # area gives small objects more material to reach min_cluster_size on,
-    # independent of the clustering thresholds below. Raises frontend compute
-    # cost (roughly the square of the resolution reduction); watch CPU load.
-    mesh_resolution: 0.003
+    mesh_resolution: 0.005                                                                          # 2026-09-19: matched to uhumans2's settled value (also the upstream MIT-SPARK/Hydra default) -- was 0.003, finer than d455_outdoor's 0.005, to give small objects more vertices to reach min_cluster_size on. Watch object detection if small real objects start dropping out with this coarser value.
   objects:
+    # 2026-09-20: tried bounding_box_type: OBB here to fix inflated/diagonal-looking
+    # AABBs on angled flat surfaces (walls/doors) -- reverted. fuser.cpp's bboxContains()
+    # (fuser.cpp:1523-1528) does a plain axis-aligned containment check and never reads
+    # world_R_center (fuser.cpp:1695-1696 only takes dimensions + world_P_center), so
+    # OBB's tilted, tighter extents broke that check for object_slot_collapse's
+    # proximity guard (and likely contact-edge detection). Back to the default AABB
+    # until fuser.cpp's containment logic is fixed to rotate the test point into the
+    # box's local frame first.
     # This profile assigns each tracked object its own unique
     # unknown_slot_* semantic label (see rsg_pipeline_openloris.yaml's
     # persistent_tracking.mode: hydra_slots), so a label essentially already
@@ -38,7 +57,7 @@ frontend:
     # specks risk being counted as objects -- if that starts happening
     # (single-vertex/flickering spurious nodes), this is the value to raise
     # back up first.
-    min_cluster_size: 5
+    min_cluster_size: 14                                                                             # 2026-09-20 TEST: scaled up from 5, paired with voxel_size dropping 0.05->0.03. Vertex count per unit surface area scales roughly with (old/new)^2 = (0.05/0.03)^2 ~= 2.78x at finer resolution, so 5 * 2.78 ~= 14 keeps roughly the same real-world minimum object size threshold as before, instead of flooding through 2.78x more noise/spurious specks at the old floor value (same reasoning as the earlier uhumans2 voxel/cluster-size pairing).
     # cluster_tolerance is the Euclidean neighbor-distance radius used to
     # decide whether a label's vertices form one connected cluster
     # (PCL EuclideanClusterExtraction, mesh_delta_clustering.cpp). Because

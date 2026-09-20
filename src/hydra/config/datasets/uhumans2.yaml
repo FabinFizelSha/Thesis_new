@@ -24,7 +24,7 @@ frontend:
     d_graph_resolution: 2.5
     mesh_resolution: 0.005                                                                          # Restored to match the upstream MIT-SPARK/Hydra default on 2026-09-19 (local copy had drifted to 0.02, 4x coarser, independent of voxel_size).
   objects:
-    min_cluster_size: 100                                                                           # 2026-09-19: raised to 100 to pair with voxel_size 0.05 -- filters the extra noise/spurious clusters finer voxels pick up, while still admitting smaller real objects than the 10cm/40 baseline did.
+    min_cluster_size: 50                                                                             # 2026-09-19: settled here after the node-vs-track sweep (ground truth via debug/bbox_diagnostics/*.jsonl distinct track_id, ~67 real tracks): 1->380 nodes, 50->61, 75->57, 100->52; post mask-consistency fix (geometry + Hydra semantic image now share the filtered mask): 50->56, 75->54. 50 stayed the closest ratio to real tracks across both.
     cluster_tolerance: 0.25
   surface_places:
     type: place_2d

@@ -31,7 +31,7 @@ def generate_launch_description() -> LaunchDescription:
     """Create the three-node RSG stack using the validated baseline defaults."""
     share = FindPackageShare("rsg")
     pipeline_config = LaunchConfiguration("pipeline_config")
-    fuser_config = PathJoinSubstitution([share, "config", "rsg_scene_graph_fuser.yaml"])
+    fuser_config = LaunchConfiguration("fuser_config")
     preprocessor_script = PathJoinSubstitution([share, "scripts", "rsg_preprocessor"])
     phase1_script = PathJoinSubstitution([share, "scripts", "rsg_phase1_semantic_coordinator"])
     vlm_server_script = PathJoinSubstitution([share, "scripts", "rsg_vlm_server"])
@@ -123,6 +123,11 @@ def generate_launch_description() -> LaunchDescription:
                 [share, "config", "rsg_pipeline.yaml"]
             ),
             description="RSG pipeline profile; defaults to the official TESSE uHumans2 bag.",
+        ),
+        DeclareLaunchArgument(
+            "fuser_config",
+            default_value=PathJoinSubstitution([share, "config", "rsg_scene_graph_fuser.yaml"]),
+            description="Scene graph fuser (marker/visualization) parameters; per-profile overrides (e.g. object marker/text size) live in their own file.",
         ),
         DeclareLaunchArgument("start_chroma", default_value="true"),
         DeclareLaunchArgument("start_qwen", default_value="true"),

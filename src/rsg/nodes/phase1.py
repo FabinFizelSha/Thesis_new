@@ -57,6 +57,7 @@ from nodes.support.phase1.rap_memory import RapMemoryUpdater
 from nodes.support.phase1.risk_vlm_diagnostics import RiskVlmDiagnostics
 from nodes.support.phase1.rap_accuracy_diagnostics import RapAccuracyDiagnostics
 from nodes.support.phase1.periodic_crop_diagnostics import PeriodicCropDiagnostics
+from nodes.support.phase1.frame_mask_overlay_diagnostics import FrameMaskOverlayDiagnostics
 from nodes.support.phase1.semantic_crop import (
     build_rap_target_only_crop,
     build_vlm_target_focus_crop,
@@ -499,6 +500,16 @@ class Phase1SemanticCoordinator(Node):
             output_dir=workspace_path("debug/object_tracking_experiment_part2/periodic_crop_diagnostics"),
             enabled=self.tracking_diagnostics_enabled,
             interval=self.config.periodic_crop_interval,
+        )
+
+        # Full-frame diagnostic: every Nth frame saved whole, with every SAM
+        # mask that frame outlined -- answers "did SAM detect this object at
+        # all, and starting when" directly, without first having to know
+        # which (if any) track it ended up under.
+        self.frame_mask_overlay_diagnostics = FrameMaskOverlayDiagnostics(
+            output_dir=workspace_path("debug/frame_mask_overlays"),
+            enabled=self.diagnostics_enabled and self.config.frame_mask_overlay_enabled,
+            interval=self.config.frame_mask_overlay_interval,
         )
         if self.diagnostics_enabled:
             self.get_logger().info(
@@ -1356,6 +1367,11 @@ class Phase1SemanticCoordinator(Node):
         window and publishes only a later slot-to-label semantic update. Spatial
         geometry and Hydra slot assignment never wait for RAP or VLM.
         """
+        try:
+            self.frame_mask_overlay_diagnostics.log_frame(int(frame.sequence), rgb, sam_masks)
+        except Exception:
+            pass
+
         classified: List[ClassifiedMask] = []
         track_records: List[Dict[str, Any]] = []
         next_instance_id = 1
@@ -1401,7 +1417,7 @@ class Phase1SemanticCoordinator(Node):
         for idx, mask in enumerate(sam_masks):
             stage_start = time.perf_counter() if timing_enabled else 0.0
             candidate_id = self.make_candidate_id(frame, mask.mask_id, idx, False)
-            metadata = self.build_object_metadata(
+            metadata, filtered_mask = self.build_object_metadata(
                 frame=frame, mask=mask, depth=depth, tx=tx, rot_m=rot_m,
                 label="unknown_object", label_id=0, instance_id=idx + 1,
                 confidence=0.0, status="collecting_best_crop",
@@ -1409,7 +1425,11 @@ class Phase1SemanticCoordinator(Node):
                 geometry_stage_ms=geometry_stage_ms,
             )
             prepared.append({
-                "metadata": metadata, "mask": mask.mask,
+                # "mask" carries the filtered (largest-island-only) mask so
+                # every downstream consumer -- geometry above, and the
+                # semantic pixel image below -- agrees on the same object
+                # footprint. See build_object_metadata's docstring.
+                "metadata": metadata, "mask": filtered_mask,
                 "timestamp_sec": timestamp_sec, "desired_hydra_label_id": 0,
             })
             # `depth_valid_points` is absent when the depth gather never ran
@@ -1575,7 +1595,11 @@ class Phase1SemanticCoordinator(Node):
 
             classified_mask = ClassifiedMask(
                 mask_id=mask.mask_id,
-                mask=mask.mask,
+                # Filtered (largest-island-only) mask, same one geometry was
+                # computed from in the loop above -- so the semantic pixel
+                # image Hydra integrates agrees with this object's own bbox,
+                # instead of painting islands its own geometry ignored.
+                mask=prepared[idx]["mask"],
                 label=str(semantic_label_name),
                 label_id=int(semantic_label_id),
                 instance_id=int(instance_id),
@@ -2060,8 +2084,15 @@ class Phase1SemanticCoordinator(Node):
         candidate_id: str,
         rap_metadata: Dict[str, Any],
         geometry_stage_ms: Optional[Dict[str, float]] = None,
-    ) -> Dict[str, Any]:
-        """Create configurable object metadata used by Hydra/fusion/risk nodes."""
+    ) -> Tuple[Dict[str, Any], np.ndarray]:
+        """Create configurable object metadata used by Hydra/fusion/risk nodes.
+
+        Returns the metadata alongside the filtered mask (largest island
+        only) so callers can reuse the exact same mask for the semantic
+        pixel image sent to Hydra -- otherwise Hydra integrates the raw,
+        unfiltered SAM mask (both islands) even though this object's own
+        geometry was computed from one island only.
+        """
         # Use filtered mask for geometry (only largest contour, no islands)
         filtered_mask = self.tracking_crop_manager.get_filtered_mask(mask.mask)
         geometry = self.geometry_estimator.estimate(filtered_mask, depth, frame.camera_info, tx, rot_m, stage_ms=geometry_stage_ms)
@@ -2079,8 +2110,8 @@ class Phase1SemanticCoordinator(Node):
             **geometry,
         }
         if self.config.persistent_tracking_enabled:
-            return metadata
-        return filter_metadata(metadata, self.config)
+            return metadata, filtered_mask
+        return filter_metadata(metadata, self.config), filtered_mask
 
     def _dispatch_tracks_after_settling(
         self,
@@ -3757,6 +3788,7 @@ class Phase1SemanticCoordinator(Node):
             "risk_fifo_queue_size": self.risk_queue.qsize(),
             "risk_fifo_queue_max_size": self.config.risk_vlm_queue_size,
         }
+        payload.update(self.persistent_tracker.track_counts())
         self._safe_publish(self.status_pub, String(data=safe_json_dumps(payload)))
 
     def destroy_node(self) -> bool:

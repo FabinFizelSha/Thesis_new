@@ -1,0 +1,192 @@
+/**:
+  ros__parameters:
+    use_sim_time: true                                                                                         # Decay uses ROS/bag time; set false only for a live robot without /clock.
+    input_dsg_topic: /hydra/backend/dsg
+    semantic_label_topic: /rsg/objects/semantic_label_result
+    risk_result_topic: /rsg/objects/risk_result                                                                   # Must match phase1.risk_vlm.result_topic in rsg_pipeline.yaml.
+    fused_dsg_topic: /rsg/hydra/fused_dsg
+    markers_topic: /rsg/scene_graph/markers
+    status_topic: /rsg/hydra/rap_fuser/status
+    fallback_frame_id: odom                                                                                     # Hydra visualization messages use odom; the Hydra launch supplies a world-to-odom bridge.
+
+    # Final semantic messages are buffered while the fuser batches expensive
+    # full-graph redraws.
+    semantic_label_qos_depth: 4096
+    semantic_refresh_rate_hz: 1.0                                                                   # Capped full-graph render rate. Semantic labels are cached immediately in a separate callback group.
+
+    publish_fused_dsg: false                                                                                    # Keep disabled; MarkerArray is the active visualization path.
+    drop_local_mesh: false                                                                                      # Retain a local Hydra mesh only for conservative object-place wall validation; never republish or render it.
+    marker_publish_rate_hz: 1.0                                                                                 # Match the bounded 1 Hz graph renderer to protect semantic-result ingestion.
+
+    # Layered RViz projection only. Hydra's DSG node geometry and topology remain unchanged.
+    show_objects: true                                                                                          # Object layer at its physical Hydra height.
+    show_rooms: true                                                                                            # Top graph layer at source Z + 20 m.
+    show_places: true                                                                                           # Middle graph layer at source Z + 10 m.
+    show_buildings: false                                                                                       # Disabled so rooms remain the visible highest hierarchy layer.
+    show_segments: false
+    show_agents: false
+    show_edges: true
+
+    # Typed graph relations shown by the layered projection.
+    show_room_place_edges: true                                                                                 # Native Hydra room-place edges plus derived visible-neighbour room completion edges.
+    show_place_object_edges: true                                                                                 # Native object-place edges plus bounded fallback when absent.
+    show_place_connectivity_edges: true                                                                         # Native Hydra place graph connectivity, including cross-room links.
+    show_native_object_object_edges: true                                                                       # Show direct native Hydra object-object topology in the fused graph; rendered black.
+    show_native_room_room_edges: true                                                                           # Show direct native Hydra room-room topology in the fused graph; rendered black.
+
+    # Node text visibility.
+    show_object_labels: true
+    show_room_labels: true                                                                                      # RViz-only labels use stable Room1, Room2, ... numbering.
+    show_place_labels: false                                                                                    # Enable only for small maps; place labels can become dense.
+    show_building_labels: true
+    show_slot_ids: false
+    show_label_confidence: true                                                                                # Fold into the label's own line as "label(confidence)", e.g. "floor(0.95)".
+    show_mobility_metadata: true                                                                               # Second line, "mobility_class(confidence)", e.g. "static(1.00)".
+
+    # Display-layer offsets. XY stays at Hydra's original spatial position.
+    object_z_offset_m: 0.0                                                                                      # Object display height relative to Hydra source geometry.
+    place_z_offset_m: 10.0                                                                                      # Place display height; preserves original XY.
+    room_z_offset_m: 20.0                                                                                       # Room display height; preserves original XY.
+    room_node_size_m: 1.10                                                                                      # Sphere diameter for room graph nodes.
+    place_node_size_m: 0.45                                                                                     # Sphere diameter for place graph nodes.
+    place_text_height_m: 0.035                                                                                  # 2026-09-20: matched to object_text_height_m so every layer's label text renders the same size (was 0.18).
+    room_alpha: 0.95                                                                                            # Room node opacity; each room uses a deterministic distinct colour.
+    place_alpha: 0.90                                                                                           # Place node opacity; hue inherits parent room.
+
+    # Complete every place with no direct Hydra room edge. Native room-place edges are
+    # shown immediately, but derived neighbour-majority links wait until the local map,
+    # room centres, and mesh have had time to settle. The timer follows incoming Hydra
+    # message time during rosbag replay, rather than depending on playback speed.
+    room_place_completion_enabled: true
+    room_place_completion_grace_period_sec: 30.0                                                           # Set 0.0 only for immediate completion; 30 s is the default map-settling interval.
+    room_place_completion_neighbours: 7
+    room_place_completion_max_distance_m: 0.0                                                      # 0 = no range cap; select the actual nearest visible places.
+    room_place_completion_max_height_difference_m: 0.50
+    room_place_completion_require_mesh_validation: true
+    room_place_completion_min_majority_votes: 1
+
+    # Membership policy: native Hydra object-place edges always win. A missing native edge can receive
+    # a display-only association only after local 3D candidate retrieval and reconstructed-mesh wall validation.
+    # The fallback fails closed: if no mesh is present in the incoming DSG, it creates no inferred edge.
+    object_place_use_local_validated_fallback: true                                                            # Enable bounded local 3D fallback only where a native object-place edge is absent.
+    object_place_max_distance_m: 3.0                                                                            # Maximum full 3D source-space distance from object centre to a candidate place.
+    object_place_index_voxel_size_m: 2.0                                                                        # 3D spatial-hash cell size; limits candidate retrieval independently of building size.
+    object_place_index_search_radius_cells: 2                                                                  # Search local cell neighbourhood only; 2 cells covers up to 4 m in each axis.
+    object_place_max_candidates: 6                                                                              # Validate at most six closest local places for each uncoupled object.
+    object_place_require_mesh_validation: true                                                                 # Require a clear mesh segment; no mesh means no derived object-place edge.
+    object_place_mesh_voxel_size_m: 0.50                                                                       # Acceleration-grid cell size for reconstructed mesh triangles.
+    object_place_mesh_max_triangle_tests: 2048                                                                 # Fail closed if a segment would require more mesh-triangle tests.
+    object_place_mesh_max_cells_per_triangle: 256                                                              # Keep exceptionally large triangles out of the regular mesh hash grid.
+    object_place_anchor_outset_m: 0.12                                                                          # Start validation just outside the object bounding box, toward the candidate place.
+    object_place_cache_recompute_translation_m: 0.25                                                           # Reuse a validated association until the object moves by this distance.
+
+    # RAP/VLM slot-label association. Slot equality is primary: every Hydra
+    # object node with a resolved semantic slot receives that slot's label.
+    # Centroids are consulted only when different semantic labels arrive for
+    # the same slot ID; then each Hydra node receives the closest-centroid label.
+    centroid_association_enabled: true
+    require_centroid_frame_match: true
+    allow_unframed_centroid: false
+    max_label_candidates_per_slot: 8          # Retain up to eight distinct class candidates per slot for conflict resolution.
+    unlabeled_object_display_label: object_unknown  # Display-only fallback when Phase 1 has not produced a result yet. Not passed through label normalisation, so the underscore stays literal (a real semantic label's underscores would otherwise become spaces).
+
+    # Marker geometry and presentation. Static/unknown nodes remain spheres;
+    # validated dynamic-capable objects can use cubes as a visual cue.
+    # Set object_use_fixed_sphere_size=true to render every object node with
+    # the same diameter. Set it false to restore bbox-volume-scaled spheres.
+    object_sphere_size_mode: fixed                 # fixed | volume_scaled
+    object_use_fixed_sphere_size: true             # true => all object nodes use object_fixed_sphere_size_m.
+    object_fixed_sphere_size_m: 0.07                # 2026-09-20: halved again from 0.14 (originally 0.28m in the base profile) -- real-scene object density here reads better smaller in RViz.
+    object_min_size_m: 0.12                        # Used only when object_use_fixed_sphere_size=false.
+    object_max_size_m: 0.60                        # Used only when object_use_fixed_sphere_size=false.
+    object_sphere_volume_scale: 0.60               # Used only when object_use_fixed_sphere_size=false.
+    object_text_height_m: 0.035                                                                                # 2026-09-20: halved again from 0.07 (originally 0.14m in the base profile), paired with the halved sphere size above.
+    object_label_vertical_offset_m: 0.10                                                                       # Compact vertical gap between node and first text line.
+    dynamic_object_use_cube: true                                                                              # Dynamic-capable objects use the same fixed size but a cube marker.
+    room_text_height_m: 0.035                                                                                   # 2026-09-20: matched to object_text_height_m (was 0.35).
+    building_text_height_m: 0.035                                                                               # 2026-09-20: matched to object_text_height_m (was 0.42).
+    building_alpha: 0.10
+    edge_width_m: 0.00625                                                                                       # 2026-09-20: halved again from 0.0125 (originally 0.025m in the base profile), matching the halved object marker/text size. Line width for all fused edges; every edge category is rendered black.
+    # Local-segment presence overlay. These are additional to the working reference visualisation path.
+    active_segments_topic: /rsg/objects/active_local_segments
+    show_presence_confidence: false                                                                              # Off 2026-09-11 to keep the object label to exactly two lines (name(confidence) + mobility(confidence)). Turn on for a 3rd diagnostic line with the raw presence state/confidence.
+    static_presence_half_life_sec: 600.0                                                                       # Ten-minute half-life for static and unknown-mobility objects.
+    dynamic_presence_half_life_sec: 120.0                                                                      # Two-minute half-life for humans, animals, and mobile robots.
+    presence_observed_epsilon_sec: 1.5
+    minimum_object_alpha: 0.03                                                                                 # Never delete nodes; stale objects remain almost transparent. Does NOT apply to a restored-but-not-yet-reobserved slot (marked via restored_from_previous_session) -- those render at full confidence regardless of this floor, since their day-shifted saved timestamp would otherwise decay them here on every resumed run.
+    presence_decay_continuous_refresh: true                                                                    # Re-render with ROS/bag time so fading continues even when no new object observation arrives.
+
+    # Object-contact relationships (amber double-arrow lines): two physical
+    # objects whose 3D bounding boxes touch/overlap. Objects phase 1 split
+    # into local segments are grouped by internal_object_id into "main
+    # objects" first; contact is always detected main-object-to-main-object,
+    # anchored on the closest real touching sub-object pair(s). See
+    # debug/fuser_object_relation_experiment/IMPLEMENTATION.md for the full
+    # design writeup.
+    object_contact_edges_enabled: true                                                                          # Master switch for contact detection (markers + DSG edges + status).
+    object_contact_tolerance_m: 0.20                                                                            # Max gap between two bboxes to still count as touching. (Raised from 0.05 on 2026-09-05 to treat slightly-separated objects as touching.)
+    object_contact_min_iou_3d: 0.0                                                                              # Unused since the 2026-09-05 nearest-centroid-matching rework of the narrow phase (no IoU gate); kept for backward compatibility.
+    object_contact_write_dsg_edges: true                                                                        # Also write a real object-object edge into the fused DSG, not just the marker.
+    object_contact_max_objects: 500                                                                             # Safety cap on main objects considered per cycle; exceeding it skips contact detection with a warning.
+    object_contact_grid_cell_size_m: 0.0                                                                        # 0.0 = auto-size the spatial-hash cell each cycle from the largest object reach seen.
+    object_contact_grid_min_cell_size_m: 0.05                                                                   # Floor for the auto-sized cell, so a scene of tiny objects doesn't produce a degenerate grid.
+    show_object_contact_edges: true                                                                             # RViz double-arrow markers for contact edges.
+    show_object_contact_labels: true                                                                            # Small floating label per contact edge: centroid distance only (dropped max(iou_xz, iou_yz) 2026-09-11).
+    object_contact_text_height_m: 0.035                                                                         # 2026-09-20: matched to object_text_height_m so every text label in the fused view is the same size (was 0.08).
+    object_contact_arrow_head_length_m: 0.05                                                                    # 2026-09-20: halved again from 0.10 (originally 0.20m in the base profile). Fixed absolute size, same on every contact arrow regardless of edge length (previously scaled down on short edges).
+    object_contact_arrow_head_diameter_m: 0.0275                                                                # 2026-09-20: halved again from 0.055 (originally 0.11m in the base profile). Fixed absolute size, same on every contact arrow regardless of edge length.
+
+    # Duplicate-object collapse. A semantic slot is allocated per physical
+    # object by phase 1, so two object nodes on the same slot ARE one object --
+    # a guarantee generic Hydra does not have, since it treats semantic_label
+    # as a class and emits a node per mesh cluster. On a resumed session that
+    # produces a second node stacked on the restored one; the fuser collapses
+    # them because its output is the final scene graph. The older (lowest-id)
+    # node survives with a union bounding box, so a revisit sustains the object
+    # it already had instead of replacing it.
+    # Only nodes in Hydra's active window (the robot's current view) are ever
+    # removed. Anything restored from a previous session is archived, and
+    # archived nodes are kept exactly as loaded -- both as the surviving node
+    # and as geometry -- so a resume never deletes map the robot is not even
+    # looking at.
+    object_slot_collapse_enabled: true                                                                          # Master switch. Off = one node per Hydra cluster, duplicates included.
+    object_slot_collapse_max_distance_m: 2.0                                                                    # 2026-09-20: reverted back to the base profile's default 2.0m. Centroid fallback. Nodes also collapse when either bbox contains the other's centroid, which is what carries large objects whose centroid shifts as more surface is seen.
+
+    # In-view highlight: a translucent grey sphere around anything currently
+    # at high presence confidence -- i.e. recently observed. Grey rather than
+    # the original cyan so it reads as a neutral highlight instead of tinting
+    # the object's own color. Driven by the same confidence value that sets
+    # alpha, not a separate age cutoff: confidence is exactly 1.0 while
+    # inside presence_observed_epsilon_sec and clears the threshold for a
+    # further few seconds after, so it reads as "in view right now" without
+    # its own parameter. A restored-but-not-yet-reobserved slot's true
+    # confidence stays vanishingly small (its day-plus save-time shift), so
+    # it renders fully opaque (see minimum_object_alpha above) but does NOT
+    # glow until it is genuinely reobserved this session.
+    highlight_active_objects: true                                                                              # Master switch. Hide in RViz by unticking the "rsg_active_objects" marker namespace instead, if you just want it off visually without restarting.
+    active_object_halo_min_confidence: 0.995                                                                    # Presence confidence threshold to glow. Raised from 0.99 2026-09-11 for a stricter "in view right now" cutoff. Lower it to keep the halo lit longer after an object leaves view.
+    active_object_halo_scale: 1.7                                                                               # Halo diameter as a multiple of the object's own sphere.
+    active_object_halo_alpha: 0.45                                                                              # Raised from 0.30 2026-09-11 for a slightly more visible grey. Raise further for a stronger glow; the halo is drawn over the object sphere.
+    active_object_halo_min_margin_m: 0.12                                                                       # Floor on the halo's extra diameter, so small objects still show a visible ring.
+
+    # Object-segment relationships (blue dotted lines): local segments phase 1
+    # split off from one physical object too large to track as a single
+    # segment. Chained in ascending NodeId order (a proxy for formation
+    # order), not fully interconnected -- a k-way split gets k-1 edges.
+    object_segment_edges_enabled: true                                                                          # Master switch for the same-object identity chain.
+    object_segment_write_dsg_edges: true                                                                        # Also write a real object-object edge into the fused DSG, not just the marker.
+    object_segment_max_group_size: 50                                                                           # Safety cap on segments per physical object; exceeding it skips that group's chain with a warning.
+    show_object_segment_edges: true                                                                             # RViz dotted-line markers for the segment chain.
+    object_segment_dot_spacing_m: 0.08                                                                          # Spacing between the small dots that make up each dotted line.
+    object_segment_dot_size_m: 0.03                                                                             # Dot diameter.
+
+    # Offline verification: dumps every main object's aggregate bbox, every
+    # member's own bbox, and the contact/segment edges actually produced, one
+    # JSON line per fusion cycle, to
+    # debug/fuser_object_relation_experiment/results/run_<timestamp>/contact_diagnostics.jsonl
+    # (or object_contact_diagnostics_path if set). See
+    # debug/fuser_object_relation_experiment/README.md to enable and analyze.
+    # Both params are live-toggleable via `ros2 param set
+    # /rsg_scene_graph_fuser ...` without a restart.
+    object_contact_diagnostics_enabled: false
+    object_contact_diagnostics_path: ""                                                                         # Explicit fixed path override; empty = auto timestamped folder under results/.

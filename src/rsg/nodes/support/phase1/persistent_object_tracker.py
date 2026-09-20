@@ -1401,6 +1401,22 @@ class PersistentObjectTracker:
                 None,
             )
 
+    def track_counts(self) -> Dict[str, int]:
+        """Snapshot of track/slot totals, for the fuser-vs-phase1 node-count diagnostic.
+
+        ``total_tracks_created``/``total_hydra_slots_allocated`` are cumulative
+        (track ids and slot ids are never reused, so these only grow) and are
+        the counterparts to compare against the fuser's ``object_nodes`` /
+        ``distinct_hydra_object_slots``. ``active_track_count`` is the live
+        snapshot (merged/dropped tracks excluded).
+        """
+        with self._lock:
+            return {
+                "active_track_count": len(self._tracks),
+                "total_tracks_created": int(self._next_track_index) - 1,
+                "total_hydra_slots_allocated": int(self._next_slot_index) - 1,
+            }
+
     def _has_slot_capacity(self) -> bool:
         if not bool(getattr(self.config, "persistent_use_hydra_slots", False)):
             return len(self._tracks) < int(self.config.persistent_max_tracks)

@@ -95,6 +95,30 @@ void MLESemanticIntegrator::updateLikelihoods(uint32_t label,
     return;
   }
 
+  // Background/unclassified (label 0) carries no real information -- an
+  // object simply hasn't been detected/tracked at this pixel yet, not "this
+  // is genuinely background". Confirmed via frame-by-frame mask-overlay
+  // diagnostics (2026-09-20): a real object (a small water can) wasn't
+  // segmented by SAM until ~frame 50, so its voxels spent the first ~50
+  // frames accumulating "background" votes under the old unconditional
+  // accumulation below. Since likelihoods never decay (this is a strict
+  // running sum, see below), that head start was permanent: once the can's
+  // real label started arriving, it could never mathematically out-vote 50
+  // frames of "background" evidence at the same voxels, and the object never
+  // formed as its own node.
+  //
+  // Skipping background entirely (never touching semantic_likelihoods for
+  // it) fixes this without weakening real label-vs-label competition (e.g.
+  // two genuinely different tracked objects, which still compete normally
+  // below): a voxel that has only ever seen background stays in its initial
+  // empty/undetermined state, which mesh_segmenter already excludes from
+  // every real object's cluster today -- identical end behavior to before.
+  // The only thing that changes is a voxel's first REAL observation is no
+  // longer competing against a false, already-accumulated background prior.
+  if (label == 0) {
+    return;
+  }
+
   if (voxel.empty) {
     voxel.empty = false;
     voxel.semantic_likelihoods.setConstant(total_labels_, init_likelihood_);
