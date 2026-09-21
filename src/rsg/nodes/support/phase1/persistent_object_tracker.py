@@ -2524,6 +2524,25 @@ class PersistentObjectTracker:
                 _t0 = time.perf_counter()
             ratio = _volume_ratio(volume, track.bbox_volume_m3)
             row["volume_ratio"] = float(ratio)
+            # Hard veto, not a vote: footprint and containment below are both
+            # computed as "fraction of the new, small observation contained in
+            # the track's box" -- once a track's accumulated box is inflated
+            # (e.g. one bad early merge), those two normally-separate votes
+            # both pass almost for free for anything spatially inside it, and
+            # quorum is satisfied without the match ever being physically
+            # plausible. This was previously computed and stored in the row
+            # for diagnostics only, never read here -- confirmed via the
+            # 2026-09-21 frame 350/356/390 case (obj_019 absorbed an unrelated
+            # object at 6.4m^3 vs a normal single-object crop, a ~15-20x
+            # ratio) that nothing was blocking it. persistent_max_volume_ratio
+            # already existed as a config field (parsed, never read) -- wiring
+            # it here rather than adding a new one.
+            max_volume_ratio = float(getattr(self.config, "persistent_max_volume_ratio", 3.0))
+            hard_volume_contradiction = bool(
+                reliable_3d and math.isfinite(ratio) and ratio > max_volume_ratio
+            )
+            if hard_volume_contradiction:
+                row["rejection_reasons"].append("volume_ratio_exceeded")
 
             containment_score = 0.0
             containment_pass = False
@@ -2674,7 +2693,12 @@ class PersistentObjectTracker:
             if score < min_score:
                 row["rejection_reasons"].append("global_association_score_below_threshold")
 
-            if not hard_2d_contradiction and pass_count >= min_groups and score >= min_score:
+            if (
+                not hard_2d_contradiction
+                and not hard_volume_contradiction
+                and pass_count >= min_groups
+                and score >= min_score
+            ):
                 # Priority zero lets the existing assignment utility rank all valid
                 # candidates directly by the common global score.
                 consider(track_id, 0, 1.0 - score, f"global_{mode}_association", row)
