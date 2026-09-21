@@ -23,6 +23,7 @@ import threading
 import time
 from collections import deque
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -1367,10 +1368,11 @@ class Phase1SemanticCoordinator(Node):
         window and publishes only a later slot-to-label semantic update. Spatial
         geometry and Hydra slot assignment never wait for RAP or VLM.
         """
-        try:
-            self.frame_mask_overlay_diagnostics.log_frame(int(frame.sequence), rgb, sam_masks)
-        except Exception:
-            pass
+        # Populated per-mask below as track association runs, then rendered
+        # onto the frame-level overlay diagnostic after the loop -- the
+        # overlay needs each mask's final track_id, which isn't known until
+        # persistent_tracker.associate() runs for that mask.
+        mask_track_ids: Dict[str, str] = {}
 
         classified: List[ClassifiedMask] = []
         track_records: List[Dict[str, Any]] = []
@@ -1520,6 +1522,7 @@ class Phase1SemanticCoordinator(Node):
                     association_ms += (time.perf_counter() - stage_start) * 1000.0
 
             external_track_id = str(metadata.get("persistent_track_id", "")) or None
+            mask_track_ids[str(mask.mask_id)] = external_track_id or "unassigned"
             # Keep updating the shared best crop. RAP/VLM receive only this
             # track ID and retrieve the latest crop when each worker dequeues it.
             stage_start = time.perf_counter() if timing_enabled else 0.0
@@ -1593,6 +1596,25 @@ class Phase1SemanticCoordinator(Node):
                 "canonical_label": str(metadata.get("canonical_label", raw_label)),
             })
 
+            # Gate the REAL label from reaching Hydra's semantic pixel image
+            # until this track has survived a few observations -- a one-off
+            # spurious detection (bad SAM prompt, single-frame noise) then
+            # never paints a real label at all and stays harmless background
+            # forever (see MLESemanticIntegrator: background/label 0 is
+            # skipped entirely, never accumulates or entrenches). Everything
+            # else -- metadata["hydra_label_id"]/bbox_diagnostics, crops,
+            # RAP/VLM dispatch -- still uses the track's real slot from
+            # observation 1, since those aren't painted into Hydra's TSDF and
+            # don't have the entrenchment problem this specifically guards
+            # against. Default (1) is a no-op: paint from the first
+            # observation, same as before this existed.
+            min_obs_for_paint = int(self.config.persistent_min_observations_before_semantic_paint)
+            hydra_paint_label_id = semantic_label_id
+            if min_obs_for_paint > 1 and external_track_id:
+                seen_count = self.persistent_tracker.get_seen_count(external_track_id)
+                if seen_count < min_obs_for_paint:
+                    hydra_paint_label_id = 0
+
             classified_mask = ClassifiedMask(
                 mask_id=mask.mask_id,
                 # Filtered (largest-island-only) mask, same one geometry was
@@ -1601,7 +1623,7 @@ class Phase1SemanticCoordinator(Node):
                 # instead of painting islands its own geometry ignored.
                 mask=prepared[idx]["mask"],
                 label=str(semantic_label_name),
-                label_id=int(semantic_label_id),
+                label_id=int(hydra_paint_label_id),
                 instance_id=int(instance_id),
                 confidence=float(rap_info.get("confidence", 0.0) or 0.0),
                 status=str(metadata["status"]),
@@ -1612,6 +1634,21 @@ class Phase1SemanticCoordinator(Node):
 
             metadata["rap_dispatch_status"] = "track_id_pending_rap" if self.config.rap_enabled else "rap_disabled"
             next_instance_id += 1
+
+        try:
+            # Overlay the filtered (largest-island-only) mask tracking actually
+            # used, not the raw SAM output -- e.g. a mask split by an occluding
+            # object shows only the surviving island, matching what geometry
+            # and the semantic image saw, not what SAM proposed.
+            overlay_masks = [
+                SimpleNamespace(mask_id=mask.mask_id, mask=prepared[idx]["mask"])
+                for idx, mask in enumerate(sam_masks)
+            ]
+            self.frame_mask_overlay_diagnostics.log_frame(
+                int(frame.sequence), rgb, overlay_masks, track_ids=mask_track_ids,
+            )
+        except Exception:
+            pass
 
         result_stage_ms = {
             "geometry_metadata_ms": geometry_ms,
@@ -3436,6 +3473,7 @@ class Phase1SemanticCoordinator(Node):
                     inference_ms=float(result.get("vlm_inference_ms", 0.0) or 0.0),
                     timestamp=float(task.get("timestamp_sec", 0.0)),
                     track_id=track_id,
+                    hydra_label_id=self.persistent_tracker.get_hydra_label_id(track_id),
                 )
             except Exception as e:
                 self.get_logger().warn(f"Failed to log VLM test result: {e}")

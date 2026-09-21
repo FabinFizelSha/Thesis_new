@@ -471,6 +471,7 @@ class Phase1Config:
     persistent_tracking_enabled: bool = False
     persistent_track_prefix: str = "rsg_obj_"
     persistent_max_tracks: int = 1024
+    persistent_min_observations_before_semantic_paint: int = 1
     persistent_max_match_distance_m: float = 0.30
     persistent_max_volume_ratio: float = 3.0
     persistent_continuation_max_age_sec: float = 2.5
@@ -939,6 +940,7 @@ class Phase1Config:
             persistent_tracking_enabled=bool(persistent_tracking.get("enabled", False)),
             persistent_track_prefix=str(persistent_tracking.get("track_prefix", "rsg_obj_")),
             persistent_max_tracks=max(1, min(65535, int(persistent_tracking.get("max_tracks", slot_count if slot_mode else 1024)))),
+            persistent_min_observations_before_semantic_paint=max(1, int(persistent_tracking.get("min_observations_before_semantic_paint", 1))),
             persistent_max_match_distance_m=float(persistent_tracking.get("max_match_distance_m", 0.30)),
             persistent_max_volume_ratio=float(persistent_tracking.get("max_volume_ratio", 3.0)),
             persistent_continuation_max_age_sec=max(0.0, float(persistent_tracking.get("continuation_max_age_sec", 2.5))),

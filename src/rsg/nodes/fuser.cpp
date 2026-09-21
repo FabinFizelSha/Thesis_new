@@ -3356,6 +3356,14 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
                                    ? unlabeled_object_display_label_
                                    : (node.name.empty() ? unlabeled_object_display_label_ : node.name));
 
+    // Prepended, not appended: the object id is the one line useful for
+    // cross-referencing this node against other diagnostics (bbox_diagnostics
+    // track_id, VLM crop folders, etc.) by eye, so it belongs first, above
+    // the label/confidence/mobility lines, not buried at the bottom.
+    if (show_slot_ids_ && slot_id > 0U) {
+      label = "id_" + std::to_string(slot_id) + "\n" + label;
+    }
+
     if (show_label_confidence_ && overlay) {
       std::ostringstream line;
       line.setf(std::ios::fixed);
@@ -3387,9 +3395,6 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
         line << "presence " << presence_tag << presence_state.confidence;
         label += "\n" + line.str();
       }
-    }
-    if (show_slot_ids_ && slot_id > 0U) {
-      label += "\nslot " + std::to_string(slot_id);
     }
     return label;
   }

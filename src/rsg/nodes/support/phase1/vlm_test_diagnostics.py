@@ -122,6 +122,7 @@ class VLMTestDiagnostics:
         inference_ms: float = 0.0,
         timestamp: float = None,
         track_id: str = None,
+        hydra_label_id: Optional[int] = None,
     ) -> Optional[str]:
         """Save the crop this VLM call used and append one result row.
 
@@ -132,12 +133,21 @@ class VLMTestDiagnostics:
             inference_ms: model compute time (llama.cpp timings); 0.0 if unavailable
             timestamp: bag time of the crop
             track_id: track id (reference only)
+            hydra_label_id: the track's Hydra semantic slot, if known -- when
+                given, this becomes the object_id (crop filename + CSV row)
+                instead of the call-order counter, so it matches the "id_N"
+                line the fuser renders on the same object in RViz
+                (show_slot_ids). Falls back to the old call-order counter
+                when not provided, so this stays backward compatible.
         """
         if not self.enabled:
             return None
         try:
             self.object_counter += 1
-            object_id = f"{self.object_counter:06d}"
+            if hydra_label_id:
+                object_id = f"{int(hydra_label_id):06d}"
+            else:
+                object_id = f"{self.object_counter:06d}"
 
             if crop_rgb is not None and getattr(crop_rgb, "size", 0) > 0:
                 crop_filename = f"obj_{object_id}_crop.{self.crop_format}"

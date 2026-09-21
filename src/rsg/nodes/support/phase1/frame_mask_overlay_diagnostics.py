@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import random
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import cv2
 import numpy as np
@@ -46,6 +46,7 @@ class FrameMaskOverlayDiagnostics:
         frame_number: int,
         rgb: Optional[np.ndarray],
         masks: List[Any],
+        track_ids: Optional[Dict[str, str]] = None,
     ) -> Optional[str]:
         """Save this frame with every mask in ``masks`` outlined, if on-interval.
 
@@ -55,6 +56,10 @@ class FrameMaskOverlayDiagnostics:
             masks: objects exposing ``.mask_id`` (str) and ``.mask`` (2D bool array
                 in full-frame coordinates) -- e.g. the SamMask list for this frame,
                 before or after classification.
+            track_ids: optional ``mask_id -> persistent track_id`` map, so each
+                mask's label also shows which track it was assigned to (e.g.
+                "rsg_obj_000015"). A mask with no entry (filtered out before
+                track association ran) is labelled with its mask_id alone.
         """
         if not self.enabled or rgb is None:
             return None
@@ -68,11 +73,13 @@ class FrameMaskOverlayDiagnostics:
                     continue
                 mask_u8 = (np.asarray(mask, dtype=np.uint8)) * 255
                 contours, _ = cv2.findContours(mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                color = self._color_for(str(getattr(item, "mask_id", id(item))))
+                mask_id = str(getattr(item, "mask_id", id(item)))
+                color = self._color_for(mask_id)
                 cv2.drawContours(overlay, contours, -1, color, 2)
                 ys, xs = np.where(mask)
                 if ys.size:
-                    label = str(getattr(item, "mask_id", ""))
+                    track_id = (track_ids or {}).get(mask_id)
+                    label = f"{mask_id} {track_id}" if track_id else mask_id
                     cv2.putText(
                         overlay, label, (int(xs.min()), max(12, int(ys.min()) - 4)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1, cv2.LINE_AA,

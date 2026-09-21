@@ -39,7 +39,7 @@
     show_room_labels: true                                                                                      # RViz-only labels use stable Room1, Room2, ... numbering.
     show_place_labels: false                                                                                    # Enable only for small maps; place labels can become dense.
     show_building_labels: true
-    show_slot_ids: false
+    show_slot_ids: true                                                                                         # 2026-09-21: turned on for this profile -- now renders as the top line of each object's label (fuser.cpp objectDisplayLabel), for cross-referencing a node against bbox_diagnostics.jsonl/VLM crops by eye.
     show_label_confidence: true                                                                                # Fold into the label's own line as "label(confidence)", e.g. "floor(0.95)".
     show_mobility_metadata: true                                                                               # Second line, "mobility_class(confidence)", e.g. "static(1.00)".
 

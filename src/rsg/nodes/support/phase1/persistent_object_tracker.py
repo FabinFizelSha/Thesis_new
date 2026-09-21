@@ -1417,6 +1417,30 @@ class PersistentObjectTracker:
                 "total_hydra_slots_allocated": int(self._next_slot_index) - 1,
             }
 
+    def get_hydra_label_id(self, track_id: str) -> int:
+        """Return the Hydra semantic slot allocated to ``track_id`` (0 if unknown).
+
+        This is exactly the number the fuser renders as the ``id_N`` line on
+        each object node (show_slot_ids). Diagnostics that want to be
+        cross-referenceable against the RViz display by eye -- e.g. VLM test
+        crop/CSV naming -- should use this instead of an independent counter.
+        """
+        with self._lock:
+            track = self._tracks.get(str(track_id))
+            return int(track.hydra_label_id) if track is not None else 0
+
+    def get_seen_count(self, track_id: str) -> int:
+        """Return how many times ``track_id`` has been observed (1 on creation).
+
+        Used to gate whether a track's real Hydra slot label is safe to paint
+        into the semantic image sent to Hydra yet -- see phase1.py's
+        publish_confirmed_label check. Returns 0 for an unknown track id
+        (already merged away, or never existed).
+        """
+        with self._lock:
+            track = self._tracks.get(str(track_id))
+            return int(track.seen_count) if track is not None else 0
+
     def _has_slot_capacity(self) -> bool:
         if not bool(getattr(self.config, "persistent_use_hydra_slots", False)):
             return len(self._tracks) < int(self.config.persistent_max_tracks)

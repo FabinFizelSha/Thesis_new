@@ -25,13 +25,7 @@ active_window:
   tsdf:
     semantic_integrator:
       type: MLESemanticIntegrator
-      # 2026-09-20: tried label_confidence: 0.7 here to fix a small object (water
-      # can) losing the per-voxel label vote to a much larger, more-observed
-      # overlapping neighbor (door). Reverted -- with total_semantic_labels: 10001
-      # (rsg_slot_only_frozen_label_space.yaml), the "penalize every other label"
-      # term is astronomically negative at both 0.7 and 0.9 (difference ~1 nat/obs),
-      # dwarfed by the ~4x observation-count gap (333 vs 75) actually driving this.
-      # Confirmed no visible effect. Back to the default (0.9, unset).
+      label_confidence: 0.75                                                                         # 2026-09-21 TEST: tried 0.7 here earlier (2026-09-20) to help a smaller, less-observed object compete against a larger dominant neighbor for shared voxels -- confirmed no visible effect at that value, since with total_semantic_labels: 10001 the per-observation gap between 0.7 and 0.9 is negligible (~1 nat) next to real observation-count imbalances. That specific background-vs-real-object case is now separately fixed (see updateLikelihoods skipping label 0 entirely, semantic_integrator.cpp). This is now purely tuning real-label-vs-real-label competition strength, not chasing the earlier bug.
 frontend:
   pgmo:
     time_horizon: 100.0
