@@ -258,6 +258,14 @@ class Phase1SemanticCoordinator(Node):
         self._vlm_quality_force_track_ids: set[str] = set()
         self._vlm_quality_deferred_lock = threading.Lock()
 
+        # Tracks that failed VLM (low label_confidence) but have not yet
+        # exhausted persistent_max_vlm_attempts. Unlike the quality-deferred
+        # pool above, there is no timeout here -- a track waits indefinitely
+        # for a strictly better crop than the one its last attempt used.
+        self._vlm_retry_waiting_track_ids: set[str] = set()
+        self._vlm_retry_last_attempt_score: Dict[str, float] = {}
+        self._vlm_retry_lock = threading.Lock()
+
         # Risk assessment: one-shot per track, dispatched right after a
         # track's first successful classification (RAP hit or VLM success).
         # Unlike rap_queue/vlm_queue, this stores the *crop itself* (already
@@ -1956,6 +1964,7 @@ class Phase1SemanticCoordinator(Node):
                 self.get_logger().warn(f"Failed to save best crop for {key}: {e}")
 
             self._resume_quality_deferred_vlm_if_ready(key)
+            self._resume_vlm_retry_if_better_crop(key)
 
     def _describe_track_crop(self, track_id: str) -> Optional[Dict[str, Any]]:
         """Return queue-safe crop metadata without copying image payloads."""
@@ -2336,6 +2345,12 @@ class Phase1SemanticCoordinator(Node):
         label = str(payload.get("semantic_label") or payload.get("canonical_label") or "unclassified_object")
         if source_name in {"vlm_failed", "rap_unknown", "rap_error"}:
             label = "unknown_object"
+        elif source_name == "vlm_retry_pending":
+            # A failed attempt that hasn't exhausted persistent_max_vlm_attempts
+            # yet -- object_detail (extracted independent of label_confidence)
+            # rides along in payload unchanged, so the fuser can show partial
+            # information even while the label itself is still unresolved.
+            label = "waiting_for_better_crop"
 
         segments = self._semantic_segments_for_fanout(payload, task)
 
@@ -2883,6 +2898,32 @@ class Phase1SemanticCoordinator(Node):
                 key,
                 "vlm_queued_after_crop_quality" if status == "queued_for_vlm_fifo" else "vlm_deferred_after_crop_quality",
             )
+
+    def _resume_vlm_retry_if_better_crop(self, track_id: str) -> None:
+        """Re-queue a track that failed VLM once a strictly better crop arrives.
+
+        Unlike _resume_quality_deferred_vlm_if_ready (a pre-first-attempt
+        minimum-quality gate with a bounded timeout), this waits indefinitely:
+        a track only leaves this pool by beating the crop score its last
+        (failed) VLM attempt used, or by exhausting persistent_max_vlm_attempts
+        on a later attempt (handled in the VLM worker, not here).
+        """
+        key = str(track_id)
+        with self._vlm_retry_lock:
+            if key not in self._vlm_retry_waiting_track_ids:
+                return
+            last_score = float(self._vlm_retry_last_attempt_score.get(key, 0.0))
+        crop_state = self._describe_track_crop(key)
+        if crop_state is None:
+            return
+        current_score = float(crop_state.get("best_frame_score", 0.0) or 0.0)
+        if current_score <= last_score:
+            return
+        with self._vlm_retry_lock:
+            self._vlm_retry_waiting_track_ids.discard(key)
+        status = self.enqueue_vlm_track(key)
+        if status in {"queued_for_vlm_fifo", "deferred_for_vlm"}:
+            self.persistent_tracker.set_labeling_status(key, "vlm_queued_after_retry_crop_improved")
 
     def _release_quality_deferred_vlm_if_expired(self, current_timestamp_sec: float) -> None:
         """Release weak crops after the bounded post-RAP collection interval.
@@ -3580,6 +3621,7 @@ class Phase1SemanticCoordinator(Node):
             self.unknown_tracker.mark_vlm_result(msg.unknown_track_id, result)
             if self.config.persistent_tracking_enabled:
                 persistent_update = None
+                semantic_task = memory_task if is_track_id_task else dict(task.get("semantic_label_task") or task)
                 if msg.success:
                     persistent_update = self.persistent_tracker.apply_vlm_result(
                         msg.unknown_track_id,
@@ -3589,15 +3631,13 @@ class Phase1SemanticCoordinator(Node):
                         msg.mobility_confidence,
                         msg.object_detail,
                     )
-                semantic_task = memory_task if is_track_id_task else dict(task.get("semantic_label_task") or task)
-                completed = self.persistent_tracker.complete_semantic_labeling(
-                    msg.unknown_track_id,
-                    float(semantic_task.get("timestamp_sec", 0.0) or 0.0),
-                    "vlm_known" if msg.success else "vlm_failed",
-                )
-                if completed is not None:
-                    self._emit_semantic_label_result(completed, semantic_task, source="vlm" if msg.success else "vlm_failed")
-                    if msg.success:
+                    completed = self.persistent_tracker.complete_semantic_labeling(
+                        msg.unknown_track_id,
+                        float(semantic_task.get("timestamp_sec", 0.0) or 0.0),
+                        "vlm_known",
+                    )
+                    if completed is not None:
+                        self._emit_semantic_label_result(completed, semantic_task, source="vlm")
                         self._enqueue_risk_task(
                             event=completed,
                             task=semantic_task,
@@ -3606,7 +3646,49 @@ class Phase1SemanticCoordinator(Node):
                             mobility_class=msg.mobility_class,
                             source="vlm",
                         )
-                    persistent_update = completed
+                        persistent_update = completed
+                else:
+                    # object_detail is extracted unconditionally in
+                    # validate_vlm_response, independent of label_confidence --
+                    # a rejected label can still carry a real description, so
+                    # keep it even though the label itself isn't trustworthy.
+                    self.persistent_tracker.record_vlm_attempt_detail(
+                        msg.unknown_track_id, msg.object_detail,
+                    )
+                    attempt_count = self.persistent_tracker.increment_vlm_attempt_count(
+                        msg.unknown_track_id,
+                    )
+                    max_attempts = int(self.config.persistent_max_vlm_attempts)
+                    if attempt_count is None or attempt_count >= max_attempts:
+                        completed = self.persistent_tracker.complete_semantic_labeling(
+                            msg.unknown_track_id,
+                            float(semantic_task.get("timestamp_sec", 0.0) or 0.0),
+                            "vlm_failed",
+                        )
+                        if completed is not None:
+                            self._emit_semantic_label_result(completed, semantic_task, source="vlm_failed")
+                            persistent_update = completed
+                    else:
+                        # Attempts remain: leave the track open (is_semantic_
+                        # labeling_open keeps crop updates running) and wait
+                        # indefinitely in a non-FIFO pool for a strictly
+                        # better crop than the one this attempt used, rather
+                        # than finalizing now.
+                        waiting_record = self.persistent_tracker.get_waiting_record(msg.unknown_track_id)
+                        if waiting_record is not None:
+                            self._emit_semantic_label_result(
+                                waiting_record, semantic_task, source="vlm_retry_pending",
+                                finalize_track=False,
+                            )
+                        self._finalize_track_queue_state(track_id)
+                        with self._vlm_retry_lock:
+                            self._vlm_retry_last_attempt_score[track_id] = float(
+                                task.get("crop_score", 0.0) or 0.0
+                            )
+                            self._vlm_retry_waiting_track_ids.add(track_id)
+                        self.persistent_tracker.set_labeling_status(
+                            msg.unknown_track_id, "vlm_retry_pending",
+                        )
                 if persistent_update is not None:
                     result["persistent_track_update"] = persistent_update
                     msg.vlm_metadata_json = safe_json_dumps(result)

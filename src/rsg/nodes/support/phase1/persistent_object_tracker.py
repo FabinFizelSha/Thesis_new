@@ -409,7 +409,10 @@ class PersistentObjectTrack:
     # settling window. The main SAM-to-Hydra path never waits.
     labeling_dispatched: bool = False
     labeling_completed: bool = False
-    labeling_status: str = "collecting"  # collecting | rap_queued | rap_dequeued | vlm_queued | vlm_dequeued | completed
+    labeling_status: str = "collecting"  # collecting | rap_queued | rap_dequeued | vlm_queued | vlm_dequeued | vlm_waiting_for_better_crop | vlm_retry_pending | completed
+    # Total VLM attempts so far (across retries after a failed/low-confidence
+    # result). Only used when persistent_max_vlm_attempts > 1.
+    vlm_attempt_count: int = 0
 
     # Local Hydra sections.  ``track_id`` remains the object-level identity for
     # best-crop tracking and semantic labelling, while the active segment slot is
@@ -1318,6 +1321,53 @@ class PersistentObjectTracker:
         with self._lock:
             track = self._tracks.get(str(track_id))
             return bool(track is not None and not track.labeling_completed)
+
+    def increment_vlm_attempt_count(self, track_id: str) -> Optional[int]:
+        """Record one more failed VLM attempt and return the new total.
+
+        Returns ``None`` if the track no longer exists or is already
+        finalized -- the caller should then treat this as exhausted rather
+        than retry a track that isn't live anymore.
+        """
+        with self._lock:
+            track = self._tracks.get(str(track_id))
+            if track is None or track.labeling_completed:
+                return None
+            track.vlm_attempt_count += 1
+            return int(track.vlm_attempt_count)
+
+    def record_vlm_attempt_detail(self, track_id: str, object_detail: str) -> None:
+        """Keep a failed attempt's object_detail without committing a label.
+
+        validate_vlm_response extracts ``object_detail`` unconditionally,
+        independent of label_confidence -- so even a rejected label can carry
+        a real, useful description. This only updates that one field; it
+        deliberately does not touch semantic_label/mobility (those still
+        require a successful attempt via apply_vlm_result).
+        """
+        detail = str(object_detail or "").strip()
+        if not detail:
+            return
+        with self._lock:
+            track = self._tracks.get(str(track_id))
+            if track is None or track.labeling_completed:
+                return
+            track.object_detail = detail
+
+    def get_waiting_record(self, track_id: str) -> Optional[Dict[str, Any]]:
+        """Return a read-only snapshot for a track waiting on a VLM retry.
+
+        Unlike complete_semantic_labeling, this does not mark the track
+        completed or touch any state -- it only builds the same record shape
+        Phase 1 publishes to the fuser, so a "waiting_for_better_crop" status
+        (and whatever object_detail is currently known) can be shown while
+        the track keeps collecting crops.
+        """
+        with self._lock:
+            track = self._tracks.get(str(track_id))
+            if track is None:
+                return None
+            return self._track_record(track, "vlm_retry_pending", "vlm_retry_pending", None)
 
     def complete_semantic_labeling(
         self,
