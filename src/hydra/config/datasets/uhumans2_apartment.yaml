@@ -1,4 +1,13 @@
 ---
+# Same simulator, same topic/frame conventions, same TSDF/clustering tuning as
+# uhumans2.yaml (office scene) -- this is a separate file only so the
+# apartment scene gets its own Hydra memory namespace (memory/hydra/
+# uhumans2_apartment/...) rather than sharing uhumans2's, per the same
+# reasoning documented in rsg_all.launch.py's _HYDRA_MEMORY_ROOT comment (an
+# OpenLoRIS run once silently loaded uhumans2's leftover saved map because
+# both used one fixed path). session_persistence is disabled for uhumans2
+# today, so this isn't a live bug right now -- just keeping the same
+# per-dataset separation this project already relies on elsewhere.
 map_window:
   type: spatial
   max_radius_m: 8.0

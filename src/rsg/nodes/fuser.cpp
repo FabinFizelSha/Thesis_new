@@ -51,6 +51,7 @@
 #include <spark_dsg/edge_attributes.h>
 #include <spark_dsg/mesh.h>
 #include <spark_dsg/node_attributes.h>
+#include <spark_dsg/node_symbol.h>
 #include <spark_dsg/scene_graph_types.h>
 #include <spark_dsg/serialization/graph_binary_serialization.h>
 
@@ -245,6 +246,18 @@ struct SemanticOverlay {
   bool has_centroid = false;
   Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
   std::string centroid_frame_id;
+  // Only used to inject a synthetic object NodeView (see collectModel) for a
+  // dynamic object phase1 confirmed but no Hydra mesh-cluster node exists for
+  // yet -- a moving object's mesh-cluster vertex count can stay under
+  // MeshSegmenter's min_cluster_size in every single update pass, so Hydra
+  // may never form a node for it at all, independent of how correctly/
+  // confidently phase1 classified it. Sourced from last_bbox_3d_min/max (one
+  // observation, never accumulated), not bbox_3d_min/max (the track's
+  // ever-growing accumulated envelope) -- for a moving object the
+  // accumulated one spans its whole travelled path, not its current extent.
+  bool has_bbox = false;
+  Eigen::Vector3d bbox_min = Eigen::Vector3d::Zero();
+  Eigen::Vector3d bbox_max = Eigen::Vector3d::Zero();
 };
 
 struct ResolvedOverlay {
@@ -1147,6 +1160,32 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   }
 
   /**
+   * Suppress one Hydra slot's object node from all future rendered output.
+   *
+   * Sent by phase1's persistent_dynamic_track_expiry: a confirmed-dynamic
+   * object (person, animal, mobile robot) whose presence confidence decayed
+   * past the configured threshold, so it has likely moved elsewhere. This
+   * never touches graph_/Hydra's own DSG mirror -- that lifecycle is owned
+   * by Hydra's backend (see applyDsgDeletions) and mixing the two risks
+   * fighting each other. Instead the slot is filtered out of collectModel's
+   * output, which every downstream consumer (markers, edges, exports)
+   * already reads from -- a single choke point, not scattered per-consumer
+   * checks.
+   */
+  void handleTrackDeleted(const Json& payload) {
+    const auto raw_slot = payload.value("hydra_slot_id", payload.value("slot_id", 0));
+    const int64_t slot = raw_slot;
+    if (slot <= 0 || slot > static_cast<int64_t>(std::numeric_limits<uint32_t>::max())) {
+      return;
+    }
+    {
+      std::lock_guard<std::mutex> labels_lock(overlays_mutex_);
+      deleted_slot_ids_.insert(static_cast<uint32_t>(slot));
+    }
+    render_dirty_.store(true, std::memory_order_release);
+  }
+
+  /**
    * Cache one final Phase-1 result and return immediately.
    *
    * The callback performs no DSG traversal, marker creation, or RViz publish.
@@ -1166,6 +1205,10 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
       return;
     }
     const std::string event = payload.value("event", std::string());
+    if (event == "track_deleted") {
+      handleTrackDeleted(payload);
+      return;
+    }
     // The fuser consumes only terminal Phase-1 outcomes. Raw RAP retrieval
     // messages remain available for diagnostics but never colour the map.
     if (event != "semantic_label_result") {
@@ -1217,6 +1260,19 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     const auto centroid_it = payload.find("centroid_3d");
     if (centroid_it != payload.end()) {
       overlay.has_centroid = parseVector3(*centroid_it, overlay.centroid);
+    }
+    // Deliberately "last_bbox_3d_*", not "bbox_3d_*": the latter is the
+    // track's accumulated envelope (monotonic min/max over every observation
+    // ever seen -- see PersistentObjectTrack._update_track_geometry), which
+    // for a genuinely moving object spans its entire travelled path, not its
+    // current extent. "last_bbox_3d_*" is the single most recent observation,
+    // never accumulated -- the only one of the two that means anything for a
+    // marker meant to show where the object actually is right now.
+    const auto bbox_min_it = payload.find("last_bbox_3d_min");
+    const auto bbox_max_it = payload.find("last_bbox_3d_max");
+    if (bbox_min_it != payload.end() && bbox_max_it != payload.end()) {
+      overlay.has_bbox = parseVector3(*bbox_min_it, overlay.bbox_min) &&
+                          parseVector3(*bbox_max_it, overlay.bbox_max);
     }
 
     {
@@ -1454,7 +1510,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     }
   }
 
-  SceneModel collectModel() const {
+  SceneModel collectModel(const OverlayCache& overlay_snapshot) const {
     SceneModel model;
     if (!graph_) {
       return model;
@@ -1466,6 +1522,25 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     collectLayer(model, spark_dsg::DsgLayers::PLACES, LayerKind::kPlaces);
     collectLayer(model, spark_dsg::DsgLayers::SEGMENTS, LayerKind::kSegments);
     collectLayer(model, spark_dsg::DsgLayers::AGENTS, LayerKind::kAgents);
+
+    // Drop any object node whose Hydra slot was explicitly deleted by phase1
+    // (see handleTrackDeleted). Single choke point: every downstream
+    // consumer of `model` (markers, edges, exports) already reads from here,
+    // so nothing else needs its own suppression check.
+    if (!deleted_slot_ids_.empty()) {
+      std::unordered_set<uint32_t> deleted_snapshot;
+      {
+        std::lock_guard<std::mutex> labels_lock(overlays_mutex_);
+        deleted_snapshot = deleted_slot_ids_;
+      }
+      for (auto it = model.nodes.begin(); it != model.nodes.end();) {
+        if (isObject(it->second) && deleted_snapshot.count(it->second.semantic_slot) > 0) {
+          it = model.nodes.erase(it);
+        } else {
+          ++it;
+        }
+      }
+    }
 
     // Collapse object nodes that are the same physical object. Done here, before
     // edges are collected, so every downstream consumer -- markers, contact
@@ -1516,6 +1591,73 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
       }
     }
     collect_edges(graph_->interlayer_edges());
+
+    // Render dynamic objects phase1 confirmed but Hydra never formed a mesh
+    // node for. MeshSegmenter only creates a node when 50+ vertices of one
+    // label appear together within a single ~0.4s update pass -- there is no
+    // accumulation across passes for a not-yet-existing node, so a genuinely
+    // moving object's labeled mesh region can simply never clear that
+    // one-shot bar, independent of how correctly/confidently phase1
+    // classified it (confirmed: several VLM-confirmed "person" detections at
+    // 0.95 confidence, zero matching Hydra object nodes for any of them).
+    //
+    // Injected as an ordinary object NodeView -- never added to graph_ itself
+    // -- so every existing consumer (markers via appendObjectMarkers, contact
+    // edges via computeObjectContacts/buildMainObjectGroups, overlay
+    // resolution via resolveOverlays, presence fading) treats it exactly like
+    // a real Hydra node with zero special-casing. Uses geometry from
+    // last_bbox_3d_min/max (see SemanticOverlay's bbox fields), the single
+    // most recent observation, never the track's accumulated envelope, which
+    // for a moving object would span its entire travelled path. A disjoint
+    // NodeSymbol prefix ('D') guarantees this can never collide with Hydra's
+    // own object ids (prefix 'O', see MeshSegmenter::kNodePrefix).
+    if (!overlay_snapshot.empty()) {
+      std::unordered_set<uint32_t> occupied_slots;
+      for (const auto& [existing_id, existing_node] : model.nodes) {
+        (void)existing_id;
+        if (isObject(existing_node) && existing_node.semantic_slot > 0U) {
+          occupied_slots.insert(existing_node.semantic_slot);
+        }
+      }
+      std::unordered_set<uint32_t> deleted_snapshot;
+      {
+        std::lock_guard<std::mutex> labels_lock(overlays_mutex_);
+        deleted_snapshot = deleted_slot_ids_;
+      }
+      for (const auto& [slot_id, candidates] : overlay_snapshot) {
+        if (slot_id == 0U || candidates.empty() || occupied_slots.count(slot_id) > 0U ||
+            deleted_snapshot.count(slot_id) > 0U) {
+          continue;
+        }
+        const SemanticOverlay* best = &candidates.front();
+        for (const auto& candidate : candidates) {
+          if (candidate.timestamp_sec > best->timestamp_sec) {
+            best = &candidate;
+          }
+        }
+        if (best->mobility_class != "dynamic" || !best->has_bbox || !usableLabel(best->label)) {
+          continue;
+        }
+        const Eigen::Vector3d dims = (best->bbox_max - best->bbox_min).cwiseAbs();
+        if (dims.x() <= 0.0 || dims.y() <= 0.0 || dims.z() <= 0.0) {
+          continue;
+        }
+        const Eigen::Vector3d center = (best->bbox_min + best->bbox_max) * 0.5;
+
+        NodeView view;
+        view.id = spark_dsg::NodeSymbol('D', slot_id);
+        view.kind = LayerKind::kObjects;
+        view.visible = layerVisible(LayerKind::kObjects);
+        view.semantic_slot = slot_id;
+        view.position = center;
+        view.is_active = true;
+        view.has_bbox = true;
+        view.bbox_center = center.cast<float>();
+        view.bbox_size = dims.cast<float>();
+        model.nodes.emplace(view.id, std::move(view));
+      }
+    }
+
     return model;
   }
 
@@ -2412,6 +2554,12 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     }
     for (const auto& [node_id, node] : model.nodes) {
       if (node.kind != LayerKind::kObjects) {
+        continue;
+      }
+      // A synthetic dynamic-object node (see collectModel) is never added to
+      // graph_ itself, so it has no real DSG metadata to sync -- skip rather
+      // than let getNode() throw on an id the graph doesn't have.
+      if (!graph_->hasNode(node_id)) {
         continue;
       }
       auto& attrs = graph_->getNode(node_id).attributes<spark_dsg::NodeAttributes>();
@@ -4190,7 +4338,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
     pruneOwnedContactEdges();
     pruneOwnedSegmentEdges();
 
-    const SceneModel model = collectModel();
+    const SceneModel model = collectModel(overlay_snapshot);
     const std::string frame = latest_header_.frame_id.empty() ? fallback_frame_id_ : latest_header_.frame_id;
     const auto resolved = resolveOverlays(model, frame, overlay_snapshot);
     updateLocalGraphMetadata(model, resolved, risk_overlay_snapshot, presence_snapshot);
@@ -4758,6 +4906,13 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   // there's no candidate list or tie-breaking here.
   RiskOverlayCache risk_overlays_by_slot_;
   PresenceCache presence_by_slot_;
+  // Hydra slots phase1 has explicitly deleted (persistent_dynamic_track_
+  // expiry -- a confirmed-dynamic object whose presence confidence decayed
+  // past the configured threshold). Never cleared: like a merge-dropped
+  // track's slot on the phase1 side, a deleted slot is retired permanently,
+  // not recycled, so there is no "un-suppress on reuse" case to handle.
+  // Protected by overlays_mutex_, same as overlays_by_slot_.
+  std::unordered_set<uint32_t> deleted_slot_ids_;
   std_msgs::msg::Header latest_header_;
   int64_t latest_sequence_ = 0;
 

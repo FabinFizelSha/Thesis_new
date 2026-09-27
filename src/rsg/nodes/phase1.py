@@ -1206,6 +1206,8 @@ class Phase1SemanticCoordinator(Node):
         if self.config.persistent_tracking_enabled and self.config.semantic_labeling_enabled:
             self._release_quality_deferred_vlm_if_expired(current_timestamp_sec)
         frame_stage_ms["quality_deferred_release_ms"] = (time.perf_counter() - stage_start) * 1000.0
+        if self.config.persistent_tracking_enabled:
+            self._prune_expired_dynamic_tracks(frame, current_timestamp_sec)
         rap_delay_ms = (time.perf_counter() - rap_start) * 1000.0
 
         label_start = time.perf_counter()
@@ -2924,6 +2926,44 @@ class Phase1SemanticCoordinator(Node):
         status = self.enqueue_vlm_track(key)
         if status in {"queued_for_vlm_fifo", "deferred_for_vlm"}:
             self.persistent_tracker.set_labeling_status(key, "vlm_queued_after_retry_crop_improved")
+
+    def _prune_expired_dynamic_tracks(self, frame: RsgFrame, current_timestamp_sec: float) -> None:
+        """Delete confirmed-dynamic tracks once presence confidence decays.
+
+        See PersistentObjectTracker.prune_expired_dynamic_tracks for the
+        decision (it already did the deletion by the time this runs) -- this
+        only handles the two things that live in phase1.py: telling the
+        fuser to drop the corresponding object from its output, and clearing
+        this node's own per-track bookkeeping so nothing stale lingers.
+        """
+        deleted = self.persistent_tracker.prune_expired_dynamic_tracks(current_timestamp_sec)
+        for record in deleted:
+            track_id = str(record.get("track_id", ""))
+            if not track_id:
+                continue
+            self._finalize_track_queue_state(track_id)
+            self._retire_track_crop(track_id)
+            with self._vlm_retry_lock:
+                self._vlm_retry_waiting_track_ids.discard(track_id)
+                self._vlm_retry_last_attempt_score.pop(track_id, None)
+            with self._semantic_label_lock:
+                self._semantic_label_pending_track_ids.discard(track_id)
+            payload = dict(record)
+            payload.update({
+                "event": "track_deleted",
+                "frame_id": str(frame.rsg_frame_id),
+                "sequence": int(frame.sequence),
+                "timestamp_sec": float(current_timestamp_sec),
+            })
+            self._safe_publish(
+                self.semantic_label_result_pub, String(data=safe_json_dumps(payload)),
+            )
+            self.get_logger().info(
+                f"Deleted dynamic track {track_id} (hydra_slot_id="
+                f"{record.get('hydra_slot_id')}, presence_confidence="
+                f"{record.get('presence_confidence'):.3f}, age_sec="
+                f"{record.get('age_sec'):.1f})"
+            )
 
     def _release_quality_deferred_vlm_if_expired(self, current_timestamp_sec: float) -> None:
         """Release weak crops after the bounded post-RAP collection interval.

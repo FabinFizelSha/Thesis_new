@@ -111,7 +111,7 @@
     active_segments_topic: /rsg/objects/active_local_segments
     show_presence_confidence: false                                                                              # Off 2026-09-11 to keep the object label to exactly two lines (name(confidence) + mobility(confidence)). Turn on for a 3rd diagnostic line with the raw presence state/confidence.
     static_presence_half_life_sec: 600.0                                                                       # Ten-minute half-life for static and unknown-mobility objects.
-    dynamic_presence_half_life_sec: 120.0                                                                      # Two-minute half-life for humans, animals, and mobile robots.
+    dynamic_presence_half_life_sec: 60.0                                                                       # 2026-09-27: set to one minute for humans, animals, and mobile robots.
     presence_observed_epsilon_sec: 1.5
     minimum_object_alpha: 0.03                                                                                 # Never delete nodes; stale objects remain almost transparent. Does NOT apply to a restored-but-not-yet-reobserved slot (marked via restored_from_previous_session) -- those render at full confidence regardless of this floor, since their day-shifted saved timestamp would otherwise decay them here on every resumed run.
     presence_decay_continuous_refresh: true                                                                    # Re-render with ROS/bag time so fading continues even when no new object observation arrives.

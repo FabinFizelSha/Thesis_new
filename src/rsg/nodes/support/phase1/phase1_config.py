@@ -473,6 +473,10 @@ class Phase1Config:
     persistent_max_tracks: int = 1024
     persistent_min_observations_before_semantic_paint: int = 1
     persistent_max_vlm_attempts: int = 3
+    persistent_dynamic_track_expiry_enabled: bool = False
+    persistent_dynamic_track_expiry_half_life_sec: float = 120.0
+    persistent_dynamic_track_expiry_confidence_threshold: float = 0.5
+    persistent_dynamic_track_expiry_observed_epsilon_sec: float = 1.5
     persistent_max_match_distance_m: float = 0.30
     persistent_max_volume_ratio: float = 3.0
     persistent_continuation_max_age_sec: float = 2.5
@@ -943,6 +947,10 @@ class Phase1Config:
             persistent_max_tracks=max(1, min(65535, int(persistent_tracking.get("max_tracks", slot_count if slot_mode else 1024)))),
             persistent_min_observations_before_semantic_paint=max(1, int(persistent_tracking.get("min_observations_before_semantic_paint", 1))),
             persistent_max_vlm_attempts=max(1, int(persistent_tracking.get("max_vlm_attempts", 3))),
+            persistent_dynamic_track_expiry_enabled=bool(persistent_tracking.get("dynamic_track_expiry_enabled", False)),
+            persistent_dynamic_track_expiry_half_life_sec=max(1e-3, float(persistent_tracking.get("dynamic_track_expiry_half_life_sec", 120.0))),
+            persistent_dynamic_track_expiry_confidence_threshold=max(0.0, min(1.0, float(persistent_tracking.get("dynamic_track_expiry_confidence_threshold", 0.5)))),
+            persistent_dynamic_track_expiry_observed_epsilon_sec=max(0.0, float(persistent_tracking.get("dynamic_track_expiry_observed_epsilon_sec", 1.5))),
             persistent_max_match_distance_m=float(persistent_tracking.get("max_match_distance_m", 0.30)),
             persistent_max_volume_ratio=float(persistent_tracking.get("max_volume_ratio", 3.0)),
             persistent_continuation_max_age_sec=max(0.0, float(persistent_tracking.get("continuation_max_age_sec", 2.5))),

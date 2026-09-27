@@ -1369,6 +1369,78 @@ class PersistentObjectTracker:
                 return None
             return self._track_record(track, "vlm_retry_pending", "vlm_retry_pending", None)
 
+    def prune_expired_dynamic_tracks(self, current_timestamp_sec: float) -> List[Dict[str, Any]]:
+        """Delete confirmed-dynamic tracks once presence confidence decays.
+
+        Mirrors the fuser's own presence-confidence formula
+        (resolvePresenceForSlot in fuser.cpp) so both sides agree on what
+        "gone" means -- but here it actually removes the track instead of
+        just fading its rendering, once it's unlikely to still be where it
+        was last seen. A person, animal, or mobile robot that hasn't been
+        re-observed in a while has a real chance of having moved elsewhere,
+        so keeping searching against its old position/geometry is wasted
+        work for every future association call.
+
+        Only tracks with a VLM-confirmed mobility_class of "dynamic" are
+        eligible -- never a still-pending or static/unknown track. Gated by
+        persistent_dynamic_track_expiry_enabled (off by default).
+
+        Matches the existing merge/reanchor precedent (see
+        merge_reanchor_duplicates -> _forget_spatial_index): the track is
+        removed from _tracks and the spatial index, but its Hydra slot id is
+        never freed for reuse -- same as a dropped track after a merge today.
+        That is deliberate: reusing the slot for a genuinely different future
+        object would need the fuser's suppression to auto-clear on a new
+        observation, which is exactly the failure mode this avoids.
+
+        Returns one record per deleted track (deletion has already happened
+        by the time this returns) so the caller can notify the fuser and
+        clean up its own per-track bookkeeping (crop registry, VLM retry
+        pool, etc.).
+        """
+        if not bool(getattr(self.config, "persistent_dynamic_track_expiry_enabled", False)):
+            return []
+        half_life = max(1e-3, float(
+            getattr(self.config, "persistent_dynamic_track_expiry_half_life_sec", 120.0)
+        ))
+        threshold = float(
+            getattr(self.config, "persistent_dynamic_track_expiry_confidence_threshold", 0.5)
+        )
+        epsilon = max(0.0, float(
+            getattr(self.config, "persistent_dynamic_track_expiry_observed_epsilon_sec", 1.5)
+        ))
+        now_sec = float(current_timestamp_sec)
+        deleted: List[Dict[str, Any]] = []
+        with self._lock:
+            for track_id, track in list(self._tracks.items()):
+                if not track.labeling_completed:
+                    continue
+                if str(track.mobility_class or "").strip().lower() != "dynamic":
+                    continue
+                age_sec = max(0.0, now_sec - float(track.last_seen_timestamp_sec))
+                if age_sec <= epsilon:
+                    continue
+                decay_age_sec = age_sec - epsilon
+                confidence = 0.5 ** (decay_age_sec / half_life)
+                if confidence >= threshold:
+                    continue
+                deleted.append({
+                    "track_id": track.track_id,
+                    "internal_object_id": track.track_id,
+                    "hydra_slot_id": int(track.hydra_label_id),
+                    "hydra_label_id": int(track.hydra_label_id),
+                    "hydra_slot_name": track.hydra_label_name,
+                    "canonical_label": track.canonical_label,
+                    "semantic_label": track.semantic_label,
+                    "mobility_class": track.mobility_class,
+                    "presence_confidence": float(confidence),
+                    "age_sec": float(age_sec),
+                    "reason": "dynamic_track_expired",
+                })
+                del self._tracks[track_id]
+                self._forget_spatial_index(track_id)
+        return deleted
+
     def complete_semantic_labeling(
         self,
         track_id: str,
