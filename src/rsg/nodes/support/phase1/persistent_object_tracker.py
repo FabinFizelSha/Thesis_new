@@ -962,7 +962,7 @@ class PersistentObjectTracker:
         """Delete confirmed-dynamic tracks once presence confidence decays.
 
         Mirrors the fuser's own presence-confidence formula
-        (resolvePresenceForSlot in fuser.cpp) so both sides agree on what
+        (resolvePresenceForSlot in fuser_presence.cpp) so both sides agree on what
         "gone" means -- but here it actually removes the track instead of
         just fading its rendering, once it's unlikely to still be where it
         was last seen. A person, animal, or mobile robot that hasn't been

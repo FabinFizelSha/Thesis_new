@@ -37,7 +37,7 @@ NO_RESULT_LABELS = {
 # Fallback when the active prompt does not (yet) request a description, or
 # the model omits the key. Empty rather than a placeholder sentence: the
 # fuser only appends an object_detail line to the RViz label when the value
-# is non-empty (see fuser.cpp's objectDisplayLabel), so "no value" means no
+# is non-empty (see fuser_object_markers.cpp's objectDisplayLabel), so "no value" means no
 # extra line instead of a fake sentence sitting on every object. Once the
 # prompt asks for object_detail, a real value from the model's response
 # simply takes over -- see validate_vlm_response.

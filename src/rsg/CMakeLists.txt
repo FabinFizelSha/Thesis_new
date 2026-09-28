@@ -24,7 +24,18 @@ find_package(Eigen3 REQUIRED)
 ament_python_install_package(nodes)
 
 add_executable(rsg_scene_graph_fuser
-  nodes/fuser.cpp
+  nodes/fuser_core.cpp
+  nodes/fuser_ingestion.cpp
+  nodes/fuser_model.cpp
+  nodes/fuser_overlays.cpp
+  nodes/fuser_relations.cpp
+  nodes/fuser_spatial_index.cpp
+  nodes/fuser_room_place.cpp
+  nodes/fuser_projection.cpp
+  nodes/fuser_presence.cpp
+  nodes/fuser_object_markers.cpp
+  nodes/fuser_edge_markers.cpp
+  nodes/fuser_publishing.cpp
 )
 target_compile_features(rsg_scene_graph_fuser PUBLIC cxx_std_17)
 ament_target_dependencies(rsg_scene_graph_fuser
