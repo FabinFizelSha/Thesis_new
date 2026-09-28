@@ -5,6 +5,7 @@ from .segmentation import SegmentationStage
 from .tracking import TrackingStage
 from .semantics import SemanticsStage
 from .publishing import PublishingStage
+from .risk_vlm_dispatch import RiskVlmDispatchStage
 
 __all__ = [
     "Phase1Config",
@@ -13,4 +14,5 @@ __all__ = [
     "TrackingStage",
     "SemanticsStage",
     "PublishingStage",
+    "RiskVlmDispatchStage",
 ]
