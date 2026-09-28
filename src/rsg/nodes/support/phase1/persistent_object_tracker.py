@@ -23,6 +23,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 import numpy as np
 
 from nodes.support.phase1.vlm_result import DEFAULT_OBJECT_DETAIL
+from nodes.support.phase1.tracker_spatial_index import TrackerSpatialIndex
 
 
 def _as_xyz(value: Any) -> Optional[np.ndarray]:
@@ -421,6 +422,7 @@ class PersistentObjectTracker:
         self._spatial_fallback_track_ids: Set[str] = set()
         self._last_reanchor: Optional[Dict[str, Any]] = None
         self._lock = Lock()
+        self.spatial_index = TrackerSpatialIndex(self)
 
     def begin_frame(self) -> None:
         """Reset one-to-one association state for the next image frame."""
@@ -2305,58 +2307,18 @@ class PersistentObjectTracker:
             ]
 
     def _spatial_cell_size(self) -> float:
-        return max(0.25, min(2.0, max(
-            float(getattr(self.config, "persistent_global_centroid_pass_m", self.config.persistent_max_match_distance_m)),
-            float(self.config.persistent_continuation_gap_m),
-            float(self.config.persistent_revisit_overlap_gap_m),
-        )))
+        return self.spatial_index._spatial_cell_size()
 
     def _spatial_cells(
         self, bbox_min: np.ndarray, bbox_max: np.ndarray, padding: float = 0.0
     ) -> Optional[Set[Tuple[int, int]]]:
-        size = self._spatial_cell_size()
-        x0, y0 = np.floor((bbox_min[:2] - padding) / size).astype(int)
-        x1, y1 = np.floor((bbox_max[:2] + padding) / size).astype(int)
-        if (x1 - x0 + 1) * (y1 - y0 + 1) > 256:
-            return None
-        return {(x, y) for x in range(x0, x1 + 1) for y in range(y0, y1 + 1)}
+        return self.spatial_index._spatial_cells(bbox_min, bbox_max, padding)
 
     def _forget_spatial_index(self, track_id: str) -> None:
-        """Drop every spatial-index entry for one track id."""
-        for cell in self._spatial_bbox_cells_by_track.pop(track_id, set()):
-            ids = self._spatial_bbox_cells.get(cell)
-            if ids is None:
-                continue
-            ids.discard(track_id)
-            if not ids:
-                del self._spatial_bbox_cells[cell]
-        centroid_cell = self._spatial_centroid_cell_by_track.pop(track_id, None)
-        if centroid_cell is not None:
-            ids = self._spatial_centroid_cells.get(centroid_cell)
-            if ids is not None:
-                ids.discard(track_id)
-                if not ids:
-                    del self._spatial_centroid_cells[centroid_cell]
-        self._spatial_fallback_track_ids.discard(track_id)
+        return self.spatial_index._forget_spatial_index(track_id)
 
     def _refresh_spatial_index(self, track: PersistentObjectTrack) -> None:
-        track_id = track.track_id
-        self._forget_spatial_index(track_id)
-
-        if track.bbox_3d_min is None or track.bbox_3d_max is None:
-            self._spatial_fallback_track_ids.add(track_id)
-        else:
-            cells = self._spatial_cells(track.bbox_3d_min, track.bbox_3d_max)
-            if cells is None:
-                self._spatial_fallback_track_ids.add(track_id)
-            else:
-                self._spatial_bbox_cells_by_track[track_id] = cells
-                for cell in cells:
-                    self._spatial_bbox_cells.setdefault(cell, set()).add(track_id)
-        if track.centroid_3d is not None:
-            cell = tuple(np.floor(track.centroid_3d[:2] / self._spatial_cell_size()).astype(int))
-            self._spatial_centroid_cell_by_track[track_id] = cell
-            self._spatial_centroid_cells.setdefault(cell, set()).add(track_id)
+        return self.spatial_index._refresh_spatial_index(track)
 
     def _candidate_track_ids(
         self,
@@ -2364,32 +2326,7 @@ class PersistentObjectTracker:
         bbox_3d_min: Optional[np.ndarray],
         bbox_3d_max: Optional[np.ndarray],
     ) -> List[str]:
-        """Return every track that can still pass the exact association gates."""
-        global_enabled = bool(getattr(self.config, "persistent_global_association_enabled", True))
-        block_2d = bool(getattr(self.config, "persistent_global_block_2d_on_3d_contradiction", True))
-        if not global_enabled or not block_2d or bbox_3d_min is None or bbox_3d_max is None:
-            return list(self._tracks)
-
-        candidate_ids = set(self._spatial_fallback_track_ids)
-        footprint_cells = self._spatial_cells(
-            bbox_3d_min,
-            bbox_3d_max,
-            max(float(self.config.persistent_continuation_gap_m), float(self.config.persistent_revisit_overlap_gap_m)),
-        )
-        if footprint_cells is None:
-            return list(self._tracks)
-        for cell in footprint_cells:
-            candidate_ids.update(self._spatial_bbox_cells.get(cell, ()))
-        if centroid is not None:
-            radius = float(getattr(
-                self.config, "persistent_global_centroid_pass_m", self.config.persistent_max_match_distance_m
-            ))
-            centroid_cells = self._spatial_cells(centroid, centroid, radius)
-            if centroid_cells is None:
-                return list(self._tracks)
-            for cell in centroid_cells:
-                candidate_ids.update(self._spatial_centroid_cells.get(cell, ()))
-        return [track_id for track_id in self._tracks if track_id in candidate_ids]
+        return self.spatial_index._candidate_track_ids(centroid, bbox_3d_min, bbox_3d_max)
 
     def _find_match(
         self,
