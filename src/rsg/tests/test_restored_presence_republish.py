@@ -23,7 +23,7 @@ import unittest
 
 import numpy as np
 
-from nodes.phase1_pipeline import LocalSegmentPresenceStage, SemanticLabelDispatchStage
+from nodes.phase1_pipeline import Phase1LocalSegmentPresenceStage, Phase1SemanticLabelDispatchStage
 
 
 def _segment(slot_id: int):
@@ -43,12 +43,12 @@ def _segment(slot_id: int):
 class _Coordinator:
     """Minimal stand-in exposing only what _restored_presence_segments uses.
 
-    _restored_presence_segments now lives on LocalSegmentPresenceStage and
+    _restored_presence_segments now lives on Phase1LocalSegmentPresenceStage and
     reaches its state through self.coordinator; self.coordinator = self
     here plays both roles (stage and coordinator) in one flat mock.
     """
 
-    _restored_presence_segments = LocalSegmentPresenceStage._restored_presence_segments
+    _restored_presence_segments = Phase1LocalSegmentPresenceStage._restored_presence_segments
 
     def __init__(self, tracks):
         self.coordinator = self
@@ -141,16 +141,16 @@ class _LabelCoordinator:
     """Stand-in for the restored-label drain, with only publishing stubbed.
 
     _drain_restored_semantic_labels / _emit_restored_semantic_label now live
-    on SemanticLabelDispatchStage and reach their state through
+    on Phase1SemanticLabelDispatchStage and reach their state through
     self.coordinator and self.logger; self.coordinator = self plays both
     roles in one flat mock, same pattern as _Coordinator above.
     """
 
     _drain_restored_semantic_labels = (
-        SemanticLabelDispatchStage._drain_restored_semantic_labels
+        Phase1SemanticLabelDispatchStage._drain_restored_semantic_labels
     )
     _emit_restored_semantic_label = (
-        SemanticLabelDispatchStage._emit_restored_semantic_label
+        Phase1SemanticLabelDispatchStage._emit_restored_semantic_label
     )
 
     def __init__(self, tracks):

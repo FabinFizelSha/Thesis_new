@@ -13,7 +13,7 @@ from nodes.support.phase1.json_utils import safe_json_dumps
 from nodes.support.phase1.vlm_result import DEFAULT_OBJECT_DETAIL
 
 
-class SemanticLabelDispatchStage:
+class Phase1SemanticLabelDispatchStage:
     """Decides when a track is ready for RAP/VLM and publishes the outcome."""
 
     def __init__(self, coordinator: Any, config: Any, logger: Any):

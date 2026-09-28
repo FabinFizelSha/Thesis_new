@@ -61,18 +61,18 @@ from nodes.support.phase1.time_utils import stamp_to_float
 from nodes.support.phase1.unknown_tracker import UnknownObjectTracker
 from nodes.support.phase1.loop_closure import loop_closure_delta, quat_to_rot
 from nodes.phase1_pipeline import (
-    SegmentationStage,
-    TrackingStage,
-    SemanticsStage,
-    PublishingStage,
-    RiskVlmDispatchStage,
-    RapDispatchStage,
-    VlmDispatchStage,
-    LocalSegmentPresenceStage,
-    TrackCropRegistry,
-    SemanticLabelDispatchStage,
+    Phase1SegmentationStage,
+    Phase1TrackingStage,
+    Phase1SemanticsStage,
+    Phase1PublishingStage,
+    Phase1RiskVlmDispatchStage,
+    Phase1RapDispatchStage,
+    Phase1VlmDispatchStage,
+    Phase1LocalSegmentPresenceStage,
+    Phase1TrackCropRegistry,
+    Phase1SemanticLabelDispatchStage,
 )
-from nodes.phase1_pipeline.crop_utils import make_candidate_id
+from nodes.phase1_pipeline.phase1_crop_utils import make_candidate_id
 
 
 class Phase1SemanticCoordinator(Node):
@@ -110,14 +110,14 @@ class Phase1SemanticCoordinator(Node):
 
         self.bridge = CvBridge()
         self.sam_backend = make_sam_backend(self.config, self.get_logger())
-        # Held locally, then handed to RapDispatchStage/VlmDispatchStage
+        # Held locally, then handed to Phase1RapDispatchStage/Phase1VlmDispatchStage
         # below once their diagnostics writers exist.
         _rap_backend = make_rap_backend(self.config, self.get_logger())
         _vlm_backend = make_vlm_backend(self.config)
         # Deliberately a separate backend instance/model from vlm_backend --
         # risk assessment always runs against its own configured
         # endpoint/model, never the object-detection VLM's. Held locally,
-        # then handed to RiskVlmDispatchStage below once its diagnostics
+        # then handed to Phase1RiskVlmDispatchStage below once its diagnostics
         # writer exists.
         _risk_vlm_backend = make_risk_vlm_backend(self.config)
         self.rap_memory_updater = RapMemoryUpdater(
@@ -142,13 +142,13 @@ class Phase1SemanticCoordinator(Node):
         )
 
         # Initialize modular pipeline stages
-        self.seg_stage = SegmentationStage(self.sam_backend, self.config, self.get_logger())
-        self.track_stage = TrackingStage(self.persistent_tracker, self.config, self.get_logger(), geometry_estimator=self.geometry_estimator)
-        self.sem_stage = SemanticsStage(self.config, self.get_logger())
-        self.pub_stage = PublishingStage(self.config, self.get_logger(), bridge=self.bridge, tf_broadcaster=self.tf_broadcaster)
-        self.presence_stage = LocalSegmentPresenceStage(self, self.config, self.get_logger())
-        self.crop_registry = TrackCropRegistry(self, self.config, self.get_logger())
-        self.semantic_dispatch = SemanticLabelDispatchStage(self, self.config, self.get_logger())
+        self.seg_stage = Phase1SegmentationStage(self.sam_backend, self.config, self.get_logger())
+        self.track_stage = Phase1TrackingStage(self.persistent_tracker, self.config, self.get_logger(), geometry_estimator=self.geometry_estimator)
+        self.sem_stage = Phase1SemanticsStage(self.config, self.get_logger())
+        self.pub_stage = Phase1PublishingStage(self.config, self.get_logger(), bridge=self.bridge, tf_broadcaster=self.tf_broadcaster)
+        self.presence_stage = Phase1LocalSegmentPresenceStage(self, self.config, self.get_logger())
+        self.crop_registry = Phase1TrackCropRegistry(self, self.config, self.get_logger())
+        self.semantic_dispatch = Phase1SemanticLabelDispatchStage(self, self.config, self.get_logger())
 
         # Hydra receives one fixed slot ID per physical object.  Semantic names
         # are applied by the downstream scene-graph fuser, therefore Phase 1 does not rewrite or
@@ -158,7 +158,7 @@ class Phase1SemanticCoordinator(Node):
         self.persistent_tracker.set_reserved_slot_ids(set())
 
         # Restore a previous session's tracks, if enabled. Done here on purpose:
-        # the tracker exists, TrackingStage already holds the reference, but no
+        # the tracker exists, Phase1TrackingStage already holds the reference, but no
         # subscription has been created and no worker thread has started, so
         # nothing can race the load. Restored tracks carry timestamps shifted
         # into the past, which is what routes them through the tracker's
@@ -216,7 +216,7 @@ class Phase1SemanticCoordinator(Node):
         # snapshot is then used for that worker's single inference request.
         self.rap_runs_async = bool(self.config.rap_enabled)
         self.rap_runs_synchronously = False
-        # Best-crop-per-track store lives on TrackCropRegistry.
+        # Best-crop-per-track store lives on Phase1TrackCropRegistry.
         self._semantic_label_pending_track_ids: set[str] = set()
         self._semantic_label_lock = threading.Lock()
         self._latest_processed_timestamp_sec = 0.0
@@ -235,17 +235,17 @@ class Phase1SemanticCoordinator(Node):
         self.evidence_buffer = EvidenceBuffer(self.config.evidence_buffer_size)
 
         # RAP queue, worker-thread bookkeeping, and accuracy diagnostics
-        # writer live on RapDispatchStage (constructed further below, once
+        # writer live on Phase1RapDispatchStage (constructed further below, once
         # its diagnostics object exists). The worker FIFO stores only
         # persistent track IDs -- crops are never held in the queue.
 
         # VLM queue, worker-thread bookkeeping (including the quality-defer
         # and post-failure retry pools), backend, and diagnostics writer
-        # live on VlmDispatchStage (constructed further below, once its
+        # live on Phase1VlmDispatchStage (constructed further below, once its
         # diagnostics object exists).
 
         # Risk-VLM queue, worker-thread bookkeeping, backend, and diagnostics
-        # writer live on RiskVlmDispatchStage (constructed further below,
+        # writer live on Phase1RiskVlmDispatchStage (constructed further below,
         # once its diagnostics object exists).
 
         self._stop_event = threading.Event()
@@ -447,7 +447,7 @@ class Phase1SemanticCoordinator(Node):
             )
         else:
             self.get_logger().info("Phase 1 per-run diagnostics disabled (phase1.diagnostics.enabled=false)")
-        self.vlm_stage = VlmDispatchStage(
+        self.vlm_stage = Phase1VlmDispatchStage(
             self, self.config, self.get_logger(),
             backend=_vlm_backend, test_diagnostics=self.vlm_test_diagnostics,
         )
@@ -461,7 +461,7 @@ class Phase1SemanticCoordinator(Node):
             output_dir=workspace_path("debug/risk_assessment_feature"),
             enabled=self.diagnostics_enabled and self.config.risk_vlm_enabled,
         )
-        self.risk_stage = RiskVlmDispatchStage(
+        self.risk_stage = Phase1RiskVlmDispatchStage(
             self, self.config, self.get_logger(),
             backend=_risk_vlm_backend, diagnostics=self.risk_vlm_diagnostics,
         )
@@ -475,7 +475,7 @@ class Phase1SemanticCoordinator(Node):
             output_dir=workspace_path("debug/rap_accuracy_test"),
             enabled=self.diagnostics_enabled and self.config.rap_enabled,
         )
-        self.rap_stage = RapDispatchStage(
+        self.rap_stage = Phase1RapDispatchStage(
             self, self.config, self.get_logger(),
             backend=_rap_backend, accuracy_diagnostics=self.rap_accuracy_diagnostics,
         )

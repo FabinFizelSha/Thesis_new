@@ -23,7 +23,7 @@ from nodes.support.phase1.json_utils import safe_json_dumps
 from nodes.support.phase1.vlm_result import DEFAULT_OBJECT_DETAIL, infer_mobility_from_label
 
 
-class RapDispatchStage:
+class Phase1RapDispatchStage:
     """Owns the RAP queue, worker thread, backend, and accuracy diagnostics.
 
     A RAP miss/error hands off to ``coordinator.vlm_stage`` to queue the

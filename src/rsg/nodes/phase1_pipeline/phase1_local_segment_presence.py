@@ -15,7 +15,7 @@ from nodes.support.phase1.json_utils import safe_json_dumps
 from nodes.support.phase1.persistent_object_tracker import _as_list
 
 
-class LocalSegmentPresenceStage:
+class Phase1LocalSegmentPresenceStage:
     """Owns the per-frame active-segment heartbeat and restored-presence backfill."""
 
     def __init__(self, coordinator: Any, config: Any, logger: Any):

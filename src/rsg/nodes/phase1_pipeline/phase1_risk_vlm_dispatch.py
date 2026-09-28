@@ -13,7 +13,7 @@ from std_msgs.msg import String
 from nodes.support.phase1.json_utils import safe_json_dumps
 
 
-class RiskVlmDispatchStage:
+class Phase1RiskVlmDispatchStage:
     """Owns the risk-assessment queue, worker thread, backend, and diagnostics.
 
     Runs entirely independent of the object-detection RAP/VLM queues/thread/

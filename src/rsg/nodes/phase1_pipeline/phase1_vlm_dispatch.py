@@ -19,12 +19,12 @@ import numpy as np
 import rclpy
 
 from rsg.msg import Phase1VlmResult
-from nodes.phase1_pipeline.crop_utils import extract_crop_with_context
+from nodes.phase1_pipeline.phase1_crop_utils import extract_crop_with_context
 from nodes.support.phase1.vlm_result import DEFAULT_OBJECT_DETAIL
 from nodes.support.phase1.json_utils import safe_json_dumps
 
 
-class VlmDispatchStage:
+class Phase1VlmDispatchStage:
     """Owns the VLM queue, worker thread, backend, and quality/retry pools."""
 
     def __init__(self, coordinator: Any, config: Any, logger: Any, *, backend: Any, test_diagnostics: Any):

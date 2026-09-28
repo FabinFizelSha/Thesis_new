@@ -11,7 +11,7 @@ from nodes.support.phase1.time_utils import stamp_to_float
 from nodes.support.phase1.json_utils import safe_json_loads, safe_json_dumps
 
 
-class PublishingStage:
+class Phase1PublishingStage:
     """Wraps Hydra message publishing logic."""
 
     def __init__(self, config: Any, logger: Any, bridge: Any = None, tf_broadcaster: Any = None):

@@ -6,7 +6,7 @@ import numpy as np
 from nodes.support.phase1.backends import SamMask
 
 
-class SegmentationStage:
+class Phase1SegmentationStage:
     """Wraps SAM segmentation logic."""
 
     def __init__(self, backend: Any, config: Any, logger: Any):

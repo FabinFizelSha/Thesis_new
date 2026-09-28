@@ -18,7 +18,7 @@ from nodes.support.phase1.semantic_crop import context_bbox_xywh, prepare_target
 from nodes.support.phase1.time_utils import stamp_to_float
 
 
-class TrackCropRegistry:
+class Phase1TrackCropRegistry:
     """Owns the best-crop-per-track store and its lock."""
 
     def __init__(self, coordinator: Any, config: Any, logger: Any):

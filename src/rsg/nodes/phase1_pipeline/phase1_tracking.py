@@ -8,7 +8,7 @@ from nodes.support.phase1.time_utils import stamp_to_float
 from nodes.support.phase1.object_geometry import filter_metadata
 
 
-class TrackingStage:
+class Phase1TrackingStage:
     """Wraps persistent object tracking logic."""
 
     def __init__(

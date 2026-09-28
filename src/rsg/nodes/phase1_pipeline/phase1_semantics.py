@@ -5,7 +5,7 @@ import numpy as np
 from nodes.support.phase1.semantic_crop import build_rap_target_only_crop, build_vlm_target_focus_crop
 
 
-class SemanticsStage:
+class Phase1SemanticsStage:
     """Wraps RAP/VLM semantic labeling logic."""
 
     def __init__(self, config: Any, logger: Any):

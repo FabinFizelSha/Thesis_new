@@ -2,7 +2,7 @@
 
 Tracks which tracks are settled and ready for RAP/VLM, and commits their
 RAP/VLM outcomes. Crop selection itself is owned by Phase 1's shared crop
-registry (TrackCropRegistry, in nodes/phase1_pipeline/), not here -- this
+registry (Phase1TrackCropRegistry, in nodes/phase1_pipeline/), not here -- this
 only tracks the *scheduling* state (dispatched/completed/status/attempt
 count) for each track. Every public method here is an externally-called
 entry point (from phase1.py's dispatch stages) and acquires
