@@ -1,4 +1,4 @@
-PWD /home/student/Thesis_pipeline_split_lean/ias_latex_template
+PWD /home/fabin/workspace/Thesis_new/ias_latex_template
 INPUT /etc/texmf/web2c/texmf.cnf
 INPUT /usr/share/texmf/web2c/texmf.cnf
 INPUT /usr/share/texlive/texmf-dist/web2c/texmf.cnf
@@ -517,7 +517,6 @@ INPUT chapters/Abstract.tex
 INPUT /usr/share/texmf/fonts/tfm/public/tex-gyre/ec-qhvr.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/tex-gyre/ec-qhvb.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/tex-gyre/ec-qplri.tfm
-INPUT /usr/share/texmf/fonts/tfm/public/tex-gyre/ec-qplri.tfm
 INPUT ./Thesis_report_Fabin.toc
 INPUT ./Thesis_report_Fabin.toc
 INPUT Thesis_report_Fabin.toc
@@ -576,6 +575,7 @@ INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/mathpazo/zplmb7t.tfm
 INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/mathpazo/zplmb7t.tfm
 INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/mathpazo/zplmb7t.tfm
 OUTPUT Thesis_report_Fabin.toc
+INPUT /usr/share/texmf/fonts/tfm/public/tex-gyre/ec-qplri.tfm
 INPUT ./Thesis_report_Fabin.lof
 INPUT ./Thesis_report_Fabin.lof
 INPUT Thesis_report_Fabin.lof
@@ -589,12 +589,14 @@ INPUT ./chapters/Introduction.tex
 INPUT ./chapters/Introduction.tex
 INPUT ./chapters/Introduction.tex
 INPUT chapters/Introduction.tex
+INPUT /usr/share/texmf/fonts/tfm/public/tex-gyre/ec-qplr.tfm
+INPUT /usr/share/texmf/fonts/tfm/public/tex-gyre/ec-qplri.tfm
+INPUT /usr/share/texmf/fonts/tfm/public/tex-gyre/ec-qplb.tfm
 INPUT ./chapters/Theory.tex
 INPUT ./chapters/Theory.tex
 INPUT ./chapters/Theory.tex
 INPUT ./chapters/Theory.tex
 INPUT chapters/Theory.tex
-INPUT /usr/share/texmf/fonts/tfm/public/tex-gyre/ec-qplr.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/tex-gyre/ec-qhvb.tfm
 INPUT ./example_images/HRC_safety_productivity.png
 INPUT ./example_images/HRC_safety_productivity.png
@@ -662,7 +664,6 @@ INPUT ./example_images/opengraph_pipeline.png
 INPUT ./example_images/opengraph_pipeline.png
 INPUT ./example_images/opengraph_pipeline.png
 INPUT ./example_images/opengraph_pipeline.png
-INPUT /usr/share/texmf/fonts/tfm/public/tex-gyre/ec-qplri.tfm
 INPUT ./example_images/scene-graph-example.png
 INPUT ./example_images/scene-graph-example.png
 INPUT ./example_images/scene-graph-example.png

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.9.28)  28 SEP 2026 20:42
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.22)  28 SEP 2026 22:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -152,7 +152,7 @@ Class scrbook Info: Redefining `\numberline' on input line 7430.
 Package: babel 2024/01/07 v24.1 The Babel package
 \babel@savecnt=\count197
 \U@D=\dimen141
-\l@unhyphenated=\language14
+\l@unhyphenated=\language89
 
 (/usr/share/texlive/texmf-dist/tex/generic/babel/txtbabel.def)
 \bbl@readstream=\read2
@@ -169,16 +169,12 @@ Package babel Info: Making " an active character on input line 122.
 ))
 (/usr/share/texlive/texmf-dist/tex/generic/babel-english/english.ldf
 Language: english 2017/06/06 v3.3r English support from the babel system
-Package babel Info: Hyphen rules for 'british' set to \l@english
-(babel)             (\language0). Reported on input line 82.
-Package babel Info: Hyphen rules for 'UKenglish' set to \l@english
-(babel)             (\language0). Reported on input line 83.
 Package babel Info: Hyphen rules for 'canadian' set to \l@english
 (babel)             (\language0). Reported on input line 102.
-Package babel Info: Hyphen rules for 'australian' set to \l@english
-(babel)             (\language0). Reported on input line 105.
-Package babel Info: Hyphen rules for 'newzealand' set to \l@english
-(babel)             (\language0). Reported on input line 108.
+Package babel Info: Hyphen rules for 'australian' set to \l@ukenglish
+(babel)             (\language84). Reported on input line 105.
+Package babel Info: Hyphen rules for 'newzealand' set to \l@ukenglish
+(babel)             (\language84). Reported on input line 108.
 ))
 (/usr/share/texlive/texmf-dist/tex/generic/babel/locale/en/babel-english.tex
 Package babel Info: Importing font and identification data for english
@@ -369,7 +365,7 @@ Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 \bibhang=\skip73
 \blx@bcfin=\read3
 \blx@bcfout=\write3
-\blx@langwohyphens=\language15
+\blx@langwohyphens=\language90
 \c@mincomprange=\count318
 \c@maxcomprange=\count319
 \c@mincompwidth=\count320
@@ -1565,63 +1561,46 @@ pdfTeX warning: pdflatex (file ./template-images/logo-unistuttgart-englisch+ias
 _80x25.pdf): PDF inclusion: multiple pdfs with page group included in a single 
 page
 >] (./chapters/Abstract.tex
-chapter without number
-[2
+Overfull \hbox (13.04948pt too wide) in paragraph at lines 11--12
+\T1/qpl/b/n/10.95 (-20) Keywords: \T1/qpl/m/n/10.95 (-20) dy-namic risk as-sess
+-ment, risk-annotated scene graph, ROS 2, Hy-dra, uncertainty-
+ []
+
+) [2
 
 
 
 
 ]
-
-LaTeX Warning: Reference `chap:theory' on page iii undefined on input line 33.
-
-
-LaTeX Warning: Reference `chap:methodology' on page iii undefined on input line
- 33.
-
-
-LaTeX Warning: Reference `chap:experiments' on page iii undefined on input line
- 33.
-
-
-LaTeX Warning: Reference `chap:conclusions' on page iii undefined on input line
- 33.
-
-)
-
-LaTeX Font Warning: Font shape `T1/qpl/m/sl' in size <10.95> not available
-(Font)              Font shape `T1/qpl/m/it' tried instead on input line 37.
-
-[3] [4]
 Package tocbasic Info: character protrusion at toc deactivated on input line 39
 .
  (./Thesis_report_Fabin.toc
 LaTeX Font Info:    Trying to load font information for OT1+pplx on input line 
-3.
+6.
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ot1pplx.fd
 File: ot1pplx.fd 2004/09/06 font definitions for OT1/pplx.
 )
 LaTeX Font Info:    Trying to load font information for OML+zplm on input line 
-3.
+6.
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/omlzplm.fd
 File: omlzplm.fd 2002/09/08 Fontinst v1.914 font definitions for OML/zplm.
 )
 LaTeX Font Info:    Trying to load font information for OMS+zplm on input line 
-3.
+6.
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/omszplm.fd
 File: omszplm.fd 2002/09/08 Fontinst v1.914 font definitions for OMS/zplm.
 )
 LaTeX Font Info:    Trying to load font information for OMX+zplm on input line 
-3.
+6.
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/omxzplm.fd
 File: omxzplm.fd 2002/09/08 Fontinst v1.914 font definitions for OMX/zplm.
 )
 LaTeX Font Info:    Trying to load font information for OT1+zplm on input line 
-3.
+6.
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ot1zplm.fd
 File: ot1zplm.fd 2002/09/08 Fontinst v1.914 font definitions for OT1/zplm.
@@ -1631,26 +1610,26 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 11.40997pt on input line 3.
+(Font)              scaled to size 11.40997pt on input line 6.
 
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 8.33606pt on input line 3.
+(Font)              scaled to size 8.33606pt on input line 6.
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 6.25204pt on input line 3.
+(Font)              scaled to size 6.25204pt on input line 6.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 11.40997pt on input line 3.
+(Font)              scaled to size 11.40997pt on input line 6.
 
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 8.33606pt on input line 3.
+(Font)              scaled to size 8.33606pt on input line 6.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 6.25204pt on input line 3.
- [5
+(Font)              scaled to size 6.25204pt on input line 6.
+ [3
 
 
 
@@ -1659,15 +1638,19 @@ LaTeX Font Info:    Font shape `U/msb/m/n' will be
 \tf@toc=\write6
 \openout6 = `Thesis_report_Fabin.toc'.
 
- [6]
+
+
+LaTeX Font Warning: Font shape `T1/qpl/m/sl' in size <10.95> not available
+(Font)              Font shape `T1/qpl/m/it' tried instead on input line 40.
+
+[4]
 Package tocbasic Info: character protrusion at lof deactivated on input line 41
 .
-
-(./Thesis_report_Fabin.lof)
+ (./Thesis_report_Fabin.lof)
 \tf@lof=\write7
 \openout7 = `Thesis_report_Fabin.lof'.
 
- [7
+ [5
 
 
 
@@ -1679,7 +1662,7 @@ Package tocbasic Info: character protrusion at lot deactivated on input line 43
 \tf@lot=\write8
 \openout8 = `Thesis_report_Fabin.lot'.
 
- [8
+ [6
 
 
 
@@ -1695,43 +1678,27 @@ chapter 1.
 
 
 
-] [2] [3]
-
-LaTeX Warning: Reference `chap:theory' on page 4 undefined on input line 43.
-
-
-LaTeX Warning: Reference `chap:methodology' on page 4 undefined on input line 4
-3.
-
-
-LaTeX Warning: Reference `chap:experiments' on page 4 undefined on input line 4
-3.
-
-
-LaTeX Warning: Reference `chap:conclusions' on page 4 undefined on input line 4
-3.
-
-) (./chapters/Theory.tex [4]
+] [2]) (./chapters/Theory.tex [3]
 chapter 2.
-[5
+[4
 
 
 ]
-<example_images/HRC_safety_productivity.png, id=315, 1806.75pt x 877.2775pt>
+<example_images/HRC_safety_productivity.png, id=274, 1806.75pt x 877.2775pt>
 File: example_images/HRC_safety_productivity.png Graphic file (type png)
 <use example_images/HRC_safety_productivity.png>
 Package pdftex.def Info: example_images/HRC_safety_productivity.png  used on in
 put line 26.
 (pdftex.def)             Requested size: 418.25555pt x 203.08142pt.
- [6 <./example_images/HRC_safety_productivity.png (PNG copy)>] [7]
-<example_images/hrc_safety_zones_generated.png, id=333, 1541.76pt x 1027.84pt>
+ [5 <./example_images/HRC_safety_productivity.png (PNG copy)>] [6]
+<example_images/hrc_safety_zones_generated.png, id=292, 1541.76pt x 1027.84pt>
 File: example_images/hrc_safety_zones_generated.png Graphic file (type png)
 <use example_images/hrc_safety_zones_generated.png>
 Package pdftex.def Info: example_images/hrc_safety_zones_generated.png  used on
  input line 56.
 (pdftex.def)             Requested size: 418.25555pt x 278.83792pt.
- [8 <./example_images/hrc_safety_zones_generated.png (PNG copy)>] [9] [10]
-<example_images/scenegraphfusion_pipeline.png, id=353, 1212.53pt x 270.00874pt>
+ [7 <./example_images/hrc_safety_zones_generated.png (PNG copy)>] [8] [9]
+<example_images/scenegraphfusion_pipeline.png, id=314, 1212.53pt x 270.00874pt>
 
 File: example_images/scenegraphfusion_pipeline.png Graphic file (type png)
 <use example_images/scenegraphfusion_pipeline.png>
@@ -1746,38 +1713,38 @@ LaTeX Font Info:    Font shape `U/msb/m/n' will be
 (Font)              scaled to size 10.42007pt on input line 130.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
 (Font)              scaled to size 7.91925pt on input line 130.
- [11{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc} <./example_imag
-es/scenegraphfusion_pipeline.png>] [12]
-<example_images/conceptgraphs_pipeline.png, id=374, 1153.30875pt x 462.72874pt>
+ [10{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc} <./example_imag
+es/scenegraphfusion_pipeline.png>] [11]
+<example_images/conceptgraphs_pipeline.png, id=334, 1153.30875pt x 462.72874pt>
 
 File: example_images/conceptgraphs_pipeline.png Graphic file (type png)
 <use example_images/conceptgraphs_pipeline.png>
 Package pdftex.def Info: example_images/conceptgraphs_pipeline.png  used on inp
 ut line 163.
 (pdftex.def)             Requested size: 418.25555pt x 167.81078pt.
- [13 <./example_images/conceptgraphs_pipeline.png>]
-<example_images/opengraph_pipeline.png, id=383, 1069.9975pt x 364.36125pt>
+ [12 <./example_images/conceptgraphs_pipeline.png>]
+<example_images/opengraph_pipeline.png, id=343, 1069.9975pt x 364.36125pt>
 File: example_images/opengraph_pipeline.png Graphic file (type png)
 <use example_images/opengraph_pipeline.png>
 Package pdftex.def Info: example_images/opengraph_pipeline.png  used on input l
 ine 184.
 (pdftex.def)             Requested size: 418.25555pt x 142.42833pt.
 
-[14 <./example_images/opengraph_pipeline.png>] [15] [16]
-<example_images/scene-graph-example.png, id=406, 1787.67876pt x 886.31125pt>
+[13 <./example_images/opengraph_pipeline.png>] [14] [15]
+<example_images/scene-graph-example.png, id=367, 1787.67876pt x 886.31125pt>
 File: example_images/scene-graph-example.png Graphic file (type png)
 <use example_images/scene-graph-example.png>
 Package pdftex.def Info: example_images/scene-graph-example.png  used on input 
 line 285.
 (pdftex.def)             Requested size: 418.25555pt x 207.36354pt.
- [17] [18 <./example_images/scene-graph-example.png (PNG copy)>]
-<example_images/hydra_3d_scene_graph.png, id=425, 1075.01625pt x 775.89874pt>
+ [16] [17 <./example_images/scene-graph-example.png (PNG copy)>]
+<example_images/hydra_3d_scene_graph.png, id=385, 1075.01625pt x 775.89874pt>
 File: example_images/hydra_3d_scene_graph.png Graphic file (type png)
 <use example_images/hydra_3d_scene_graph.png>
 Package pdftex.def Info: example_images/hydra_3d_scene_graph.png  used on input
  line 321.
 (pdftex.def)             Requested size: 418.25555pt x 301.87709pt.
- [19 <./example_images/hydra_3d_scene_graph.png>] [20] [21]
+ [18 <./example_images/hydra_3d_scene_graph.png>] [19] [20]
 Overfull \hbox (21.79437pt too wide) in paragraph at lines 404--405
 []\T1/qpl/m/n/10 (-20) The dis-cus-sion fo-cuses on the high-level con-cepts of
  the orig-i-nal frame-work rather than implementation-
@@ -1789,8 +1756,8 @@ Overfull \hbox (1.93953pt too wide) in paragraph at lines 404--405
 e of per-cep-tion, seg-men-ta-tion, retrieval-augmented
  []
 
-[22]
-<example_images/existing_work_overview_enhanced.png, id=459, 1805.74625pt x 108
+[21]
+<example_images/existing_work_overview_enhanced.png, id=419, 1805.74625pt x 108
 4.05pt>
 File: example_images/existing_work_overview_enhanced.png Graphic file (type png
 )
@@ -1798,28 +1765,28 @@ File: example_images/existing_work_overview_enhanced.png Graphic file (type png
 Package pdftex.def Info: example_images/existing_work_overview_enhanced.png  us
 ed on input line 417.
 (pdftex.def)             Requested size: 418.25555pt x 251.07962pt.
- [23 <./example_images/existing_work_overview_enhanced.png>] [24] [25]
-[26] [27] [28] [29]
-<example_images/safetydetect_pipeline.png, id=513, 1329.96875pt x 313.17pt>
+ [22 <./example_images/existing_work_overview_enhanced.png>] [23] [24]
+[25] [26] [27] [28]
+<example_images/safetydetect_pipeline.png, id=473, 1329.96875pt x 313.17pt>
 File: example_images/safetydetect_pipeline.png Graphic file (type png)
 <use example_images/safetydetect_pipeline.png>
 Package pdftex.def Info: example_images/safetydetect_pipeline.png  used on inpu
 t line 560.
 (pdftex.def)             Requested size: 418.25555pt x 98.48659pt.
- [30]) (./chapters/Methodology.tex [31 <./example_images/safetydetect_pipeline.
+ [29]) (./chapters/Methodology.tex [30 <./example_images/safetydetect_pipeline.
 png>]
 chapter 3.
-[32
+[31
 
 
-] [33]) (./chapters/Experiments.tex [34]
+] [32]) (./chapters/Experiments.tex [33]
 chapter 4.
-) [35
+) [34
 
 
 ]
 chapter 5.
-[36
+[35
 
 
 ]
@@ -1841,7 +1808,7 @@ Package microtype Info: Character `029' is missing
 Package biblatex Warning: No driver for 'standard'.
 (biblatex)                Using fallback driver on input line 67.
 
-[37
+[36
 
 
 
@@ -1866,19 +1833,19 @@ Package biblatex Warning: No driver for 'standard'.
 Package biblatex Warning: No driver for 'standard'.
 (biblatex)                Using fallback driver on input line 67.
 
-[38] [39]
+[37]
 Overfull \hbox (23.86905pt too wide) in paragraph at lines 68--68
 []\T1/qpl/m/n/10.95 (-20) A. Kir-illov, E. Mintun, N. Ravi, \T1/qpl/m/it/10.95 
 (-20) et al.\T1/qpl/m/n/10.95 (-20) , ^^P  Seg-ment any-thing,^^Q \T1/qpl/m/it/
 10.95 (-20) arXiv preprint arXiv:2304.02643\T1/qpl/m/n/10.95 (-20) ,
  []
 
-[40]
+[38] [39]
 chapter A.
-[41
+[40
 
 
-] [42
+] [41
 
 
 ] (./Thesis_report_Fabin.aux)
@@ -1886,10 +1853,6 @@ chapter A.
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2020/03/25>
  ***********
-
-
-LaTeX Warning: There were undefined references.
-
 Package rerunfilecheck Info: File `Thesis_report_Fabin.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
 Package logreq Info: Writing requests to 'Thesis_report_Fabin.run.xml'.
@@ -1897,13 +1860,13 @@ Package logreq Info: Writing requests to 'Thesis_report_Fabin.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 50272 strings out of 476056
- 1112409 string characters out of 5791604
- 2186941 words of memory out of 5000000
- 71074 multiletter control sequences out of 15000+600000
- 653096 words of font info for 259 fonts, out of 8000000 for 9000
- 61 hyphenation exceptions out of 8191
- 108i,9n,107p,10914b,2628s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 50241 strings out of 474222
+ 1112135 string characters out of 5748733
+ 2191463 words of memory out of 5000000
+ 71293 multiletter control sequences out of 15000+600000
+ 655394 words of font info for 257 fonts, out of 8000000 for 9000
+ 1143 hyphenation exceptions out of 8191
+ 108i,9n,107p,10914b,2626s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr
 /share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share
 /texlive/texmf-dist/fonts/type1/public/mathpazo/fplmri.pfb></usr/share/texmf/fo
@@ -1913,10 +1876,10 @@ exmf/fonts/type1/public/tex-gyre/qplri.pfb></usr/share/texmf/fonts/type1/public
 /cm-super/sftt1095.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/palatino/
 uplr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/palatino/uplri8a.pfb>
 
-Output written on Thesis_report_Fabin.pdf (50 pages, 7079949 bytes).
+Output written on Thesis_report_Fabin.pdf (47 pages, 7074777 bytes).
 PDF statistics:
- 882 PDF objects out of 1000 (max. 8388607)
- 771 compressed objects within 8 object streams
- 167 named destinations out of 1000 (max. 500000)
- 46100 words of extra memory for PDF output out of 51595 (max. 10000000)
+ 823 PDF objects out of 1000 (max. 8388607)
+ 715 compressed objects within 8 object streams
+ 153 named destinations out of 1000 (max. 500000)
+ 48100 words of extra memory for PDF output out of 51595 (max. 10000000)
 
