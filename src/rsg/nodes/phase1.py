@@ -65,9 +65,9 @@ from nodes.support.phase1.semantic_crop import (
 )
 from nodes.support.phase1.time_utils import stamp_to_float
 from nodes.support.phase1.unknown_tracker import UnknownObjectTracker
-from nodes.support.phase1.vlm_result import DEFAULT_OBJECT_DETAIL, infer_mobility_from_label
+from nodes.support.phase1.vlm_result import DEFAULT_OBJECT_DETAIL
 from nodes.support.phase1.loop_closure import loop_closure_delta, quat_to_rot
-from nodes.phase1_pipeline import SegmentationStage, TrackingStage, SemanticsStage, PublishingStage, RiskVlmDispatchStage
+from nodes.phase1_pipeline import SegmentationStage, TrackingStage, SemanticsStage, PublishingStage, RiskVlmDispatchStage, RapDispatchStage
 from nodes.phase1_pipeline.crop_utils import extract_crop_with_context, make_candidate_id
 
 
@@ -226,18 +226,10 @@ class Phase1SemanticCoordinator(Node):
         self.frame_cache = BoundedFrameCache(self.config.frame_cache_size)
         self.evidence_buffer = EvidenceBuffer(self.config.evidence_buffer_size)
 
-        # The bounded worker FIFOs store only persistent track IDs.  When a
-        # worker FIFO is full, the ID is retained in a small deferred registry
-        # rather than being dropped.  Crops are never held in either queue.
-        self.rap_queue: "queue.Queue[str]" = queue.Queue(maxsize=self.config.rap_queue_size)
-        self.rap_queue_dropped_count = 0
-        self.rap_queue_deferred_count = 0
-        self.rap_completed_count = 0
-        self._rap_task_keys: set[str] = set()
-        self._rap_deferred_track_ids = deque()
-        self._rap_deferred_track_id_set: set[str] = set()
-        self._rap_enqueued_monotonic: Dict[str, float] = {}
-        self._rap_task_lock = threading.Lock()
+        # RAP queue, worker-thread bookkeeping, and accuracy diagnostics
+        # writer live on RapDispatchStage (constructed further below, once
+        # its diagnostics object exists). The worker FIFO stores only
+        # persistent track IDs -- crops are never held in the queue.
 
         # VLM uses the same ID-only/deferred scheduling policy.  A legacy
         # dictionary task remains supported only for the RAP-disabled fallback
@@ -278,7 +270,6 @@ class Phase1SemanticCoordinator(Node):
         # property the RAP/VLM worker threads below already rely on.
         self._segmentation_thread = threading.Thread(target=self._segmentation_loop, daemon=True)
         self._tracking_publish_thread = threading.Thread(target=self._tracking_publish_loop, daemon=True)
-        self._rap_thread = threading.Thread(target=self._rap_loop, daemon=True)
         self._vlm_thread = threading.Thread(target=self._vlm_loop, daemon=True)
 
         input_qos = QoSProfile(
@@ -495,6 +486,11 @@ class Phase1SemanticCoordinator(Node):
             output_dir=workspace_path("debug/rap_accuracy_test"),
             enabled=self.diagnostics_enabled and self.config.rap_enabled,
         )
+        self.rap_stage = RapDispatchStage(
+            self, self.config, self.get_logger(),
+            backend=self.rap_backend, accuracy_diagnostics=self.rap_accuracy_diagnostics,
+        )
+        self._rap_thread = threading.Thread(target=self.rap_stage._rap_loop, daemon=True)
 
         # Periodic per-track crop diagnostics: saves every Nth observation
         # of every track (raw crop + both the raw per-frame geometry and
@@ -2034,7 +2030,7 @@ class Phase1SemanticCoordinator(Node):
             "vlm_crop_quality_timeout_forced": quality_timeout_forced,
         })
 
-        queued_time = self._rap_enqueued_monotonic.get(key) if stage.startswith("rap") else self._vlm_enqueued_monotonic.get(key)
+        queued_time = self.rap_stage._enqueued_monotonic.get(key) if stage.startswith("rap") else self._vlm_enqueued_monotonic.get(key)
         return {
             "persistent_track_id": key,
             "hydra_slot_id": slot_id,
@@ -2140,7 +2136,7 @@ class Phase1SemanticCoordinator(Node):
                 # The RAP FIFO contains only the persistent track ID.  Do not copy
                 # or freeze the crop here: later observations remain eligible until
                 # the RAP worker actually dequeues this ID.
-                status = self.enqueue_rap_task(track_id)
+                status = self.rap_stage.enqueue_rap_task(track_id)
                 if status in {"queued_for_rap", "deferred_for_rap"}:
                     self.persistent_tracker.set_labeling_status(
                         track_id,
@@ -2546,10 +2542,7 @@ class Phase1SemanticCoordinator(Node):
         key = str(track_id)
         if not key:
             return
-        with self._rap_task_lock:
-            self._rap_task_keys.discard(key)
-            self._rap_deferred_track_id_set.discard(key)
-            self._rap_enqueued_monotonic.pop(key, None)
+        self.rap_stage.finalize_track(key)
         with self._vlm_task_lock:
             self._vlm_task_keys.discard(key)
             self._vlm_deferred_track_id_set.discard(key)
@@ -2558,45 +2551,6 @@ class Phase1SemanticCoordinator(Node):
             self._vlm_quality_deferred_track_ids.discard(key)
             self._vlm_quality_deferred_since_timestamp_sec.pop(key, None)
             self._vlm_quality_force_track_ids.discard(key)
-
-    def _pump_rap_deferred(self) -> None:
-        """Move deferred RAP IDs into the bounded FIFO when capacity exists."""
-        with self._rap_task_lock:
-            while self._rap_deferred_track_ids:
-                track_id = str(self._rap_deferred_track_ids[0])
-                if track_id not in self._rap_task_keys or track_id not in self._rap_deferred_track_id_set:
-                    self._rap_deferred_track_ids.popleft()
-                    self._rap_deferred_track_id_set.discard(track_id)
-                    continue
-                try:
-                    self.rap_queue.put_nowait(track_id)
-                except queue.Full:
-                    return
-                self._rap_deferred_track_ids.popleft()
-                self._rap_deferred_track_id_set.discard(track_id)
-
-    def enqueue_rap_task(self, track_id: str) -> str:
-        """Schedule one persistent track for RAP without queuing its crop.
-
-        A bounded FIFO protects the worker, while the deferred registry preserves
-        every unique unresolved track ID during temporary overload.
-        """
-        key = str(track_id)
-        if not key:
-            return "missing_track_id"
-        with self._rap_task_lock:
-            if key in self._rap_task_keys:
-                return "rap_already_requested_for_track"
-            self._rap_task_keys.add(key)
-            self._rap_enqueued_monotonic[key] = time.perf_counter()
-            try:
-                self.rap_queue.put_nowait(key)
-                return "queued_for_rap"
-            except queue.Full:
-                self._rap_deferred_track_ids.append(key)
-                self._rap_deferred_track_id_set.add(key)
-                self.rap_queue_deferred_count += 1
-                return "deferred_for_rap"
 
     def _pump_vlm_deferred(self) -> None:
         """Move deferred VLM IDs into the bounded FIFO when capacity exists."""
@@ -2824,184 +2778,6 @@ class Phase1SemanticCoordinator(Node):
         if completed is not None:
             self._emit_semantic_label_result(completed, task, source="vlm_failed")
 
-    def _rap_loop(self) -> None:
-        """Run VisualRAP over the latest crop available at ID dequeue time."""
-        while not self._stop_event.is_set():
-            self._pump_rap_deferred()
-            try:
-                track_id = self.rap_queue.get(timeout=0.1)
-            except queue.Empty:
-                continue
-            self._pump_rap_deferred()
-            task = self._snapshot_track_task(str(track_id), "rap_dequeue")
-            if task is not None:
-                self.persistent_tracker.set_labeling_status(str(track_id), "rap_dequeued")
-                # Save diagnostic crop for RAP
-                try:
-                    rap_crop_result = self.tracking_crop_manager.save_rap_dequeue_crop(
-                        track_id=str(track_id),
-                        rap_crop=task.get("rgb_crop"),
-                        crop_revision=int(task.get("crop_revision", 0)),
-                        crop_score=float(task.get("crop_score", 0.0)),
-                        sequence=int(task.get("sequence", 0)),
-                    )
-                    if rap_crop_result:
-                        self.get_logger().debug(f"Saved RAP crop for {track_id}: {rap_crop_result}")
-                except Exception as e:
-                    self.get_logger().warn(f"Failed to save RAP crop for {track_id}: {e}")
-            if task is None:
-                fallback = {
-                    "persistent_track_id": str(track_id),
-                    "hydra_slot_id": 0,
-                    "timestamp_sec": 0.0,
-                    "object_metadata": {},
-                }
-                self.get_logger().warn(f"RAP track {track_id} has no active crop; finalizing as unknown.")
-                self._publish_rap_result(fallback, label="unknown_object", confidence=0.0,
-                                         is_known=False, status="rap_missing_crop", reason="no_active_crop")
-                self._finish_unknown_without_vlm(str(track_id), fallback, "rap_missing_crop")
-                continue
-            try:
-                self._process_rap_task(task)
-            except Exception as exc:
-                if rclpy.ok() and not self._stop_event.is_set():
-                    self.get_logger().error(
-                        f"Async RAP failed for slot={task.get('hydra_slot_id', 0)} "
-                        f"track={task.get('persistent_track_id', '')}: {exc}"
-                    )
-                vlm_status = self._enqueue_vlm_after_rap(str(track_id))
-                self._publish_rap_result(task, label="unknown_object", confidence=0.0,
-                                         is_known=False, status="rap_error", reason=str(exc),
-                                         vlm_dispatch_status=vlm_status)
-                if not self._vlm_schedule_accepted(vlm_status):
-                    self._finish_unknown_without_vlm(str(track_id), task, "rap_worker_error")
-
-    def _process_rap_task(self, task: Dict[str, Any]) -> str:
-        """Run RAP on a dequeue-time snapshot of one track's best crop."""
-        start = time.perf_counter()
-        crop = task.get("rgb_crop")
-        if crop is None or getattr(crop, "size", 0) == 0:
-            raise RuntimeError("Asynchronous RAP task has no representative crop")
-        height, width = crop.shape[:2]
-        synthetic_mask = SamMask(
-            mask_id=str(task.get("candidate_id", "semantic_crop")),
-            mask=np.ones((height, width), dtype=bool),
-            bbox_2d=[0, 0, int(width), int(height)],
-            area_px=int(height * width),
-            crop=crop,
-            score=1.0,
-            metadata={"semantic_track_labeling": True, "crop_revision": task.get("crop_revision", 0)},
-        )
-        rap = self.rap_backend.classify(crop, synthetic_mask, 0)
-        is_known = bool(rap.is_known and rap.confidence >= self.config.rap_confidence_threshold)
-        # Direct RAP hit/miss signal, independent of Risk VLM's source column
-        # (which requires a separate feature enabled) -- this is the ground
-        # truth for whether RAP identified the crop or deferred to VLM.
-        self.get_logger().info(
-            f"RAP {'HIT' if is_known else 'MISS'}: track={task.get('persistent_track_id', '?')} "
-            f"label='{rap.label}' distance={float(rap.distance):.4f} "
-            f"threshold={float(self.config.rap_distance_threshold):.4f} confidence={float(rap.confidence):.3f}"
-        )
-        try:
-            self.rap_accuracy_diagnostics.log_rap_result(
-                crop,
-                is_known,
-                str(rap.label),
-                float(rap.distance),
-                float(rap.confidence),
-                float(self.config.rap_distance_threshold),
-                track_id=str(task.get("persistent_track_id", "")),
-                hydra_slot_id=int(task.get("hydra_slot_id", 0) or 0),
-                timestamp=float(task.get("timestamp_sec", 0.0) or 0.0),
-            )
-        except Exception as e:
-            self.get_logger().warn(f"Failed to log RAP result diagnostics: {e}")
-        label = str(rap.label or "unknown_object")
-        rap_metadata = dict(rap.metadata or {})
-        rap_has_mobility_metadata = "mobility_class" in rap_metadata
-        mobility_class = str(rap_metadata.get("mobility_class", "unknown") or "unknown").strip().lower()
-        if mobility_class not in {"static", "dynamic", "unknown"}:
-            mobility_class = "unknown"
-        try:
-            stored_mobility_confidence = float(rap_metadata.get("mobility_confidence", 0.0) or 0.0)
-        except (TypeError, ValueError):
-            stored_mobility_confidence = 0.0
-        try:
-            stored_label_confidence = float(rap_metadata.get("label_confidence", rap.confidence) or 0.0)
-        except (TypeError, ValueError):
-            stored_label_confidence = float(rap.confidence)
-        label_confidence = min(
-            max(0.0, min(1.0, stored_label_confidence)),
-            max(0.0, min(1.0, float(rap.confidence))),
-        )
-        mobility_confidence = min(
-            max(0.0, min(1.0, stored_mobility_confidence)),
-            max(0.0, min(1.0, float(rap.confidence))),
-        )
-        mobility_source = "rap_memory" if mobility_class != "unknown" else "none"
-        object_detail = str(rap_metadata.get("object_detail") or DEFAULT_OBJECT_DETAIL)
-        if is_known and mobility_class == "unknown" and not rap_has_mobility_metadata:
-            mobility_class = infer_mobility_from_label(
-                label,
-                dynamic_label_hints=self.config.vlm_dynamic_label_hints,
-                static_label_hints=self.config.vlm_static_label_hints,
-            )
-            if mobility_class != "unknown":
-                mobility_confidence = max(0.0, min(1.0, float(rap.confidence)))
-                mobility_source = "rap_label_hint"
-        track_id = str(task.get("persistent_track_id", ""))
-        persistent_update = None
-        if self.config.persistent_tracking_enabled and track_id:
-            persistent_update = self.persistent_tracker.apply_rap_result(
-                track_id=track_id,
-                label=label,
-                confidence=float(label_confidence),
-                is_known=is_known,
-                mobility_class=mobility_class,
-                mobility_confidence=mobility_confidence,
-                mobility_source=mobility_source,
-                object_detail=object_detail,
-            )
-
-        vlm_status = "not_requested"
-        if is_known and track_id:
-            completed = self.persistent_tracker.complete_semantic_labeling(
-                track_id, float(task.get("timestamp_sec", 0.0) or 0.0), "rap_known"
-            )
-            if completed is not None:
-                self._emit_semantic_label_result(completed, task, source="rap")
-                self.risk_stage.enqueue_risk_task(
-                    event=completed,
-                    task=task,
-                    crop=task.get("vlm_rgb_crop", task.get("rgb_crop")),
-                    label=label,
-                    mobility_class=mobility_class,
-                    source="rap",
-                )
-        elif not is_known:
-            vlm_status = self._enqueue_vlm_after_rap(track_id)
-            if not self._vlm_schedule_accepted(vlm_status):
-                self._finish_unknown_without_vlm(track_id, task, "rap_unknown_vlm_unavailable")
-
-        self.rap_completed_count += 1
-        self._publish_rap_result(
-            task,
-            label=label,
-            confidence=float(rap.confidence),
-            label_confidence=float(label_confidence),
-            is_known=is_known,
-            status="known" if is_known else "unknown",
-            reason="async_retrieval_complete",
-            rap_metadata=rap_metadata,
-            mobility_class=mobility_class,
-            mobility_confidence=mobility_confidence,
-            mobility_source=mobility_source,
-            persistent_update=persistent_update,
-            vlm_dispatch_status=vlm_status,
-            rap_delay_ms=(time.perf_counter() - start) * 1000.0,
-        )
-        return "completed"
-
     def _enqueue_vlm_after_rap(self, track_id: str) -> str:
         """Queue an unresolved track only when its current VLM crop is useful.
 
@@ -3028,51 +2804,6 @@ class Phase1SemanticCoordinator(Node):
                 "vlm_queued" if status == "queued_for_vlm_fifo" else "vlm_deferred",
             )
         return status
-
-    def _publish_rap_result(
-        self,
-        task: Dict[str, Any],
-        *,
-        label: str,
-        confidence: float,
-        label_confidence: Optional[float] = None,
-        is_known: bool,
-        status: str,
-        reason: str,
-        rap_metadata: Optional[Dict[str, Any]] = None,
-        mobility_class: str = "unknown",
-        mobility_confidence: float = 0.0,
-        mobility_source: str = "none",
-        persistent_update: Optional[Dict[str, Any]] = None,
-        vlm_dispatch_status: str = "",
-        rap_delay_ms: float = 0.0,
-    ) -> None:
-        """Publish the asynchronous RAP contract: stable slot ID and label."""
-        payload = {
-            "event": "rap_result",
-            "status": str(status),
-            "reason": str(reason),
-            "persistent_track_id": str(task.get("persistent_track_id", "")),
-            "hydra_slot_id": int(task.get("hydra_slot_id", 0) or 0),
-            "hydra_slot_name": str(task.get("hydra_slot_name", "")),
-            "candidate_id": str(task.get("candidate_id", "")),
-            "frame_id": str(task.get("frame_id", "")),
-            "sequence": int(task.get("sequence", 0) or 0),
-            "timestamp_sec": float(task.get("timestamp_sec", 0.0) or 0.0),
-            "label": str(label),
-            "confidence": float(confidence),
-            "label_confidence": float(confidence if label_confidence is None else label_confidence),
-            "retrieval_confidence": float(confidence),
-            "mobility_class": str(mobility_class),
-            "mobility_confidence": float(mobility_confidence),
-            "mobility_source": str(mobility_source),
-            "is_known": bool(is_known),
-            "rap_delay_ms": float(rap_delay_ms),
-            "vlm_dispatch_status": str(vlm_dispatch_status),
-            "rap_metadata": rap_metadata or {},
-            "persistent_update": persistent_update or {},
-        }
-        self._safe_publish(self.rap_result_pub, String(data=safe_json_dumps(payload)))
 
     def dispatch_unknowns_to_vlm(
         self,
@@ -3495,12 +3226,12 @@ class Phase1SemanticCoordinator(Node):
             "rap_backend": self.config.rap_backend,
             "rap_async": self.config.rap_async,
             "rap_result_topic": self.config.rap_result_topic,
-            "rap_fifo_queue_size": self.rap_queue.qsize(),
+            "rap_fifo_queue_size": self.rap_stage.queue.qsize(),
             "rap_fifo_queue_max_size": self.config.rap_queue_size,
-            "rap_queue_dropped": self.rap_queue_dropped_count,
-            "rap_queue_deferred_total": self.rap_queue_deferred_count,
-            "rap_deferred_pending": len(self._rap_deferred_track_id_set),
-            "rap_completed": self.rap_completed_count,
+            "rap_queue_dropped": self.rap_stage.queue_dropped_count,
+            "rap_queue_deferred_total": self.rap_stage.queue_deferred_count,
+            "rap_deferred_pending": len(self.rap_stage._deferred_track_id_set),
+            "rap_completed": self.rap_stage.completed_count,
             "vlm_enabled": self.config.vlm_enabled,
             "vlm_mode": self.config.vlm_mode,
             "num_masks": len(masks),
@@ -3615,11 +3346,11 @@ class Phase1SemanticCoordinator(Node):
             "sam_output_fifo_size": self.sam_output_fifo.qsize(),
             "sam_output_fifo_max_size": 1,
             "sam_output_dropped": self.sam_output_dropped_count,
-            "rap_queue_dropped": self.rap_queue_dropped_count,
-            "rap_queue_deferred_total": self.rap_queue_deferred_count,
-            "rap_deferred_pending": len(self._rap_deferred_track_id_set),
-            "rap_completed": self.rap_completed_count,
-            "rap_fifo_queue_size": self.rap_queue.qsize(),
+            "rap_queue_dropped": self.rap_stage.queue_dropped_count,
+            "rap_queue_deferred_total": self.rap_stage.queue_deferred_count,
+            "rap_deferred_pending": len(self.rap_stage._deferred_track_id_set),
+            "rap_completed": self.rap_stage.completed_count,
+            "rap_fifo_queue_size": self.rap_stage.queue.qsize(),
             "rap_fifo_queue_max_size": self.config.rap_queue_size,
             "vlm_queued": self.unknown_vlm_count,
             "vlm_queue_dropped": self.vlm_queue_dropped_count,
