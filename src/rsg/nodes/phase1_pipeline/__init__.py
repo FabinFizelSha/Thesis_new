@@ -8,6 +8,7 @@ from .publishing import PublishingStage
 from .risk_vlm_dispatch import RiskVlmDispatchStage
 from .rap_dispatch import RapDispatchStage
 from .vlm_dispatch import VlmDispatchStage
+from .local_segment_presence import LocalSegmentPresenceStage
 
 __all__ = [
     "Phase1Config",
@@ -19,4 +20,5 @@ __all__ = [
     "RiskVlmDispatchStage",
     "RapDispatchStage",
     "VlmDispatchStage",
+    "LocalSegmentPresenceStage",
 ]

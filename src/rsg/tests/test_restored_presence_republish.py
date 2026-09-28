@@ -24,6 +24,7 @@ import unittest
 import numpy as np
 
 from nodes.phase1 import Phase1SemanticCoordinator
+from nodes.phase1_pipeline import LocalSegmentPresenceStage
 
 
 def _segment(slot_id: int):
@@ -41,11 +42,17 @@ def _segment(slot_id: int):
 
 
 class _Coordinator:
-    """Minimal stand-in exposing only what _restored_presence_segments uses."""
+    """Minimal stand-in exposing only what _restored_presence_segments uses.
 
-    _restored_presence_segments = Phase1SemanticCoordinator._restored_presence_segments
+    _restored_presence_segments now lives on LocalSegmentPresenceStage and
+    reaches its state through self.coordinator; self.coordinator = self
+    here plays both roles (stage and coordinator) in one flat mock.
+    """
+
+    _restored_presence_segments = LocalSegmentPresenceStage._restored_presence_segments
 
     def __init__(self, tracks):
+        self.coordinator = self
         self.persistent_tracker = SimpleNamespace(_tracks=tracks)
         self._restored_presence_pending = {
             int(slot)
