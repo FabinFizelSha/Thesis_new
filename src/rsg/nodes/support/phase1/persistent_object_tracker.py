@@ -24,267 +24,32 @@ import numpy as np
 
 from nodes.support.phase1.vlm_result import DEFAULT_OBJECT_DETAIL
 from nodes.support.phase1.tracker_spatial_index import TrackerSpatialIndex
-
-
-def _as_xyz(value: Any) -> Optional[np.ndarray]:
-    if not isinstance(value, (list, tuple, np.ndarray)) or len(value) != 3:
-        return None
-    try:
-        array = np.asarray([float(value[0]), float(value[1]), float(value[2])], dtype=np.float64)
-    except (TypeError, ValueError):
-        return None
-    return array if np.all(np.isfinite(array)) else None
-
-
-def _safe_float(value: Any) -> Optional[float]:
-    try:
-        result = float(value)
-    except (TypeError, ValueError):
-        return None
-    return result if math.isfinite(result) else None
-
-
-def _bbox_iou(a: Any, b: Any) -> float:
-    """Return IoU for [x, y, width, height] boxes."""
-    if not isinstance(a, (list, tuple)) or not isinstance(b, (list, tuple)):
-        return 0.0
-    if len(a) != 4 or len(b) != 4:
-        return 0.0
-    try:
-        ax, ay, aw, ah = (float(value) for value in a)
-        bx, by, bw, bh = (float(value) for value in b)
-    except (TypeError, ValueError):
-        return 0.0
-    ax2, ay2 = ax + max(0.0, aw), ay + max(0.0, ah)
-    bx2, by2 = bx + max(0.0, bw), by + max(0.0, bh)
-    ix1, iy1 = max(ax, bx), max(ay, by)
-    ix2, iy2 = min(ax2, bx2), min(ay2, by2)
-    intersection = max(0.0, ix2 - ix1) * max(0.0, iy2 - iy1)
-    union = max(0.0, aw) * max(0.0, ah) + max(0.0, bw) * max(0.0, bh) - intersection
-    return 0.0 if union <= 0.0 else float(intersection / union)
-
-
-def _volume_ratio(a: Optional[float], b: Optional[float]) -> float:
-    if a is None or b is None or a <= 0.0 or b <= 0.0:
-        return 1.0
-    return max(float(a), float(b)) / max(min(float(a), float(b)), 1e-9)
-
-
-def _aabb_gap_xy(
-    a_min: np.ndarray,
-    a_max: np.ndarray,
-    b_min: np.ndarray,
-    b_max: np.ndarray,
-) -> float:
-    """Return the shortest horizontal separation between two 3D boxes."""
-    dx = max(float(a_min[0] - b_max[0]), float(b_min[0] - a_max[0]), 0.0)
-    dy = max(float(a_min[1] - b_max[1]), float(b_min[1] - a_max[1]), 0.0)
-    return float(math.hypot(dx, dy))
-
-
-def _aabb_gap_z(
-    a_min: np.ndarray,
-    a_max: np.ndarray,
-    b_min: np.ndarray,
-    b_max: np.ndarray,
-) -> float:
-    """Return the shortest vertical separation between two 3D boxes."""
-    return max(float(a_min[2] - b_max[2]), float(b_min[2] - a_max[2]), 0.0)
-
-
-def _aabb_center_distance_xy(
-    a_min: np.ndarray,
-    a_max: np.ndarray,
-    b_min: np.ndarray,
-    b_max: np.ndarray,
-) -> float:
-    """Return horizontal distance between two 3D-box centres."""
-    a_center = 0.5 * (a_min[:2] + a_max[:2])
-    b_center = 0.5 * (b_min[:2] + b_max[:2])
-    return float(np.linalg.norm(a_center - b_center))
-
-
-def _aabb_center_delta_z(
-    a_min: np.ndarray,
-    a_max: np.ndarray,
-    b_min: np.ndarray,
-    b_max: np.ndarray,
-) -> float:
-    """Return the vertical distance between two 3D-box centres."""
-    a_center_z = 0.5 * float(a_min[2] + a_max[2])
-    b_center_z = 0.5 * float(b_min[2] + b_max[2])
-    return abs(a_center_z - b_center_z)
-
-
-
-
-def _aabb_overlap_fraction_3d(
-    observation_min: np.ndarray,
-    observation_max: np.ndarray,
-    track_min: np.ndarray,
-    track_max: np.ndarray,
-) -> Tuple[float, float, float, float]:
-    """Return observation-normalised 3D volume overlap (XYZ) with per-axis fractions.
-
-    With 30cm depth padding, Z-ranges are normalized and 3D overlap is stable.
-    Returns: (volume_fraction, x_fraction, y_fraction, z_fraction)
-    """
-    obs_dx = max(0.0, float(observation_max[0] - observation_min[0]))
-    obs_dy = max(0.0, float(observation_max[1] - observation_min[1]))
-    obs_dz = max(0.0, float(observation_max[2] - observation_min[2]))
-    obs_volume = max(obs_dx * obs_dy * obs_dz, 1e-9)
-
-    overlap_x = max(
-        0.0,
-        min(float(observation_max[0]), float(track_max[0]))
-        - max(float(observation_min[0]), float(track_min[0])),
-    )
-    overlap_y = max(
-        0.0,
-        min(float(observation_max[1]), float(track_max[1]))
-        - max(float(observation_min[1]), float(track_min[1])),
-    )
-    overlap_z = max(
-        0.0,
-        min(float(observation_max[2]), float(track_max[2]))
-        - max(float(observation_min[2]), float(track_min[2])),
-    )
-    overlap_volume = overlap_x * overlap_y * overlap_z
-
-    fraction_x = overlap_x / max(obs_dx, 1e-9)
-    fraction_y = overlap_y / max(obs_dy, 1e-9)
-    fraction_z = overlap_z / max(obs_dz, 1e-9)
-    volume_fraction = overlap_volume / obs_volume
-
-    return (
-        max(0.0, min(1.0, float(volume_fraction))),
-        max(0.0, min(1.0, float(fraction_x))),
-        max(0.0, min(1.0, float(fraction_y))),
-        max(0.0, min(1.0, float(fraction_z))),
-    )
-
-
-def _aabb_3d_containment(
-    observation_min: np.ndarray,
-    observation_max: np.ndarray,
-    track_min: np.ndarray,
-    track_max: np.ndarray,
-) -> float:
-    """Return fraction of observation bbox contained within track bbox (0.0 to 1.0)."""
-    obs_dx = max(0.0, float(observation_max[0] - observation_min[0]))
-    obs_dy = max(0.0, float(observation_max[1] - observation_min[1]))
-    obs_dz = max(0.0, float(observation_max[2] - observation_min[2]))
-    obs_volume = max(1e-9, obs_dx * obs_dy * obs_dz)
-
-    contained_x = max(
-        0.0,
-        min(float(observation_max[0]), float(track_max[0]))
-        - max(float(observation_min[0]), float(track_min[0])),
-    )
-    contained_y = max(
-        0.0,
-        min(float(observation_max[1]), float(track_max[1]))
-        - max(float(observation_min[1]), float(track_min[1])),
-    )
-    contained_z = max(
-        0.0,
-        min(float(observation_max[2]), float(track_max[2]))
-        - max(float(observation_min[2]), float(track_min[2])),
-    )
-    contained_volume = contained_x * contained_y * contained_z
-    return max(0.0, min(1.0, float(contained_volume / obs_volume)))
-
-
-def _gaussian_compatibility(value: float, sigma: float) -> float:
-    """Map a non-negative residual to [0, 1], where one is ideal."""
-    sigma = max(float(sigma), 1e-9)
-    value = max(0.0, float(value))
-    return float(math.exp(-0.5 * (value / sigma) ** 2))
-
-def _aabb_xy_diagonal(a_min: np.ndarray, a_max: np.ndarray) -> float:
-    """Return horizontal XY diagonal of a 3D axis-aligned bounding box."""
-    return float(math.hypot(float(a_max[0] - a_min[0]), float(a_max[1] - a_min[1])))
-
-
-def _aabb_union_xy_diagonal(
-    a_min: np.ndarray,
-    a_max: np.ndarray,
-    b_min: np.ndarray,
-    b_max: np.ndarray,
-) -> float:
-    """Return horizontal XY diagonal after merging two 3D boxes."""
-    union_min = np.minimum(a_min, b_min)
-    union_max = np.maximum(a_max, b_max)
-    return _aabb_xy_diagonal(union_min, union_max)
-
-
-def _aabb_iou_3d(
-    a_min: np.ndarray,
-    a_max: np.ndarray,
-    b_min: np.ndarray,
-    b_max: np.ndarray,
-) -> float:
-    """Symmetric 3D intersection-over-union of two axis-aligned boxes."""
-    inter = np.maximum(
-        0.0, np.minimum(a_max, b_max) - np.maximum(a_min, b_min)
-    )
-    inter_vol = float(inter[0] * inter[1] * inter[2])
-    if inter_vol <= 0.0:
-        return 0.0
-    vol_a = float(np.prod(np.maximum(0.0, a_max - a_min)))
-    vol_b = float(np.prod(np.maximum(0.0, b_max - b_min)))
-    union = vol_a + vol_b - inter_vol
-    return inter_vol / union if union > 1e-9 else 0.0
-
-
-def _rigid_point(point: Optional[np.ndarray], rot: np.ndarray, trans: np.ndarray) -> Optional[np.ndarray]:
-    """Apply ``p -> R @ p + t`` to a single 3D point (``None`` passes through)."""
-    if point is None:
-        return None
-    return (rot @ np.asarray(point, dtype=np.float64)) + trans
-
-
-def _rigid_aabb(
-    bbox_min: Optional[np.ndarray],
-    bbox_max: Optional[np.ndarray],
-    rot: np.ndarray,
-    trans: np.ndarray,
-) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
-    """Rigid-transform an axis-aligned box.
-
-    A non-zero rotation tilts the box, so all eight corners are transformed and
-    a fresh axis-aligned min/max is taken.  Exact for a pure translation, and
-    the tightest axis-aligned envelope otherwise.
-    """
-    if bbox_min is None or bbox_max is None:
-        return bbox_min, bbox_max
-    lo = np.asarray(bbox_min, dtype=np.float64)
-    hi = np.asarray(bbox_max, dtype=np.float64)
-    corners = np.array(
-        [[lo[0], lo[1], lo[2]], [lo[0], lo[1], hi[2]],
-         [lo[0], hi[1], lo[2]], [lo[0], hi[1], hi[2]],
-         [hi[0], lo[1], lo[2]], [hi[0], lo[1], hi[2]],
-         [hi[0], hi[1], lo[2]], [hi[0], hi[1], hi[2]]],
-        dtype=np.float64,
-    )
-    moved = (corners @ rot.T) + trans
-    return moved.min(axis=0), moved.max(axis=0)
-
-
-def _normalise_label(value: Any) -> str:
-    return " ".join(str(value or "").strip().lower().replace("_", " ").split())
-
-
-def _track_sort_key(track_id: Any) -> Tuple[int, Any]:
-    """Deterministic ordering for track ids that are usually plain integers."""
-    text = str(track_id)
-    return (0, int(text)) if text.isdigit() else (1, text)
-
-
-def _as_list(value: Optional[np.ndarray]) -> Optional[List[float]]:
-    if value is None:
-        return None
-    return [float(v) for v in value.tolist()]
+from nodes.support.phase1 import tracker_serialization
+# Re-exported so `from nodes.support.phase1.persistent_object_tracker import
+# _as_list` (and friends) keeps working for every existing external importer
+# -- the definitions live in tracker_geometry.py, which every tracker_*.py
+# collaborator can import from without risking a circular import back here.
+from nodes.support.phase1.tracker_geometry import (
+    _as_xyz,
+    _safe_float,
+    _bbox_iou,
+    _volume_ratio,
+    _aabb_gap_xy,
+    _aabb_gap_z,
+    _aabb_center_distance_xy,
+    _aabb_center_delta_z,
+    _aabb_overlap_fraction_3d,
+    _aabb_3d_containment,
+    _gaussian_compatibility,
+    _aabb_xy_diagonal,
+    _aabb_union_xy_diagonal,
+    _aabb_iou_3d,
+    _rigid_point,
+    _rigid_aabb,
+    _normalise_label,
+    _track_sort_key,
+    _as_list,
+)
 
 
 @dataclass
@@ -2819,82 +2584,11 @@ class PersistentObjectTracker:
         match_reason: str,
         match_score: Optional[float],
     ) -> None:
-        active_segment = track.segments.get(int(track.active_segment_slot_id))
-        active_segment_record = (
-            PersistentObjectTracker._segment_record(active_segment)
-            if active_segment is not None else {}
-        )
-        all_segment_records = [
-            PersistentObjectTracker._segment_record(segment)
-            for segment in track.segments.values()
-        ]
-        metadata.update(
-            {
-                "persistent_track_id": track.track_id,
-                "internal_object_id": track.track_id,
-                "persistent_instance_id": int(track.instance_id),
-                "local_segment_id": f"{track.track_id}:slot_{int(track.hydra_label_id)}",
-                "semantic_segment_id": f"{track.track_id}:slot_{int(track.hydra_label_id)}",
-                "local_segment_slot_id": int(track.hydra_label_id),
-                "local_segment_event": str(track.last_segment_event),
-                "local_segment_match_reason": str(track.last_segment_match_reason),
-                "local_segment_match_score": None if track.last_segment_match_score is None else float(track.last_segment_match_score),
-                "local_segment_xy_span_m": active_segment_record.get("local_segment_xy_span_m"),
-                "local_segment_centroid_3d": active_segment_record.get("centroid_3d"),
-                "local_segment_bbox_3d_min": active_segment_record.get("bbox_3d_min"),
-                "local_segment_bbox_3d_max": active_segment_record.get("bbox_3d_max"),
-                "local_segment_seen_count": active_segment_record.get("seen_count", 0),
-                "semantic_segments": all_segment_records,
-                "semantic_slot_ids": [int(item.get("hydra_slot_id", 0)) for item in all_segment_records],
-                "semantic_segment_count": len(all_segment_records),
-                "persistent_track_event": track_event,
-                "persistent_track_seen_count": int(track.seen_count),
-                "persistent_match_reason": match_reason,
-                "persistent_match_score": None if match_score is None else float(match_score),
-                "hydra_label_id": int(track.hydra_label_id),
-                "hydra_label_name": track.hydra_label_name,
-                "semantic_kind": track.semantic_kind,
-                "canonical_label": track.canonical_label,
-                "semantic_label_source": track.label_source,
-                "semantic_label_confidence": float(track.label_confidence),
-                "raw_rap_label": track.raw_rap_label,
-                "raw_vlm_label": track.raw_vlm_label,
-                "mobility_class": track.mobility_class,
-                "mobility_confidence": float(track.mobility_confidence),
-                "mobility_source": track.mobility_source,
-                "object_detail": track.object_detail,
-                "slot_state": track.slot_state,
-                "labeling_dispatched": bool(track.labeling_dispatched),
-                "labeling_completed": bool(track.labeling_completed),
-                "labeling_status": str(track.labeling_status),
-            }
-        )
+        return tracker_serialization.annotate_metadata(metadata, track, track_event, match_reason, match_score)
 
     @staticmethod
     def _segment_record(segment: PersistentObjectSegment) -> Dict[str, Any]:
-        span = None
-        if segment.bbox_3d_min is not None and segment.bbox_3d_max is not None:
-            span = _aabb_xy_diagonal(segment.bbox_3d_min, segment.bbox_3d_max)
-        return {
-            "local_segment_id": str(segment.segment_id),
-            "semantic_segment_id": str(segment.segment_id),
-            "hydra_slot_id": int(segment.hydra_label_id),
-            "hydra_slot_name": str(segment.hydra_label_name),
-            "hydra_label_id": int(segment.hydra_label_id),
-            "hydra_label_name": str(segment.hydra_label_name),
-            "instance_id": int(segment.instance_id),
-            "seen_count": int(segment.seen_count),
-            "first_seen_timestamp_sec": float(segment.first_seen_timestamp_sec),
-            "last_seen_timestamp_sec": float(segment.last_seen_timestamp_sec),
-            "centroid_3d": _as_list(segment.centroid_3d),
-            "bbox_2d": segment.bbox_2d,
-            "bbox_3d_min": _as_list(segment.bbox_3d_min),
-            "bbox_3d_max": _as_list(segment.bbox_3d_max),
-            "last_bbox_3d_min": _as_list(segment.last_bbox_3d_min),
-            "last_bbox_3d_max": _as_list(segment.last_bbox_3d_max),
-            "local_segment_xy_span_m": span,
-            "closed": bool(segment.closed),
-        }
+        return tracker_serialization.segment_record(segment)
 
     def _track_record(
         self,
@@ -2903,65 +2597,4 @@ class PersistentObjectTracker:
         reason: str,
         score: Optional[float],
     ) -> Dict[str, Any]:
-        active_segment = track.segments.get(int(track.active_segment_slot_id))
-        active_segment_record = self._segment_record(active_segment) if active_segment is not None else {}
-        all_segment_records = [self._segment_record(segment) for segment in track.segments.values()]
-        return {
-            "event": event,
-            "track_event": event,
-            "persistent_track_event": event,
-            "persistent_track_id": track.track_id,
-            "internal_object_id": track.track_id,
-            "persistent_instance_id": int(track.instance_id),
-            "local_segment_id": f"{track.track_id}:slot_{int(track.hydra_label_id)}",
-            "semantic_segment_id": f"{track.track_id}:slot_{int(track.hydra_label_id)}",
-            "local_segment_slot_id": int(track.hydra_label_id),
-            "local_segment_event": str(track.last_segment_event),
-            "local_segment_match_reason": str(track.last_segment_match_reason),
-            "local_segment_match_score": None if track.last_segment_match_score is None else float(track.last_segment_match_score),
-            "local_segment_xy_span_m": active_segment_record.get("local_segment_xy_span_m"),
-            "local_segment_centroid_3d": active_segment_record.get("centroid_3d"),
-            "local_segment_bbox_3d_min": active_segment_record.get("bbox_3d_min"),
-            "local_segment_bbox_3d_max": active_segment_record.get("bbox_3d_max"),
-            "local_segment_seen_count": active_segment_record.get("seen_count", 0),
-            "persistent_track_seen_count": int(track.seen_count),
-            "persistent_match_reason": reason,
-            "persistent_match_score": None if score is None else float(score),
-            "hydra_slot_id": int(track.hydra_label_id),
-            "hydra_slot_name": track.hydra_label_name,
-            "hydra_label_id": int(track.hydra_label_id),
-            "hydra_label_name": track.hydra_label_name,
-            "canonical_label": track.canonical_label,
-            "semantic_label_source": track.label_source,
-            "semantic_label_confidence": float(track.label_confidence),
-            "slot_state": track.slot_state,
-            "labeling_dispatched": bool(track.labeling_dispatched),
-            "labeling_completed": bool(track.labeling_completed),
-            "labeling_status": str(track.labeling_status),
-            "semantic_label": track.semantic_label,
-            "semantic_label_source": track.semantic_label_source,
-            "semantic_label_confidence": float(track.semantic_label_confidence),
-            "mobility_class": track.mobility_class,
-            "mobility_confidence": float(track.mobility_confidence),
-            "mobility_source": track.mobility_source,
-            "object_detail": track.object_detail,
-            "semantic_hydra_class_id": int(track.semantic_hydra_class_id),
-            "semantic_reason": track.semantic_reason,
-            "semantic_timestamp_sec": track.semantic_timestamp_sec,
-            "semantic_update_count": int(track.semantic_update_count),
-            "first_seen_timestamp_sec": float(track.first_seen_timestamp_sec),
-            "last_seen_timestamp_sec": float(track.last_seen_timestamp_sec),
-            "centroid_3d": _as_list(track.centroid_3d),
-            "bbox_volume_m3": track.bbox_volume_m3,
-            "bbox_2d": track.bbox_2d,
-            "bbox_3d_min": _as_list(track.bbox_3d_min),
-            "bbox_3d_max": _as_list(track.bbox_3d_max),
-            "last_bbox_3d_min": _as_list(track.last_bbox_3d_min),
-            "last_bbox_3d_max": _as_list(track.last_bbox_3d_max),
-            "label_evidence": {str(k): float(v) for k, v in track.label_evidence.items()},
-            "label_observations": {str(k): int(v) for k, v in track.label_observations.items()},
-            "semantic_slot_ids": [int(item.get("hydra_slot_id", 0)) for item in all_segment_records],
-            "semantic_segment_count": len(all_segment_records),
-            "active_segment": active_segment_record,
-            "semantic_segments": all_segment_records,
-        }
+        return tracker_serialization.track_record(track, event, reason, score)
