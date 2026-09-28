@@ -64,11 +64,9 @@ class BboxDiagnosticsLogger:
                 "frame_number": frame_number,
                 "track_id": track_id,
                 # The Hydra semantic slot this track was assigned (mode:
-                # hydra_slots). Added 2026-09-20: without this, matching a
-                # track back to its represented/missing status in Hydra's DSG
-                # required guessing the track->slot mapping (unreliable --
-                # merges and reserved slots break simple sequential
-                # numbering). This makes it a direct join instead.
+                # hydra_slots), so a track joins directly to its status in
+                # Hydra's DSG. Merges and reserved slots break simple
+                # sequential numbering, so it cannot be inferred.
                 "hydra_label_id": metadata.get("hydra_label_id"),
                 "centroid_3d": metadata.get("centroid_3d"),
                 "bbox_3d_min": metadata.get("bbox_3d_min"),

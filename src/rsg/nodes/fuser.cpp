@@ -4024,10 +4024,8 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   }
 
   /**
-   * Small floating label at a contact edge's midpoint: just the Euclidean
-   * centroid distance (e.g. "1.45m"). Used to show the 2D IoU here too
-   * (the larger of the XZ- and YZ-plane projections) but that was removed
-   * 2026-09-11 to keep the label to a single, simpler number.
+   * Small floating label at a contact edge's midpoint: the Euclidean
+   * centroid distance (e.g. "1.45m").
    */
   void appendObjectContactLabel(MarkerArray& markers, MarkerSet& next_keys, const std::string& frame,
                                 const builtin_interfaces::msg::Time& stamp, NodeId source, NodeId target,

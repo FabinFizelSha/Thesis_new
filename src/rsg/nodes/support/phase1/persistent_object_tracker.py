@@ -2567,13 +2567,7 @@ class PersistentObjectTracker:
             # (e.g. one bad early merge), those two normally-separate votes
             # both pass almost for free for anything spatially inside it, and
             # quorum is satisfied without the match ever being physically
-            # plausible. This was previously computed and stored in the row
-            # for diagnostics only, never read here -- confirmed via the
-            # 2026-09-21 frame 350/356/390 case (obj_019 absorbed an unrelated
-            # object at 6.4m^3 vs a normal single-object crop, a ~15-20x
-            # ratio) that nothing was blocking it. persistent_max_volume_ratio
-            # already existed as a config field (parsed, never read) -- wiring
-            # it here rather than adding a new one.
+            # plausible.
             max_volume_ratio = float(getattr(self.config, "persistent_max_volume_ratio", 3.0))
             hard_volume_contradiction = bool(
                 reliable_3d and math.isfinite(ratio) and ratio > max_volume_ratio

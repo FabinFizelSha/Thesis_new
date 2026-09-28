@@ -1675,14 +1675,12 @@ class Phase1SemanticCoordinator(Node):
     def _experiment_crop_score(
         self, rgb: np.ndarray, mask: Optional[np.ndarray], bbox_2d: Any
     ) -> Optional[float]:
-        """Crop-quality score from the finalized crop-scoring experiment.
-
-        CROP_SCORING_DOCUMENTATION (finalized 2026-08-30): the 2:2:1 weighted
-        additive scorer (log pixel count : Laplacian sharpness : 3px edge
-        margin) in ``TrackingCropManager._score_crop``, evaluated on the tight
-        mask bounding-box crop exactly as ``extract_crop`` does. Returns
-        ``None`` when the crop cannot be scored (no mask / degenerate box), so
-        the caller can fall back to the geometry score.
+        """Crop-quality score: the 2:2:1 weighted additive scorer (log pixel
+        count : Laplacian sharpness : 3px edge margin) in
+        ``TrackingCropManager._score_crop``, evaluated on the tight mask
+        bounding-box crop exactly as ``extract_crop`` does. Returns ``None``
+        when the crop cannot be scored (no mask / degenerate box), so the
+        caller can fall back to the geometry score.
         """
         if mask is None or not bbox_2d or len(bbox_2d) < 4:
             return None

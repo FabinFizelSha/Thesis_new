@@ -9,7 +9,6 @@
 # lookup, RViz, the phase1 coordinator) never connect at all ("incompatible
 # QoS, DURABILITY_QOS_POLICY" warning), which is what left hydra_ros_node
 # stuck forever on "Waiting for sensor extrinsics 'base_link_gt_T_left_cam'"
-# (2026-09-19).
 #
 # Overriding to TRANSIENT_LOCAL lets late-joining subscribers still receive
 # the one recorded /tf_static sample.
