@@ -470,7 +470,7 @@ class VlmDispatchStage:
                         "object_metadata": {},
                     }
                     self.logger.warn(f"VLM track {track_id} has no active crop; finalizing as unknown.")
-                    coordinator._finish_unknown_without_vlm(track_id, fallback, "vlm_missing_crop")
+                    coordinator.semantic_dispatch._finish_unknown_without_vlm(track_id, fallback, "vlm_missing_crop")
                     continue
                 task["unknown_track_id"] = track_id
                 if not self._is_vlm_crop_eligible(task, track_id):
@@ -655,7 +655,7 @@ class VlmDispatchStage:
                         "vlm_known",
                     )
                     if completed is not None:
-                        coordinator._emit_semantic_label_result(completed, semantic_task, source="vlm")
+                        coordinator.semantic_dispatch._emit_semantic_label_result(completed, semantic_task, source="vlm")
                         coordinator.risk_stage.enqueue_risk_task(
                             event=completed,
                             task=semantic_task,
@@ -684,7 +684,7 @@ class VlmDispatchStage:
                             "vlm_failed",
                         )
                         if completed is not None:
-                            coordinator._emit_semantic_label_result(completed, semantic_task, source="vlm_failed")
+                            coordinator.semantic_dispatch._emit_semantic_label_result(completed, semantic_task, source="vlm_failed")
                             persistent_update = completed
                     else:
                         # Attempts remain: leave the track open (is_semantic_
@@ -694,11 +694,11 @@ class VlmDispatchStage:
                         # than finalizing now.
                         waiting_record = coordinator.persistent_tracker.get_waiting_record(msg.unknown_track_id)
                         if waiting_record is not None:
-                            coordinator._emit_semantic_label_result(
+                            coordinator.semantic_dispatch._emit_semantic_label_result(
                                 waiting_record, semantic_task, source="vlm_retry_pending",
                                 finalize_track=False,
                             )
-                        coordinator._finalize_track_queue_state(track_id)
+                        coordinator.semantic_dispatch._finalize_track_queue_state(track_id)
                         with self._retry_lock:
                             self._retry_last_attempt_score[track_id] = float(
                                 task.get("crop_score", 0.0) or 0.0

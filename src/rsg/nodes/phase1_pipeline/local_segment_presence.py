@@ -137,7 +137,7 @@ class LocalSegmentPresenceStage:
                     )),
                     "centroid_3d": record.get("centroid_3d"),
                 }]
-                coordinator._emit_semantic_label_result(
+                coordinator.semantic_dispatch._emit_semantic_label_result(
                     propagation_event,
                     task,
                     source="object_label_propagation",

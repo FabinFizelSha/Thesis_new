@@ -23,8 +23,7 @@ import unittest
 
 import numpy as np
 
-from nodes.phase1 import Phase1SemanticCoordinator
-from nodes.phase1_pipeline import LocalSegmentPresenceStage
+from nodes.phase1_pipeline import LocalSegmentPresenceStage, SemanticLabelDispatchStage
 
 
 def _segment(slot_id: int):
@@ -139,25 +138,30 @@ class RestoredPresenceRepublishTest(unittest.TestCase):
 
 
 class _LabelCoordinator:
-    """Stand-in for the restored-label drain, with only publishing stubbed."""
+    """Stand-in for the restored-label drain, with only publishing stubbed.
+
+    _drain_restored_semantic_labels / _emit_restored_semantic_label now live
+    on SemanticLabelDispatchStage and reach their state through
+    self.coordinator and self.logger; self.coordinator = self plays both
+    roles in one flat mock, same pattern as _Coordinator above.
+    """
 
     _drain_restored_semantic_labels = (
-        Phase1SemanticCoordinator._drain_restored_semantic_labels
+        SemanticLabelDispatchStage._drain_restored_semantic_labels
     )
     _emit_restored_semantic_label = (
-        Phase1SemanticCoordinator._emit_restored_semantic_label
+        SemanticLabelDispatchStage._emit_restored_semantic_label
     )
 
     def __init__(self, tracks):
+        self.coordinator = self
         self.persistent_tracker = SimpleNamespace(
             _tracks=tracks,
             _segment_record=lambda segment: {"segment_id": segment.segment_id},
         )
         self._restored_label_pending = set(tracks)
         self.emitted = []
-
-    def get_logger(self):
-        return SimpleNamespace(
+        self.logger = SimpleNamespace(
             info=lambda *a, **k: None,
             warn=lambda *a, **k: None,
             warning=lambda *a, **k: None,

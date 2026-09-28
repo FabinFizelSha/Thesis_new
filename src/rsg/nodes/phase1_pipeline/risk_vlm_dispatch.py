@@ -63,7 +63,7 @@ class RiskVlmDispatchStage:
         track_id = str(event.get("persistent_track_id", task.get("persistent_track_id", "")))
         if not track_id:
             return
-        segments = self.coordinator._semantic_segments_for_fanout(event, task)
+        segments = self.coordinator.semantic_dispatch._semantic_segments_for_fanout(event, task)
         hydra_slot_ids = sorted({
             slot_id
             for segment in segments

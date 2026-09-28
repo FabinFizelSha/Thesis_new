@@ -132,7 +132,7 @@ class RapDispatchStage:
                 self.logger.warn(f"RAP track {track_id} has no active crop; finalizing as unknown.")
                 self._publish_rap_result(fallback, label="unknown_object", confidence=0.0,
                                          is_known=False, status="rap_missing_crop", reason="no_active_crop")
-                coordinator._finish_unknown_without_vlm(str(track_id), fallback, "rap_missing_crop")
+                coordinator.semantic_dispatch._finish_unknown_without_vlm(str(track_id), fallback, "rap_missing_crop")
                 continue
             try:
                 self._process_rap_task(task)
@@ -147,7 +147,7 @@ class RapDispatchStage:
                                          is_known=False, status="rap_error", reason=str(exc),
                                          vlm_dispatch_status=vlm_status)
                 if not coordinator.vlm_stage.schedule_accepted(vlm_status):
-                    coordinator._finish_unknown_without_vlm(str(track_id), task, "rap_worker_error")
+                    coordinator.semantic_dispatch._finish_unknown_without_vlm(str(track_id), task, "rap_worker_error")
 
     def _process_rap_task(self, task: Dict[str, Any]) -> str:
         """Run RAP on a dequeue-time snapshot of one track's best crop."""
@@ -243,7 +243,7 @@ class RapDispatchStage:
                 track_id, float(task.get("timestamp_sec", 0.0) or 0.0), "rap_known"
             )
             if completed is not None:
-                coordinator._emit_semantic_label_result(completed, task, source="rap")
+                coordinator.semantic_dispatch._emit_semantic_label_result(completed, task, source="rap")
                 coordinator.risk_stage.enqueue_risk_task(
                     event=completed,
                     task=task,
@@ -255,7 +255,7 @@ class RapDispatchStage:
         elif not is_known:
             vlm_status = coordinator.vlm_stage.enqueue_after_rap(track_id)
             if not coordinator.vlm_stage.schedule_accepted(vlm_status):
-                coordinator._finish_unknown_without_vlm(track_id, task, "rap_unknown_vlm_unavailable")
+                coordinator.semantic_dispatch._finish_unknown_without_vlm(track_id, task, "rap_unknown_vlm_unavailable")
 
         self.completed_count += 1
         self._publish_rap_result(
