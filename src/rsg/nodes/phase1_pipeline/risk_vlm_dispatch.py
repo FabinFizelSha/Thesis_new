@@ -120,7 +120,7 @@ class RiskVlmDispatchStage:
         and risk throughput rises without any adaptive tuning here.
         """
         while not self.coordinator._stop_event.is_set():
-            if self.config.risk_vlm_yield_to_object_vlm and not self.coordinator.vlm_queue.empty():
+            if self.config.risk_vlm_yield_to_object_vlm and not self.coordinator.vlm_stage.queue.empty():
                 time.sleep(float(self.config.risk_vlm_yield_backoff_sec))
                 continue
             try:

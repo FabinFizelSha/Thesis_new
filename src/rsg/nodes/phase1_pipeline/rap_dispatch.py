@@ -26,10 +26,8 @@ from nodes.support.phase1.vlm_result import DEFAULT_OBJECT_DETAIL, infer_mobilit
 class RapDispatchStage:
     """Owns the RAP queue, worker thread, backend, and accuracy diagnostics.
 
-    VLM dispatch is still coordinator-owned at this point in the
-    incremental extraction, so a RAP miss/error calls back into
-    ``coordinator._enqueue_vlm_after_rap``/``coordinator._vlm_schedule_accepted``
-    rather than a VlmDispatchStage.
+    A RAP miss/error hands off to ``coordinator.vlm_stage`` to queue the
+    track for VLM.
     """
 
     def __init__(self, coordinator: Any, config: Any, logger: Any, *, backend: Any, accuracy_diagnostics: Any):
@@ -144,11 +142,11 @@ class RapDispatchStage:
                         f"Async RAP failed for slot={task.get('hydra_slot_id', 0)} "
                         f"track={task.get('persistent_track_id', '')}: {exc}"
                     )
-                vlm_status = coordinator._enqueue_vlm_after_rap(str(track_id))
+                vlm_status = coordinator.vlm_stage.enqueue_after_rap(str(track_id))
                 self._publish_rap_result(task, label="unknown_object", confidence=0.0,
                                          is_known=False, status="rap_error", reason=str(exc),
                                          vlm_dispatch_status=vlm_status)
-                if not coordinator._vlm_schedule_accepted(vlm_status):
+                if not coordinator.vlm_stage.schedule_accepted(vlm_status):
                     coordinator._finish_unknown_without_vlm(str(track_id), task, "rap_worker_error")
 
     def _process_rap_task(self, task: Dict[str, Any]) -> str:
@@ -255,8 +253,8 @@ class RapDispatchStage:
                     source="rap",
                 )
         elif not is_known:
-            vlm_status = coordinator._enqueue_vlm_after_rap(track_id)
-            if not coordinator._vlm_schedule_accepted(vlm_status):
+            vlm_status = coordinator.vlm_stage.enqueue_after_rap(track_id)
+            if not coordinator.vlm_stage.schedule_accepted(vlm_status):
                 coordinator._finish_unknown_without_vlm(track_id, task, "rap_unknown_vlm_unavailable")
 
         self.completed_count += 1
