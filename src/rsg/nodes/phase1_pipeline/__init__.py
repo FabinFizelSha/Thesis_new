@@ -1,6 +1,5 @@
 """Phase1 pipeline modular components."""
 
-from .config import Phase1Config, DiagnosticConfig
 from .segmentation import SegmentationStage
 from .tracking import TrackingStage
 from .semantics import SemanticsStage
@@ -13,8 +12,6 @@ from .track_crop_registry import TrackCropRegistry
 from .semantic_label_dispatch import SemanticLabelDispatchStage
 
 __all__ = [
-    "Phase1Config",
-    "DiagnosticConfig",
     "SegmentationStage",
     "TrackingStage",
     "SemanticsStage",
