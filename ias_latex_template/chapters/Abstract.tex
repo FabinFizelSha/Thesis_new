@@ -1,13 +1,33 @@
-\chapter*{Abstract}
-\addcontentsline{toc}{chapter}{Abstract}
+\chapter{Introduction}
 
-Conventional risk assessment mechanisms are limited when the control strategy or operating environment of an autonomous system changes after deployment. This limitation is particularly relevant for systems operating in dynamic environments or modified through adaptive software components and over-the-air updates.
+\section{Motivation}
 
-This thesis contributes to the development of a dynamic risk assessment mechanism by extending an existing scene graph generation framework. The original FastAPI-based implementation is ported to ROS 2 to improve portability and integration with robotic systems. To support operation in larger environments, the scene graph generation process is extended through the integration of Hydra-based spatial data and loop closure detection. In addition, a probabilistic object representation is developed to account for uncertainty in object perception and to provide more robust information for risk assessment.
+Robots are increasingly leaving fenced industrial cells and entering shared, dynamic environments such as warehouses, hospitals, and offices. In 2024, almost 200,000 professional service robots were sold, 102,900 of them for transportation and logistics, where mobile robots move goods through their surroundings~\cite{ifr2025servicerobots}. At the same time, AI is becoming a key technology in robotics~\cite{ifr2025robots}. It allows robots to perceive and adapt to their environment, but it also makes their behaviour harder to predict during design-time safety analysis~\cite{silvaneto2022aisafetyassurance}.
 
-The thesis further refines the output of the vision-language model to produce bounded and consistent scene graph information. The proposed extensions are implemented with consideration for near-real-time operation, enabling the generated risk-annotated scene graph to provide structured environmental context during system operation.
+Conventional risk assessment is carried out before deployment and relies on assumptions about the intended use, operating environment, and known hazards~\cite{iso12100}. These assumptions may no longer hold when a mobile robot operates in a changing environment or receives software updates. Continuous risk assessment, which is updated while the system is running, has therefore been proposed~\cite{grimmeisen2023continuousrisk}. Such an approach needs a structured description of the current environment: which objects are present, where they are, and which of them may be relevant to risk. A spatial risk-annotated scene graph provides exactly this information in a machine-readable form.
 
-The framework is evaluated using multiple datasets, including a manually generated dataset collected with a Unitree Go1 robot in a university environment. Overall, this work improves the scalability, portability, and robustness of spatial risk-annotated scene graph generation and supports the development of dynamic risk assessment mechanisms for autonomous systems.
-\vfill
-\noindent\textbf{Keywords:} dynamic risk assessment, risk-annotated scene graph, ROS 2, SLAM, loop closure detection, probabilistic object representation, vision-language model
-\vfill
+\section{Relevance}
+
+To be useful in practice, such a scene graph must meet four requirements. It must be \emph{portable}, integrating with common robotic middleware rather than being tied to a specific robot or sensor setup. It must be \emph{spatially scalable}, so that objects keep a consistent identity as the robot moves through larger areas and revisits known places. It must be \emph{uncertainty-aware}, since perception is never error-free and objects are not always visible. Finally, it must run in \emph{near real time}, because risk assessment is only useful if the environmental context is available during operation.
+
+\section{Goal of the Thesis}
+
+The goal of this thesis is to extend the existing risk-annotated scene graph framework~\cite{previous_rsg_thesis} into a 3D spatial scene graph that describes the objects in the environment, their spatial context, and their risk-relevant properties. The baseline is mainly suited to local, frame-based scene understanding; this thesis aims to make it practical for mobile robots.
+
+The first goal is to port the FastAPI-based baseline to ROS~2~\cite{macenski2022ros2} for direct integration with robotic software. The second goal is to ground the scene graph in a spatial map and use loop closure to keep object information consistent across larger environments. The third goal is to represent how reliably each object has been identified and how recently it has been observed. The fourth goal is near-real-time operation on embedded hardware. The framework is evaluated on the simulated uHumans2 dataset~\cite{rosinol2021kimera} and the real-world OpenLORIS-Scene dataset~\cite{shi2020openloris}.
+
+\section{Contributions}
+
+This thesis makes the following contributions:
+
+\begin{enumerate}
+    \item A ROS~2 re-implementation of the framework with dedicated nodes for preprocessing, semantic perception, and scene graph fusion.
+    \item An integration with Hydra~\cite{hughes2022hydra} that produces a layered 3D scene graph enriched with semantic, mobility, and risk information.
+    \item A persistent object representation with label, mobility, and time-dependent presence confidences.
+    \item An asynchronous design for near-real-time operation on an NVIDIA Jetson AGX Thor~\cite{nvidia_jetson_thor}.
+    \item An evaluation on simulated and real-world data.
+\end{enumerate}
+
+\section{Structure of the Thesis}
+
+Chapter~\ref{chap:theory} presents the theoretical background, and Chapter~\ref{chap:methodology} describes the design of the extended framework. Chapter~\ref{chap:experiments} presents the experiments and results, and Chapter~\ref{chap:conclusions} concludes the thesis and outlines future work.
