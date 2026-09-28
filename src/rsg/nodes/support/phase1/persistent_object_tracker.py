@@ -27,6 +27,7 @@ from nodes.support.phase1.tracker_spatial_index import TrackerSpatialIndex
 from nodes.support.phase1.tracker_local_segments import TrackerLocalSegments
 from nodes.support.phase1.tracker_semantic_evidence import TrackerSemanticEvidence
 from nodes.support.phase1.tracker_reanchor import TrackerReanchor
+from nodes.support.phase1.tracker_labeling_lifecycle import TrackerLabelingLifecycle
 from nodes.support.phase1 import tracker_serialization
 # Re-exported so `from nodes.support.phase1.persistent_object_tracker import
 # _as_list` (and friends) keeps working for every existing external importer
@@ -191,6 +192,7 @@ class PersistentObjectTracker:
         self.local_segments = TrackerLocalSegments(self)
         self.semantic_evidence = TrackerSemanticEvidence(self)
         self.reanchor = TrackerReanchor(self)
+        self.labeling_lifecycle = TrackerLabelingLifecycle(self)
 
     def begin_frame(self) -> None:
         """Reset one-to-one association state for the next image frame."""
@@ -936,123 +938,25 @@ class PersistentObjectTracker:
         *,
         force: bool = False,
     ) -> List[Dict[str, Any]]:
-        """Return RAP task records after the fixed crop-settling window.
-
-        A semantic job is intentionally not scheduled from the first valid crop.
-        The persistent track remains live while later observations can replace
-        that crop in Phase 1's shared best-crop registry. ``current_timestamp_sec``
-        uses recorded message time, so the delay is deterministic during bag
-        replay and independent of worker latency.
-        """
-        ready: List[Dict[str, Any]] = []
-        min_observations = int(
-            getattr(self.config, "semantic_labeling_min_observations", 1)
-        )
-        settle_time_sec = max(
-            0.0,
-            float(getattr(self.config, "semantic_labeling_settle_time_sec", 0.0)),
-        )
-        now_sec = float(current_timestamp_sec)
-
-        with self._lock:
-            # Iterate over every live track rather than only the current-frame
-            # detections. This lets an object that has left the camera view be
-            # released once its fixed collection interval has elapsed.
-            for track in self._tracks.values():
-                if track.labeling_dispatched or track.labeling_completed:
-                    continue
-                if int(track.seen_count) < min_observations:
-                    continue
-
-                settling_age_sec = max(0.0, now_sec - float(track.first_seen_timestamp_sec))
-                if not force and settling_age_sec < settle_time_sec:
-                    track.labeling_status = "collecting"
-                    continue
-
-                track.labeling_dispatched = True
-                track.labeling_status = "queued"
-                reason = "shutdown_best_available_crop" if force else "fixed_settling_window_elapsed"
-                record = self._track_record(track, "labeling_ready", reason, None)
-                record["settling_age_sec"] = float(settling_age_sec)
-                record["settle_time_sec"] = float(settle_time_sec)
-                record["forced_dispatch"] = bool(force)
-                ready.append(record)
-        return ready
+        return self.labeling_lifecycle.prepare_active_for_labeling(current_timestamp_sec, force=force)
 
     def release_labeling_request(self, track_id: str, reason: str) -> None:
-        """Allow a later observation to retry RAP after enqueue/worker failure."""
-        with self._lock:
-            track = self._tracks.get(str(track_id))
-            if track is None or track.labeling_completed:
-                return
-            track.labeling_dispatched = False
-            track.labeling_status = str(reason)
+        return self.labeling_lifecycle.release_labeling_request(track_id, reason)
 
     def set_labeling_status(self, track_id: str, status: str) -> None:
-        """Record the asynchronous semantic stage without changing track identity.
-
-        Crop selection remains owned by Phase 1's shared registry.  This state
-        is diagnostic and makes it explicit that the representative crop stays
-        mutable while a track ID waits in RAP or VLM.
-        """
-        with self._lock:
-            track = self._tracks.get(str(track_id))
-            if track is None or track.labeling_completed:
-                return
-            track.labeling_status = str(status)
+        return self.labeling_lifecycle.set_labeling_status(track_id, status)
 
     def is_semantic_labeling_open(self, track_id: str) -> bool:
-        """Return whether a track may still accept crop updates."""
-        with self._lock:
-            track = self._tracks.get(str(track_id))
-            return bool(track is not None and not track.labeling_completed)
+        return self.labeling_lifecycle.is_semantic_labeling_open(track_id)
 
     def increment_vlm_attempt_count(self, track_id: str) -> Optional[int]:
-        """Record one more failed VLM attempt and return the new total.
-
-        Returns ``None`` if the track no longer exists or is already
-        finalized -- the caller should then treat this as exhausted rather
-        than retry a track that isn't live anymore.
-        """
-        with self._lock:
-            track = self._tracks.get(str(track_id))
-            if track is None or track.labeling_completed:
-                return None
-            track.vlm_attempt_count += 1
-            return int(track.vlm_attempt_count)
+        return self.labeling_lifecycle.increment_vlm_attempt_count(track_id)
 
     def record_vlm_attempt_detail(self, track_id: str, object_detail: str) -> None:
-        """Keep a failed attempt's object_detail without committing a label.
-
-        validate_vlm_response extracts ``object_detail`` unconditionally,
-        independent of label_confidence -- so even a rejected label can carry
-        a real, useful description. This only updates that one field; it
-        deliberately does not touch semantic_label/mobility (those still
-        require a successful attempt via apply_vlm_result).
-        """
-        detail = str(object_detail or "").strip()
-        if not detail:
-            return
-        with self._lock:
-            track = self._tracks.get(str(track_id))
-            if track is None or track.labeling_completed:
-                return
-            track.object_detail = detail
+        return self.labeling_lifecycle.record_vlm_attempt_detail(track_id, object_detail)
 
     def get_waiting_record(self, track_id: str) -> Optional[Dict[str, Any]]:
-        """Return a read-only snapshot for a track waiting on a VLM retry.
-
-        Unlike complete_semantic_labeling, this does not mark the track
-        completed or touch any state -- it only builds the same record shape
-        Phase 1 publishes to the fuser, so a "waiting_for_better_crop" status
-        (and whatever object_detail is currently known) can be shown while
-        the track keeps collecting crops.
-        """
-        with self._lock:
-            track = self._tracks.get(str(track_id))
-            if track is None:
-                return None
-            return self._track_record(track, "vlm_retry_pending", "vlm_retry_pending", None)
+        return self.labeling_lifecycle.get_waiting_record(track_id)
 
     def prune_expired_dynamic_tracks(self, current_timestamp_sec: float) -> List[Dict[str, Any]]:
         """Delete confirmed-dynamic tracks once presence confidence decays.
@@ -1132,20 +1036,7 @@ class PersistentObjectTracker:
         timestamp_sec: float,
         reason: str,
     ) -> Optional[Dict[str, Any]]:
-        """Commit the first RAP/VLM outcome without changing the Hydra slot.
-
-        The returned record is consumed by Phase 1 to publish a
-        ``semantic_label_result`` event.  The slot remains the same physical
-        object identity and is never replaced by a class ID.
-        """
-        with self._lock:
-            track = self._tracks.get(str(track_id))
-            if track is None:
-                return None
-            self._commit_semantic_label(track, float(timestamp_sec), str(reason))
-            track.labeling_completed = True
-            track.labeling_status = "completed"
-            return self._track_record(track, "semantic_label_completed", str(reason), None)
+        return self.labeling_lifecycle.complete_semantic_labeling(track_id, timestamp_sec, reason)
 
     def apply_vlm_result(
         self,
@@ -1156,24 +1047,14 @@ class PersistentObjectTracker:
         mobility_confidence: float = 0.0,
         object_detail: str = DEFAULT_OBJECT_DETAIL,
     ) -> Optional[Dict[str, Any]]:
-        """Attach one validated VLM label and mobility decision to a slot."""
-        normalised = self._canonicalise_label(label)
-        if not normalised:
-            return None
-        with self._lock:
-            track = self._tracks.get(str(track_id))
-            if track is None:
-                return None
-            track.raw_vlm_label = normalised
-            track.object_detail = str(object_detail or DEFAULT_OBJECT_DETAIL)
-            self._update_semantics(track, normalised, "vlm", float(confidence))
-            self._update_mobility(
-                track,
-                mobility_class=mobility_class,
-                confidence=mobility_confidence,
-                source="vlm",
-            )
-            return self._track_record(track, "vlm_semantic_update", "vlm_result", None)
+        return self.labeling_lifecycle.apply_vlm_result(
+            track_id,
+            label,
+            confidence,
+            mobility_class=mobility_class,
+            mobility_confidence=mobility_confidence,
+            object_detail=object_detail,
+        )
 
     def apply_rap_result(
         self,
@@ -1186,27 +1067,16 @@ class PersistentObjectTracker:
         mobility_source: str = "rap",
         object_detail: str = DEFAULT_OBJECT_DETAIL,
     ) -> Optional[Dict[str, Any]]:
-        """Attach one RAP label and stored mobility metadata to a slot."""
-        with self._lock:
-            track = self._tracks.get(str(track_id))
-            if track is None:
-                return None
-            resolved = self._canonicalise_label(label) if bool(is_known) else ""
-            if resolved:
-                self._update_semantics(track, resolved, "rap", float(confidence))
-                self._update_mobility(
-                    track,
-                    mobility_class=mobility_class,
-                    confidence=mobility_confidence,
-                    source=mobility_source,
-                )
-                track.object_detail = str(object_detail or DEFAULT_OBJECT_DETAIL)
-            return self._track_record(
-                track,
-                "rap_semantic_update" if resolved else "rap_unknown",
-                "rap_result",
-                None,
-            )
+        return self.labeling_lifecycle.apply_rap_result(
+            track_id,
+            label,
+            confidence,
+            is_known,
+            mobility_class=mobility_class,
+            mobility_confidence=mobility_confidence,
+            mobility_source=mobility_source,
+            object_detail=object_detail,
+        )
 
     def track_counts(self) -> Dict[str, int]:
         """Snapshot of track/slot totals, for the fuser-vs-phase1 node-count diagnostic.
