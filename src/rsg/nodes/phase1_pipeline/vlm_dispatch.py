@@ -156,7 +156,7 @@ class VlmDispatchStage:
         with self._quality_deferred_lock:
             if key not in self._quality_deferred_track_ids:
                 return
-        crop_state = self.coordinator._describe_track_crop(key)
+        crop_state = self.coordinator.crop_registry._describe_track_crop(key)
         if crop_state is None or not bool(crop_state.get("vlm_crop_quality_eligible", False)):
             return
         with self._quality_deferred_lock:
@@ -183,7 +183,7 @@ class VlmDispatchStage:
             if key not in self._retry_waiting_track_ids:
                 return
             last_score = float(self._retry_last_attempt_score.get(key, 0.0))
-        crop_state = self.coordinator._describe_track_crop(key)
+        crop_state = self.coordinator.crop_registry._describe_track_crop(key)
         if crop_state is None:
             return
         current_score = float(crop_state.get("best_frame_score", 0.0) or 0.0)
@@ -228,7 +228,7 @@ class VlmDispatchStage:
                     if status == "queued_for_vlm_fifo"
                     else "vlm_deferred_after_quality_timeout",
                 )
-                crop_state = self.coordinator._describe_track_crop(track_id) or {}
+                crop_state = self.coordinator.crop_registry._describe_track_crop(track_id) or {}
                 self.record_vlm_queue_event(
                     event="quality_timeout_force",
                     task={
@@ -275,7 +275,7 @@ class VlmDispatchStage:
         if not self.config.vlm_enabled:
             return "vlm_disabled"
         key = str(track_id)
-        crop_state = self.coordinator._describe_track_crop(key)
+        crop_state = self.coordinator.crop_registry._describe_track_crop(key)
         if crop_state is None:
             return "vlm_missing_crop"
         if not bool(crop_state.get("vlm_crop_quality_eligible", False)):
@@ -445,7 +445,7 @@ class VlmDispatchStage:
             is_track_id_task = isinstance(queued_item, str)
             track_id = str(queued_item) if is_track_id_task else str(queued_item.get("unknown_track_id", queued_item.get("persistent_track_id", "")))
             if is_track_id_task:
-                task = coordinator._snapshot_track_task(track_id, "vlm_dequeue")
+                task = coordinator.crop_registry._snapshot_track_task(track_id, "vlm_dequeue")
                 if task is not None:
                     coordinator.persistent_tracker.set_labeling_status(track_id, "vlm_dequeued")
                     # Save diagnostic crop for VLM

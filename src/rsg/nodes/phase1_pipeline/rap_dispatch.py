@@ -106,7 +106,7 @@ class RapDispatchStage:
             except queue.Empty:
                 continue
             self._pump_rap_deferred()
-            task = coordinator._snapshot_track_task(str(track_id), "rap_dequeue")
+            task = coordinator.crop_registry._snapshot_track_task(str(track_id), "rap_dequeue")
             if task is not None:
                 coordinator.persistent_tracker.set_labeling_status(str(track_id), "rap_dequeued")
                 # Save diagnostic crop for RAP
