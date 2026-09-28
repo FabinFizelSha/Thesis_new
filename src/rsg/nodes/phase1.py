@@ -68,6 +68,7 @@ from nodes.support.phase1.unknown_tracker import UnknownObjectTracker
 from nodes.support.phase1.vlm_result import DEFAULT_OBJECT_DETAIL, infer_mobility_from_label
 from nodes.support.phase1.loop_closure import loop_closure_delta, quat_to_rot
 from nodes.phase1_pipeline import SegmentationStage, TrackingStage, SemanticsStage, PublishingStage
+from nodes.phase1_pipeline.crop_utils import extract_crop_with_context, make_candidate_id
 
 
 class Phase1SemanticCoordinator(Node):
@@ -1426,7 +1427,7 @@ class Phase1SemanticCoordinator(Node):
         depth_range_keep: List[bool] = []
         for idx, mask in enumerate(sam_masks):
             stage_start = time.perf_counter() if timing_enabled else 0.0
-            candidate_id = self.make_candidate_id(frame, mask.mask_id, idx, False)
+            candidate_id = make_candidate_id(frame, mask.mask_id, idx, False)
             metadata, filtered_mask = self.build_object_metadata(
                 frame=frame, mask=mask, depth=depth, tx=tx, rot_m=rot_m,
                 label="unknown_object", label_id=0, instance_id=idx + 1,
@@ -1486,7 +1487,7 @@ class Phase1SemanticCoordinator(Node):
             use_known_class = False
             forced_slot_id = 0
             desired_label_id, desired_label_name = 0, "unknown"
-            candidate_id = self.make_candidate_id(frame, mask.mask_id, idx, False)
+            candidate_id = make_candidate_id(frame, mask.mask_id, idx, False)
             status = "collecting_best_crop"
             metadata = dict(prepared[idx]["metadata"])
 
@@ -3268,7 +3269,7 @@ class Phase1SemanticCoordinator(Node):
             candidate_id = str(unknown.get("candidate_id", ""))
             classified_mask = mask_lookup.get(candidate_id)
             bbox_2d = unknown.get("bbox_2d")
-            _, context_bbox_2d = self.extract_crop_with_context(
+            _, context_bbox_2d = extract_crop_with_context(
                 rgb,
                 bbox_2d,
                 context_ratio=float(self.config.vlm_crop_context_ratio),
@@ -3646,35 +3647,6 @@ class Phase1SemanticCoordinator(Node):
             self._safe_publish(self.vlm_result_pub, msg)
             self.publish_vlm_timing(msg)
             self.record_vlm_queue_event(event="completed", task=task, queue_wait_ms=queue_wait_ms, reason=msg.status)
-
-    @staticmethod
-    def extract_crop(rgb: np.ndarray, bbox_2d: Any) -> Optional[np.ndarray]:
-        """Extract a tight RGB crop from [x, y, w, h] metadata."""
-        crop, _ = Phase1SemanticCoordinator.extract_crop_with_context(rgb, bbox_2d, context_ratio=0.0)
-        return crop
-
-    @staticmethod
-    def extract_crop_with_context(
-        rgb: np.ndarray,
-        bbox_2d: Any,
-        *,
-        context_ratio: float,
-    ) -> Tuple[Optional[np.ndarray], List[int]]:
-        """Extract a clipped crop with symmetric context around an object box."""
-        context_bbox = context_bbox_xywh(
-            rgb.shape[:2], bbox_2d, context_ratio=context_ratio
-        )
-        if not context_bbox:
-            return None, []
-        x, y, width, height = context_bbox
-        return rgb[y:y + height, x:x + width].copy(), context_bbox
-
-    @staticmethod
-    def make_candidate_id(frame: RsgFrame, mask_id: str, index: int, is_known: bool) -> str:
-        """Build a reproducible identifier for one mask candidate."""
-        prefix = "rsg_known" if is_known else "rsg_unknown"
-        safe_frame_id = frame.rsg_frame_id.replace("/", "_")
-        return f"{prefix}_{safe_frame_id}_{index:03d}_{mask_id}"
 
     def build_result_metadata(
         self,
