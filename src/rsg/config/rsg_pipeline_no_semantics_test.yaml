@@ -157,7 +157,6 @@ phase1:                                                                         
   coordinator:
     request_queue_size: 1                                                                            # Keep only the newest segmentation request; prevents GPU backlog.
     frame_cache_size: 600                                                                            # Preserve associations between async results and source frames.
-    max_result_age_sec: 5.0                                                                          # Discard stale async results after five simulated seconds.
     drop_oldest_when_full: true                                                                      # Prefer recent views when the pipeline cannot keep up.
     publish_status: true                                                                             # Publish operational status.
     status_every_n_frames: 1                                                                         # Limit status traffic.
@@ -240,8 +239,6 @@ phase1:                                                                         
     global_revisit_weight_containment: 0.00
     continuation_max_age_sec: 8.0
     global_containment_threshold: 0.92                                                    # TENTATIVE (2026-09-06, awaiting a confirmation run -- revert to 0.90 if unconfirmed). Raised from 0.90. NOTE: until 2026-09-06 this key was never parsed -- Phase1Config had no matching field, so _find_match's getattr() always fell back to the literal 0.90 and any value set here was inert. Now wired; the first run after this is its first real effect. Containment is the same measurement as the footprint overlap (identical formula, stricter threshold), so for a small object standing inside a big surface track's envelope, footprint + containment + vertical are three votes for one geometric fact -- enough to meet the quorum while centroid and image both correctly object. The plant-into-wall merge sat at containment 0.906 in both runs; 0.92 removes that vote. Costs 5 rejections across 1387 recorded associations, all with the same signature (image IoU <= 0.29, centroid 0.9-2.7m away, small mask into a big track). Values form a continuum here, so this is a dial: raise toward 0.935 if the same merge reappears.
-    global_min_depth_z: 0.30                                                                  # Z-axis (vertical) padding threshold for thin floors/ceilings (meters).
-    global_min_depth_xy: 0.15                                                                 # X/Y-axis (horizontal) padding threshold for thin walls/railings (meters).
     revisit_min_2d_iou: 0.75
     local_segments_enabled: true                                                                      # Deliberate deviation from object-tracking-optimisation-experiment FINAL_OPTIMIZED_CONFIG.yaml (false), re-confirmed 2026-09-06 -- needed for long-internal-object splitting into local Hydra segments. Everything else in this block still matches the experiment exactly.
     local_segment_max_xy_span_m: 6.0                                                                 # Maximum horizontal span of one local semantic slot/section.
@@ -290,7 +287,6 @@ phase1:                                                                         
     include_bbox_volume: true                                                                        # Include 3D box volume for matching validation.
     include_depth_stats: true                                                                        # Include mask depth statistics for geometry diagnostics.
     include_mask_area: true                                                                          # Include mask area for confidence and filtering diagnostics.
-    include_timing_metadata: false                                                                   # Avoid bulky timing metadata in every message.
     include_frame_relation_metadata: false                                                           # Avoid redundant per-frame relation metadata.
 
   sam:

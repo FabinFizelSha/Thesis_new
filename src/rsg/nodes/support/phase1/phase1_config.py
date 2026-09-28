@@ -14,14 +14,7 @@ from typing import Any, Dict, List, Tuple
 
 import yaml
 
-from nodes.support.workspace_paths import expand_paths_in_yaml, workspace_path
-
-
-def _as_bool(value: Any, default: bool = False) -> bool:
-    """Return a robust bool from YAML values."""
-    if value is None:
-        return default
-    return bool(value)
+from nodes.support.workspace_paths import expand_paths_in_yaml
 
 
 def _deep_update(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
@@ -38,18 +31,14 @@ def _deep_update(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, An
 class Phase1Config:
     """Configuration values shared by ``rsg_object_detection`` and classifier."""
 
-    node_key: str
     use_sim_time: bool
     profile: str
     allow_dummy_fallback: bool
 
     # Topics.
     preprocessed_frame_topic: str
-    perception_request_topic: str
     vlm_result_topic: str
     rap_result_topic: str
-    semantic_label_result_topic: str
-    track_observations_topic: str
     hydra_frame_topic: str
     status_topic: str
     timing_topic: str
@@ -67,9 +56,7 @@ class Phase1Config:
     output_qos_depth: int
     semantic_label_qos_depth: int
     request_queue_size: int
-    classifier_queue_size: int
     frame_cache_size: int
-    max_result_age_sec: float
     drop_oldest_when_full: bool
 
     # Debug / timing.
@@ -120,7 +107,6 @@ class Phase1Config:
     include_bbox_volume: bool
     include_depth_stats: bool
     include_mask_area: bool
-    include_timing_metadata: bool
     include_frame_relation_metadata: bool
 
     # SAM / RAP / VLM settings.
@@ -176,7 +162,6 @@ class Phase1Config:
     # registry preserves unique unresolved tracks when the FIFO is full.
     rap_async: bool = True
     rap_queue_size: int = 300
-    rap_queue_drop_policy: str = "defer_track_id"
 
     # Shared mask-aware semantic crop representations. RAP queries and RAP
     # memory use a target-only crop. VLM keeps orientation context, but that
@@ -203,14 +188,11 @@ class Phase1Config:
     semantic_labeling_enabled: bool = True
     semantic_labeling_min_observations: int = 1
     semantic_labeling_settle_time_sec: float = 3.0
-    semantic_labeling_force_dispatch_on_shutdown: bool = True
     semantic_labeling_publish_topic: str = "/rsg/objects/semantic_label_result"
-    semantic_labeling_shutdown_wait_sec: float = 8.0
 
     vlm_enabled: bool = False
     vlm_active_profile: str = ""
     vlm_mode: str = "dummy"
-    vlm_async: bool = True
     # VLM also stores track IDs only in normal RAP-enabled operation. A
     # deferred registry avoids discarding unresolved tracks under backpressure.
     vlm_queue_size: int = 300
@@ -463,10 +445,7 @@ class Phase1Config:
     # object metadata, never by dynamically created semantic classes.
     hydra_label_lookup: Dict[str, int] = field(default_factory=dict)
     hydra_label_names: Dict[int, str] = field(default_factory=dict)
-    hydra_unclassified_label_id: int = 0
-    hydra_unclassified_label_name: str = "unknown"
 
-    rap_execution_mode: str = "auto"  # auto | async | synchronous
 
     persistent_tracking_enabled: bool = False
     persistent_track_prefix: str = "rsg_obj_"
@@ -524,8 +503,6 @@ class Phase1Config:
     persistent_global_revisit_weight_centroid: float = 0.30
     persistent_global_revisit_weight_vertical: float = 0.20
     persistent_global_revisit_weight_image: float = 0.05
-    persistent_global_min_depth_z: float = 0.30
-    persistent_global_min_depth_xy: float = 0.15
     persistent_local_segments_enabled: bool = True
     persistent_local_segment_max_xy_span_m: float = 4.0
     persistent_local_segment_revisit_distance_m: float = 1.5
@@ -618,7 +595,6 @@ class Phase1Config:
         topics = phase1.get("topics", {}) or {}
         qos = phase1.get("qos", {}) or {}
         coordinator = phase1.get("coordinator", {}) or {}
-        classifier = phase1.get("object_classifier", {}) or {}
         hydra = phase1.get("hydra_output", {}) or {}
         metadata = phase1.get("metadata", {}) or {}
         sam = phase1.get("sam", {}) or {}
@@ -714,16 +690,12 @@ class Phase1Config:
         preproc_image = preprocessing.get("image", {}) or {}
 
         config = Phase1Config(
-            node_key=node_key,
             use_sim_time=bool(runtime.get("use_sim_time", preproc_runtime.get("use_sim_time", True))),
             profile=str(phase1.get("profile", "dummy")),
             allow_dummy_fallback=bool(deployment.get("allow_dummy_fallback", False)),
             preprocessed_frame_topic=str(topics.get("preprocessed_frame", preproc_topics.get("prepared_frame", "/rsg/preprocessed/frame"))),
-            perception_request_topic=str(topics.get("perception_request", "/rsg/phase1/object_classifier/input")),
             vlm_result_topic=str(topics.get("vlm_result", "/rsg/phase1/object_classifier/vlm_result")),
             rap_result_topic=str(topics.get("rap_result", "/rsg/objects/rap_result")),
-            semantic_label_result_topic=str(topics.get("semantic_label_result", "/rsg/objects/semantic_label_result")),
-            track_observations_topic=str(topics.get("track_observations", "/rsg/objects/track_observations")),
             hydra_frame_topic=str(topics.get("hydra_frame", "/rsg/phase1/hydra/input_frame")),
             status_topic=str(topics.get(f"{node_key}_status", f"/rsg/phase1/{node_key}/status")),
             timing_topic=str(topics.get(f"{node_key}_timing", f"/rsg/phase1/{node_key}/timing")),
@@ -742,9 +714,7 @@ class Phase1Config:
             # outputs, which keep the small normal output queue.
             semantic_label_qos_depth=max(1, int(qos.get("semantic_label_depth", 4096))),
             request_queue_size=max(1, int(coordinator.get("request_queue_size", 2))),
-            classifier_queue_size=max(1, int(classifier.get("queue_size", 1))),
             frame_cache_size=max(1, int(coordinator.get("frame_cache_size", 75))),
-            max_result_age_sec=float(coordinator.get("max_result_age_sec", 1.0)),
             drop_oldest_when_full=bool(coordinator.get("drop_oldest_when_full", True)),
             timing_measurement_enabled=bool(performance.get("measure_timing", True)),
             publish_timing_topic=bool(performance.get("publish_timing", True)),
@@ -778,7 +748,6 @@ class Phase1Config:
             include_bbox_volume=bool(metadata.get("include_bbox_volume", True)),
             include_depth_stats=bool(metadata.get("include_depth_stats", True)),
             include_mask_area=bool(metadata.get("include_mask_area", True)),
-            include_timing_metadata=bool(metadata.get("include_timing_metadata", True)),
             include_frame_relation_metadata=bool(metadata.get("include_frame_relation_metadata", True)),
             sam_enabled=bool(sam.get("enabled", True)),
             sam_backend=str(sam.get("backend", "dummy")),
@@ -829,7 +798,6 @@ class Phase1Config:
             rap_auto_start_server=bool(rap.get("auto_start_server", True)),
             rap_async=bool(rap.get("async", True)),
             rap_queue_size=max(1, int(rap.get("queue_size", 300))),
-            rap_queue_drop_policy=str(rap.get("queue_drop_policy", "defer_track_id")),
             semantic_crop_rap_target_only_enabled=bool(semantic_crop.get("rap_target_only", True)),
             semantic_crop_rap_background_rgb=tuple(
                 max(0, min(255, int(value)))
@@ -854,13 +822,10 @@ class Phase1Config:
             semantic_labeling_enabled=bool(semantic_labeling.get("enabled", True)),
             semantic_labeling_min_observations=max(1, int(semantic_labeling.get("min_observations", 1))),
             semantic_labeling_settle_time_sec=max(0.0, float(semantic_labeling.get("settle_time_sec", 3.0))),
-            semantic_labeling_force_dispatch_on_shutdown=bool(semantic_labeling.get("force_dispatch_on_shutdown", True)),
             semantic_labeling_publish_topic=str(semantic_labeling.get("result_topic", topics.get("semantic_label_result", "/rsg/objects/semantic_label_result"))),
-            semantic_labeling_shutdown_wait_sec=max(0.0, float(semantic_labeling.get("shutdown_wait_sec", 8.0))),
             vlm_enabled=bool(vlm.get("enabled", True)),
             vlm_active_profile=str(vlm.get("active_profile", "")),
             vlm_mode=str(vlm.get("mode", "dummy")),
-            vlm_async=bool(vlm.get("async", True)),
             vlm_queue_size=max(1, int(vlm.get("queue_size", 300))),
             vlm_queue_drop_policy=str(vlm.get("queue_drop_policy", "defer_track_id")),
             vlm_dummy_delay_sec=float(vlm.get("dummy_delay_sec", 0.0)),
@@ -939,9 +904,6 @@ class Phase1Config:
             unknown_min_2d_iou=float(unknown_tracking.get("min_2d_iou", 0.30)),
             hydra_label_lookup=hydra_label_lookup,
             hydra_label_names=hydra_label_names,
-            hydra_unclassified_label_id=unclassified_id,
-            hydra_unclassified_label_name=str(hydra_label_names.get(unclassified_id, unclassified_name)),
-            rap_execution_mode=rap_execution_mode,
             persistent_tracking_enabled=bool(persistent_tracking.get("enabled", False)),
             persistent_track_prefix=str(persistent_tracking.get("track_prefix", "rsg_obj_")),
             persistent_max_tracks=max(1, min(65535, int(persistent_tracking.get("max_tracks", slot_count if slot_mode else 1024)))),
@@ -1000,8 +962,6 @@ class Phase1Config:
             persistent_global_revisit_weight_centroid=max(0.0, float(persistent_tracking.get("global_revisit_weight_centroid", 0.30))),
             persistent_global_revisit_weight_vertical=max(0.0, float(persistent_tracking.get("global_revisit_weight_vertical", 0.20))),
             persistent_global_revisit_weight_image=max(0.0, float(persistent_tracking.get("global_revisit_weight_image", 0.05))),
-            persistent_global_min_depth_z=max(0.05, float(persistent_tracking.get("global_min_depth_z", 0.30))),
-            persistent_global_min_depth_xy=max(0.05, float(persistent_tracking.get("global_min_depth_xy", 0.15))),
             persistent_local_segments_enabled=bool(persistent_tracking.get("local_segments_enabled", True)),
             persistent_local_segment_max_xy_span_m=max(0.25, float(persistent_tracking.get("local_segment_max_xy_span_m", 4.0))),
             persistent_local_segment_revisit_distance_m=max(0.05, float(persistent_tracking.get("local_segment_revisit_distance_m", 1.5))),

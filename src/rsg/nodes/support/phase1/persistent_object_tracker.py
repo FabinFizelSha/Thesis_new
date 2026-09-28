@@ -117,35 +117,6 @@ def _aabb_center_delta_z(
 
 
 
-def _aabb_overlap_fraction_xy(
-    observation_min: np.ndarray,
-    observation_max: np.ndarray,
-    track_min: np.ndarray,
-    track_max: np.ndarray,
-) -> Tuple[float, float, float]:
-    """Return observation-normalised XY overlap area and per-axis fractions."""
-    obs_dx = max(0.0, float(observation_max[0] - observation_min[0]))
-    obs_dy = max(0.0, float(observation_max[1] - observation_min[1]))
-    overlap_x = max(
-        0.0,
-        min(float(observation_max[0]), float(track_max[0]))
-        - max(float(observation_min[0]), float(track_min[0])),
-    )
-    overlap_y = max(
-        0.0,
-        min(float(observation_max[1]), float(track_max[1]))
-        - max(float(observation_min[1]), float(track_min[1])),
-    )
-    fraction_x = overlap_x / max(obs_dx, 1e-9)
-    fraction_y = overlap_y / max(obs_dy, 1e-9)
-    area_fraction = (overlap_x * overlap_y) / max(obs_dx * obs_dy, 1e-9)
-    return (
-        max(0.0, min(1.0, float(area_fraction))),
-        max(0.0, min(1.0, float(fraction_x))),
-        max(0.0, min(1.0, float(fraction_y))),
-    )
-
-
 def _aabb_overlap_fraction_3d(
     observation_min: np.ndarray,
     observation_max: np.ndarray,
@@ -800,62 +771,6 @@ class PersistentObjectTracker:
         if math.isfinite(ratio) and ratio > max_volume_ratio:
             return False
         return True
-
-    @staticmethod
-    def _hungarian_maximize(weights: List[List[float]]) -> List[int]:
-        """Return one selected column per row using a rectangular Hungarian solver."""
-        if not weights:
-            return []
-        n = len(weights)
-        m = len(weights[0])
-        if n > m:
-            raise ValueError("Hungarian solver requires columns >= rows")
-        maximum = max(max(row) for row in weights)
-        cost = [[maximum - value for value in row] for row in weights]
-        u = [0.0] * (n + 1)
-        v = [0.0] * (m + 1)
-        p = [0] * (m + 1)
-        way = [0] * (m + 1)
-        for i in range(1, n + 1):
-            p[0] = i
-            j0 = 0
-            minv = [float("inf")] * (m + 1)
-            used = [False] * (m + 1)
-            while True:
-                used[j0] = True
-                i0 = p[j0]
-                delta = float("inf")
-                j1 = 0
-                for j in range(1, m + 1):
-                    if used[j]:
-                        continue
-                    cur = cost[i0 - 1][j - 1] - u[i0] - v[j]
-                    if cur < minv[j]:
-                        minv[j] = cur
-                        way[j] = j0
-                    if minv[j] < delta:
-                        delta = minv[j]
-                        j1 = j
-                for j in range(m + 1):
-                    if used[j]:
-                        u[p[j]] += delta
-                        v[j] -= delta
-                    else:
-                        minv[j] -= delta
-                j0 = j1
-                if p[j0] == 0:
-                    break
-            while True:
-                j1 = way[j0]
-                p[j0] = p[j1]
-                j0 = j1
-                if j0 == 0:
-                    break
-        assignment = [-1] * n
-        for j in range(1, m + 1):
-            if p[j] > 0:
-                assignment[p[j] - 1] = j - 1
-        return assignment
 
     @staticmethod
     def _greedy_maximize(
@@ -2861,86 +2776,6 @@ class PersistentObjectTracker:
             track.bbox_3d_max = bbox_3d_max.copy() if track.bbox_3d_max is None else np.maximum(track.bbox_3d_max, bbox_3d_max)
             track.last_bbox_3d_min = bbox_3d_min.copy()
             track.last_bbox_3d_max = bbox_3d_max.copy()
-
-    def analyze_bbox_overlaps(self) -> Dict[str, Any]:
-        """Analyze overlapping bboxes in current tracks for fragmentation diagnosis.
-
-        Returns dict with overlap statistics for threshold optimization.
-        """
-        overlaps = []
-        track_list = list(self._tracks.items())
-
-        for i in range(len(track_list)):
-            for j in range(i + 1, len(track_list)):
-                tid_i, track_i = track_list[i]
-                tid_j, track_j = track_list[j]
-
-                # Skip if either track has no valid bbox
-                if (track_i.bbox_3d_min is None or track_i.bbox_3d_max is None or
-                    track_j.bbox_3d_min is None or track_j.bbox_3d_max is None):
-                    continue
-
-                # Calculate 3D bbox overlap fraction
-                min_i = track_i.bbox_3d_min
-                max_i = track_i.bbox_3d_max
-                min_j = track_j.bbox_3d_min
-                max_j = track_j.bbox_3d_max
-
-                # Overlap bounds
-                overlap_min = np.maximum(min_i, min_j)
-                overlap_max = np.minimum(max_i, max_j)
-
-                # Check if there's overlap in all 3 dimensions
-                overlap = np.all(overlap_min < overlap_max)
-                if not overlap:
-                    continue
-
-                # Calculate overlap volume
-                overlap_dims = overlap_max - overlap_min
-                overlap_volume = float(np.prod(overlap_dims))
-
-                # Calculate original volumes
-                vol_i = float(np.prod(max_i - min_i))
-                vol_j = float(np.prod(max_j - min_j))
-
-                # Overlap as percentage of smaller track
-                overlap_pct = 100.0 * overlap_volume / min(vol_i, vol_j)
-
-                # XY distance between centroids
-                cent_i = track_i.centroid_3d or ((min_i + max_i) / 2.0)
-                cent_j = track_j.centroid_3d or ((min_j + max_j) / 2.0)
-                xy_dist = float(np.linalg.norm(cent_i[:2] - cent_j[:2]))
-
-                if overlap_pct > 0:
-                    overlaps.append({
-                        'track_i': tid_i,
-                        'track_j': tid_j,
-                        'overlap_pct': overlap_pct,
-                        'xy_distance_m': xy_dist,
-                        'vol_i': vol_i,
-                        'vol_j': vol_j,
-                        'overlap_volume': overlap_volume,
-                        'age_i': track_i.seen_count,
-                        'age_j': track_j.seen_count,
-                    })
-
-        # Summary statistics
-        stats = {
-            'total_track_pairs': len(track_list) * (len(track_list) - 1) // 2,
-            'overlapping_pairs': len(overlaps),
-            'overlap_pct_min': min([o['overlap_pct'] for o in overlaps], default=0),
-            'overlap_pct_max': max([o['overlap_pct'] for o in overlaps], default=0),
-            'overlap_pct_mean': np.mean([o['overlap_pct'] for o in overlaps]) if overlaps else 0,
-            'xy_distance_min': min([o['xy_distance_m'] for o in overlaps], default=0),
-            'detailed_overlaps': overlaps,
-        }
-
-        self.logger.info(
-            f"BBox overlap analysis: {stats['overlapping_pairs']} overlapping pairs "
-            f"(max overlap: {stats['overlap_pct_max']:.1f}%, mean: {stats['overlap_pct_mean']:.1f}%)"
-        )
-
-        return stats
 
     @staticmethod
     def _source_rank(source: str) -> int:

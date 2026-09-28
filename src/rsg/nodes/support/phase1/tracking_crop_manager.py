@@ -71,51 +71,6 @@ class TrackingCropManager:
         self.rap_dir = None
         self.vlm_dir = None
 
-    def _clean_mask(self, mask_uint8: np.ndarray) -> np.ndarray:
-        """
-        Clean mask by removing small noise islands and keeping only largest component.
-
-        Args:
-            mask_uint8: Binary mask (uint8)
-
-        Returns:
-            Cleaned binary mask (or original if cleaning would eliminate it)
-        """
-        original_pixels = cv2.countNonZero(mask_uint8)
-
-        # If mask is very small, return as-is (don't over-clean)
-        if original_pixels < 20:
-            return mask_uint8
-
-        # Apply morphological close to remove small holes
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        mask_closed = cv2.morphologyEx(mask_uint8, cv2.MORPH_CLOSE, kernel, iterations=2)
-
-        # Find connected components
-        num_labels, labels = cv2.connectedComponents(mask_closed)
-
-        if num_labels <= 1:
-            return mask_closed
-
-        # Find largest component (excluding background=0)
-        largest_label = 0
-        largest_size = 0
-        for label in range(1, num_labels):
-            size = np.sum(labels == label)
-            if size > largest_size:
-                largest_size = size
-                largest_label = label
-
-        # Keep only largest component, but ensure it's substantial
-        cleaned = np.where(labels == largest_label, 255, 0).astype(np.uint8)
-
-        # If cleaning removed too much, return original
-        cleaned_pixels = cv2.countNonZero(cleaned)
-        if cleaned_pixels < original_pixels * 0.3:  # Lost more than 70%
-            return mask_uint8
-
-        return cleaned
-
     def get_filtered_mask(self, mask: np.ndarray) -> np.ndarray:
         """Return mask containing only the largest contour (after area filtering).
 

@@ -131,17 +131,3 @@ class TrackingStage:
         if self.config.persistent_tracking_enabled:
             return metadata
         return filter_metadata(metadata, self.config)
-
-    def update_track_observations(self, track_records: List[Dict[str, Any]]) -> None:
-        """Update track observations after association."""
-        # This would be called after metadata is finalized
-        for record in track_records:
-            track_id = record.get("persistent_track_id")
-            if track_id and track_id in self.tracker._tracks:
-                track = self.tracker._tracks[track_id]
-                # Update track with final metadata
-                if "centroid_3d" in record:
-                    track.centroid_3d = record["centroid_3d"]
-                if "bbox_3d_min" in record and "bbox_3d_max" in record:
-                    track.bbox_3d_min = record["bbox_3d_min"]
-                    track.bbox_3d_max = record["bbox_3d_max"]

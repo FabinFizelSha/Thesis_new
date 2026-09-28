@@ -29,7 +29,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import rclpy
 from cv_bridge import CvBridge
-from geometry_msgs.msg import PoseStamped, TransformStamped
+from geometry_msgs.msg import PoseStamped
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image
@@ -60,8 +60,6 @@ from nodes.support.phase1.rap_accuracy_diagnostics import RapAccuracyDiagnostics
 from nodes.support.phase1.periodic_crop_diagnostics import PeriodicCropDiagnostics
 from nodes.support.phase1.frame_mask_overlay_diagnostics import FrameMaskOverlayDiagnostics
 from nodes.support.phase1.semantic_crop import (
-    build_rap_target_only_crop,
-    build_vlm_target_focus_crop,
     context_bbox_xywh,
     prepare_target_mask,
 )
@@ -1674,42 +1672,6 @@ class Phase1SemanticCoordinator(Node):
             result_stage_ms.update(association_stage_ms)
         return classified, track_records, result_stage_ms
 
-    def _classify_rap_synchronously(self, rgb: np.ndarray, mask: SamMask, mask_index: int) -> Dict[str, Any]:
-        """Return one RAP decision before Hydra publication in reuse mode."""
-        if not self.config.rap_enabled:
-            return {"label": "unknown_object", "confidence": 0.0, "is_known": False, "metadata": {}, "status": "disabled", "delay_ms": 0.0}
-        start = time.perf_counter()
-        try:
-            rap_crop = self.sem_stage.build_rap_crop(rgb, mask.mask, mask.bbox_2d)
-            if rap_crop is None or rap_crop.size == 0:
-                raise RuntimeError("Synchronous RAP target-only crop is empty")
-
-            height, width = rap_crop.shape[:2]
-            synthetic_mask = SamMask(
-                mask_id=str(mask.mask_id),
-                mask=np.ones((height, width), dtype=bool),
-                bbox_2d=[0, 0, int(width), int(height)],
-                area_px=int(height * width),
-                crop=rap_crop,
-                score=float(mask.score),
-                metadata={**dict(mask.metadata or {}), "semantic_crop_representation": "target_only"},
-            )
-            rap = self.rap_backend.classify(rap_crop, synthetic_mask, int(mask_index))
-            confidence = float(rap.confidence)
-            is_known = bool(rap.is_known and confidence >= self.config.rap_confidence_threshold)
-            return {
-                "label": str(rap.label or "unknown_object"),
-                "confidence": confidence,
-                "is_known": is_known,
-                "metadata": dict(rap.metadata or {}),
-                "status": "known" if is_known else "unknown",
-                "delay_ms": (time.perf_counter() - start) * 1000.0,
-            }
-        except Exception as exc:
-            self.get_logger().warn(f"Synchronous RAP lookup failed: {exc}")
-            return {"label": "unknown_object", "confidence": 0.0, "is_known": False, "metadata": {"error": str(exc)}, "status": "error", "delay_ms": (time.perf_counter() - start) * 1000.0}
-
-
     def _experiment_crop_score(
         self, rgb: np.ndarray, mask: Optional[np.ndarray], bbox_2d: Any
     ) -> Optional[float]:
@@ -2107,15 +2069,6 @@ class Phase1SemanticCoordinator(Node):
             "vlm_crop_quality_timeout_forced": quality_timeout_forced,
             "queue_stage": str(stage),
         }
-
-    @staticmethod
-    def _normalise_label_key(label: Any) -> str:
-        return " ".join(str(label or "").strip().lower().replace("_", " ").split())
-
-    def _resolve_hydra_semantic_label(self, label_key: str, is_known: bool) -> Tuple[int, str]:
-        """Compatibility shim: semantic classes never replace physical slots."""
-        del label_key, is_known
-        return 0, "unknown"
 
     def build_object_metadata(
         self,
@@ -2779,14 +2732,6 @@ class Phase1SemanticCoordinator(Node):
             self._vlm_quality_deferred_since_timestamp_sec.pop(key, None)
             self._vlm_quality_force_track_ids.discard(key)
 
-    def _release_rap_task_key(self, task_or_track_id: Any) -> None:
-        """Compatibility wrapper used by older error paths."""
-        if isinstance(task_or_track_id, dict):
-            key = str(task_or_track_id.get("persistent_track_id", ""))
-        else:
-            key = str(task_or_track_id or "")
-        self._finalize_track_queue_state(key)
-
     def _pump_rap_deferred(self) -> None:
         """Move deferred RAP IDs into the bounded FIFO when capacity exists."""
         with self._rap_task_lock:
@@ -3010,18 +2955,6 @@ class Phase1SemanticCoordinator(Node):
                     queue_wait_ms=0.0,
                     reason="vlm_crop_quality_timeout",
                 )
-
-    def _force_release_quality_deferred_vlm_tracks(self) -> None:
-        """Release deferred IDs at controlled shutdown with their best available crop."""
-        with self._vlm_quality_deferred_lock:
-            track_ids = list(self._vlm_quality_deferred_track_ids)
-            self._vlm_quality_deferred_track_ids.clear()
-            self._vlm_quality_deferred_since_timestamp_sec.clear()
-            self._vlm_quality_force_track_ids.update(track_ids)
-        for track_id in track_ids:
-            status = self.enqueue_vlm_track(track_id)
-            if status in {"queued_for_vlm_fifo", "deferred_for_vlm"}:
-                self.persistent_tracker.set_labeling_status(track_id, "vlm_forced_low_quality_at_shutdown")
 
     def enqueue_vlm_track(self, track_id: str) -> str:
         """Schedule one unresolved persistent track for VLM by ID only."""
@@ -3267,26 +3200,6 @@ class Phase1SemanticCoordinator(Node):
                 key,
                 "vlm_queued" if status == "queued_for_vlm_fifo" else "vlm_deferred",
             )
-        return status
-
-    def _dispatch_vlm_from_rap_task(self, task: Dict[str, Any]) -> str:
-        """Compatibility path used only when the old unknown tracker is active."""
-        if not self.config.vlm_enabled:
-            return "vlm_disabled"
-        unknown = dict(task.get("unknown_metadata") or {})
-        if not unknown:
-            return "missing_unknown_metadata"
-        vlm_task, dispatch_info = self.unknown_tracker.update_evidence_and_build_vlm_task(
-            unknown=unknown,
-            rgb_crop=task.get("rgb_crop"),
-            frame_header=task.get("frame_header"),
-            frame_id=str(task.get("frame_id", "")),
-            sequence=int(task.get("sequence", 0)),
-            image_area_px=int(task["rgb"].shape[0] * task["rgb"].shape[1]) if getattr(task.get("rgb"), "ndim", 0) >= 2 else None,
-        )
-        status = str(dispatch_info.get("vlm_dispatch_status", "not_queued"))
-        if vlm_task is not None:
-            status = self.enqueue_vlm_task(vlm_task, status)
         return status
 
     def _publish_rap_result(
@@ -3805,32 +3718,6 @@ class Phase1SemanticCoordinator(Node):
             "source_preprocessor_metadata": safe_json_loads(frame.metadata_json, default={}),
         }
         return metadata
-
-    def build_failed_result(self, frame: RsgFrame, reason: str) -> Phase1ClassificationResult:
-        """Build a failure result with empty label maps so downstream nodes can log it."""
-        result = Phase1ClassificationResult()
-        result.header = frame.header
-        result.rsg_frame_id = frame.rsg_frame_id
-        result.sequence = frame.sequence
-        result.success = False
-        result.status = "failed"
-        result.reason = reason
-        height = int(frame.rgb.height) if frame.rgb.height else 1
-        width = int(frame.rgb.width) if frame.rgb.width else 1
-        empty = np.zeros((height, width), dtype=np.uint16)
-        result.semantic_labels = self.bridge.cv2_to_imgmsg(empty, encoding=self.config.semantic_label_encoding)
-        result.semantic_labels.header = frame.header
-        result.instance_labels = self.bridge.cv2_to_imgmsg(empty, encoding=self.config.instance_label_encoding)
-        result.instance_labels.header = frame.header
-        result.label_table_json = safe_json_dumps({"0": "background"})
-        result.object_metadata_json = "[]"
-        result.unknown_candidates_json = "[]"
-        result.vlm_dispatch_json = "[]"
-        result.metadata_json = safe_json_dumps({"phase": "phase1_object_classification", "status": "failed", "reason": reason})
-        result.image_conversion_delay_ms = 0.0
-        result.result_message_build_delay_ms = 0.0
-        result.classifier_debug_record_delay_ms = 0.0
-        return result
 
     def publish_timing_event(self, result: Phase1ClassificationResult, metadata: Optional[Dict[str, Any]] = None) -> None:
         """Record one simple classifier phase-latency row per processed frame."""

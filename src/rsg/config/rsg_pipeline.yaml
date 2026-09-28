@@ -101,7 +101,7 @@ preprocessing:                                                                  
 
 phase1:                                                                                              # NanoSAM segmentation, RAP retrieval, optional VLM labeling, and Hydra semantic-frame output.
   diagnostics:
-    enabled: true                                                                                   # MASTER SWITCH for all per-run diagnostic writers: bbox dumps, crop-evolution, tracking-quality logs, RAP/VLM crop images, and the VLM test crop+CSV. false => nothing written, near-zero overhead. Functional crop scoring / mask filtering / best-crop selection is unaffected. (The keys below are legacy and currently unwired; `enabled` governs everything.) Turned back on 2026-09-11 to capture risk-VLM diagnostics (crops + risk_results.csv, see phase1.risk_vlm.enabled below) -- log_tracking stays false and rap.enabled stays false, so the tracking-quality and RAP-accuracy writers this switch also gates stay off; only the risk-VLM writer is actually enabled by this. Does NOT affect phase1.performance.measure_timing/write_timing_excel (a separate system, phase1_timing.csv) -- that stays on regardless.
+    enabled: false                                                                                  # 2026-09-28: turned off -- MASTER SWITCH for all per-run diagnostic writers: bbox dumps, crop-evolution, tracking-quality logs, RAP/VLM crop images, and the VLM test crop+CSV. false => nothing written, near-zero overhead. Functional crop scoring / mask filtering / best-crop selection is unaffected. (The keys below are legacy and currently unwired; `enabled` governs everything.) Does NOT affect phase1.performance.measure_timing/write_timing_excel (a separate system, phase1_timing.csv) -- turned off separately below.
     log_tracking: false                                                                             # Object-tracking diagnostics sub-switch: the association/lifecycle/frames JSONL (TrackingQualityRecorder) and the periodic per-track crops. Wired 2026-09-06 (it had been declared here but never parsed). Turned back off 2026-09-11 -- the revisit-accuracy experiment that needed this (debug/revisit_experiment/EXPERIMENT_PART1_REVISIT_ACCURACY.md) is closed. Re-enable (with the master `enabled` above) if another cross-session association-mode verification is needed. The risk-VLM and RAP writers are independent of this and follow `enabled` above.
     save_tracking_crops: false                                                                      # Save accepted best crops and the exact crop revisions dequeued by RAP/VLM.
     tracking_crop_dir: ${WORKSPACE_ROOT}/debug/phase1_excel_current/tracking_crops            # Per-internal-object diagnostic image directory.
@@ -145,7 +145,6 @@ phase1:                                                                         
   coordinator:
     request_queue_size: 1                                                                            # Keep only the newest segmentation request; prevents GPU backlog.
     frame_cache_size: 600                                                                            # Preserve associations between async results and source frames.
-    max_result_age_sec: 5.0                                                                          # Discard stale async results after five simulated seconds.
     drop_oldest_when_full: true                                                                      # Prefer recent views when the pipeline cannot keep up.
     publish_status: true                                                                             # Publish operational status.
     status_every_n_frames: 1                                                                         # Limit status traffic.
@@ -232,8 +231,6 @@ phase1:                                                                         
     global_revisit_weight_containment: 0.00
     continuation_max_age_sec: 8.0
     global_containment_threshold: 0.92                                                    # TENTATIVE (2026-09-06, awaiting a confirmation run -- revert to 0.90 if unconfirmed). Raised from 0.90. NOTE: until 2026-09-06 this key was never parsed -- Phase1Config had no matching field, so _find_match's getattr() always fell back to the literal 0.90 and any value set here was inert. Now wired; the first run after this is its first real effect. Containment is the same measurement as the footprint overlap (identical formula, stricter threshold), so for a small object standing inside a big surface track's envelope, footprint + containment + vertical are three votes for one geometric fact -- enough to meet the quorum while centroid and image both correctly object. The plant-into-wall merge sat at containment 0.906 in both runs; 0.92 removes that vote. Costs 5 rejections across 1387 recorded associations, all with the same signature (image IoU <= 0.29, centroid 0.9-2.7m away, small mask into a big track). Values form a continuum here, so this is a dial: raise toward 0.935 if the same merge reappears.
-    global_min_depth_z: 0.30                                                                  # Z-axis (vertical) padding threshold for thin floors/ceilings (meters).
-    global_min_depth_xy: 0.15                                                                 # X/Y-axis (horizontal) padding threshold for thin walls/railings (meters).
     revisit_min_2d_iou: 0.75
     local_segments_enabled: true                                                                      # Deliberate deviation from object-tracking-optimisation-experiment FINAL_OPTIMIZED_CONFIG.yaml (false), re-confirmed 2026-09-06 -- needed for long-internal-object splitting into local Hydra segments. Everything else in this block still matches the experiment exactly.
     local_segment_max_xy_span_m: 6.0                                                                 # Maximum horizontal span of one local semantic slot/section.
@@ -282,7 +279,6 @@ phase1:                                                                         
     include_bbox_volume: true                                                                        # Include 3D box volume for matching validation.
     include_depth_stats: true                                                                        # Include mask depth statistics for geometry diagnostics.
     include_mask_area: true                                                                          # Include mask area for confidence and filtering diagnostics.
-    include_timing_metadata: false                                                                   # Avoid bulky timing metadata in every message.
     include_frame_relation_metadata: false                                                           # Avoid redundant per-frame relation metadata.
 
   sam:
@@ -503,7 +499,7 @@ phase1:                                                                         
       output_root: ${WORKSPACE_ROOT}/debug/prompt_optimisation_experiment/runs                # <output_root>/<run_id>/session_<timestamp>/{crops,vlm_results.csv}
 
     object_detail_experiment:                                                                        # object_detail prompt-addition experiment (debug/object_detail_prompt_experiment/). Set enabled: false for normal runs. See that folder's EXPERIMENT_REPORT.md for the addition text to paste into `prompt` above before enabling.
-      enabled: true                                                                                   # V1 activated 2026-09-18 -- prompt above is BASELINE_FROZEN + V1_basic_addition. See debug/object_detail_prompt_experiment/EXPERIMENT_REPORT.md §9.
+      enabled: false                                                                                  # 2026-09-28: turned off for normal runs (was left on from the 2026-09-18 V1 activation). VLM crop/CSV output now follows the normal VLM-Test-Session path instead of this experiment folder -- moot anyway with diagnostics.enabled also off above.
       run_id: V1__qwen35_4b__basic_addition                                                                # Matches the pre-scaffolded folder under debug/object_detail_prompt_experiment/runs/.
       prompt_version: V1_basic_addition                                                                    # Which version from object_detail_prompts_under_test.yaml is pasted into `prompt` above.
       output_root: ${WORKSPACE_ROOT}/debug/object_detail_prompt_experiment/runs                # <output_root>/<run_id>/session_<timestamp>/{crops,vlm_results.csv}
@@ -655,9 +651,9 @@ phase1:                                                                         
     max_frames: 50                                                                                   # Used only if evidence buffering is enabled later.
 
   performance:
-    measure_timing: true                                                                             # Retain performance metrics for later inspection.
+    measure_timing: false                                                                            # 2026-09-28: turned off as part of a full diagnostics sweep.
     publish_timing: false                                                                            # Avoid live timing-topic overhead.
-    write_timing_excel: true                                                                         # Buffer timing samples and write the workbook during clean shutdown.
+    write_timing_excel: false                                                                        # 2026-09-28: turned off as part of a full diagnostics sweep.
     timing_excel_path: ${WORKSPACE_ROOT}/debug/{node_name}_debug_{session_date}_{creation_time}.xlsx  # Used only if Excel timing is enabled.
     timing_sheet_name: phase1_timing                                                                 # Worksheet containing Phase 1 stage and end-to-end timing samples.
     timing_excel_autosave_every: 0                                                                   # Disable periodic spreadsheet writes.
