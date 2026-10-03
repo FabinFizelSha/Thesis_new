@@ -293,17 +293,177 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.6.6}Scene Graph Construction and Risk Annotation}{26}{subsection.2.6.6}\protected@file@percent }
 \BKM@entry{id=39,dest={73756273656374696F6E2E322E362E37},srcline={504}}{5C3337365C3337375C303030325C3030302E5C303030365C3030302E5C303030375C3030305C3034305C3030304C5C303030695C3030306D5C303030695C303030745C303030615C303030745C303030695C3030306F5C3030306E5C303030735C3030305C3034305C3030306F5C303030665C3030305C3034305C303030745C303030685C303030655C3030305C3034305C303030425C303030615C303030735C303030655C3030306C5C303030695C3030306E5C303030655C3030305C3034305C303030465C303030725C303030615C3030306D5C303030655C303030775C3030306F5C303030725C3030306B}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.6.7}Limitations of the Baseline Framework}{27}{subsection.2.6.7}\protected@file@percent }
-\BKM@entry{id=40,dest={73656374696F6E2E322E37},srcline={527}}{5C3337365C3337375C303030325C3030302E5C303030375C3030305C3034305C3030304E5C303030565C303030495C303030445C303030495C303030415C3030305C3034305C3030304A5C303030655C303030745C303030735C3030306F5C3030306E5C3030305C3034305C303030415C303030475C303030585C3030305C3034305C303030545C303030685C3030306F5C30303072}
-\abx@aux@cite{0}{nvidia_jetson_thor}
-\abx@aux@segm{0}{0}{nvidia_jetson_thor}
-\@writefile{toc}{\contentsline {section}{\numberline {2.7}NVIDIA Jetson AGX Thor}{28}{section.2.7}\protected@file@percent }
+\BKM@entry{id=40,dest={73656374696F6E2E322E37},srcline={529}}{5C3337365C3337375C303030325C3030302E5C303030375C3030305C3034305C3030304C5C303030695C303030675C303030685C303030745C303030775C303030655C303030695C303030675C303030685C303030745C3030305C3034305C303030505C303030725C3030306F5C3030306D5C303030705C303030745C303030615C303030625C3030306C5C303030655C3030305C3034305C303030535C303030655C303030675C3030306D5C303030655C3030306E5C303030745C303030615C303030745C303030695C3030306F5C3030306E5C3030305C3034305C303030775C303030695C303030745C303030685C3030305C3034305C3030304E5C303030615C3030306E5C3030306F5C303030535C303030415C3030304D}
+\abx@aux@cite{0}{kirillov2023segmentanything}
+\abx@aux@segm{0}{0}{kirillov2023segmentanything}
+\abx@aux@cite{0}{previous_rsg_thesis}
+\abx@aux@segm{0}{0}{previous_rsg_thesis}
+\abx@aux@cite{0}{nanosam2023}
+\abx@aux@segm{0}{0}{nanosam2023}
+\abx@aux@cite{0}{nvidia_tensorrt}
+\abx@aux@segm{0}{0}{nvidia_tensorrt}
+\@writefile{toc}{\contentsline {section}{\numberline {2.7}Lightweight Promptable Segmentation with NanoSAM}{28}{section.2.7}\protected@file@percent }
+\newlabel{sec:nanosam}{{2.7}{28}{Lightweight Promptable Segmentation with NanoSAM}{section.2.7}{}}
+\BKM@entry{id=41,dest={73756273656374696F6E2E322E372E31},srcline={534}}{5C3337365C3337375C303030325C3030302E5C303030375C3030302E5C303030315C3030305C3034305C303030415C303030725C303030635C303030685C303030695C303030745C303030655C303030635C303030745C303030755C303030725C303030655C3030305C3034305C3030306F5C303030665C3030305C3034305C303030745C303030685C303030655C3030305C3034305C303030535C303030655C303030675C3030306D5C303030655C3030306E5C303030745C3030305C3034305C303030415C3030306E5C303030795C303030745C303030685C303030695C3030306E5C303030675C3030305C3034305C3030304D5C3030306F5C303030645C303030655C3030306C}
+\abx@aux@cite{0}{kirillov2023segmentanything}
+\abx@aux@segm{0}{0}{kirillov2023segmentanything}
+\abx@aux@cite{0}{dosovitskiy2021vit}
+\abx@aux@segm{0}{0}{dosovitskiy2021vit}
+\abx@aux@cite{0}{he2022mae}
+\abx@aux@segm{0}{0}{he2022mae}
+\abx@aux@cite{0}{kirillov2023segmentanything}
+\abx@aux@segm{0}{0}{kirillov2023segmentanything}
+\abx@aux@cite{0}{kirillov2023segmentanything}
+\abx@aux@segm{0}{0}{kirillov2023segmentanything}
+\abx@aux@cite{0}{kirillov2023segmentanything}
+\abx@aux@segm{0}{0}{kirillov2023segmentanything}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.7.1}Architecture of the Segment Anything Model}{29}{subsection.2.7.1}\protected@file@percent }
+\newlabel{subsec:sam_architecture}{{2.7.1}{29}{Architecture of the Segment Anything Model}{subsection.2.7.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.9}{\ignorespaces Overview of the Segment Anything Model (SAM) architecture. The model consists of an image encoder, a prompt encoder, and a lightweight mask decoder that produces segmentation masks conditioned on input prompts. Reproduced from Kirillov et al.~\blx@tocontentsinit {0}\cite {kirillov2023segmentanything}.}}{29}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:sam_architecture}{{2.9}{29}{Overview of the Segment Anything Model (SAM) architecture. The model consists of an image encoder, a prompt encoder, and a lightweight mask decoder that produces segmentation masks conditioned on input prompts. Reproduced from Kirillov et al.~\cite {kirillov2023segmentanything}}{figure.caption.13}{}}
+\BKM@entry{id=42,dest={73756273656374696F6E2E322E372E32},srcline={550}}{5C3337365C3337375C303030325C3030302E5C303030375C3030302E5C303030325C3030305C3034305C3030304B5C3030306E5C3030306F5C303030775C3030306C5C303030655C303030645C303030675C303030655C3030305C3034305C303030445C303030695C303030735C303030745C303030695C3030306C5C3030306C5C303030615C303030745C303030695C3030306F5C3030306E5C3030305C3034305C303030615C3030306E5C303030645C3030305C3034305C3030304D5C3030306F5C303030625C303030695C3030306C5C303030655C303030535C303030415C3030304D}
+\abx@aux@cite{0}{hinton2015distilling}
+\abx@aux@segm{0}{0}{hinton2015distilling}
+\abx@aux@cite{0}{zhang2023mobilesam}
+\abx@aux@segm{0}{0}{zhang2023mobilesam}
+\abx@aux@cite{0}{wu2022tinyvit}
+\abx@aux@segm{0}{0}{wu2022tinyvit}
+\abx@aux@cite{0}{zhang2023mobilesam}
+\abx@aux@segm{0}{0}{zhang2023mobilesam}
+\BKM@entry{id=43,dest={73756273656374696F6E2E322E372E33},srcline={557}}{5C3337365C3337375C303030325C3030302E5C303030375C3030302E5C303030335C3030305C3034305C3030304E5C303030615C3030306E5C3030306F5C303030535C303030415C3030304D}
+\abx@aux@cite{0}{nanosam2023}
+\abx@aux@segm{0}{0}{nanosam2023}
+\abx@aux@cite{0}{he2016resnet}
+\abx@aux@segm{0}{0}{he2016resnet}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.7.2}Knowledge Distillation and MobileSAM}{30}{subsection.2.7.2}\protected@file@percent }
+\newlabel{subsec:mobilesam}{{2.7.2}{30}{Knowledge Distillation and MobileSAM}{subsection.2.7.2}{}}
+\abx@aux@cite{0}{lin2014coco}
+\abx@aux@segm{0}{0}{lin2014coco}
+\abx@aux@cite{0}{huber1964robust}
+\abx@aux@segm{0}{0}{huber1964robust}
+\abx@aux@cite{0}{nvidia_tensorrt}
+\abx@aux@segm{0}{0}{nvidia_tensorrt}
+\abx@aux@cite{0}{nanosam2023}
+\abx@aux@segm{0}{0}{nanosam2023}
+\abx@aux@cite{0}{nanosam2023}
+\abx@aux@segm{0}{0}{nanosam2023}
+\abx@aux@cite{0}{nanosam2023}
+\abx@aux@segm{0}{0}{nanosam2023}
+\BKM@entry{id=44,dest={73756273656374696F6E2E322E372E34},srcline={582}}{5C3337365C3337375C303030325C3030302E5C303030375C3030302E5C303030345C3030305C3034305C3030304C5C303030695C3030306D5C303030695C303030745C303030615C303030745C303030695C3030306F5C3030306E5C30303073}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.7.3}NanoSAM}{31}{subsection.2.7.3}\protected@file@percent }
+\newlabel{subsec:nanosam_model}{{2.7.3}{31}{NanoSAM}{subsection.2.7.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2.1}{\ignorespaces Latency on Jetson AGX Orin and mean IoU on COCO 2017 validation with ground-truth box prompts, as reported in \blx@tocontentsinit {0}\cite {nanosam2023}.}}{31}{table.caption.14}\protected@file@percent }
+\newlabel{tab:nanosam_performance}{{2.1}{31}{Latency on Jetson AGX Orin and mean IoU on COCO 2017 validation with ground-truth box prompts, as reported in \cite {nanosam2023}}{table.caption.14}{}}
+\BKM@entry{id=45,dest={73656374696F6E2E322E38},srcline={594}}{5C3337365C3337375C303030325C3030302E5C303030385C3030305C3034305C3030304D5C303030755C3030306C5C303030745C303030695C3030302D5C3030304F5C303030625C3030306A5C303030655C303030635C303030745C3030305C3034305C303030545C303030725C303030615C303030635C3030306B5C303030695C3030306E5C303030675C3030305C3034305C303030615C3030306E5C303030645C3030305C3034305C303030445C303030615C303030745C303030615C3030305C3034305C303030415C303030735C303030735C3030306F5C303030635C303030695C303030615C303030745C303030695C3030306F5C3030306E}
+\BKM@entry{id=46,dest={73756273656374696F6E2E322E382E31},srcline={599}}{5C3337365C3337375C303030325C3030302E5C303030385C3030302E5C303030315C3030305C3034305C303030545C303030685C303030655C3030305C3034305C303030445C303030615C303030745C303030615C3030305C3034305C303030415C303030735C303030735C3030306F5C303030635C303030695C303030615C303030745C303030695C3030306F5C3030306E5C3030305C3034305C303030505C303030725C3030306F5C303030625C3030306C5C303030655C3030306D}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.7.4}Limitations}{32}{subsection.2.7.4}\protected@file@percent }
+\newlabel{subsec:nanosam_limitations}{{2.7.4}{32}{Limitations}{subsection.2.7.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.8}Multi-Object Tracking and Data Association}{32}{section.2.8}\protected@file@percent }
+\newlabel{sec:tracking_association}{{2.8}{32}{Multi-Object Tracking and Data Association}{section.2.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.8.1}The Data Association Problem}{32}{subsection.2.8.1}\protected@file@percent }
+\newlabel{subsec:data_association}{{2.8.1}{32}{The Data Association Problem}{subsection.2.8.1}{}}
+\BKM@entry{id=47,dest={73756273656374696F6E2E322E382E32},srcline={608}}{5C3337365C3337375C303030325C3030302E5C303030385C3030302E5C303030325C3030305C3034305C3030304F5C303030625C3030306A5C303030655C303030635C303030745C3030302D5C3030304C5C303030655C303030765C303030655C3030306C5C3030305C3034305C303030535C3030304C5C303030415C3030304D5C3030305C3034305C303030775C303030695C303030745C303030685C3030305C3034305C303030465C303030755C303030735C303030695C3030306F5C3030306E5C3030302B5C3030302B}
+\abx@aux@cite{0}{mccormac2018fusion}
+\abx@aux@segm{0}{0}{mccormac2018fusion}
+\abx@aux@cite{0}{he2017maskrcnn}
+\abx@aux@segm{0}{0}{he2017maskrcnn}
+\abx@aux@cite{0}{mccormac2018fusion}
+\abx@aux@segm{0}{0}{mccormac2018fusion}
+\abx@aux@cite{0}{mccormac2018fusion}
+\abx@aux@segm{0}{0}{mccormac2018fusion}
+\abx@aux@cite{0}{mccormac2018fusion}
+\abx@aux@segm{0}{0}{mccormac2018fusion}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.8.2}Object-Level SLAM with Fusion++}{33}{subsection.2.8.2}\protected@file@percent }
+\newlabel{subsec:fusionpp}{{2.8.2}{33}{Object-Level SLAM with Fusion++}{subsection.2.8.2}{}}
+\BKM@entry{id=48,dest={73756273656374696F6E2E322E382E33},srcline={617}}{5C3337365C3337375C303030325C3030302E5C303030385C3030302E5C303030335C3030305C3034305C3030304C5C303030695C3030306D5C303030695C303030745C303030615C303030745C303030695C3030306F5C3030306E5C303030735C3030305C3034305C3030306F5C303030665C3030305C3034305C303030465C303030755C303030735C303030695C3030306F5C3030306E5C3030302B5C3030302B}
+\abx@aux@cite{0}{mccormac2018fusion}
+\abx@aux@segm{0}{0}{mccormac2018fusion}
+\abx@aux@cite{0}{mccormac2018fusion}
+\abx@aux@segm{0}{0}{mccormac2018fusion}
+\BKM@entry{id=49,dest={73756273656374696F6E2E322E382E34},srcline={624}}{5C3337365C3337375C303030325C3030302E5C303030385C3030302E5C303030345C3030305C3034305C303030525C303030655C3030306C5C303030655C303030765C303030615C3030306E5C303030635C303030655C3030305C3034305C303030665C3030306F5C303030725C3030305C3034305C303030505C303030655C303030725C303030735C303030695C303030735C303030745C303030655C3030306E5C303030745C3030305C3034305C303030535C303030635C303030655C3030306E5C303030655C3030305C3034305C303030525C303030655C303030705C303030725C303030655C303030735C303030655C3030306E5C303030745C303030615C303030745C303030695C3030306F5C3030306E5C30303073}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.8.3}Limitations of Fusion++}{34}{subsection.2.8.3}\protected@file@percent }
+\newlabel{subsec:fusionpp_limitations}{{2.8.3}{34}{Limitations of Fusion++}{subsection.2.8.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.8.4}Relevance for Persistent Scene Representations}{34}{subsection.2.8.4}\protected@file@percent }
+\newlabel{subsec:tracking_relevance}{{2.8.4}{34}{Relevance for Persistent Scene Representations}{subsection.2.8.4}{}}
+\BKM@entry{id=50,dest={73656374696F6E2E322E39},srcline={638}}{5C3337365C3337375C303030325C3030302E5C303030395C3030305C3034305C303030565C303030695C303030735C303030755C303030615C3030306C5C3030305C3034305C303030525C303030655C303030745C303030725C303030695C303030655C303030765C303030615C3030306C5C3030305C3034305C303030615C3030306E5C303030645C3030305C3034305C303030565C303030695C303030735C303030695C3030306F5C3030306E5C3030302D5C3030304C5C303030615C3030306E5C303030675C303030755C303030615C303030675C303030655C3030305C3034305C3030304D5C3030306F5C303030645C303030655C3030306C5C30303073}
+\abx@aux@cite{0}{previous_rsg_thesis}
+\abx@aux@segm{0}{0}{previous_rsg_thesis}
+\BKM@entry{id=51,dest={73756273656374696F6E2E322E392E31},srcline={645}}{5C3337365C3337375C303030325C3030302E5C303030395C3030302E5C303030315C3030305C3034305C303030525C303030655C303030745C303030725C303030695C303030655C303030765C303030615C3030306C5C3030302D5C303030415C303030755C303030675C3030306D5C303030655C3030306E5C303030745C303030655C303030645C3030305C3034305C303030505C303030655C303030725C303030635C303030655C303030705C303030745C303030695C3030306F5C3030306E}
+\abx@aux@cite{0}{radford2021clip}
+\abx@aux@segm{0}{0}{radford2021clip}
+\abx@aux@cite{0}{dosovitskiy2021vit}
+\abx@aux@segm{0}{0}{dosovitskiy2021vit}
+\abx@aux@cite{0}{radford2021clip}
+\abx@aux@segm{0}{0}{radford2021clip}
+\@writefile{toc}{\contentsline {section}{\numberline {2.9}Visual Retrieval and Vision-Language Models}{35}{section.2.9}\protected@file@percent }
+\newlabel{sec:visual_retrieval_vlm}{{2.9}{35}{Visual Retrieval and Vision-Language Models}{section.2.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.9.1}Retrieval-Augmented Perception}{35}{subsection.2.9.1}\protected@file@percent }
+\newlabel{subsec:visual_retrieval}{{2.9.1}{35}{Retrieval-Augmented Perception}{subsection.2.9.1}{}}
+\abx@aux@cite{0}{lewis2020rag}
+\abx@aux@segm{0}{0}{lewis2020rag}
+\abx@aux@cite{0}{chroma2026docs}
+\abx@aux@segm{0}{0}{chroma2026docs}
+\abx@aux@cite{0}{previous_rsg_thesis}
+\abx@aux@segm{0}{0}{previous_rsg_thesis}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.10}{\ignorespaces Principle of visual retrieval: the crop embedding is compared with stored references, and the nearest label is returned if its distance lies below the threshold $\delta $.}}{36}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:rap_flow}{{2.10}{36}{Principle of visual retrieval: the crop embedding is compared with stored references, and the nearest label is returned if its distance lies below the threshold $\delta $}{figure.caption.15}{}}
+\BKM@entry{id=52,dest={73756273656374696F6E2E322E392E32},srcline={669}}{5C3337365C3337375C303030325C3030302E5C303030395C3030302E5C303030325C3030305C3034305C303030565C303030695C303030735C303030695C3030306F5C3030306E5C3030302D5C3030304C5C303030615C3030306E5C303030675C303030755C303030615C303030675C303030655C3030305C3034305C3030304D5C3030306F5C303030645C303030655C3030306C5C30303073}
+\abx@aux@cite{0}{liu2023llava}
+\abx@aux@segm{0}{0}{liu2023llava}
+\abx@aux@cite{0}{li2023pope}
+\abx@aux@segm{0}{0}{li2023pope}
+\abx@aux@cite{0}{previous_rsg_thesis}
+\abx@aux@segm{0}{0}{previous_rsg_thesis}
+\abx@aux@cite{0}{previous_rsg_thesis}
+\abx@aux@segm{0}{0}{previous_rsg_thesis}
+\abx@aux@cite{0}{xiong2024uncertainty}
+\abx@aux@segm{0}{0}{xiong2024uncertainty}
+\BKM@entry{id=53,dest={73756273656374696F6E2E322E392E33},srcline={680}}{5C3337365C3337375C303030325C3030302E5C303030395C3030302E5C303030335C3030305C3034305C303030545C303030685C303030655C3030305C3034305C303030515C303030775C303030655C3030306E5C3030305C3034305C303030565C303030695C303030735C303030695C3030306F5C3030306E5C3030302D5C3030304C5C303030615C3030306E5C303030675C303030755C303030615C303030675C303030655C3030305C3034305C3030304D5C3030306F5C303030645C303030655C3030306C5C3030305C3034305C303030465C303030615C3030306D5C303030695C3030306C5C30303079}
+\abx@aux@cite{0}{previous_rsg_thesis}
+\abx@aux@segm{0}{0}{previous_rsg_thesis}
+\abx@aux@cite{0}{previous_rsg_thesis}
+\abx@aux@segm{0}{0}{previous_rsg_thesis}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.9.2}Vision-Language Models}{37}{subsection.2.9.2}\protected@file@percent }
+\newlabel{subsec:vlm}{{2.9.2}{37}{Vision-Language Models}{subsection.2.9.2}{}}
+\abx@aux@cite{0}{wang2024qwen2vl}
+\abx@aux@segm{0}{0}{wang2024qwen2vl}
+\abx@aux@cite{0}{bai2025qwen25vl}
+\abx@aux@segm{0}{0}{bai2025qwen25vl}
+\abx@aux@cite{0}{bai2025qwen3vl}
+\abx@aux@segm{0}{0}{bai2025qwen3vl}
+\abx@aux@cite{0}{qwen2026qwen35}
+\abx@aux@segm{0}{0}{qwen2026qwen35}
+\abx@aux@cite{0}{bai2025qwen3vl}
+\abx@aux@segm{0}{0}{bai2025qwen3vl}
+\abx@aux@cite{0}{bai2025qwen3vl}
+\abx@aux@segm{0}{0}{bai2025qwen3vl}
+\abx@aux@cite{0}{qwen2026qwen35}
+\abx@aux@segm{0}{0}{qwen2026qwen35}
+\abx@aux@cite{0}{artificialanalysis2026qwen35}
+\abx@aux@segm{0}{0}{artificialanalysis2026qwen35}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.9.3}The Qwen Vision-Language Model Family}{38}{subsection.2.9.3}\protected@file@percent }
+\newlabel{subsec:qwen}{{2.9.3}{38}{The Qwen Vision-Language Model Family}{subsection.2.9.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2.2}{\ignorespaces Release history of the open-weight Qwen vision-language models.}}{38}{table.caption.16}\protected@file@percent }
+\newlabel{tab:qwen_history}{{2.2}{38}{Release history of the open-weight Qwen vision-language models}{table.caption.16}{}}
+\BKM@entry{id=54,dest={73656374696F6E2E322E3130},srcline={716}}{5C3337365C3337375C303030325C3030302E5C303030315C303030305C3030305C3034305C303030455C3030306D5C303030625C303030655C303030645C303030645C303030655C303030645C3030305C3034305C303030435C3030306F5C3030306D5C303030705C303030755C303030745C303030695C3030306E5C303030675C3030305C3034305C303030485C303030615C303030725C303030645C303030775C303030615C303030725C303030655C3030303A5C3030305C3034305C3030304E5C303030565C303030495C303030445C303030495C303030415C3030305C3034305C3030304A5C303030655C303030745C303030735C3030306F5C3030306E5C3030305C3034305C303030505C3030306C5C303030615C303030745C303030665C3030306F5C303030725C3030306D5C30303073}
+\BKM@entry{id=55,dest={73756273656374696F6E2E322E31302E31},srcline={722}}{5C3337365C3337375C303030325C3030302E5C303030315C303030305C3030302E5C303030315C3030305C3034305C3030304E5C303030565C303030495C303030445C303030495C303030415C3030305C3034305C3030304A5C303030655C303030745C303030735C3030306F5C3030306E5C3030305C3034305C303030415C303030475C303030585C3030305C3034305C3030304F5C303030725C303030695C3030306E5C3030305C3034305C303030445C303030655C303030765C303030655C3030306C5C3030306F5C303030705C303030655C303030725C3030305C3034305C3030304B5C303030695C30303074}
 \abx@aux@cite{0}{nvidia_jetson_orin}
 \abx@aux@segm{0}{0}{nvidia_jetson_orin}
+\abx@aux@cite{0}{schiel2026online}
+\abx@aux@segm{0}{0}{schiel2026online}
+\BKM@entry{id=56,dest={73756273656374696F6E2E322E31302E32},srcline={728}}{5C3337365C3337375C303030325C3030302E5C303030315C303030305C3030302E5C303030325C3030305C3034305C3030304E5C303030565C303030495C303030445C303030495C303030415C3030305C3034305C3030304A5C303030655C303030745C303030735C3030306F5C3030306E5C3030305C3034305C303030415C303030475C303030585C3030305C3034305C303030545C303030685C3030306F5C303030725C3030305C3034305C303030445C303030655C303030765C303030655C3030306C5C3030306F5C303030705C303030655C303030725C3030305C3034305C3030304B5C303030695C30303074}
 \abx@aux@cite{0}{nvidia_jetson_thor}
 \abx@aux@segm{0}{0}{nvidia_jetson_thor}
+\abx@aux@cite{0}{nvidia_jetson_thor}
+\abx@aux@segm{0}{0}{nvidia_jetson_thor}
+\@writefile{toc}{\contentsline {section}{\numberline {2.10}Embedded Computing Hardware: NVIDIA Jetson Platforms}{39}{section.2.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.10.1}NVIDIA Jetson AGX Orin Developer Kit}{39}{subsection.2.10.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.10.2}NVIDIA Jetson AGX Thor Developer Kit}{39}{subsection.2.10.2}\protected@file@percent }
 \abx@aux@cite{0}{jetson_ai_lab_models}
 \abx@aux@segm{0}{0}{jetson_ai_lab_models}
-\BKM@entry{id=41,dest={73656374696F6E2E322E38},srcline={550}}{5C3337365C3337375C303030325C3030302E5C303030385C3030305C3034305C303030535C303030635C303030655C3030306E5C303030655C3030305C3034305C303030475C303030725C303030615C303030705C303030685C303030735C3030305C3034305C303030665C3030306F5C303030725C3030305C3034305C303030445C3030306F5C303030775C3030306E5C303030735C303030745C303030725C303030655C303030615C3030306D5C3030305C3034305C303030535C303030615C303030665C303030655C303030745C303030795C3030305C3034305C303030525C303030655C303030615C303030735C3030306F5C3030306E5C303030695C3030306E5C30303067}
+\abx@aux@cite{0}{schiel2026online}
+\abx@aux@segm{0}{0}{schiel2026online}
+\BKM@entry{id=57,dest={73656374696F6E2E322E3131},srcline={755}}{5C3337365C3337375C303030325C3030302E5C303030315C303030315C3030305C3034305C303030535C303030635C303030655C3030306E5C303030655C3030305C3034305C303030475C303030725C303030615C303030705C303030685C303030735C3030305C3034305C303030665C3030306F5C303030725C3030305C3034305C303030445C3030306F5C303030775C3030306E5C303030735C303030745C303030725C303030655C303030615C3030306D5C3030305C3034305C303030535C303030615C303030665C303030655C303030745C303030795C3030305C3034305C303030525C303030655C303030615C303030735C3030306F5C3030306E5C303030695C3030306E5C30303067}
 \abx@aux@cite{0}{mullen2024safetydetect}
 \abx@aux@segm{0}{0}{mullen2024safetydetect}
 \abx@aux@cite{0}{mullen2024safetydetect}
@@ -312,48 +472,44 @@
 \abx@aux@segm{0}{0}{mullen2024safetydetect}
 \abx@aux@cite{0}{mullen2024safetydetect}
 \abx@aux@segm{0}{0}{mullen2024safetydetect}
-\@writefile{toc}{\contentsline {section}{\numberline {2.8}Scene Graphs for Downstream Safety Reasoning}{29}{section.2.8}\protected@file@percent }
-\BKM@entry{id=42,dest={73656374696F6E2E322E39},srcline={578}}{5C3337365C3337375C303030325C3030302E5C303030395C3030305C3034305C303030535C303030655C303030635C303030745C303030695C3030306F5C3030306E5C30303036}
-\BKM@entry{id=43,dest={73656374696F6E2E322E3130},srcline={583}}{5C3337365C3337375C303030325C3030302E5C303030315C303030305C3030305C3034305C303030535C303030655C303030635C303030745C303030695C3030306F5C3030306E5C30303037}
-\@writefile{lof}{\contentsline {figure}{\numberline {2.9}{\ignorespaces SafetyDetect pipeline showing the agent point of view, scene graph construction, prompt formation, and LLM-based anomaly classification. Reproduced from \blx@tocontentsinit {0}\cite {mullen2024safetydetect}.}}{30}{figure.caption.13}\protected@file@percent }
-\newlabel{fig:safetydetect_pipeline}{{2.9}{30}{SafetyDetect pipeline showing the agent point of view, scene graph construction, prompt formation, and LLM-based anomaly classification. Reproduced from \cite {mullen2024safetydetect}}{figure.caption.13}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {2.9}Section6}{30}{section.2.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {2.10}Section7}{30}{section.2.10}\protected@file@percent }
-\BKM@entry{id=44,open,dest={636861707465722E33},srcline={1}}{5C3337365C3337375C303030335C3030305C3034305C3030304D5C303030655C303030745C303030685C3030306F5C303030645C3030306F5C3030306C5C3030306F5C303030675C30303079}
-\BKM@entry{id=45,dest={73656374696F6E2E332E31},srcline={3}}{5C3337365C3337375C303030335C3030302E5C303030315C3030305C3034305C303030425C303030615C303030735C303030655C3030306C5C303030695C3030306E5C303030655C3030305C3034305C303030535C303030795C303030735C303030745C303030655C3030306D5C3030305C3034305C303030615C3030306E5C303030645C3030305C3034305C303030505C303030725C3030306F5C303030705C3030306F5C303030735C303030655C303030645C3030305C3034305C303030455C303030785C303030745C303030655C3030306E5C303030735C303030695C3030306F5C3030306E5C30303073}
-\BKM@entry{id=46,dest={73656374696F6E2E332E32},srcline={11}}{5C3337365C3337375C303030335C3030302E5C303030325C3030305C3034305C303030485C303030615C303030725C303030645C303030775C303030615C303030725C303030655C3030305C3034305C303030535C303030655C303030745C303030755C303030705C3030305C3034305C303030615C3030306E5C303030645C3030305C3034305C303030495C3030306E5C303030705C303030755C303030745C3030305C3034305C303030445C303030615C303030745C303030615C3030305C3034305C303030505C303030725C303030655C303030705C303030615C303030725C303030615C303030745C303030695C3030306F5C3030306E}
-\@writefile{toc}{\contentsline {chapter}{\numberline {3}Methodology}{31}{chapter.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.11}Scene Graphs for Downstream Safety Reasoning}{40}{section.2.11}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.11}{\ignorespaces SafetyDetect pipeline showing the agent point of view, scene graph construction, prompt formation, and LLM-based anomaly classification. Reproduced from \blx@tocontentsinit {0}\cite {mullen2024safetydetect}.}}{40}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:safetydetect_pipeline}{{2.11}{40}{SafetyDetect pipeline showing the agent point of view, scene graph construction, prompt formation, and LLM-based anomaly classification. Reproduced from \cite {mullen2024safetydetect}}{figure.caption.17}{}}
+\BKM@entry{id=58,open,dest={636861707465722E33},srcline={1}}{5C3337365C3337375C303030335C3030305C3034305C3030304D5C303030655C303030745C303030685C3030306F5C303030645C3030306F5C3030306C5C3030306F5C303030675C30303079}
+\BKM@entry{id=59,dest={73656374696F6E2E332E31},srcline={3}}{5C3337365C3337375C303030335C3030302E5C303030315C3030305C3034305C303030425C303030615C303030735C303030655C3030306C5C303030695C3030306E5C303030655C3030305C3034305C303030535C303030795C303030735C303030745C303030655C3030306D5C3030305C3034305C303030615C3030306E5C303030645C3030305C3034305C303030505C303030725C3030306F5C303030705C3030306F5C303030735C303030655C303030645C3030305C3034305C303030455C303030785C303030745C303030655C3030306E5C303030735C303030695C3030306F5C3030306E5C30303073}
+\BKM@entry{id=60,dest={73656374696F6E2E332E32},srcline={11}}{5C3337365C3337375C303030335C3030302E5C303030325C3030305C3034305C303030485C303030615C303030725C303030645C303030775C303030615C303030725C303030655C3030305C3034305C303030535C303030655C303030745C303030755C303030705C3030305C3034305C303030615C3030306E5C303030645C3030305C3034305C303030495C3030306E5C303030705C303030755C303030745C3030305C3034305C303030445C303030615C303030745C303030615C3030305C3034305C303030505C303030725C303030655C303030705C303030615C303030725C303030615C303030745C303030695C3030306F5C3030306E}
+\@writefile{toc}{\contentsline {chapter}{\numberline {3}Methodology}{42}{chapter.3}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{lol}{\addvspace {10\p@ }}
-\@writefile{toc}{\contentsline {section}{\numberline {3.1}Baseline System and Proposed Extensions}{31}{section.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3.2}Hardware Setup and Input Data Preparation}{31}{section.3.2}\protected@file@percent }
-\BKM@entry{id=47,dest={73656374696F6E2E332E33},srcline={25}}{5C3337365C3337375C303030335C3030302E5C303030335C3030305C3034305C303030445C303030615C303030745C303030615C3030305C3034305C303030505C303030725C303030655C303030705C303030725C3030306F5C303030635C303030655C303030735C303030735C303030695C3030306E5C30303067}
-\@writefile{toc}{\contentsline {section}{\numberline {3.3}Data Preprocessing}{32}{section.3.3}\protected@file@percent }
-\BKM@entry{id=48,dest={73656374696F6E2E332E34},srcline={46}}{5C3337365C3337375C303030335C3030302E5C303030345C3030305C3034305C303030505C303030725C303030655C3030302D5C303030505C303030725C3030306F5C303030635C303030655C303030735C303030735C303030695C3030306E5C30303067}
-\@writefile{toc}{\contentsline {section}{\numberline {3.4}Pre-Processing}{33}{section.3.4}\protected@file@percent }
-\BKM@entry{id=49,open,dest={636861707465722E34},srcline={1}}{5C3337365C3337375C303030345C3030305C3034305C303030455C303030785C303030705C303030655C303030725C303030695C3030306D5C303030655C3030306E5C303030745C30303073}
-\@writefile{toc}{\contentsline {chapter}{\numberline {4}Experiments}{34}{chapter.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.1}Baseline System and Proposed Extensions}{42}{section.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.2}Hardware Setup and Input Data Preparation}{42}{section.3.2}\protected@file@percent }
+\BKM@entry{id=61,dest={73656374696F6E2E332E33},srcline={25}}{5C3337365C3337375C303030335C3030302E5C303030335C3030305C3034305C303030445C303030615C303030745C303030615C3030305C3034305C303030505C303030725C303030655C303030705C303030725C3030306F5C303030635C303030655C303030735C303030735C303030695C3030306E5C30303067}
+\@writefile{toc}{\contentsline {section}{\numberline {3.3}Data Preprocessing}{44}{section.3.3}\protected@file@percent }
+\BKM@entry{id=62,dest={73656374696F6E2E332E34},srcline={46}}{5C3337365C3337375C303030335C3030302E5C303030345C3030305C3034305C303030505C303030725C303030655C3030302D5C303030505C303030725C3030306F5C303030635C303030655C303030735C303030735C303030695C3030306E5C30303067}
+\@writefile{toc}{\contentsline {section}{\numberline {3.4}Pre-Processing}{45}{section.3.4}\protected@file@percent }
+\BKM@entry{id=63,open,dest={636861707465722E34},srcline={1}}{5C3337365C3337375C303030345C3030305C3034305C303030455C303030785C303030705C303030655C303030725C303030695C3030306D5C303030655C3030306E5C303030745C30303073}
+\@writefile{toc}{\contentsline {chapter}{\numberline {4}Experiments}{46}{chapter.4}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{lol}{\addvspace {10\p@ }}
-\BKM@entry{id=50,open,dest={636861707465722E35},srcline={60}}{5C3337365C3337375C303030355C3030305C3034305C303030435C3030306F5C3030306E5C303030635C3030306C5C303030755C303030735C303030695C3030306F5C3030306E5C30303073}
-\@writefile{toc}{\contentsline {chapter}{\numberline {5}Conclusions}{35}{chapter.5}\protected@file@percent }
+\BKM@entry{id=64,open,dest={636861707465722E35},srcline={60}}{5C3337365C3337375C303030355C3030305C3034305C303030435C3030306F5C3030306E5C303030635C3030306C5C303030755C303030735C303030695C3030306F5C3030306E5C30303073}
+\@writefile{toc}{\contentsline {chapter}{\numberline {5}Conclusions}{47}{chapter.5}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{lol}{\addvspace {10\p@ }}
-\BKM@entry{id=51,open,dest={636861707465722A2E3134},srcline={68}}{5C3337365C3337375C303030425C303030695C303030625C3030306C5C303030695C3030306F5C303030675C303030725C303030615C303030705C303030685C30303079}
-\@writefile{toc}{\contentsline {chapter}{\nonumberline Bibliography}{36}{chapter*.14}\protected@file@percent }
+\BKM@entry{id=65,open,dest={636861707465722A2E3138},srcline={68}}{5C3337365C3337375C303030425C303030695C303030625C3030306C5C303030695C3030306F5C303030675C303030725C303030615C303030705C303030685C30303079}
+\@writefile{toc}{\contentsline {chapter}{\nonumberline Bibliography}{48}{chapter*.18}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{lol}{\addvspace {10\p@ }}
-\BKM@entry{id=52,open,dest={617070656E6469782E41},srcline={71}}{5C3337365C3337375C303030415C3030305C3034305C303030455C303030785C303030615C3030306D5C303030705C3030306C5C303030655C3030305C3034305C303030615C303030705C303030705C303030655C3030306E5C303030645C303030695C303030785C3030305C3034305C303030635C303030685C303030615C303030705C303030745C303030655C30303072}
-\@writefile{toc}{\contentsline {chapter}{\numberline {A}Example appendix chapter}{40}{appendix.A}\protected@file@percent }
+\BKM@entry{id=66,open,dest={617070656E6469782E41},srcline={71}}{5C3337365C3337375C303030415C3030305C3034305C303030455C303030785C303030615C3030306D5C303030705C3030306C5C303030655C3030305C3034305C303030615C303030705C303030705C303030655C3030306E5C303030645C303030695C303030785C3030305C3034305C303030635C303030685C303030615C303030705C303030745C303030655C30303072}
+\@writefile{toc}{\contentsline {chapter}{\numberline {A}Example appendix chapter}{53}{appendix.A}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{lol}{\addvspace {10\p@ }}
 \global\csname @altsecnumformattrue\endcsname
-\abx@aux@read@bbl@mdfivesum{D9CB2D3A28761754C07DDCF5701E2153}
+\abx@aux@read@bbl@mdfivesum{43CE97B777FAF1107A0C4FD9AE7CF19E}
 \abx@aux@defaultrefcontext{0}{previous_rsg_thesis}{none/global//global/global}
 \abx@aux@defaultrefcontext{0}{ifr2025servicerobots}{none/global//global/global}
 \abx@aux@defaultrefcontext{0}{ifr2025robots}{none/global//global/global}
@@ -388,14 +544,37 @@
 \abx@aux@defaultrefcontext{0}{lewis2020rag}{none/global//global/global}
 \abx@aux@defaultrefcontext{0}{liu2023llava}{none/global//global/global}
 \abx@aux@defaultrefcontext{0}{hagberg2008networkx}{none/global//global/global}
-\abx@aux@defaultrefcontext{0}{nvidia_jetson_thor}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{nanosam2023}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{nvidia_tensorrt}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{dosovitskiy2021vit}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{he2022mae}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{hinton2015distilling}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{zhang2023mobilesam}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{wu2022tinyvit}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{he2016resnet}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{lin2014coco}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{huber1964robust}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{mccormac2018fusion}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{he2017maskrcnn}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{radford2021clip}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{chroma2026docs}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{li2023pope}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{xiong2024uncertainty}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{wang2024qwen2vl}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{bai2025qwen25vl}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{bai2025qwen3vl}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{qwen2026qwen35}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{artificialanalysis2026qwen35}{none/global//global/global}
 \abx@aux@defaultrefcontext{0}{nvidia_jetson_orin}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{schiel2026online}{none/global//global/global}
+\abx@aux@defaultrefcontext{0}{nvidia_jetson_thor}{none/global//global/global}
 \abx@aux@defaultrefcontext{0}{jetson_ai_lab_models}{none/global//global/global}
 \global\@namedef{scr@dte@chapter@lastmaxnumwidth}{15.5489pt}
 \global\@namedef{scr@dte@section@lastmaxnumwidth}{26.27988pt}
-\global\@namedef{scr@dte@subsection@lastmaxnumwidth}{29.01736pt}
-\global\@namedef{scr@dte@figure@lastmaxnumwidth}{20.80489pt}
+\global\@namedef{scr@dte@subsection@lastmaxnumwidth}{34.49236pt}
+\global\@namedef{scr@dte@table@lastmaxnumwidth}{20.80489pt}
+\global\@namedef{scr@dte@figure@lastmaxnumwidth}{26.27988pt}
 \@writefile{toc}{\providecommand\tocbasic@end@toc@file{}\tocbasic@end@toc@file}
 \@writefile{lof}{\providecommand\tocbasic@end@toc@file{}\tocbasic@end@toc@file}
 \@writefile{lot}{\providecommand\tocbasic@end@toc@file{}\tocbasic@end@toc@file}
-\gdef \@abspage@last{47}
+\gdef \@abspage@last{61}
