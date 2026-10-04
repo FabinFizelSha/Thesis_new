@@ -32,36 +32,33 @@
 \contentsline {section}{\numberline {2.6}Risk-Annotated Scene Graph Framework Baseline}{21}{section.2.6}%
 \contentsline {subsection}{\numberline {2.6.1}Information Flow in the Baseline Framework}{22}{subsection.2.6.1}%
 \contentsline {subsection}{\numberline {2.6.2}FastAPI}{23}{subsection.2.6.2}%
-\contentsline {subsection}{\numberline {2.6.3}SAM-Based Object Segmentation}{24}{subsection.2.6.3}%
-\contentsline {subsection}{\numberline {2.6.4}Retrieval-Augmented Perception}{25}{subsection.2.6.4}%
-\contentsline {subsection}{\numberline {2.6.5}Vision-Language Model Reasoning}{25}{subsection.2.6.5}%
-\contentsline {subsection}{\numberline {2.6.6}Scene Graph Construction and Risk Annotation}{26}{subsection.2.6.6}%
-\contentsline {subsection}{\numberline {2.6.7}Limitations of the Baseline Framework}{27}{subsection.2.6.7}%
-\contentsline {section}{\numberline {2.7}Lightweight Promptable Segmentation with NanoSAM}{28}{section.2.7}%
-\contentsline {subsection}{\numberline {2.7.1}Architecture of the Segment Anything Model}{29}{subsection.2.7.1}%
-\contentsline {subsection}{\numberline {2.7.2}Knowledge Distillation and MobileSAM}{30}{subsection.2.7.2}%
-\contentsline {subsection}{\numberline {2.7.3}NanoSAM}{31}{subsection.2.7.3}%
-\contentsline {subsection}{\numberline {2.7.4}Limitations}{32}{subsection.2.7.4}%
-\contentsline {section}{\numberline {2.8}Multi-Object Tracking and Data Association}{32}{section.2.8}%
-\contentsline {subsection}{\numberline {2.8.1}The Data Association Problem}{32}{subsection.2.8.1}%
-\contentsline {subsection}{\numberline {2.8.2}Object-Level SLAM with Fusion++}{33}{subsection.2.8.2}%
-\contentsline {subsection}{\numberline {2.8.3}Limitations of Fusion++}{34}{subsection.2.8.3}%
-\contentsline {subsection}{\numberline {2.8.4}Relevance for Persistent Scene Representations}{34}{subsection.2.8.4}%
-\contentsline {section}{\numberline {2.9}Visual Retrieval and Vision-Language Models}{35}{section.2.9}%
-\contentsline {subsection}{\numberline {2.9.1}Retrieval-Augmented Perception}{35}{subsection.2.9.1}%
-\contentsline {subsection}{\numberline {2.9.2}Vision-Language Models}{37}{subsection.2.9.2}%
-\contentsline {subsection}{\numberline {2.9.3}The Qwen Vision-Language Model Family}{38}{subsection.2.9.3}%
-\contentsline {section}{\numberline {2.10}Embedded Computing Hardware: NVIDIA Jetson Platforms}{39}{section.2.10}%
-\contentsline {subsection}{\numberline {2.10.1}NVIDIA Jetson AGX Orin Developer Kit}{39}{subsection.2.10.1}%
-\contentsline {subsection}{\numberline {2.10.2}NVIDIA Jetson AGX Thor Developer Kit}{39}{subsection.2.10.2}%
-\contentsline {section}{\numberline {2.11}Scene Graphs for Downstream Safety Reasoning}{40}{section.2.11}%
-\contentsline {chapter}{\numberline {3}Methodology}{42}{chapter.3}%
-\contentsline {section}{\numberline {3.1}Baseline System and Proposed Extensions}{42}{section.3.1}%
-\contentsline {section}{\numberline {3.2}Hardware Setup and Input Data Preparation}{42}{section.3.2}%
-\contentsline {section}{\numberline {3.3}Data Preprocessing}{44}{section.3.3}%
-\contentsline {section}{\numberline {3.4}Pre-Processing}{45}{section.3.4}%
-\contentsline {chapter}{\numberline {4}Experiments}{46}{chapter.4}%
-\contentsline {chapter}{\numberline {5}Conclusions}{47}{chapter.5}%
-\contentsline {chapter}{\nonumberline Bibliography}{48}{chapter*.18}%
-\contentsline {chapter}{\numberline {A}Example appendix chapter}{53}{appendix.A}%
+\contentsline {subsection}{\numberline {2.6.3}Scene Graph Construction and Risk Annotation}{23}{subsection.2.6.3}%
+\contentsline {subsection}{\numberline {2.6.4}Limitations of the Baseline Framework}{24}{subsection.2.6.4}%
+\contentsline {section}{\numberline {2.7}Lightweight Promptable Segmentation with NanoSAM}{25}{section.2.7}%
+\contentsline {subsection}{\numberline {2.7.1}Architecture of the Segment Anything Model}{26}{subsection.2.7.1}%
+\contentsline {subsection}{\numberline {2.7.2}Knowledge Distillation and MobileSAM}{27}{subsection.2.7.2}%
+\contentsline {subsection}{\numberline {2.7.3}NanoSAM}{27}{subsection.2.7.3}%
+\contentsline {subsection}{\numberline {2.7.4}Limitations}{28}{subsection.2.7.4}%
+\contentsline {section}{\numberline {2.8}Multi-Object Tracking and Data Association}{28}{section.2.8}%
+\contentsline {subsection}{\numberline {2.8.1}The Data Association Problem}{29}{subsection.2.8.1}%
+\contentsline {subsection}{\numberline {2.8.2}Object-Level SLAM with Fusion++}{29}{subsection.2.8.2}%
+\contentsline {subsection}{\numberline {2.8.3}Limitations of Fusion++}{30}{subsection.2.8.3}%
+\contentsline {subsection}{\numberline {2.8.4}Relevance for Persistent Scene Representations}{31}{subsection.2.8.4}%
+\contentsline {section}{\numberline {2.9}Visual Retrieval and Vision-Language Models}{31}{section.2.9}%
+\contentsline {subsection}{\numberline {2.9.1}Retrieval-Augmented Perception}{31}{subsection.2.9.1}%
+\contentsline {subsection}{\numberline {2.9.2}Vision-Language Models}{33}{subsection.2.9.2}%
+\contentsline {subsection}{\numberline {2.9.3}The Qwen Vision-Language Model Family}{34}{subsection.2.9.3}%
+\contentsline {section}{\numberline {2.10}Embedded Computing Hardware: NVIDIA Jetson Platforms}{35}{section.2.10}%
+\contentsline {subsection}{\numberline {2.10.1}NVIDIA Jetson AGX Orin Developer Kit}{35}{subsection.2.10.1}%
+\contentsline {subsection}{\numberline {2.10.2}NVIDIA Jetson AGX Thor Developer Kit}{36}{subsection.2.10.2}%
+\contentsline {section}{\numberline {2.11}Scene Graphs for Downstream Safety Reasoning}{36}{section.2.11}%
+\contentsline {chapter}{\numberline {3}Methodology}{38}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Baseline System and Proposed Extensions}{38}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Hardware Setup and Input Data Preparation}{38}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Data Preprocessing}{40}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Pre-Processing}{41}{section.3.4}%
+\contentsline {chapter}{\numberline {4}Experiments}{42}{chapter.4}%
+\contentsline {chapter}{\numberline {5}Conclusions}{43}{chapter.5}%
+\contentsline {chapter}{\nonumberline Bibliography}{44}{chapter*.18}%
+\contentsline {chapter}{\numberline {A}Example appendix chapter}{50}{appendix.A}%
 \providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

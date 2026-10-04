@@ -394,23 +394,21 @@ In this thesis, Hydra is useful as a spatial backbone for extending the existing
 
 
 
-
 \section{Risk-Annotated Scene Graph Framework Baseline}
+\label{sec:baseline_framework}
 
 {\small
 
-This section introduces the existing risk-annotated scene graph framework that forms the basis of this thesis \cite{previous_rsg_thesis}. The purpose is to explain the conceptual pipeline of the original work, including how visual input is processed, how objects and relationships are extracted, and how risk-related information is represented in the generated scene graph. This provides the necessary background for understanding the extensions proposed in this thesis.
-
-The discussion focuses on the high-level concepts of the original framework rather than implementation-specific details. In particular, it describes the role of perception, segmentation, retrieval-augmented perception, vision-language model reasoning, scene graph construction, and risk annotation. The limitations of the existing framework are also considered, especially with respect to portability, scalability, spatial consistency, uncertainty representation, and runtime applicability.
+The framework developed in this thesis extends the risk-annotated scene graph framework presented by Schiel~\cite{previous_rsg_thesis}, which is referred to as the baseline in the following. This section outlines its processing pipeline and external interface, explains how the scene graph is constructed and annotated with risk-relevant information, and identifies the limitations that motivate the present work. The focus lies on the conceptual design of the framework rather than on its implementation. The underlying segmentation, retrieval, and vision-language techniques are introduced separately in Sections~\ref{sec:nanosam} and~\ref{sec:visual_retrieval_vlm}.
 
 }
 
 \subsection{Information Flow in the Baseline Framework}
-
+\label{subsec:baseline_information_flow}
 
 {\small
 
-The baseline framework follows a modular processing pipeline in which RGB-D data is received, processed, interpreted, and integrated into a risk-annotated scene graph. The input to the system is an RGB-D observation of the environment, consisting of a colour image and its corresponding depth image. In the original implementation, this input can be provided through a dataset or submitted through an external interface. The external communication is handled through a FastAPI-based interface, which allows incoming samples and processing requests to be passed into the internal pipeline. This design separates data input and client communication from the perception and scene graph generation modules.
+The baseline framework follows a modular, worker-based processing pipeline in which RGB-D data is received, processed, interpreted, and integrated into a risk-annotated scene graph. The input to the system is an RGB-D observation of the environment, consisting of a colour image and its corresponding depth image, which is either provided through a dataset or submitted through the FastAPI-based interface described in Section~\ref{subsec:baseline_fastapi}. This design separates data input and client communication from the perception and scene graph generation modules. The resulting information flow is illustrated in Figure~\ref{fig:existing_rsg_framework}.
 
 \begin{figure}[htbp]
     \centering
@@ -419,101 +417,53 @@ The baseline framework follows a modular processing pipeline in which RGB-D data
     \label{fig:existing_rsg_framework}
 \end{figure}
 
-After an RGB-D input sample is received, the frame is handled as a task in the processing pipeline. The colour image is first used for object segmentation. For this purpose, the framework uses the Segment Anything Model (SAM) to generate object masks or image regions that may correspond to relevant entities in the scene. These masks are then used to create image cutouts for detected object candidates. The associated depth image, camera parameters, and pose information support later spatial processing, including coordinate conversion, visibility checking, and the spatial grounding of graph elements.
+Each received sample is handled as a task in the processing pipeline. The colour image is first segmented with the Segment Anything Model (SAM) \cite{kirillov2023segmentanything} to obtain class-agnostic object candidates. For every retained candidate, the framework stores an image crop, a bounding box, a binary mask, and a segmentation quality score. These candidates carry no semantic meaning, so their identities must be determined in the subsequent stages. The depth image, camera parameters, and pose information are used for the later spatial processing, including coordinate conversion, visibility checking, and the spatial grounding of graph elements.
 
-The segmented object candidates are then processed using a Retrieval-Augmented Perception (RAP) mechanism and a Vision-Language Model (VLM). RAP retrieves relevant or similar labels from a visual knowledge base for the detected object cutouts. This provides additional label candidates and prior visual context for the later interpretation stage. In parallel, the existing scene graph is reduced to a cutout that contains only the nodes and edges relevant to the current camera view. This scene-graph cutout is generated using the current pose and depth image, so that only likely visible graph elements are passed forward for inference.
-
-The VLM receives the RGB image together with the scene-graph cutout and the possible labels retrieved for the detected object candidates. It is then used to interpret the current scene and produce structured information about visible entities, semantic labels, relationships, confidence values, and risk-relevant properties. The VLM output is parsed into a graph-like representation and then merged with the existing scene graph. During this update, existing nodes and edges can be modified, newly detected entities can be added, and graph information can be updated according to the latest observation.
-
-Finally, the extracted and updated information is maintained as a risk-annotated scene graph. In this representation, relevant objects are modelled as nodes, while spatial, semantic, or risk-related relationships are represented as edges or attributes. The depth component of the RGB-D input is important because it supports spatial grounding of detected objects and enables approximate geometric relationships to be represented in the graph. The resulting graph provides a machine-readable representation of the observed scene and can be used as structured input for downstream reasoning or risk assessment. The overall information flow can therefore be summarised as RGB-D input, task handling, object segmentation, object cutout generation, RAP-based label retrieval, scene-graph cutout generation, VLM-based interpretation, and scene-graph update.
-
-The main design elements of the baseline framework are its modular worker-based structure, its separation between external communication and internal processing, its use of foundation models for segmentation and semantic interpretation, its retrieval-based support for object labelling, and its graph-based representation of RGB-D scene information. These elements make the framework suitable as a basis for risk-aware scene understanding.
+The object crops are then passed to the Retrieval-Augmented Perception (RAP) module, which returns label candidates from a visual knowledge base of previously stored observations (Section~\ref{subsec:visual_retrieval}). In parallel, the existing scene graph is reduced to a cutout that contains only the nodes and edges likely to be visible in the current camera view, determined from the current pose and depth image. The RGB image, the scene-graph cutout, and the RAP label candidates are subsequently passed to a vision-language model (VLM), which returns an updated graph for the current view (Section~\ref{subsec:vlm}). Finally, this output is grounded in 3D and merged into the complete scene graph, as described in Section~\ref{subsec:baseline_graph_construction}.
 
 }
+
 \subsection{FastAPI}
-
-FastAPI is a modern Python web framework used for building application programming interfaces (APIs) \cite{fastapi_docs}. It allows external clients to communicate with a software system through network-accessible endpoints, typically using HTTP requests. In robotics and perception systems, this can be useful when a perception pipeline is executed as a separate service and must receive RGB-D observations, processing requests, or configuration information from external programs.
-
-One advantage of FastAPI is that structured interfaces can be developed quickly in Python. The expected format of incoming requests can be defined explicitly, which is useful when external clients submit complex data such as RGB-D images, timestamps, and pose information. FastAPI also supports asynchronous web-server operation, making it suitable for service-based applications that handle multiple requests, communicate with external processes, or expose machine-learning components through a network interface \cite{fastapi_docs}. In the baseline risk-annotated scene graph framework, this provides a practical way to expose the scene graph generation pipeline as an external service while keeping the client application separated from the internal perception, segmentation, VLM, and scene graph modules.
-
-However, a FastAPI-based interface also has limitations for direct integration with autonomous robotic systems. Robotic software usually requires continuous sensor streams, low-latency communication, synchronised multi-modal data, distributed robot nodes, and predictable timing behaviour. A REST-based API is well suited for request-response communication \cite{fastapi_docs}, but it is less natural for high-frequency RGB-D streams and real-time control loops. Therefore, FastAPI is useful as a modular service interface in the baseline framework, but it is not ideal as the primary communication mechanism for portable robotic deployment. This motivates the later porting of the framework to ROS 2, where RGB-D data, pose information, scene graph updates, and system status can be handled using robot-native communication mechanisms.
-
-
-\subsection{SAM-Based Object Segmentation}
+\label{subsec:baseline_fastapi}
 
 {\small
 
-The Segment Anything Model (SAM) is a foundation model for image segmentation introduced by Kirillov et al. \cite{kirillov2023segmentanything}. It is designed as a promptable segmentation model that can generate masks from inputs such as points, bounding boxes, or masks. Since SAM is not limited to a fixed set of object classes, it is useful for open-ended visual perception tasks where the objects in a scene may not be known in advance.
+FastAPI is a Python web framework for building application programming interfaces (APIs), through which external clients communicate with a software system via network-accessible endpoints, typically using HTTP requests \cite{fastapi_docs}. The expected format of incoming requests can be defined explicitly, which suits complex inputs such as RGB-D images, timestamps, and pose information, and asynchronous operation allows several requests to be handled concurrently \cite{fastapi_docs}. In the baseline framework, FastAPI exposes the scene graph generation pipeline as an external service and keeps client applications separated from the internal perception, segmentation, VLM, and scene graph modules. For this external communication, the internal graph is converted into a dictionary-based representation in which node and edge information are stored separately.
 
-In the baseline risk-annotated scene graph framework, SAM is used to extract candidate object regions from the RGB component of the RGB-D input. For each retained object candidate, the framework keeps an object crop, a bounding box, a binary segmentation mask, and a confidence-related score. The crop is used for later visual interpretation, the bounding box and mask describe the image-space extent of the object candidate, and the score indicates the quality or stability of the segmentation.
-
-SAM therefore provides the low-level object proposal stage of the pipeline. However, it does not provide object identities, semantic relationships, risk labels, physical meaning, or 3D positions. Depth data, retrieval-based labels, and VLM-based interpretation are required before the segmented regions can be represented as meaningful nodes and relations in a risk-annotated scene graph.
-
-}
-
-\subsection{Retrieval-Augmented Perception}
-
-{\small
-
-Retrieval-Augmented Perception (RAP) in the baseline framework follows the broader idea of retrieval-augmented methods, where stored information is retrieved and used to support the interpretation of new input. This idea is closely related to retrieval-augmented generation, introduced by Lewis et al. for knowledge-intensive natural language processing tasks, where generated outputs are supported by information retrieved from an external knowledge source \cite{lewis2020rag}. In the baseline framework, this principle is transferred from text-based generation to visual perception. Instead of interpreting each segmented object only from the current RGB-D observation, the system retrieves relevant information from previously stored visual observations and uses it as additional context for object interpretation.
-
-After SAM generates candidate object regions, these object cutouts are passed to the RAP mechanism. RAP compares the current visual object candidates with entries in a visual knowledge base and retrieves similar or relevant object labels. These retrieved labels act as prior information for the later VLM-based interpretation stage. In this way, RAP supports object consistency across observations and reduces the dependence on the VLM having to infer every object label from the current image alone.
-
-The main advantage of RAP is that it introduces memory-like behaviour into the perception pipeline. If an object or a visually similar object has been observed before, the retrieved information can help guide the interpretation of the current scene. This is useful for risk-annotated scene graph generation because object identity and consistency are important when maintaining a structured representation of the environment over time. However, RAP does not independently solve object recognition or risk assessment. Its output must still be interpreted together with the current RGB-D observation, the segmented object regions, and the VLM output before the information can be inserted into the scene graph.
-
-}
-
-\subsection{Vision-Language Model Reasoning}
-
-
-{\small
-
-Vision-Language Models (VLMs) are multimodal models that combine visual and textual information to support image understanding through natural language. Unlike conventional object recognition models that predict labels from a fixed set of classes, VLMs can interpret visual content using prompts, descriptions, or structured instructions. Instruction-following VLMs such as LLaVA demonstrate how visual inputs can be connected with language-model reasoning through multimodal instruction tuning \cite{liu2023llava}. This makes VLMs useful for open-ended scene understanding, where the system must identify objects, infer relationships, and reason about context beyond predefined categories.
-
-Within the baseline framework, the VLM acts as the semantic reasoning component. It converts visual and contextual information into structured scene-level outputs, including object identities, attributes, relationships, confidence values, and risk-relevant descriptions. These outputs provide the semantic information required for constructing and updating the risk-annotated scene graph.
-
-The baseline study evaluated LLaVA 1.6 Mistral 7B, Qwen 2.5-VL 7B, and Phi-4 Vision Multimodal for the scene graph generation task. The comparison considered input- and output-format compatibility, repetition and hallucination behaviour, and the stability of location-format output. Based on this evaluation, the Qwen model series was identified as the best performing option for the baseline framework \cite{previous_rsg_thesis}. Later testing used Qwen 3-VL to use the newer available model version while preserving the framework's model-interchangeable design \cite{previous_rsg_thesis}.
-
-However, VLM-based reasoning can produce inconsistent descriptions, miss small objects, or infer relationships that are not fully supported by the visual input. Therefore, VLM output cannot be treated as directly reliable safety information. It must be bounded, checked, and converted into a consistent graph representation before it can support downstream risk assessment. This motivates the refinement of VLM outputs in this thesis.
+This interface is well suited to dataset-based testing and to request-response communication with external clients \cite{fastapi_docs}. Robotic software, however, relies on continuous high-frequency sensor streams, synchronised multi-modal data, distributed nodes, and predictable timing behaviour, for which a REST-based interface is less natural. FastAPI is therefore not ideal as the primary communication mechanism for deployment on a robotic platform, which motivates the port of the framework to ROS~2 \cite{macenski2022ros2}.
 
 }
 
 \subsection{Scene Graph Construction and Risk Annotation}
+\label{subsec:baseline_graph_construction}
 
 {\small
 
-The baseline framework represents the scene graph as a directed graph, where entities in the environment are modelled as nodes and relationships between entities are modelled as edges \cite{previous_rsg_thesis}. The original implementation uses NetworkX, a Python library for network analysis and graph manipulation, which supports incremental graph operations such as adding, updating, and removing nodes and edges \cite{hagberg2008networkx}. For external communication, the internal graph is converted into a dictionary-based representation, where node and edge information are stored separately. This makes the graph easier to return through the FastAPI interface and process by external clients.
+The baseline framework represents the scene graph as a directed graph, where entities in the environment are modelled as nodes and relationships between entities are modelled as edges \cite{previous_rsg_thesis}. The implementation uses NetworkX, a Python library for network analysis and graph manipulation, which supports incremental graph operations such as adding, updating, and removing nodes and edges \cite{hagberg2008networkx}.
 
 Each node stores semantic, spatial, and risk-related information. Important node attributes include a persistent identifier, object label, semantic description, semantic pose, 3D position, risk metadata, appearance score, confidence score, and layer type. The semantic description describes the visual identity of the entity, while the semantic pose describes its current physical state, such as standing, lying, open, closed, or moving. Edges store relationships between nodes, including the source node, target node, relationship label, distance between the connected entities, and an appearance score.
 
-The scene graph is updated after each VLM inference step. First, a local graph cutout is generated and sent to the VLM together with the current visual input. The VLM returns an updated graph containing detected or modified nodes and edges. Before this result is merged into the complete scene graph, the predicted graph is converted from image-space information into 3D coordinates using the depth image and camera pose. The converted VLM output is then compared with the graph cutout that was originally sent to the VLM.
+After each VLM inference step, the returned graph is converted from image-space information into 3D coordinates using the depth image and camera pose. The converted output is then compared with the scene-graph cutout that was originally sent to the VLM, and the two are combined following an update-or-insert strategy. For each node in the VLM output, the framework checks whether a node with the same identifier already exists in the complete scene graph. If it exists, its attributes are updated using the latest VLM output and its appearance score is increased. Otherwise, it is inserted as a new node with an initial appearance score. This allows newly detected objects or humans to be added while persistent entities are reinforced over time.
 
-The graph combination follows an update-or-insert strategy. For each node in the VLM output, the framework checks whether a node with the same identifier already exists in the complete scene graph. If the node already exists, its attributes are updated using the latest VLM output and its appearance score is increased. If the node does not yet exist, it is inserted into the complete scene graph as a new node with an initial appearance score. This allows newly detected objects or humans to be added while persistent entities are reinforced over time.
+Nodes that were present in the VLM input cutout but are missing from the VLM output are interpreted as not being detected in the current update. Instead of being removed immediately, their appearance score is decreased, and a node is removed only when its appearance score falls below a predefined threshold. This prevents isolated missed detections from immediately deleting objects from the graph.
 
-The framework also checks for nodes that were present in the VLM input cutout but are missing from the VLM output. These nodes are interpreted as not being detected in the current update. Instead of removing them immediately, the framework decreases their appearance score. A node is removed only when its appearance score falls below a predefined threshold. This prevents isolated missed detections from immediately deleting objects from the graph and provides basic temporal persistence.
-
-The same principle is applied to edges. For each edge returned by the VLM, the framework checks whether the edge already exists between the corresponding source and target nodes. If it exists, the relationship label and distance are updated and the edge appearance score is increased. If it does not exist, a new edge is added with an initial appearance score. The edge distance is calculated from the 3D positions of the connected nodes, allowing spatial relationships to be stored together with semantic relationship labels.
-
-Edges that were present in the input cutout but are missing from the VLM output are weakened by decreasing their appearance score. If the score falls below the threshold, the edge is removed. Therefore, the baseline framework handles temporal consistency mainly through appearance-based persistence. Repeatedly observed nodes and edges become more stable, while missing or transient entities are gradually removed. However, this mechanism does not maintain a full probability distribution over possible object classes or relationship labels. It provides basic robustness against false positives and false negatives, but it does not yet provide a complete probabilistic representation of semantic or spatial uncertainty.
-
-Overall, the scene graph construction strategy combines semantic information, spatial information, and risk-related metadata in a machine-readable representation. The update mechanism allows the graph to evolve over time as new RGB-D observations are processed. This makes the baseline framework suitable for incremental risk-aware scene understanding, while also motivating later extensions for spatial consistency, probabilistic uncertainty handling, and scalability in larger environments.
+The same principle is applied to edges. If an edge returned by the VLM already exists between the corresponding source and target nodes, its relationship label and distance are updated and its appearance score is increased; otherwise, a new edge is added with an initial appearance score. The edge distance is calculated from the 3D positions of the connected nodes, so that spatial relationships are stored together with semantic relationship labels. Edges that were present in the input cutout but are missing from the VLM output are weakened by decreasing their appearance score and are removed once it falls below the threshold. Temporal consistency is therefore handled through appearance-based persistence: repeatedly observed nodes and edges become more stable, while missing or transient entities are gradually removed.
 
 }
 
 
 \subsection{Limitations of the Baseline Framework}
+\label{subsec:baseline_limitations}
 
 {\small
 
-Although the baseline framework provides a suitable foundation for risk-annotated scene graph generation, it has several limitations when considered for deployment in autonomous robotic systems. The first limitation is related to portability. The original framework is exposed mainly through a FastAPI-based service interface, which is useful for dataset-based testing and external client communication. However, autonomous robotic systems typically rely on robot middleware for continuous sensor streams, synchronised data exchange, distributed nodes, and runtime coordination. As a result, the baseline interface is not directly aligned with robot-native communication patterns, making integration with real robotic platforms less straightforward.
+When considered for deployment on a mobile robot, the baseline framework has limitations in three areas: its integration into the robotic system and the spatial extent it can represent, the reliability of the information stored in the scene graph, and its computational cost.
 
-A second limitation concerns scalability across larger environments. The baseline framework processes RGB-D observations and updates a scene graph based on the current frame, camera pose, and visible graph elements. This is suitable for local scene understanding, but it does not by itself provide a complete mechanism for building and maintaining a spatially consistent graph across multiple rooms, corridors, or revisited locations. As the operating area increases, the system requires stronger spatial anchoring so that objects observed at different positions and times can be associated with the correct location in a global environment representation.
+The first limitation arises from the service-oriented interface of the framework, which is not aligned with robot-native communication patterns (Section~\ref{subsec:baseline_fastapi}) and therefore makes deployment on real robotic platforms less straightforward. The spatial extent of the representation is likewise restricted, as the scene graph is updated based only on the current frame, camera pose, and visible graph elements. This is suitable for local scene understanding, but it provides no mechanism for keeping the graph spatially consistent across multiple rooms, corridors, or revisited locations. Since the framework also lacks loop closure, an area revisited after accumulated pose drift may lead to revisited objects being inserted as new observations, or to updates based on spatial information that is no longer globally consistent. Anchoring the scene graph in a SLAM-based spatial map with loop closure, such as the one provided by Hydra \cite{hughes2022hydra}, is therefore necessary to extend the framework beyond local frame-by-frame scene understanding.
 
-Closely related to this is the absence of a dedicated loop closure mechanism. In mobile robotic operation, the robot may revisit a previously observed area after accumulating pose drift. Without loop closure, the system may treat revisited objects or locations as new observations, or may update the scene graph using spatial information that is no longer globally consistent. This limits the framework's ability to maintain a reliable long-term scene graph in larger environments. For this reason, integration with SLAM-based spatial data and loop closure detection is necessary for extending the framework beyond local frame-by-frame scene understanding.
+Beyond these integration aspects, the information stored in the scene graph is only partially reliable. Uncertainty is expressed solely through confidence values and appearance scores. Appearance-based persistence distinguishes repeatedly observed entities from briefly observed ones, but it maintains neither a probability distribution over object classes or relationship labels nor a probabilistic estimate of object existence or spatial position, although such information is required for downstream risk assessment (Section~\ref{subsec:tracking_relevance}). The relationships stored on the edges are similarly limited. They are inferred by the VLM from a single two-dimensional view, and several of them, such as \textit{in front of} or \textit{behind}, are defined relative to the observer rather than to the scene. An object that is behind another object from one viewpoint may appear beside or in front of it from another, so the same pair of objects can receive contradictory labels as the robot moves, and each update overwrites the previously stored label. Such egocentric relations do not describe a stable property of the three-dimensional scene. Moreover, the scene graph depends directly on the VLM output and therefore inherits the failure modes described in Section~\ref{subsec:vlm}. Since the parsing and graph-combination steps mitigate only some of these effects, the VLM output must be bounded, checked, and converted into a consistent graph representation before it can serve as reliable input for risk assessment.
 
-The baseline framework also has limitations with respect to uncertainty representation. Object candidates are generated from segmentation, interpreted by a VLM, and then merged into the scene graph using confidence-related and appearance-based information. This supports basic persistence handling, because objects that are repeatedly observed can be treated as more stable than objects that appear only briefly. However, this does not provide a full probabilistic representation of object existence, object class, or spatial position. For downstream risk assessment, such probabilistic information is important because the risk associated with an object may depend not only on its detected class, but also on the likelihood of its presence, the uncertainty of its location, and the reliability of its classification. Representing important objects with probability distributions or uncertainty estimates would allow the risk assessment mechanism to distinguish between confidently detected objects, weakly observed objects, and objects whose position or classification remains uncertain.
-
-Finally, the baseline framework depends strongly on the quality and consistency of VLM output. VLM-generated scene graph information may contain formatting errors, hallucinated relationships, missed objects, or inconsistent descriptions. Although parsing and graph-combination mechanisms can reduce some of these effects, the output still needs to be bounded and checked before it can be used as reliable input for risk assessment. These limitations motivate the extensions proposed in this thesis: porting the framework to ROS 2, integrating SLAM-based spatial information and loop closure, introducing probabilistic object representation, refining VLM output constraints, and considering near-real-time operation during system design.
+Finally, the runtime performance of the framework is constrained by its per-frame inference load. Segmenting every frame with SAM in automatic mode and invoking the VLM on every frame limits the achievable update rate of the scene graph on embedded hardware, for the reasons given in Sections~\ref{subsec:sam_architecture} and~\ref{subsec:vlm}. Together, these limitations motivate the extensions proposed in this thesis: porting the framework to ROS~2, anchoring the scene graph in a SLAM-based spatial map with loop closure, introducing a probabilistic object representation, deriving object relationships from the three-dimensional geometry of the scene, constraining and validating the VLM output, and reducing the per-frame inference load to enable near-real-time operation.
 
 }
 
@@ -528,12 +478,14 @@ Finally, the baseline framework depends strongly on the quality and consistency 
 
 \section{Lightweight Promptable Segmentation with NanoSAM}
 \label{sec:nanosam}
+{\small
 
 The baseline framework uses the Segment Anything Model (SAM) to generate class-agnostic object candidates from the RGB component of each observation \cite{kirillov2023segmentanything, previous_rsg_thesis}. Although SAM achieves strong zero-shot segmentation quality, its image encoder is computationally expensive. On an embedded robotic platform, segmentation must share the available compute and memory with spatial mapping, retrieval, and vision-language model inference, which makes the original model unsuitable for near-real-time operation. In this thesis, SAM is therefore replaced by NanoSAM, a distilled SAM variant developed by NVIDIA for real-time inference on Jetson devices using NVIDIA TensorRT \cite{nanosam2023, nvidia_tensorrt}. This section introduces the architecture of SAM that NanoSAM inherits, the knowledge distillation approach used to obtain NanoSAM, its deployment and performance characteristics, and its use in the proposed framework.
 
+}
 \subsection{Architecture of the Segment Anything Model}
 \label{subsec:sam_architecture}
-
+{\small
 SAM formulates segmentation as a promptable task: given an image and a prompt that indicates what to segment, the model returns a valid segmentation mask, even if the prompt is ambiguous \cite{kirillov2023segmentanything}. The model is class-agnostic, meaning that it delineates image regions without assigning semantic labels. It consists of three components. The image encoder is a Vision Transformer (ViT) \cite{dosovitskiy2021vit}, pre-trained as a masked autoencoder \cite{he2022mae}, which processes an input image resized and padded to $1024 \times 1024$ pixels. The image is divided into $16 \times 16$ pixel patches, which are processed by transformer blocks using mostly windowed and occasionally global self-attention, and a convolutional neck compresses the result into a dense image embedding of $64 \times 64 \times 256$.
 
 \begin{figure}[htbp]
@@ -546,23 +498,24 @@ SAM formulates segmentation as a promptable task: given an image and a prompt th
 In this work, the model is prompted exclusively with single foreground points placed on a regular grid. The prompt encoder maps each point to a 256-dimensional token by combining a random Fourier positional encoding of its image coordinates with a learned embedding identifying it as a foreground point. Since the same positional encoding is applied to the locations of the image embedding, the prompt token and the image features share a common coordinate representation, which allows the decoder to relate the prompt to the corresponding image region. The mask decoder is a lightweight two-way transformer, in which the prompt token and a set of learned output tokens attend to each other and to the image embedding, while the image embedding in turn attends to the tokens. After upsampling the updated embedding, each output mask token is mapped to a per-pixel classifier that yields mask logits, and a dedicated output token predicts the intersection-over-union (IoU) of each mask with the target object \cite{kirillov2023segmentanything}.
 
 Two design properties of SAM are particularly relevant for this thesis. First, the computational cost is distributed asymmetrically: the image encoder accounts for the large majority of the computation but is executed only once per image, after which the embedding can be reused for an arbitrary number of prompts at low additional cost. Second, since a single point can be ambiguous, for example when it lies on a part of an object as well as on the object as a whole, the decoder predicts several candidate masks at different levels of granularity together with their predicted IoU. For automatic segmentation without user input, SAM prompts the image with a regular grid of foreground points and filters the resulting masks by predicted IoU, mask stability, and non-maximum suppression (NMS). This automatic mode multiplies the decoder cost by the number of grid points and, combined with the large ViT encoder, is not compatible with near-real-time operation on embedded hardware.
-
+}
 \subsection{Knowledge Distillation and MobileSAM}
 \label{subsec:mobilesam}
 
+{\small
 Knowledge distillation is a model compression technique in which a compact student network is trained to reproduce the outputs or intermediate representations of a larger teacher network \cite{hinton2015distilling}. Since the student is supervised by the teacher rather than by ground-truth annotations, a substantial part of the teacher's behaviour can be transferred to a model with considerably lower computational cost.
 
 MobileSAM applies this principle to SAM \cite{zhang2023mobilesam}. Zhang et al. observed that jointly distilling the image encoder and the mask decoder is difficult, because both components are optimised in a coupled manner. They therefore proposed decoupled distillation, in which only the image encoder is distilled: a lightweight TinyViT-based encoder \cite{wu2022tinyvit} is trained to regress the image embeddings of SAM's ViT-H encoder. Because the student produces embeddings in the same format as the teacher, the original prompt encoder and mask decoder can be reused without retraining. In this way, MobileSAM reduces the image encoder from more than 600 million to approximately five million parameters while retaining segmentation behaviour comparable to the original model \cite{zhang2023mobilesam}.
-
+}
 \subsection{NanoSAM}
 \label{subsec:nanosam_model}
-
+{\small
 NanoSAM extends the decoupled distillation strategy of MobileSAM by a further compression step targeted at embedded NVIDIA hardware \cite{nanosam2023}. The MobileSAM image encoder acts as the teacher, and a convolutional network acts as the student. The student uses an ImageNet-initialised ResNet-18 backbone \cite{he2016resnet}, which processes the $1024 \times 1024$ input through a stem and four stages of residual blocks, progressively halving the spatial resolution and doubling the number of channels until a feature map of $32 \times 32 \times 512$ is obtained. A convolutional neck then reduces the channels, upsamples the features to $64 \times 64$ using a transposed convolution, and projects them to 256 channels. Finally, a learned positional embedding of $64 \times 64 \times 256$ is added. This positional embedding compensates for the largely translation-equivariant nature of convolutions, which would otherwise prevent the student from reproducing the position-dependent component of the transformer teacher's embedding.
 
 The student is trained on unlabelled images from the COCO 2017 training set \cite{lin2014coco} by regressing the teacher embedding with a Huber loss \cite{huber1964robust}. Since no segmentation annotations are required, the distillation relies entirely on the teacher's representations. Because the embedding format is preserved, NanoSAM reuses the MobileSAM prompt encoder and mask decoder without modification. The resulting pipeline therefore consists of the distilled ResNet-18 encoder followed by the unchanged MobileSAM decoder.
 
 For deployment, both components are compiled into TensorRT engines. TensorRT converts a trained network into a hardware-specific engine by applying, among other techniques, layer fusion, reduced-precision execution, and automatic selection of kernel implementations for the target GPU \cite{nvidia_tensorrt}. The NanoSAM encoder is executed in half precision (FP16), whereas the decoder is executed in single precision (FP32) \cite{nanosam2023}. Since the engines are specific to the GPU architecture and TensorRT version, they must be built on, or for, the target platform. Table~\ref{tab:nanosam_performance} summarises the latency and accuracy reported by the developers, where accuracy is measured by prompting the model with ground-truth bounding boxes from the COCO 2017 validation set.
-
+}
 \begin{table}[htbp]
 	\centering
 	\caption{Latency on Jetson AGX Orin and mean IoU on COCO 2017 validation with ground-truth box prompts, as reported in \cite{nanosam2023}.}
@@ -581,10 +534,9 @@ For deployment, both components are compiled into TensorRT engines. TensorRT con
 
 \subsection{Limitations}
 \label{subsec:nanosam_limitations}
-
+{\small
 NanoSAM has two limitations that affect its use in the proposed framework. First, although NanoSAM uses the same decoder architecture as SAM, its TensorRT-based predictor only exposes prompt-based inference and does not include the automatic mask generation pipeline of SAM, which therefore has to be implemented separately as a post-processing wrapper around the model. In particular, object candidates must be obtained through externally generated prompts, and duplicate masks arising from neighbouring prompts must be removed by the application. Second, the distillation reduces segmentation accuracy, particularly for small objects, which may nevertheless be safety-relevant in cluttered indoor environments. Consequently, NanoSAM masks must be regarded as uncertain object proposals that require subsequent filtering, tracking, and semantic interpretation.
-
-
+}
 
 
 
@@ -593,41 +545,41 @@ NanoSAM has two limitations that affect its use in the proposed framework. First
 
 \section{Multi-Object Tracking and Data Association}
 \label{sec:tracking_association}
-
+{\small
 Segmentation, as discussed in Section~\ref{sec:nanosam}, describes the objects visible in a single image, but it does not establish whether a segmented region corresponds to an object that has already been observed. For a mobile robot operating over an extended period, this distinction is essential. As the robot moves, the same physical object reappears from different viewpoints, at different distances, and under varying degrees of occlusion. If every observation were treated independently, the scene representation would accumulate duplicate objects, and information gathered over time could not be attributed to the same physical entity. Multi-object tracking addresses this problem by maintaining persistent object representations over time and relating each new observation to them.
-
+}
 \subsection{The Data Association Problem}
 \label{subsec:data_association}
-
+{\small
 The central task in multi-object tracking is data association: deciding which current observation corresponds to which previously established object. If an observation is sufficiently consistent with an existing object representation, it is associated with that object and contributes to its refinement. Otherwise, it is treated as a previously unseen instance and used to initialise a new object representation. Conversely, an existing object that is not observed in the current frame is not necessarily absent, since it may be occluded, outside the field of view, or missed by the perception system.
 
 The reliability of this decision depends on the evidence used to compare observations with existing objects. Image-space evidence, such as the position or overlap of regions in the image, changes substantially when the camera moves, even if the observed object remains stationary. A table, for example, can occupy entirely different image regions when viewed from opposite sides of a room. For a mobile robot, apparent motion in the image is therefore caused by both object motion and ego-motion. When depth measurements and camera poses are available, observations can instead be expressed in a common three-dimensional reference frame, in which the position and extent of a static object remain approximately constant across viewpoints. Three-dimensional information therefore provides more stable evidence for associating observations that are far apart in time or taken from very different viewpoints.
 
 Two types of association error must be considered. A false association merges observations of distinct physical objects into a single representation, while a missed association splits one physical object into duplicate representations. Both errors propagate directly into any scene representation built on top of the tracking result.
-
+}
 \subsection{Object-Level SLAM with Fusion++}
 \label{subsec:fusionpp}
-
+{\small
 A relevant precedent for persistent, object-centric scene representation is Fusion++, an object-level SLAM system proposed by McCormac et al.~\cite{mccormac2018fusion}. Instead of representing the environment exclusively through a single monolithic geometric model, Fusion++ builds a persistent map composed of individual object instances. The system operates on RGB-D input and uses Mask R-CNN instance segmentation~\cite{he2017maskrcnn} to detect object regions in incoming frames. The corresponding depth measurements are used to initialise a separate volumetric TSDF model for each newly detected object, with the voxel resolution of each model chosen according to the object's size. A coarse TSDF of the background is maintained in parallel to support camera tracking~\cite{mccormac2018fusion}.
 
 Data association in Fusion++ couples the persistent 3D models with the 2D segmentation output. Existing object models are rendered into the current camera view, and each new instance mask is compared with these renderings using their intersection-over-union. A mask is associated with an existing object if the overlap exceeds a threshold. Otherwise, it initialises a new object~\cite{mccormac2018fusion}. When an object is observed again, the new depth measurements are fused into its existing TSDF rather than creating an independent copy. Since an object is rarely fully visible from a single viewpoint, repeated observations from different viewpoints gradually complete its geometry. Persistent association therefore serves two purposes: it preserves object identity, and it allows the spatial representation of each object to be refined over time.
 
 Fusion++ also maintains uncertainty-related quantities for each object. Semantic identity is not fixed at initialisation. Instead, the class probabilities predicted by Mask R-CNN are fused over successive observations, so that the class estimate of an object can change as further evidence becomes available, independently of the object's identity in the map. In addition, each object carries an existence probability, which is derived from how often the object is detected compared with how often it is expected to be visible but is not detected. Objects whose existence probability falls too low are removed, which suppresses spurious detections without discarding objects after a single missed observation~\cite{mccormac2018fusion}. Finally, the object instances are organised in a six-degree-of-freedom pose graph and used as landmarks for tracking, relocalisation, and loop-closure detection. As a result, objects become persistent elements of the spatial map rather than transient detections tied to individual frames.
-
+}
 \subsection{Limitations of Fusion++}
 \label{subsec:fusionpp_limitations}
-
+{\small
 Despite these properties, Fusion++ is not suitable as the basis of the proposed framework. Its semantic perception is closed-set, since objects are detected and classified by Mask R-CNN, which is trained on a fixed set of categories~\cite{mccormac2018fusion}. Objects outside this set are not represented as distinct entities, which conflicts with the requirement of open-vocabulary identification of risk-relevant objects. Furthermore, Fusion++ produces an object-level map rather than a scene graph. It contains no relationships between objects, descriptive object properties, or higher-level spatial structures such as rooms, and therefore lacks the relational context on which downstream safety reasoning depends.
 
 In addition, Fusion++ assumes a static environment~\cite{mccormac2018fusion}. Its existence probability indicates whether an object is repeatedly detected, but not whether a previously observed object is still at its last observed position, even though this uncertainty is itself risk-relevant in dynamic environments. Finally, maintaining a separate volumetric model for every object, combined with a two-stage segmentation network, results in memory and computational costs that grow with the number of objects. This conflicts with the requirement of near-real-time operation on embedded hardware.
-
+}
 \subsection{Relevance for Persistent Scene Representations}
 \label{subsec:tracking_relevance}
-
+{\small
 Despite these limitations, the central idea behind Fusion++ remains relevant to this work. Image observations can be combined with depth to build persistent object representations, and new observations can be linked back to them over time. For a scene graph that supports risk assessment, this means that each node should represent a physical object rather than a single detection. Information collected at different times, such as labels, properties, or positions, can then be gathered in one place instead of being spread across duplicate entries. The semantic label of an object should also be treated as an estimate that can improve with more observations, rather than as a fixed value assigned when the object is first seen.
 
 In the same way, the presence of an object is better described by a probability than by a simple yes or no. This makes it possible to tell apart objects that have been seen many times, objects that were seen only briefly, and objects that have not been observed for some time. Such distinctions matter for risk assessment, since an object that may have moved should be treated differently from one whose position is well known. These ideas, however, need to be applied under conditions that Fusion++ does not consider, including open-vocabulary object identification, relations between objects, changing object positions, and near-real-time operation on embedded hardware.
-
+}
 
 
 
@@ -642,8 +594,12 @@ In the same way, the presence of an object is better described by a probability 
 
 Class-agnostic segmentation produces object masks without semantic meaning. Labels can be assigned to such masks by visual retrieval, which reuses the label of a previously seen, similar object, or by a vision-language model (VLM), which names an object directly from its appearance. Retrieval is computationally cheap but limited to what has been observed before, whereas a VLM can describe arbitrary objects at a considerably higher computational cost. The baseline framework combines both approaches~\cite{previous_rsg_thesis}, and its concept forms the starting point for the pipeline developed in this thesis.
 
+}
+
 \subsection{Retrieval-Augmented Perception}
 \label{subsec:visual_retrieval}
+
+{\small
 
 Visual retrieval requires an image encoder that converts an image into a fixed-length vector, referred to as an embedding, such that similar images obtain similar embeddings. A widely used encoder is the image encoder of Contrastive Language--Image Pre-training (CLIP)~\cite{radford2021clip}. In its ViT-B/32 variant, the image is resized to $224 \times 224$ pixels, divided into $32 \times 32$ pixel patches, and processed by a Vision Transformer~\cite{dosovitskiy2021vit}. A summary token that collects information from all patches is projected to a vector of 512 values and normalised to unit length.
 
@@ -666,8 +622,12 @@ In the baseline framework, this principle is implemented as Retrieval-Augmented 
 
 Retrieval is fast, and repeated observations of the same object receive consistent labels. However, it can only return labels that are already stored, an incorrect entry is propagated to all similar observations, and the threshold trades the number of resolved objects against the number of accepted errors. Moreover, the encoder summarises the entire image including its background, because nothing indicates which pixels belong to the object. Large uniform surfaces such as walls and ceilings in the same room can therefore appear more similar to each other than to the same surface type elsewhere.
 
+}
+
 \subsection{Vision-Language Models}
 \label{subsec:vlm}
+
+{\small
 
 A VLM consists of a vision encoder, which converts image patches into feature vectors, a connector, which maps these features into the input space of a large language model, and the language model, which generates the answer token by token from the visual input and a text prompt~\cite{liu2023llava}. Since each token requires one forward pass, the latency grows with the length of the answer. A pre-trained VLM can be applied to new tasks without retraining, as the task is specified in the prompt.
 
@@ -677,8 +637,12 @@ In the baseline framework, the VLM is the central reasoning component~\cite{prev
 
 In general, VLM output cannot be treated as ground truth. A reported confidence value is generated text rather than a calibrated probability, and models often state high confidence for incorrect answers~\cite{xiong2024uncertainty}. VLM output should therefore be validated, for example against confidence thresholds, before it is stored in a persistent environment representation.
 
+}
+
 \subsection{The Qwen Vision-Language Model Family}
 \label{subsec:qwen}
+
+{\small
 
 The baseline study evaluated three VLMs for scene graph generation: LLaVA~1.6 Mistral~7B, Qwen2.5-VL~7B, and Phi-4 Multimodal~\cite{previous_rsg_thesis}. The models were compared with respect to the compatibility of their input and output formats, their tendency towards repetition and hallucination, and the stability of the generated object locations. Based on this comparison, the Qwen series was identified as the most suitable model family, and later tests of the baseline framework used the newer Qwen3-VL generation, taking advantage of the model-interchangeable design of the framework~\cite{previous_rsg_thesis}. This thesis builds on this result. Instead of repeating the comparison between model families, it continues with the best-performing Qwen family and updates the model choice to the latest available generations, with a focus on small models that are suited to embedded hardware.
 
@@ -705,6 +669,7 @@ Qwen2-VL introduced image processing at native resolution~\cite{wang2024qwen2vl}
 The released models differ in size, architecture, and operating mode. Dense models use all of their parameters for every token, whereas mixture-of-experts models activate only a subset of their parameters per token, which reduces computation but not the memory required to store the full model~\cite{bai2025qwen3vl}. In addition, Qwen3-VL is released in an instruction-following variant, which answers directly, and a thinking variant, which reasons explicitly before answering~\cite{bai2025qwen3vl}, while Qwen3.5 combines both behaviours in one model~\cite{qwen2026qwen35}. For embedded deployment, the memory footprint is decisive. The memory required for the weights is approximately the number of parameters multiplied by the number of bits per parameter, so that an 8B model in 16-bit precision requires about 16\,GB, whereas a 4B model stored with about 4 bits per parameter requires roughly 2 to 3\,GB. Small dense models, which are commonly also distributed in such reduced-precision formats, are therefore the most suitable candidates when the VLM has to run alongside other perception and mapping components on the same device.
 
 Since the baseline study, a new generation has appeared roughly every six to twelve months, and small models have improved noticeably: on the MMMU-Pro benchmark, Qwen3.5-4B scores 65.4\,\% compared with 52.0\,\% for Qwen3-VL-4B~\cite{artificialanalysis2026qwen35}. Although general benchmarks do not directly predict task-specific accuracy, this trend indicates that the small Qwen3-VL and Qwen3.5 models are promising candidates for the present work, and that future generations may improve the results further. The model-interchangeable design of the baseline framework allows such newer models to be adopted without changes to the remaining pipeline.
+
 }
 
 
@@ -717,19 +682,27 @@ Since the baseline study, a new generation has appeared roughly every six to twe
 
 {\small
 
-The proposed framework combines several computationally demanding components, including SAM-based segmentation, retrieval-augmented perception, VLM reasoning, Hydra-based spatial mapping, and risk-annotated scene graph generation. For onboard robotic deployment, these components must run on embedded hardware with sufficient AI compute, memory capacity, and energy efficiency. This section introduces the two NVIDIA Jetson platforms relevant to this work, the Jetson AGX Orin Developer Kit and the Jetson AGX Thor Developer Kit.
+The proposed framework combines several computationally demanding components, including NanoSAM-based segmentation, retrieval-augmented perception, VLM reasoning, Hydra-based spatial mapping, and risk-annotated scene graph generation. For onboard robotic deployment, these components must run on embedded hardware with sufficient AI compute, memory capacity, and energy efficiency. This section introduces the two NVIDIA Jetson platforms relevant to this work, the Jetson AGX Orin Developer Kit and the Jetson AGX Thor Developer Kit.
+
+}
 
 \subsection{NVIDIA Jetson AGX Orin Developer Kit}
 
-NVIDIA Jetson AGX Orin is an embedded edge-AI computing platform designed for robotics, computer vision, and autonomous machines. Like other members of the Jetson family, it integrates CPU, GPU, memory, I/O, and AI acceleration into a compact module for onboard computation. Jetson AGX Orin is based on the NVIDIA Ampere architecture, combining a 2048-core GPU with 64 Tensor Cores and a 12-core Arm Cortex-A78AE CPU. It provides up to 275 TOPS of AI performance, 64 GB of memory, and a configurable power range of 15 W to 60 W \cite{nvidia_jetson_orin}.
+{\small
 
-Jetson AGX Orin was used as the target platform in the baseline framework \cite{schiel2026online}. Its compute capacity is sufficient for executing individual perception and reasoning components, such as segmentation and VLM inference with models in the 7B parameter class. However, running the complete pipeline, consisting of segmentation, retrieval, VLM reasoning, and spatial mapping, concurrently on a single Orin module places considerable demands on its memory and compute resources, which limits the achievable update rate of the scene graph.
+NVIDIA Jetson AGX Orin is an embedded edge-AI computing platform designed for robotics, computer vision, and autonomous machines. Like other members of the Jetson family, it integrates CPU, GPU, memory, I/O, and AI acceleration into a compact module for onboard computation. Jetson AGX Orin is based on the NVIDIA Ampere architecture, combining a 2048-core GPU with 64 Tensor Cores and a 12-core Arm Cortex-A78AE CPU. It provides up to 275 TOPS of AI performance, 64~GB of memory, and a configurable power range of 15~W to 60~W \cite{nvidia_jetson_orin}.
+
+Jetson AGX Orin was used as the target platform in the baseline framework \cite{schiel2026online}. Its compute capacity is sufficient for executing individual perception and reasoning components, such as segmentation and VLM inference with models in the 7B parameter class. However, executing the complete pipeline, consisting of segmentation, retrieval, VLM reasoning, and spatial mapping, concurrently on a single module can be expected to place considerable demands on the available memory and compute resources. Since the CPU and GPU share the same physical memory and power budget, these components compete for the same resources, which may limit the achievable update rate of the scene graph.
+
+}
 
 \subsection{NVIDIA Jetson AGX Thor Developer Kit}
 
-NVIDIA Jetson AGX Thor is the successor platform within the Jetson family and is designed specifically for physical AI, robotics, and real-time multimodal perception. It is based on the NVIDIA Blackwell architecture, combining a 2560-core GPU with 96 fifth-generation Tensor Cores and a 14-core Arm Neoverse-V3AE CPU. It provides up to 2070 FP4 sparse TFLOPS of AI compute, 128 GB of memory, and a configurable power range of 40 W to 130 W \cite{nvidia_jetson_thor}. NVIDIA reports that Jetson AGX Thor provides up to 7.5 times higher AI compute and 3.5 times better energy efficiency than Jetson AGX Orin \cite{nvidia_jetson_thor}.
+{\small
 
-This additional capacity is relevant for the proposed framework because it allows the perception, reasoning, and mapping components to be executed on the same embedded platform. Jetson AGX Thor also offers improved support for transformer-based and multimodal workloads. Jetson AI Lab lists Qwen3-VL models, including Qwen3-VL 4B and Qwen3-VL 8B, as available for Jetson AGX Thor through Quick Start Runner and vLLM-based serving configurations \cite{jetson_ai_lab_models}. Since the Qwen model series was identified as the best performing option in the baseline framework \cite{schiel2026online}, Jetson AGX Thor provides a suitable hardware basis for extending the system toward onboard robotic deployment without dependence on an external workstation for model inference.
+NVIDIA Jetson AGX Thor is the successor platform within the Jetson family and is designed specifically for physical AI, robotics, and real-time multimodal perception. It is based on the NVIDIA Blackwell architecture, combining a 2560-core GPU with 96 fifth-generation Tensor Cores and a 14-core Arm Neoverse-V3AE CPU. It provides up to 2070 FP4 sparse TFLOPS of AI compute, 128~GB of memory, and a configurable power range of 40~W to 130~W \cite{nvidia_jetson_thor}. According to the manufacturer, Jetson AGX Thor provides up to 7.5 times higher AI compute and 3.5 times better energy efficiency than Jetson AGX Orin \cite{nvidia_jetson_thor}.\footnote{The compute figures of the two platforms are specified at different numerical precisions (FP4 sparse TFLOPS for Jetson AGX Thor and TOPS for Jetson AGX Orin). The comparison therefore reflects the manufacturer's specification rather than a measured result.}
+
+This additional capacity is potentially relevant for the proposed framework, as it may allow the perception, reasoning, and mapping components to be executed concurrently on the same embedded platform with fewer resource constraints. Jetson AGX Thor also offers improved support for transformer-based and multimodal workloads. Jetson AI Lab lists Qwen3-VL models, including Qwen3-VL 4B and Qwen3-VL 8B, as available for Jetson AGX Thor through Quick Start Runner and vLLM-based serving configurations \cite{jetson_ai_lab_models}. Since the Qwen model series was identified as the best-performing option in the baseline framework \cite{schiel2026online}, Jetson AGX Thor represents a suitable hardware basis for extending the system toward onboard robotic deployment without dependence on an external workstation for model inference.
 
 }
 
