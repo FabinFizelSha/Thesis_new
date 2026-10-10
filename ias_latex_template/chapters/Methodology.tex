@@ -133,6 +133,9 @@ where $\mathbf{T}_{\mathrm{WB}}(t) \in SE(3)$ denotes the pose of the robot base
 
 
 
+
+
+
 \section{Object Segmentation and Persistent Tracking}
 \label{sec:method_tracking}
 {\small
@@ -200,10 +203,11 @@ Each track holds a persistent identity, a smoothed centroid and volume, an accum
 Extended structures such as floors, walls and ceilings cannot be represented by a single box, since its extent would cover a large part of the map and its centroid would lie far from most of the structure. Each track is therefore divided into local segments of bounded horizontal span. Every segment receives its own slot ID (Section~\ref{sec:method_overview}) and thus its own object node in Hydra~\cite{hughes2022hydra}, while the track retains one identity and therefore one label for all its segments. An observation extends an open segment as long as the span limit is respected. A segment that reaches the limit is closed; subsequent observations either re-attach to it without enlarging its geometry or open a new segment. A single mask that already exceeds the limit is not split.
 \par}
 
-
-
-
-
+\subsection{Transfer of Object Observations to Hydra}
+\label{subsec:method_hydra_input}
+{\small
+The tracking results of every frame are passed to Hydra~\cite{hughes2022hydra} independently of the semantic labelling, so that the spatial representation is built up without delay. The masks are rendered into a semantic image and an instance image (Section~\ref{subsec:method_architecture}), in which each pixel carries the slot ID of the assigned local segment, so that Hydra forms one object node per segment. Each mask is rendered in the filtered form from which its geometry was computed, and overlapping masks are drawn in order of decreasing area, so that every pixel carries a single slot ID and small objects remain visible in front of large structures. Pixels without a track or with depth outside the valid range receive a reserved background ID and invalid depth, and for real sensor data the slot ID of a new track can be withheld until it has been observed in several frames. All data are transmitted with the timestamp of the original observation, so that Hydra integrates geometry and object identity from the same instant.
+\par}
 
 
 
@@ -267,5 +271,112 @@ The structured result of the VLM comprises five fields: an open-vocabulary label
 The label states what an object is, whereas its risk relevance frequently depends on its current state. The visual-state description therefore records what is visibly particular about the instance at the time of observation, namely items placed on or with it, its condition, or whether it appears active or in use, such as water on a floor or a display that is switched on. It excludes identity, material and colour, which are covered by the label, and has an explicit value for the case that nothing notable is visible. Together with the mobility class, this description constitutes the risk-relevant object information that the scene graph provides to downstream risk assessment; the framework records these observations rather than computing a risk score itself. As open-ended text, it is not used to accept or reject a result. When a label is obtained by retrieval, however, the stored description belongs to the reference observation rather than to the current instance, so the description is most informative for objects labelled directly by the VLM.
 
 Validation treats the fields asymmetrically. A result is rejected only on the basis of its label and label confidence, whereas a weak mobility decision is reduced to the unknown class without discarding an otherwise valid label, and a mobility class that contradicts an unambiguous label, for instance a person reported as static, is corrected for consistency. The instruction given to the model is organised as a structured decision procedure with priorities for ambiguous regions, such as surfaces carrying fixtures or transparent partitions, together with explicit guidance on calibrating the reported confidence. Its examples illustrate this procedure rather than enumerate permissible labels. The prompt variants considered during development are compared in Chapter~\ref{chap:evaluation}.
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Scene Graph Fusion and Uncertainty Modelling}
+\label{sec:method_fusion}
+
+{\small
+
+The semantic interpretation of objects (Sections~\ref{sec:method_tracking} and~\ref{sec:method_labelling}) and the spatial scene graph maintained by Hydra~\cite{hughes2022hydra} are produced independently and at different rates. This section describes how both are combined into a single risk-annotated scene graph (Section~\ref{subsec:method_graph_fusion}) and how the uncertainty associated with each object is represented within it (Section~\ref{sec:method_uncertainty}).
+
+}
+
+\subsection{Scene Graph Fusion}
+\label{subsec:method_graph_fusion}
+
+{\small
+
+The fusion stage combines the spatial scene graph of Hydra with the semantic results and observation history of the tracked objects. Its central design principle is that Hydra's graph is treated as the authoritative spatial structure and is never modified. Labels, relations and confidence values are added on top of this structure rather than written into it. They are not kept as a separate record that is updated step by step; instead, they are computed anew from Hydra's graph each time Hydra provides an update. As a consequence, structural changes made by Hydra, for example when object nodes are merged or corrected after loop closure (Section~\ref{sec:method_loopclosure}), are reflected automatically in the fused graph, and semantic information cannot drift out of alignment with the spatial map.
+
+Semantic information is attached to Hydra's object nodes through their common slot. In the normal case, all nodes associated with a slot receive the same label, mobility class, descriptive object properties and associated confidence values. Where Hydra represents a single object by several overlapping nodes that share a slot, these nodes are consolidated into one node in the fused graph, and their edges are transferred to it, so that each physical object appears only once. Conflicting semantic results for the same slot, which can arise when Hydra merges or corrects nodes, are resolved by spatial proximity, so that each node receives the interpretation that was observed closest to it. Objects that have not yet been interpreted are represented explicitly as such, which allows the graph to distinguish between an object of unknown identity and the absence of an object.
+
+Before relations between objects can be derived, it must be clear which graph nodes belong to the same physical object. A large structure, such as a long wall, may be represented by several local segments (Section~\ref{sec:method_tracking}), each of which appears as a separate node in the graph. If relations were derived between these nodes directly, a single physical relationship, such as a table standing against the wall, would appear several times, once for each wall segment. To avoid this, nodes that share a common track identity are first grouped into a \textit{main object}, and relations are always reasoned about at this level.
+
+Two kinds of relations are derived between main objects. The \textit{identity relation} connects the segments of one main object and states that they are parts of the same physical object. It follows directly from the tracking result and does not depend on geometry. The \textit{contact relation} connects two different main objects and states that they touch or nearly touch. Contact is first decided for the two objects as a whole, and the resulting edges are then attached to those segments of the two objects that lie closest to each other. Since identity relations only link parts of the same object, while contact relations only link different objects, the two relation types never connect the same pair of nodes and therefore cannot contradict each other.
+
+The spatial membership of objects and places is taken from Hydra wherever it is available and is completed only where it is missing. Associations between objects and places, and between places and rooms, are added only when the reconstructed geometry of the environment confirms that the two elements are mutually visible, so that no association is created through a wall or across floors. Where such geometric confirmation is not possible, no association is derived.
+
+All derived relations therefore follow the same principle: they are added only when supported by geometric evidence in the shared three-dimensional frame. As a result, they describe properties of the scene itself and remain the same regardless of the viewpoint from which the robot observes it.
+
+}
+
+\subsection{Uncertainty and Persistence Modelling}
+\label{sec:method_uncertainty}
+
+{\small
+
+For each object, the framework represents three kinds of uncertainty separately: uncertainty about its semantic identity, about its mobility, and about its continued presence at the last observed position. These quantities answer different questions for downstream risk assessment and behave differently over time: identity and mobility are fixed once an object has been labelled, whereas the belief in its presence changes continuously.
+
+Semantic identity and mobility are determined together, once per tracked object (Section~\ref{sec:method_labelling}). If a sufficiently similar object has been labelled before, its label, mobility class and object description are taken over through visual retrieval; otherwise, they are obtained directly from the VLM. Because tracks with conflicting labels are never merged (Section~\ref{sec:method_tracking}), each object retains a single label throughout its lifetime, and objects for which no usable label is obtained remain explicitly unclassified. The uncertainty of identity and mobility is represented by the confidence values attached to them, which are carried into the scene graph. For a retrieved label, this confidence is bounded both by the confidence with which the original object was labelled and by the similarity between the two objects. A label transferred from a weakly matching or uncertainly labelled object is therefore marked as correspondingly uncertain, which allows downstream risk assessment to distinguish confidently identified objects from those whose identity is doubtful.
+
+Presence is represented by a confidence $p \in [0, 1]$, which expresses the belief that an object is still located where it was last observed. It is derived from the time of the most recent observation of the object, is equal to one while the object is being observed, and otherwise decays over time at a rate that depends on its mobility class $m$,
+\begin{equation}
+p(t) = 0.5^{\,(t - t_{\mathrm{last}})/\tau_m}, \qquad \tau_{\mathrm{dynamic}} \ll \tau_{\mathrm{static}},
+\label{eq:presence_decay}
+\end{equation}
+where $t_{\mathrm{last}}$ is the time of the most recent observation and $\tau_m$ the half-life associated with the mobility class. The decay rates can be adapted to the dynamics of a given environment. How the mobility class shapes this decay, and what follows from it, is described in Section~\ref{subsec:method_static_dynamic}.
+
+By separating what an object is, whether it moves, and whether it is still present, the representation enables downstream risk assessment to distinguish well-established objects from uncertain ones. These quantities are, however, confidence values and decay heuristics rather than calibrated probabilities. They inherit the uncalibrated nature of VLM-reported confidence (Section~\ref{subsec:vlm}) and should therefore be interpreted as relative measures of reliability.
+
+}
+
+\subsection{Treatment of Static and Dynamic Objects}
+\label{subsec:method_static_dynamic}
+
+{\small
+
+The mobility class determines how an object is represented and maintained over time. An object is classified as \textit{dynamic} only if it can move by itself, as humans, animals and mobile robots do. All other objects, including furniture that is occasionally moved by others, such as chairs, are classified as \textit{static}. If the mobility of an object cannot be determined with sufficient confidence, it is classified as \textit{unknown}. To reduce misclassifications, the mobility class proposed by the VLM is checked against the object category: clear labels of humans, animals or mobile robots enforce the dynamic class, whereas clear labels of structures and furniture enforce the static class (Section~\ref{sec:method_labelling}).
+
+The two classes reflect two different assumptions about the environment. For a static object, the default assumption is that it remains where it was observed, even when it has not been seen for some time. For a dynamic object, the default assumption is the opposite: once it is no longer observed, it has most likely moved elsewhere. This difference affects three aspects of the representation, which are summarised in Table~\ref{tab:static_dynamic}.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Differences in the treatment of static and dynamic objects.}
+\label{tab:static_dynamic}
+\begin{tabular}{p{0.22\textwidth}p{0.34\textwidth}p{0.34\textwidth}}
+\hline
+\textbf{Aspect} & \textbf{Static (and unknown)} & \textbf{Dynamic} \\
+\hline
+Typical objects & Walls, floors, furniture, fixtures & Humans, animals, mobile robots \\
+Spatial representation & Node created by Hydra from the accumulated reconstruction & Most recent observed position; added to the fused graph if Hydra has no node \\
+Presence decay & Slow & Fast \\
+When no longer observed & Retained with decreasing presence confidence & Withdrawn once presence has become unlikely \\
+\hline
+\end{tabular}
+\end{table}
+
+The first aspect is the spatial representation. Hydra creates object nodes from surfaces that are reconstructed consistently over time~\cite{hughes2022hydra}. This works well for static objects, whose surfaces accumulate at the same location with every observation. A moving object, by contrast, does not remain in place long enough for its surface to accumulate, so that Hydra may never create a node for it, even though it has been reliably identified by the perception pipeline. Such dynamic objects are therefore added to the fused graph by the fusion stage itself, using only their most recent observation. The extent observed over the whole track is deliberately not used, since for a moving object it would cover the entire path travelled rather than the space the object currently occupies. Without this step, the objects that are most relevant for risk assessment would be missing from the scene graph precisely because they move.
+
+The second aspect is the decay of the presence confidence (Equation~\ref{eq:presence_decay}). Because a dynamic object is expected to change its position, its presence confidence decays within a short time after it was last observed. The presence confidence of a static object decays slowly, so that furniture and structures remain credible long after leaving the field of view. Objects of unknown mobility are treated as static, since in the absence of evidence that an object moves, assuming that it has stayed in place is the safer choice.
+
+The third aspect concerns what happens to an object that is no longer observed. A dynamic object is withdrawn from both the tracking state and the fused graph once its presence confidence has fallen below a threshold, since it has then most likely left its last observed position. This prevents outdated positions of people or robots from suggesting hazards where none exist. Static objects and objects of unknown mobility are never withdrawn. They remain in the scene graph with a correspondingly low presence confidence, so that downstream risk assessment can still take them into account while recognising that their position has not been confirmed recently. In no case is an object removed from Hydra's map. This asymmetry is deliberate: for risk assessment, wrongly removing a static obstacle that is still present is more harmful than retaining an object whose presence is uncertain.
 
 }

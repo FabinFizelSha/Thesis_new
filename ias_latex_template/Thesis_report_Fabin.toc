@@ -61,11 +61,16 @@
 \contentsline {subsection}{\numberline {3.3.1}Object Proposals and 3D Observations}{45}{subsection.3.3.1}%
 \contentsline {subsection}{\numberline {3.3.2}Evidence-Based Association}{46}{subsection.3.3.2}%
 \contentsline {subsection}{\numberline {3.3.3}Track Representation and Local Segments}{48}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}Transfer of Object Observations to Hydra}{49}{subsection.3.3.4}%
 \contentsline {section}{\numberline {3.4}Semantic Labelling and Risk-Relevant Object Information}{49}{section.3.4}%
 \contentsline {subsection}{\numberline {3.4.1}Selection and Presentation of the Object View}{49}{subsection.3.4.1}%
 \contentsline {subsection}{\numberline {3.4.2}Structured Output and Risk-Relevant Object Information}{50}{subsection.3.4.2}%
-\contentsline {chapter}{\numberline {4}Experiments}{52}{chapter.4}%
-\contentsline {chapter}{\numberline {5}Conclusions}{53}{chapter.5}%
-\contentsline {chapter}{\nonumberline Bibliography}{54}{chapter*.20}%
-\contentsline {chapter}{\numberline {A}Example appendix chapter}{60}{appendix.A}%
+\contentsline {section}{\numberline {3.5}Scene Graph Fusion and Uncertainty Modelling}{51}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}Scene Graph Fusion}{51}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}Uncertainty and Persistence Modelling}{52}{subsection.3.5.2}%
+\contentsline {subsection}{\numberline {3.5.3}Treatment of Static and Dynamic Objects}{53}{subsection.3.5.3}%
+\contentsline {chapter}{\numberline {4}Experiments}{55}{chapter.4}%
+\contentsline {chapter}{\numberline {5}Conclusions}{56}{chapter.5}%
+\contentsline {chapter}{\nonumberline Bibliography}{57}{chapter*.21}%
+\contentsline {chapter}{\numberline {A}Example appendix chapter}{63}{appendix.A}%
 \providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

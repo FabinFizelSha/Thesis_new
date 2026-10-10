@@ -1,12 +1,12 @@
 # Fdb version 4
-["biber Thesis_report_Fabin"] 1791648059.52002 "Thesis_report_Fabin.bcf" "Thesis_report_Fabin.bbl" "Thesis_report_Fabin" 1791655173.47322 0
-  "Thesis_report_Fabin.bcf" 1791655173.30949 119629 d45765dacd2c979bd2f85d6c86784187 "pdflatex"
+["biber Thesis_report_Fabin"] 1791666174.77711 "Thesis_report_Fabin.bcf" "Thesis_report_Fabin.bbl" "Thesis_report_Fabin" 1791666394.00625 0
+  "Thesis_report_Fabin.bcf" 1791666393.83869 119845 28ff0a470eba98da1aa89532b58fab78 "pdflatex"
   "bibliography.bib" 1791648051.42527 31560 4f83aea53f08c0874eac7358960ed98f ""
   (generated)
   "Thesis_report_Fabin.bbl"
   "Thesis_report_Fabin.blg"
   (rewritten before read)
-["pdflatex"] 1791655169.3104 "Thesis_report_Fabin.tex" "Thesis_report_Fabin.pdf" "Thesis_report_Fabin" 1791655173.4735 0
+["pdflatex"] 1791666389.90808 "Thesis_report_Fabin.tex" "Thesis_report_Fabin.pdf" "Thesis_report_Fabin" 1791666394.00656 0
   "/etc/texmf/web2c/texmf.cnf" 1779465110.20949 475 c0e671620eb5563b2130f56340a5fde8 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -312,18 +312,18 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1779465126.55966 5472669 54eaf61a88b6b7896ebd0dac973cb29c ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1779465157 8213269 cd87e51f7acd51556c94309c9b3ea6ef ""
-  "Thesis_report_Fabin.aux" 1791655173.28149 71179 482e8930818893a529940b670f1f602c "pdflatex"
-  "Thesis_report_Fabin.bbl" 1791648060.56691 118665 c62c81fd4df8b3dec3445de44811e57e "biber Thesis_report_Fabin"
-  "Thesis_report_Fabin.lof" 1791655173.31049 3777 1f1f872a64a85969576aed6a1082b82d "pdflatex"
-  "Thesis_report_Fabin.lot" 1791655173.31049 611 bfa5ca575d578dfdbe248c99796d6878 "pdflatex"
-  "Thesis_report_Fabin.out" 1791655170.8798 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
-  "Thesis_report_Fabin.run.xml" 1791655173.31046 2604 3316da312b9c08fb08004e1be09176bf "pdflatex"
+  "Thesis_report_Fabin.aux" 1791666393.81069 75692 f85d8744d5370bc12b1299a02c0bb95c "pdflatex"
+  "Thesis_report_Fabin.bbl" 1791666175.78746 118665 c62c81fd4df8b3dec3445de44811e57e "biber Thesis_report_Fabin"
+  "Thesis_report_Fabin.lof" 1791666393.83968 3777 1f1f872a64a85969576aed6a1082b82d "pdflatex"
+  "Thesis_report_Fabin.lot" 1791666393.83968 750 eed547b9d665b350a7d07d26132fa070 "pdflatex"
+  "Thesis_report_Fabin.out" 1791666391.44927 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
+  "Thesis_report_Fabin.run.xml" 1791666393.83968 2604 3316da312b9c08fb08004e1be09176bf "pdflatex"
   "Thesis_report_Fabin.tex" 1790623979.54925 1767 f8aab3d37e7066813f6c6de0ef362aa0 ""
-  "Thesis_report_Fabin.toc" 1791655173.31049 6641 e79605d4c4b603aa2e4155557b933abb "pdflatex"
+  "Thesis_report_Fabin.toc" 1791666393.83968 7164 dccdeaffb4d7f6e9504d2c56c89b6dd8 "pdflatex"
   "chapters/Abstract.tex" 1790624328.01709 2336 fb6a0d15c2fc8de69e52799448500a28 ""
   "chapters/Experiments.tex" 1790623979.5495 23 905c5616f55855b9c8c04df84dc99469 ""
   "chapters/Introduction.tex" 1790628596.55544 8865 6755e4cca413b2406e92ffd40aa632a0 ""
-  "chapters/Methodology.tex" 1791655163.41549 48223 7dfff35a08a9dfcec45cddc00c706235 ""
+  "chapters/Methodology.tex" 1791666383.36842 61259 2f15aa6fd690664bd0578a6a9c36cf25 ""
   "chapters/Theory.tex" 1791112160.16742 97172 6e10875f0c36bf29e14d78ec37a14e02 ""
   "example_images/HRC_safety_productivity.png" 1790623979.55114 863145 5a362705cef0f90cff1c94b37a783179 ""
   "example_images/SAM.png" 1791045959.88673 274624 0dc82fdeeddfd876dc382065bdc34617 ""

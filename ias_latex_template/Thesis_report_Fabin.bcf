@@ -2533,7 +2533,10 @@
     <bcf:citekey order="168" intorder="1">mccormac2018fusion</bcf:citekey>
     <bcf:citekey order="169" intorder="1">keselman2017realsense</bcf:citekey>
     <bcf:citekey order="170" intorder="1">hughes2022hydra</bcf:citekey>
-    <bcf:citekey order="171" intorder="1">pechpacheco2000laplacian</bcf:citekey>
+    <bcf:citekey order="171" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="172" intorder="1">pechpacheco2000laplacian</bcf:citekey>
+    <bcf:citekey order="173" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="174" intorder="1">hughes2022hydra</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="none">

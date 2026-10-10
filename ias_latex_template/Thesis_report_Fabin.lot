@@ -4,6 +4,7 @@
 \contentsline {table}{\numberline {2.1}{\ignorespaces Latency on Jetson AGX Orin and mean IoU on COCO 2017 validation with ground-truth box prompts, as reported in \blx@tocontentsinit {0}\cite {nanosam2023}.}}{28}{table.caption.14}%
 \contentsline {table}{\numberline {2.2}{\ignorespaces Release history of the open-weight Qwen vision-language models.}}{34}{table.caption.16}%
 \addvspace {10\p@ }
+\contentsline {table}{\numberline {3.1}{\ignorespaces Differences in the treatment of static and dynamic objects.}}{54}{table.caption.20}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
