@@ -43,7 +43,7 @@
       \field{labeltitlesource}{title}
       \field{title}{{Online Risk-Annotated Scene Graohs for Autonomous Systems}}
       \field{type}{{Master's thesis}}
-      \field{year}{{2026}}
+      \field{year}{2026}
     \endentry
     \entry{ifr2025servicerobots}{online}{}
       \name{author}{1}{}{%
@@ -2219,7 +2219,9 @@
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Proceedings of the 38th International Conference on Machine Learning}
+      \field{series}{Proceedings of Machine Learning Research}
       \field{title}{Learning Transferable Visual Models From Natural Language Supervision}
+      \field{volume}{139}
       \field{year}{2021}
       \field{pages}{8748\bibrangedash 8763}
       \range{pages}{16}
@@ -2894,6 +2896,94 @@
       \endverb
       \verb{url}
       \verb https://www.jetson-ai-lab.com/models/
+      \endverb
+    \endentry
+    \entry{keselman2017realsense}{inproceedings}{}
+      \name{author}{4}{}{%
+        {{hash=b3d4eff8be3e1d5f0adb71e2f52bfb8a}{%
+           family={Keselman},
+           familyi={K\bibinitperiod},
+           given={Leonid},
+           giveni={L\bibinitperiod}}}%
+        {{hash=7b68237991da7091bf31bcdb343ae812}{%
+           family={Woodfill},
+           familyi={W\bibinitperiod},
+           given={John\bibnamedelima Iselin},
+           giveni={J\bibinitperiod\bibinitdelim I\bibinitperiod}}}%
+        {{hash=81e82c706525a3feccc93af8e18804d6}{%
+           family={Grunnet-Jepsen},
+           familyi={G\bibinithyphendelim J\bibinitperiod},
+           given={Anders},
+           giveni={A\bibinitperiod}}}%
+        {{hash=94218d18352a950275aa265a74090329}{%
+           family={Bhowmik},
+           familyi={B\bibinitperiod},
+           given={Achintya},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{47fbc172b7c94c8a5988e0d496142e13}
+      \strng{fullhash}{a6bbc90751d7e301cc7b39d17099f822}
+      \strng{bibnamehash}{a6bbc90751d7e301cc7b39d17099f822}
+      \strng{authorbibnamehash}{a6bbc90751d7e301cc7b39d17099f822}
+      \strng{authornamehash}{47fbc172b7c94c8a5988e0d496142e13}
+      \strng{authorfullhash}{a6bbc90751d7e301cc7b39d17099f822}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)}
+      \field{title}{Intel {RealSense} Stereoscopic Depth Cameras}
+      \field{year}{2017}
+      \field{pages}{1\bibrangedash 10}
+      \range{pages}{10}
+      \verb{doi}
+      \verb 10.1109/CVPRW.2017.167
+      \endverb
+    \endentry
+    \entry{pechpacheco2000laplacian}{inproceedings}{}
+      \name{author}{4}{}{%
+        {{hash=a3df6ea3f337b5ed071bb977f971e876}{%
+           family={Pech-Pacheco},
+           familyi={P\bibinithyphendelim P\bibinitperiod},
+           given={J.\bibnamedelimi L.},
+           giveni={J\bibinitperiod\bibinitdelim L\bibinitperiod}}}%
+        {{hash=e4787203528eb9cb2a8766c36be5c75c}{%
+           family={Cristóbal},
+           familyi={C\bibinitperiod},
+           given={G.},
+           giveni={G\bibinitperiod}}}%
+        {{hash=24e182e240f40a5a7d54662f6dea96c1}{%
+           family={Chamorro-Martínez},
+           familyi={C\bibinithyphendelim M\bibinitperiod},
+           given={J.},
+           giveni={J\bibinitperiod}}}%
+        {{hash=56debc23923acb003f53f5132f7a5684}{%
+           family={Fernández-Valdivia},
+           familyi={F\bibinithyphendelim V\bibinitperiod},
+           given={J.},
+           giveni={J\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {IEEE}%
+      }
+      \strng{namehash}{38ba181592aea109b2a975f5a3774983}
+      \strng{fullhash}{ef4b3759d60a7f27081a65bc41015866}
+      \strng{bibnamehash}{ef4b3759d60a7f27081a65bc41015866}
+      \strng{authorbibnamehash}{ef4b3759d60a7f27081a65bc41015866}
+      \strng{authornamehash}{38ba181592aea109b2a975f5a3774983}
+      \strng{authorfullhash}{ef4b3759d60a7f27081a65bc41015866}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 15th International Conference on Pattern Recognition (ICPR)}
+      \field{title}{Diatom Autofocusing in Brightfield Microscopy: A Comparative Study}
+      \field{volume}{3}
+      \field{year}{2000}
+      \field{pages}{314\bibrangedash 317}
+      \range{pages}{4}
+      \verb{doi}
+      \verb 10.1109/ICPR.2000.903548
       \endverb
     \endentry
   \enddatalist

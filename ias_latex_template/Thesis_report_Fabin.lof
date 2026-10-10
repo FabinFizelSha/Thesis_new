@@ -13,6 +13,8 @@
 \contentsline {figure}{\numberline {2.10}{\ignorespaces Principle of visual retrieval: the crop embedding is compared with stored references, and the nearest label is returned if its distance lies below the threshold $\delta $.}}{32}{figure.caption.15}%
 \contentsline {figure}{\numberline {2.11}{\ignorespaces SafetyDetect pipeline showing the agent point of view, scene graph construction, prompt formation, and LLM-based anomaly classification. Reproduced from \blx@tocontentsinit {0}\cite {mullen2024safetydetect}.}}{37}{figure.caption.17}%
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Overview of the proposed framework, showing the synchronous per-frame path (solid) and the asynchronous per-track path (dashed).}}{39}{figure.caption.18}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Preprocessing of the input streams into a prepared RGB-D-pose frame.}}{44}{figure.caption.19}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
