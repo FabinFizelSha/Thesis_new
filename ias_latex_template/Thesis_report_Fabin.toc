@@ -69,8 +69,11 @@
 \contentsline {subsection}{\numberline {3.5.1}Scene Graph Fusion}{51}{subsection.3.5.1}%
 \contentsline {subsection}{\numberline {3.5.2}Uncertainty and Persistence Modelling}{52}{subsection.3.5.2}%
 \contentsline {subsection}{\numberline {3.5.3}Treatment of Static and Dynamic Objects}{53}{subsection.3.5.3}%
-\contentsline {chapter}{\numberline {4}Experiments}{55}{chapter.4}%
-\contentsline {chapter}{\numberline {5}Conclusions}{56}{chapter.5}%
-\contentsline {chapter}{\nonumberline Bibliography}{57}{chapter*.21}%
-\contentsline {chapter}{\numberline {A}Example appendix chapter}{63}{appendix.A}%
+\contentsline {section}{\numberline {3.6}Loop Closure and Multi-Session Consistency}{55}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}Consistency under Loop Closure}{55}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}Persistence across Sessions}{56}{subsection.3.6.2}%
+\contentsline {chapter}{\numberline {4}Experiments}{58}{chapter.4}%
+\contentsline {chapter}{\numberline {5}Conclusions}{59}{chapter.5}%
+\contentsline {chapter}{\nonumberline Bibliography}{60}{chapter*.21}%
+\contentsline {chapter}{\numberline {A}Example appendix chapter}{66}{appendix.A}%
 \providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

@@ -380,3 +380,94 @@ The second aspect is the decay of the presence confidence (Equation~\ref{eq:pres
 The third aspect concerns what happens to an object that is no longer observed. A dynamic object is withdrawn from both the tracking state and the fused graph once its presence confidence has fallen below a threshold, since it has then most likely left its last observed position. This prevents outdated positions of people or robots from suggesting hazards where none exist. Static objects and objects of unknown mobility are never withdrawn. They remain in the scene graph with a correspondingly low presence confidence, so that downstream risk assessment can still take them into account while recognising that their position has not been confirmed recently. In no case is an object removed from Hydra's map. This asymmetry is deliberate: for risk assessment, wrongly removing a static obstacle that is still present is more harmful than retaining an object whose presence is uncertain.
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% ---------------------------------------------------------------------------
+% Section 3.6 -- append at the end of chapters/Methodology.tex.
+% Requires \label{subsec:hydra_loop_closure} after
+% \subsection{Loop Closure, Optimization, and Real-Time Architecture}
+% in chapters/Theory.tex (Section 2.5.4 currently has no label).
+% ---------------------------------------------------------------------------
+
+\section{Loop Closure and Multi-Session Consistency}
+\label{sec:method_loopclosure}
+
+{\small
+The tracks of Phase~1 cache object geometry in the map frame and must remain consistent with Hydra's map whenever that map changes, whether through a drift correction within a session or through a restart between sessions. Otherwise, a re-observed object no longer matches its own track and creates a duplicate instead of being re-identified.
+\par}
+
+\subsection{Consistency under Loop Closure}
+\label{subsec:method_loopclosure_reanchor}
+
+{\small
+When the localisation back-end corrects accumulated drift, Hydra deforms its scene graph accordingly (Section~\ref{subsec:hydra_loop_closure}). The cache of the tracker is not part of this optimisation and would remain in the uncorrected frame. Re-observed objects would then fail the association tests of Section~\ref{subsec:method_association} and start new tracks, so that Phase~1 diverges from Hydra.
+
+A correction becomes visible as a change in the transform $\mathbf{T}_{\mathrm{MO}}$ between the map frame and the odometry frame, and changes below a small threshold are ignored as jitter. This change, however, describes the correction at the current pose only. Since drift accumulates along the trajectory, geometry observed shortly before the closure carries almost the full error, whereas geometry observed at the beginning of the loop carries almost none. Applied rigidly to the entire cache, the change would be exact for the most recent objects but would displace the earliest ones, which are precisely those re-observed when the loop is closed. Hydra's optimisation, in contrast, distributes the correction along the trajectory and moves every object node individually.
+
+The tracker therefore adopts Hydra's correction instead of estimating its own. Since every local segment carries its own slot ID and thus corresponds to exactly one object node (Section~\ref{subsec:method_track_state}), the correction of a segment can be read directly from the movement of its node. Only segments for which Hydra has not yet created a node, typically those observed shortly before the closure, require a different treatment. Every point $\mathbf{x}$ of a segment $s$, that is, its centroid and the corners of its bounding box, is therefore moved to
+\begin{equation}
+	\mathbf{x}' =
+	\begin{cases}
+		\mathbf{x} + \left(\mathbf{p}'_s - \mathbf{p}_s\right) & \text{if Hydra has a node for } s,\\[4pt]
+		\mathbf{T}'_{\mathrm{MO}}\,\mathbf{T}_{\mathrm{MO}}^{-1}\,\mathbf{x} & \text{otherwise},
+	\end{cases}
+	\label{eq:reanchor}
+\end{equation}
+where a prime denotes a quantity after the correction. The first case applies to segments that Hydra has already integrated into its graph. Here, $\mathbf{p}_s$ and $\mathbf{p}'_s$ are the positions of the node of $s$ in the last graph before and the first graph after the correction, so that their difference is exactly the displacement that Hydra's optimisation has assigned to this object. Since both positions are expressed in the map frame, this displacement already contains the complete correction of the object, and the change in $\mathbf{T}_{\mathrm{MO}}$ is not applied in addition. Adding it to $\mathbf{x}$ moves the cached segment by the same amount as its node, and the tracker therefore inherits Hydra's non-rigid correction segment by segment without estimating any correction of its own.
+
+The second case applies to segments without a node and is read from right to left. A cached point was originally obtained in the odometry frame and converted into the map frame with the transform valid at that time, $\mathbf{x} = \mathbf{T}_{\mathrm{MO}}\,\mathbf{x}_{\mathrm{O}}$, where $\mathbf{x}_{\mathrm{O}}$ denotes its odometry coordinates. A loop closure changes only this transform, not the odometry measurement itself. Multiplying by $\mathbf{T}_{\mathrm{MO}}^{-1}$ therefore recovers $\mathbf{x}_{\mathrm{O}}$, and multiplying by $\mathbf{T}'_{\mathrm{MO}}$ converts it into the map frame with the corrected transform, as if the correction had already been known when the point was observed. Both transforms are applied in homogeneous coordinates. Because $\mathbf{T}'_{\mathrm{MO}}$ compensates the drift accumulated up to the current pose, this case is only valid for geometry that carries the same drift, which holds for the recently observed segments to which it is applied.
+
+Tracks that were nevertheless created twice around the closure are folded into their earlier identity by a subsequent merging step. A recently created track is merged into an older compatible track, that is, one without a conflicting label, if it lies within a search radius that scales with the magnitude of the correction, and pairs whose extents overlap strongly are merged as well. The older identity, together with its slot and label, survives. This is the later repair of fragmentation anticipated in Section~\ref{sec:method_tracking}.
+\par}
+
+\subsection{Persistence across Sessions}
+\label{subsec:method_sessions}
+
+{\small
+A robot that is switched off and restarted should neither forget what it has mapped nor build a second copy of the environment once it resumes operation. This work considers a restart in place, in which the robot is started again where it was switched off, so that its last known pose remains valid. This pose is saved together with the map at shutdown and used as the initial pose of the new session, which therefore continues in the same map frame as the previous one.
+
+The three components that hold state save it independently. The tracker saves its tracks, including their geometry, local segments with their slot IDs, labels and mobility classes, together with its slot and identity counters, so that no identifier is issued twice. Hydra saves its scene graph and mesh, and the retrieval memory retains its stored references (Section~\ref{sec:method_labelling}). The fuser holds no state of its own, since its output is recomputed from the other components (Section~\ref{subsec:method_graph_fusion}). After the restart, restored tracks take part in the association like any other track, and their labels are reused directly without querying retrieval or the VLM again.
+
+Hydra can save its map but provides no means of resuming from it, which required three conceptual changes. First, the saved scene graph and mesh are loaded as the initial map of the new session before any new data are integrated. Second, all restored nodes are marked as archived, that is, as lying outside the active window in which Hydra is currently mapping, because Hydra only considers archived nodes as merge candidates for newly mapped objects. Third, the identifiers of new nodes continue after the highest restored identifier, and new geometry is appended to the restored mesh, so that new and restored elements never collide. The trajectory of the previous session is not restored; the new session begins a new trajectory at the saved pose.
+
+Restored nodes are reconciled with newly mapped ones by Hydra's object merging, which is enabled for this purpose and joins nodes that carry the same label and are spatially consistent. Merging by label is normally risky, since many physical instances share a class, but here it is safe: as a direct benefit of the slot design (Section~\ref{subsec:method_design_decisions}), labels are per-object slot IDs, so two distinct objects can never share one.
+\par}
