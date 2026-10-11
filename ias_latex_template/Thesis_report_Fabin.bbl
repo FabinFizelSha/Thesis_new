@@ -2986,6 +2986,64 @@
       \verb 10.1109/ICPR.2000.903548
       \endverb
     \endentry
+    \entry{intel_realsense_d455}{online}{}
+      \name{author}{1}{}{%
+        {{hash=b7f0fb90e404efb48f8a85a517dec3c9}{%
+           family={{Intel Corporation}},
+           familyi={I\bibinitperiod}}}%
+      }
+      \strng{namehash}{b7f0fb90e404efb48f8a85a517dec3c9}
+      \strng{fullhash}{b7f0fb90e404efb48f8a85a517dec3c9}
+      \strng{bibnamehash}{b7f0fb90e404efb48f8a85a517dec3c9}
+      \strng{authorbibnamehash}{b7f0fb90e404efb48f8a85a517dec3c9}
+      \strng{authornamehash}{b7f0fb90e404efb48f8a85a517dec3c9}
+      \strng{authorfullhash}{b7f0fb90e404efb48f8a85a517dec3c9}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Intel RealSense Depth Camera D455}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.intelrealsense.com/depth-camera-d455/
+      \endverb
+      \verb{url}
+      \verb https://www.intelrealsense.com/depth-camera-d455/
+      \endverb
+    \endentry
+    \entry{unitree_go1}{online}{}
+      \name{author}{1}{}{%
+        {{hash=1816738b3d76b98cee588de847aee6f0}{%
+           family={{Unitree Robotics}},
+           familyi={U\bibinitperiod}}}%
+      }
+      \strng{namehash}{1816738b3d76b98cee588de847aee6f0}
+      \strng{fullhash}{1816738b3d76b98cee588de847aee6f0}
+      \strng{bibnamehash}{1816738b3d76b98cee588de847aee6f0}
+      \strng{authorbibnamehash}{1816738b3d76b98cee588de847aee6f0}
+      \strng{authornamehash}{1816738b3d76b98cee588de847aee6f0}
+      \strng{authorfullhash}{1816738b3d76b98cee588de847aee6f0}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Unitree Go1}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.unitree.com/go1
+      \endverb
+      \verb{url}
+      \verb https://www.unitree.com/go1
+      \endverb
+    \endentry
   \enddatalist
 \endrefsection
 \endinput

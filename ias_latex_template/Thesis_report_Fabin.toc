@@ -72,8 +72,14 @@
 \contentsline {section}{\numberline {3.6}Loop Closure and Multi-Session Consistency}{55}{section.3.6}%
 \contentsline {subsection}{\numberline {3.6.1}Consistency under Loop Closure}{55}{subsection.3.6.1}%
 \contentsline {subsection}{\numberline {3.6.2}Persistence across Sessions}{56}{subsection.3.6.2}%
-\contentsline {chapter}{\numberline {4}Experiments}{58}{chapter.4}%
-\contentsline {chapter}{\numberline {5}Conclusions}{59}{chapter.5}%
-\contentsline {chapter}{\nonumberline Bibliography}{60}{chapter*.21}%
-\contentsline {chapter}{\numberline {A}Example appendix chapter}{66}{appendix.A}%
+\contentsline {chapter}{\numberline {4}Implementation}{58}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Hardware Platforms and the Go1 Data-Collection Campaign}{58}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Compute Platforms}{58}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Planned Data-Collection Campaign}{58}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}Limitations Encountered}{59}{subsection.4.1.3}%
+\contentsline {subsection}{\numberline {4.1.4}Substitute Datasets}{61}{subsection.4.1.4}%
+\contentsline {chapter}{\numberline {5}Experiments}{62}{chapter.5}%
+\contentsline {chapter}{\numberline {6}Conclusions}{63}{chapter.6}%
+\contentsline {chapter}{\nonumberline Bibliography}{64}{chapter*.22}%
+\contentsline {chapter}{\numberline {A}Example appendix chapter}{70}{appendix.A}%
 \providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

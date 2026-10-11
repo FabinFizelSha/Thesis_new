@@ -2537,6 +2537,17 @@
     <bcf:citekey order="172" intorder="1">pechpacheco2000laplacian</bcf:citekey>
     <bcf:citekey order="173" intorder="1">hughes2022hydra</bcf:citekey>
     <bcf:citekey order="174" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="175" intorder="1">nvidia_jetson_orin</bcf:citekey>
+    <bcf:citekey order="176" intorder="1">nvidia_jetson_thor</bcf:citekey>
+    <bcf:citekey order="177" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="178" intorder="1">intel_realsense_d455</bcf:citekey>
+    <bcf:citekey order="179" intorder="1">unitree_go1</bcf:citekey>
+    <bcf:citekey order="180" intorder="1">macenski2022ros2</bcf:citekey>
+    <bcf:citekey order="181" intorder="1">shi2020openloris</bcf:citekey>
+    <bcf:citekey order="182" intorder="1">rosinol2021kimera</bcf:citekey>
+    <bcf:citekey order="183" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="184" intorder="1">shi2020openloris</bcf:citekey>
+    <bcf:citekey order="185" intorder="1">rosinol2021kimera</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="none">

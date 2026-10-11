@@ -471,3 +471,102 @@ Hydra can save its map but provides no means of resuming from it, which required
 
 Restored nodes are reconciled with newly mapped ones by Hydra's object merging, which is enabled for this purpose and joins nodes that carry the same label and are spatially consistent. Merging by label is normally risky, since many physical instances share a class, but here it is safe: as a direct benefit of the slot design (Section~\ref{subsec:method_design_decisions}), labels are per-object slot IDs, so two distinct objects can never share one.
 \par}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\chapter{Implementation}
+\label{chap:implementation}
+
+{\small This chapter describes how the methodology presented in Chapter~\ref{chap:methodology} was realised. Section~\ref{sec:impl_hardware} establishes the hardware and data basis of the work, including the data-collection campaign that was originally planned and the reasons why substitute datasets were adopted. Section~\ref{sec:impl_software} describes the software implementation of the framework, and Section~\ref{sec:impl_optimisation} the measures taken to achieve near-real-time operation on embedded hardware.\par}
+
+\section{Hardware Platforms and the Go1 Data-Collection Campaign}
+\label{sec:impl_hardware}
+
+\subsection{Compute Platforms}
+\label{subsec:impl_compute}
+
+{\small The pipeline was developed, profiled and optimised on an NVIDIA Jetson AGX Orin~\cite{nvidia_jetson_orin} and subsequently ported to an NVIDIA Jetson AGX Thor~\cite{nvidia_jetson_thor}, on which the final runtime results were obtained. On both platforms, all components of the framework are executed on the same board: the segmentation model, the embedding model and vector database used for retrieval, the local inference server hosting the vision-language model, Hydra~\cite{hughes2022hydra}, and the three framework nodes, namely the preprocessor, the Phase~1 semantic coordinator and the scene graph fuser. The specific models are selected through the configuration and can be exchanged without changes to the code. This configuration corresponds to the intended onboard deployment, but it also means that segmentation, retrieval, VLM inference and volumetric mapping compete for the same GPU and the same unified memory. Contention for these shared resources is therefore a central factor for the achievable update rate and is addressed in Section~\ref{sec:impl_optimisation}.\par}
+
+\subsection{Planned Data-Collection Campaign}
+\label{subsec:impl_go1_plan}
+
+{\small The publicly available datasets considered in this work were recorded with wheeled robots, handheld sensors or in simulation. To evaluate the framework on the type of platform for which it is intended, a dedicated real-world dataset was planned, recorded with a legged robot inside a university building. In the intended deployment scenario, the robot carries an RGB-D camera and sufficient onboard computing resources to execute the complete perception, mapping and annotation pipeline during operation.\par}
+
+{\small The planned setup consisted of an Intel RealSense D455 RGB-D camera~\cite{intel_realsense_d455}, which provides synchronised colour and depth images, mounted on a Unitree Go1 quadruped robot~\cite{unitree_go1}. The camera was rigidly attached to the robot body by a custom 3D-printed base, and the transform between the robot base and the camera was defined manually as a fixed extrinsic, corresponding to the constant transform $\mathbf{T}_{\mathrm{BC}}$ assumed in Section~\ref{sec:method_preprocessing}. The camera was connected via USB to a Raspberry Pi onboard the robot, which ran the RealSense driver under ROS~1 Melodic, in line with the ROS~1-based software stack of the Go1. The colour, depth and calibration messages were published over the internal network of the robot, on which a separate onboard computer subscribed to them together with the robot odometry.\par}
+
+{\small During operation, this computer recorded the colour images and the depth images at a resolution of $640 \times 480$ pixels, together with their calibration, the depth-to-colour extrinsics and the robot odometry, as ROS~1 bags directly on the robot. Depth was recorded in its native sensor geometry rather than aligned to the colour image, which kept the processing load on the Raspberry Pi low, while the recorded extrinsics retained the information required for a later alignment. Since the onboard computer did not provide sufficient free storage for RGB-D recordings, the bags were to be written to a USB storage device connected to it. The recordings had to contain complete and temporally consistent streams, since accurate temporal alignment between the images and the odometry is a precondition for the frame preparation described in Section~\ref{sec:method_preprocessing}. The recorded bags were subsequently to be converted into the ROS~2 bag format and replayed through the ROS~2 pipeline~\cite{macenski2022ros2}, with all processing on the Jetson performed offline. For an actual deployment of the complete system, the robot would either have to provide a native ROS~2 interface or use a ROS~1--ROS~2 bridge that transfers the sensor and odometry data into the ROS~2 pipeline during operation.\par}
+
+{\small The campaign was carried out but ultimately discarded, since the limitations described in Section~\ref{subsec:impl_go1_limitations} prevented the recording of data suitable for the evaluation. The framework was therefore evaluated on publicly available datasets instead (Section~\ref{subsec:impl_datasets}). The office sequences of the real-world OpenLORIS-Scene dataset~\cite{shi2020openloris} replace the planned recordings, as they were captured with a RealSense camera of the same sensor family as the D455. They are complemented by two simulated scenes of the uHumans2 dataset~\cite{rosinol2021kimera}, an office and an apartment. The apartment sequence contains a human and thus provides a dynamic object, which allows the mobility classification and the mobility-dependent presence model of Section~\ref{sec:method_uncertainty} to be examined.\par}
+
+\subsection{Limitations Encountered}
+\label{subsec:impl_go1_limitations}
+
+{\small Several limitations arose during the campaign, which are summarised in Table~\ref{tab:go1_limitations}. They fall into three categories: the integration of the compute platform with the robot, the recording of the data, and the quality of the depth measurements.\par}
+
+{\small
+\begin{table}[htbp]
+\centering
+\small
+\caption{Limitations encountered during the Go1 data-collection campaign.}
+\label{tab:go1_limitations}
+\begin{tabular}{p{0.19\textwidth}p{0.35\textwidth}p{0.34\textwidth}}
+\toprule
+\textbf{Limitation} & \textbf{Cause} & \textbf{Consequence for this thesis} \\
+\midrule
+(1) Onboard compute & No suitable power supply or hardware interface on the Go1 to operate the Jetson AGX Thor onboard & Processing only possible offline after recording \\
+\addlinespace
+(2) Recording bandwidth & Only USB~2.0 ports on the robot for camera and storage; D455 restricted to 5, 15 or 30\,fps at $640 \times 480$ & Delivered rates below 15\,fps and frame loss; no reliably complete, temporally consistent recordings \\
+\addlinespace
+(3) Vibration-induced depth noise & Strong gait vibrations amplified by the 3D-printed camera mount & Very high depth noise; fixed camera-to-base transform not valid during motion \\
+\addlinespace
+(4) Reflective surfaces & Highly reflective floors and other surfaces in the building & Critical noise and errors in the active stereo depth \\
+\bottomrule
+\end{tabular}
+\end{table}
+\par}
+
+{\small The first category concerns platform integration. The Go1 provides neither a suitable power supply nor a hardware interface through which the Jetson AGX Thor could be operated onboard, so that the framework could only be applied offline after recording (limitation~1). This restricts the campaign to offline evaluation, but does not prevent it.\par}
+
+{\small The second category concerns data recording (limitation~2). Because of the limited onboard storage, the recordings had to be written to an external USB storage device (Section~\ref{subsec:impl_go1_plan}). The robot, however, only provides external USB~2.0 ports, so that the camera, although capable of USB~3 operation, was also connected via USB~2.0. At $640 \times 480$ pixels, the D455 offers only the discrete frame rates of 5, 15 and 30\,fps. Even at 15\,fps, the available bandwidth was insufficient in early recordings: the delivered rates remained at approximately 11.7\,Hz for colour and 10.7\,Hz for depth, and frames were lost. Although a later recording reached an average rate close to 15\,Hz, the behaviour varied between runs, so that complete and temporally consistent recordings at a usable frame rate could not be obtained reliably.\par}
+
+{\small The third category concerns the quality of the depth data. The legged gait of the Go1 produces strong vibrations, which the 3D-printed camera mount amplified rather than damped. This resulted in very high noise in the depth measurements and, at the same time, meant that the fixed, manually defined camera-to-base transform did not hold while the robot was moving (limitation~3). Furthermore, the floors of the university building are highly reflective, and reflections on the floor and on other surfaces caused critical noise and errors in the depth measured by the active stereo sensor of the D455 (limitation~4).\par}
+
+{\small The depth-quality limitations were decisive, since the framework depends on metric depth at every stage of the per-frame path. Depth is used to back-project segmentation masks into 3D observations (Section~\ref{subsec:method_proposals}), it provides the 3D evidence on which data association is based (Section~\ref{subsec:method_association}), and it is integrated by Hydra into the volumetric reconstruction from which the mesh, the object nodes and the places are derived~\cite{hughes2022hydra}. In addition, back-projection relies on the rigid camera transform of Equation~\eqref{eq:camera_pose}, which limitation~3 invalidates. Noisy depth therefore propagates into the object geometry, into the tracking and into the map itself. Together with the incomplete recordings, this made the Go1 data unsuitable as the basis of the evaluation.\par}
+
+\subsection{Substitute Datasets}
+\label{subsec:impl_datasets}
+
+{\small The substitute datasets were selected according to the input contract defined in Section~\ref{sec:method_preprocessing}. A suitable dataset had to provide registered colour and depth images, the camera calibration, odometry and a known extrinsic transform between the robot base and the camera, recorded in indoor environments as replayable ROS bags. Two datasets were chosen on this basis.\par}
+
+{\small The office sequences of the OpenLORIS-Scene dataset~\cite{shi2020openloris} serve as the real-world data. They were recorded with a RealSense D400-series camera, that is, a sensor of the same family as the D455, and provide depth images that are already aligned to the colour image, real wheel odometry, and a calibrated transform from the robot base to the camera. OpenLORIS-Scene is therefore the closest real-world substitute for the planned recordings. Since the data were recorded on a wheeled robot with complete sensor streams, they avoid precisely the recording and vibration problems described in Section~\ref{subsec:impl_go1_limitations}, so that the method can be evaluated on real sensor data without the results being dominated by these hardware-specific effects. The bags were converted into the ROS~2 format with the same procedure that had been planned for the Go1 data, and the 16-bit depth images in millimetres are converted into metres by the preprocessor.\par}
+
+{\small The simulated office and apartment scenes of the uHumans2 dataset~\cite{rosinol2021kimera} complement the real-world data. Both provide ground-truth odometry and metric depth. The office scene was used for development, optimisation and repeatable experiments under controlled conditions, while the apartment scene, which contains a human, serves to test the portability of the framework to a second environment and its handling of a dynamic object.\par}
