@@ -55,31 +55,37 @@
 \contentsline {chapter}{\numberline {3}Methodology}{38}{chapter.3}%
 \contentsline {section}{\numberline {3.1}Framework Overview}{38}{section.3.1}%
 \contentsline {subsection}{\numberline {3.1.1}Framework Architecture}{38}{subsection.3.1.1}%
-\contentsline {subsection}{\numberline {3.1.2}Central Design Decisions}{41}{subsection.3.1.2}%
-\contentsline {section}{\numberline {3.2}Data Acquisition and Preprocessing}{43}{section.3.2}%
-\contentsline {section}{\numberline {3.3}Object Segmentation and Persistent Tracking}{45}{section.3.3}%
-\contentsline {subsection}{\numberline {3.3.1}Object Proposals and 3D Observations}{45}{subsection.3.3.1}%
-\contentsline {subsection}{\numberline {3.3.2}Evidence-Based Association}{46}{subsection.3.3.2}%
-\contentsline {subsection}{\numberline {3.3.3}Track Representation and Local Segments}{48}{subsection.3.3.3}%
-\contentsline {subsection}{\numberline {3.3.4}Transfer of Object Observations to Hydra}{49}{subsection.3.3.4}%
-\contentsline {section}{\numberline {3.4}Semantic Labelling and Risk-Relevant Object Information}{49}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}Selection and Presentation of the Object View}{49}{subsection.3.4.1}%
-\contentsline {subsection}{\numberline {3.4.2}Structured Output and Risk-Relevant Object Information}{50}{subsection.3.4.2}%
-\contentsline {section}{\numberline {3.5}Scene Graph Fusion and Uncertainty Modelling}{51}{section.3.5}%
-\contentsline {subsection}{\numberline {3.5.1}Scene Graph Fusion}{51}{subsection.3.5.1}%
-\contentsline {subsection}{\numberline {3.5.2}Uncertainty and Persistence Modelling}{52}{subsection.3.5.2}%
-\contentsline {subsection}{\numberline {3.5.3}Treatment of Static and Dynamic Objects}{53}{subsection.3.5.3}%
-\contentsline {section}{\numberline {3.6}Loop Closure and Multi-Session Consistency}{55}{section.3.6}%
-\contentsline {subsection}{\numberline {3.6.1}Consistency under Loop Closure}{55}{subsection.3.6.1}%
-\contentsline {subsection}{\numberline {3.6.2}Persistence across Sessions}{56}{subsection.3.6.2}%
-\contentsline {chapter}{\numberline {4}Implementation}{58}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Hardware Platforms and the Go1 Data-Collection Campaign}{58}{section.4.1}%
-\contentsline {subsection}{\numberline {4.1.1}Compute Platforms}{58}{subsection.4.1.1}%
-\contentsline {subsection}{\numberline {4.1.2}Planned Data-Collection Campaign}{58}{subsection.4.1.2}%
-\contentsline {subsection}{\numberline {4.1.3}Limitations Encountered}{59}{subsection.4.1.3}%
-\contentsline {subsection}{\numberline {4.1.4}Substitute Datasets}{61}{subsection.4.1.4}%
-\contentsline {chapter}{\numberline {5}Experiments}{62}{chapter.5}%
-\contentsline {chapter}{\numberline {6}Conclusions}{63}{chapter.6}%
-\contentsline {chapter}{\nonumberline Bibliography}{64}{chapter*.22}%
-\contentsline {chapter}{\numberline {A}Example appendix chapter}{70}{appendix.A}%
+\contentsline {subsection}{\numberline {3.1.2}Central Design Decisions}{40}{subsection.3.1.2}%
+\contentsline {section}{\numberline {3.2}Data Acquisition and Preprocessing}{42}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Object Segmentation and Persistent Tracking}{43}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Object Proposals and 3D Observations}{44}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}Evidence-Based Association}{45}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}Track Representation and Local Segments}{47}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}Transfer of Object Observations to Hydra}{48}{subsection.3.3.4}%
+\contentsline {section}{\numberline {3.4}Semantic Labelling and Risk-Relevant Object Information}{48}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}Selection and Presentation of the Object View}{48}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}Structured Output and Risk-Relevant Object Information}{49}{subsection.3.4.2}%
+\contentsline {section}{\numberline {3.5}Scene Graph Fusion and Uncertainty Modelling}{50}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}Scene Graph Fusion}{50}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}Uncertainty and Persistence Modelling}{51}{subsection.3.5.2}%
+\contentsline {subsection}{\numberline {3.5.3}Treatment of Static and Dynamic Objects}{52}{subsection.3.5.3}%
+\contentsline {section}{\numberline {3.6}Loop Closure and Multi-Session Consistency}{53}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}Consistency under Loop Closure}{53}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}Persistence across Sessions}{55}{subsection.3.6.2}%
+\contentsline {chapter}{\numberline {4}Implementation}{56}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Data Collection and Substitute Datasets}{56}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Planned Data-Collection Campaign}{56}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Limitations Encountered}{57}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}Substitute Datasets}{57}{subsection.4.1.3}%
+\contentsline {section}{\numberline {4.2}Software Implementation}{58}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Package Structure and Deployment}{58}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}Preprocessor}{60}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Phase~1 Coordinator}{61}{subsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.2.4}Hydra Integration and Session Persistence}{62}{subsection.4.2.4}%
+\contentsline {subsection}{\numberline {4.2.5}Scene Graph Fuser}{64}{subsection.4.2.5}%
+\contentsline {subsection}{\numberline {4.2.6}Portability and Extensibility}{66}{subsection.4.2.6}%
+\contentsline {chapter}{\numberline {5}Experiments}{67}{chapter.5}%
+\contentsline {chapter}{\numberline {6}Conclusions}{68}{chapter.6}%
+\contentsline {chapter}{\nonumberline Bibliography}{69}{chapter*.28}%
+\contentsline {chapter}{\numberline {A}Example appendix chapter}{75}{appendix.A}%
 \providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

@@ -3044,6 +3044,40 @@
       \verb https://www.unitree.com/go1
       \endverb
     \endentry
+    \entry{llamacpp}{online}{}
+      \name{author}{2}{}{%
+        {{hash=04310eba93e5dc1c0adb659291d1aeca}{%
+           family={Gerganov},
+           familyi={G\bibinitperiod},
+           given={Georgi},
+           giveni={G\bibinitperiod}}}%
+        {{hash=3879ef7a3d22ff061fe4ac6a2b338424}{%
+           family={{llama.cpp contributors}},
+           familyi={l\bibinitperiod}}}%
+      }
+      \strng{namehash}{b5c1f0e5e1a9fc3296ca943462c5289b}
+      \strng{fullhash}{b5c1f0e5e1a9fc3296ca943462c5289b}
+      \strng{bibnamehash}{b5c1f0e5e1a9fc3296ca943462c5289b}
+      \strng{authorbibnamehash}{b5c1f0e5e1a9fc3296ca943462c5289b}
+      \strng{authornamehash}{b5c1f0e5e1a9fc3296ca943462c5289b}
+      \strng{authorfullhash}{b5c1f0e5e1a9fc3296ca943462c5289b}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{llama.cpp: {LLM} Inference in {C/C++}}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://github.com/ggml-org/llama.cpp
+      \endverb
+      \verb{url}
+      \verb https://github.com/ggml-org/llama.cpp
+      \endverb
+    \endentry
   \enddatalist
 \endrefsection
 \endinput

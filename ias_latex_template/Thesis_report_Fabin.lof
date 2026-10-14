@@ -14,8 +14,13 @@
 \contentsline {figure}{\numberline {2.11}{\ignorespaces SafetyDetect pipeline showing the agent point of view, scene graph construction, prompt formation, and LLM-based anomaly classification. Reproduced from \blx@tocontentsinit {0}\cite {mullen2024safetydetect}.}}{37}{figure.caption.17}%
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {3.1}{\ignorespaces Overview of the proposed framework, showing the synchronous per-frame path (solid) and the asynchronous per-track path (dashed).}}{39}{figure.caption.18}%
-\contentsline {figure}{\numberline {3.2}{\ignorespaces Preprocessing of the input streams into a prepared RGB-D-pose frame.}}{44}{figure.caption.19}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Preprocessing of the input streams into a prepared RGB-D-pose frame.}}{42}{figure.caption.20}%
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Class overview of the implemented framework, showing the main ROS~2 nodes, internal processing stages, supporting classes, and configurable backends.}}{59}{figure.caption.23}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Sequence of one frame through the preprocessor.}}{60}{figure.caption.24}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Sequence of the Phase~1 coordinator.}}{63}{figure.caption.25}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Sequence of the modified Hydra pipeline with session persistence.}}{64}{figure.caption.26}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Sequence of the scene graph fuser.}}{65}{figure.caption.27}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

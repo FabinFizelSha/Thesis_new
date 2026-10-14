@@ -2520,3 +2520,29 @@
     <bcf:citekey order="155" intorder="1">chroma2026docs</bcf:citekey>
     <bcf:citekey order="156" intorder="1">qwen2026qwen35</bcf:citekey>
     <bcf:citekey order="157" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="158" intorder="1">radford2021clip</bcf:citekey>
+    <bcf:citekey order="159" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="160" intorder="1">wu2021scenegraphfusion</bcf:citekey>
+    <bcf:citekey order="161" intorder="1">gu2024conceptgraphs</bcf:citekey>
+    <bcf:citekey order="162" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="163" intorder="1">rosinol2021kimera</bcf:citekey>
+    <bcf:citekey order="164" intorder="1">shi2020openloris</bcf:citekey>
+    <bcf:citekey order="165" intorder="1">kirillov2023segmentanything</bcf:citekey>
+    <bcf:citekey order="166" intorder="1">nanosam2023</bcf:citekey>
+    <bcf:citekey order="167" intorder="1">keselman2017realsense</bcf:citekey>
+    <bcf:citekey order="168" intorder="1">mccormac2018fusion</bcf:citekey>
+    <bcf:citekey order="169" intorder="1">keselman2017realsense</bcf:citekey>
+    <bcf:citekey order="170" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="171" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="172" intorder="1">pechpacheco2000laplacian</bcf:citekey>
+    <bcf:citekey order="173" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="174" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="175" intorder="1">intel_realsense_d455</bcf:citekey>
+    <bcf:citekey order="176" intorder="1">unitree_go1</bcf:citekey>
+    <bcf:citekey order="177" intorder="1">macenski2022ros2</bcf:citekey>
+    <bcf:citekey order="178" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="179" intorder="1">shi2020openloris</bcf:citekey>
+    <bcf:citekey order="180" intorder="1">rosinol2021kimera</bcf:citekey>
+    <bcf:citekey order="181" intorder="1">macenski2022ros2</bcf:citekey>
+    <bcf:citekey order="182" intorder="1">hughes2022hydra</bcf:citekey>
+    <bcf:citekey order="183" intorder="1">llamacpp</bcf:citekey>

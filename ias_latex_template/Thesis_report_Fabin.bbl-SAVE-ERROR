@@ -2898,6 +2898,186 @@
       \verb https://www.jetson-ai-lab.com/models/
       \endverb
     \endentry
+    \entry{keselman2017realsense}{inproceedings}{}
+      \name{author}{4}{}{%
+        {{hash=b3d4eff8be3e1d5f0adb71e2f52bfb8a}{%
+           family={Keselman},
+           familyi={K\bibinitperiod},
+           given={Leonid},
+           giveni={L\bibinitperiod}}}%
+        {{hash=7b68237991da7091bf31bcdb343ae812}{%
+           family={Woodfill},
+           familyi={W\bibinitperiod},
+           given={John\bibnamedelima Iselin},
+           giveni={J\bibinitperiod\bibinitdelim I\bibinitperiod}}}%
+        {{hash=81e82c706525a3feccc93af8e18804d6}{%
+           family={Grunnet-Jepsen},
+           familyi={G\bibinithyphendelim J\bibinitperiod},
+           given={Anders},
+           giveni={A\bibinitperiod}}}%
+        {{hash=94218d18352a950275aa265a74090329}{%
+           family={Bhowmik},
+           familyi={B\bibinitperiod},
+           given={Achintya},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{47fbc172b7c94c8a5988e0d496142e13}
+      \strng{fullhash}{a6bbc90751d7e301cc7b39d17099f822}
+      \strng{bibnamehash}{a6bbc90751d7e301cc7b39d17099f822}
+      \strng{authorbibnamehash}{a6bbc90751d7e301cc7b39d17099f822}
+      \strng{authornamehash}{47fbc172b7c94c8a5988e0d496142e13}
+      \strng{authorfullhash}{a6bbc90751d7e301cc7b39d17099f822}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)}
+      \field{title}{Intel {RealSense} Stereoscopic Depth Cameras}
+      \field{year}{2017}
+      \field{pages}{1\bibrangedash 10}
+      \range{pages}{10}
+      \verb{doi}
+      \verb 10.1109/CVPRW.2017.167
+      \endverb
+    \endentry
+    \entry{pechpacheco2000laplacian}{inproceedings}{}
+      \name{author}{4}{}{%
+        {{hash=a3df6ea3f337b5ed071bb977f971e876}{%
+           family={Pech-Pacheco},
+           familyi={P\bibinithyphendelim P\bibinitperiod},
+           given={J.\bibnamedelimi L.},
+           giveni={J\bibinitperiod\bibinitdelim L\bibinitperiod}}}%
+        {{hash=e4787203528eb9cb2a8766c36be5c75c}{%
+           family={Cristóbal},
+           familyi={C\bibinitperiod},
+           given={G.},
+           giveni={G\bibinitperiod}}}%
+        {{hash=24e182e240f40a5a7d54662f6dea96c1}{%
+           family={Chamorro-Martínez},
+           familyi={C\bibinithyphendelim M\bibinitperiod},
+           given={J.},
+           giveni={J\bibinitperiod}}}%
+        {{hash=56debc23923acb003f53f5132f7a5684}{%
+           family={Fernández-Valdivia},
+           familyi={F\bibinithyphendelim V\bibinitperiod},
+           given={J.},
+           giveni={J\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {IEEE}%
+      }
+      \strng{namehash}{38ba181592aea109b2a975f5a3774983}
+      \strng{fullhash}{ef4b3759d60a7f27081a65bc41015866}
+      \strng{bibnamehash}{ef4b3759d60a7f27081a65bc41015866}
+      \strng{authorbibnamehash}{ef4b3759d60a7f27081a65bc41015866}
+      \strng{authornamehash}{38ba181592aea109b2a975f5a3774983}
+      \strng{authorfullhash}{ef4b3759d60a7f27081a65bc41015866}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 15th International Conference on Pattern Recognition (ICPR)}
+      \field{title}{Diatom Autofocusing in Brightfield Microscopy: A Comparative Study}
+      \field{volume}{3}
+      \field{year}{2000}
+      \field{pages}{314\bibrangedash 317}
+      \range{pages}{4}
+      \verb{doi}
+      \verb 10.1109/ICPR.2000.903548
+      \endverb
+    \endentry
+    \entry{intel_realsense_d455}{online}{}
+      \name{author}{1}{}{%
+        {{hash=b7f0fb90e404efb48f8a85a517dec3c9}{%
+           family={{Intel Corporation}},
+           familyi={I\bibinitperiod}}}%
+      }
+      \strng{namehash}{b7f0fb90e404efb48f8a85a517dec3c9}
+      \strng{fullhash}{b7f0fb90e404efb48f8a85a517dec3c9}
+      \strng{bibnamehash}{b7f0fb90e404efb48f8a85a517dec3c9}
+      \strng{authorbibnamehash}{b7f0fb90e404efb48f8a85a517dec3c9}
+      \strng{authornamehash}{b7f0fb90e404efb48f8a85a517dec3c9}
+      \strng{authorfullhash}{b7f0fb90e404efb48f8a85a517dec3c9}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Intel RealSense Depth Camera D455}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.intelrealsense.com/depth-camera-d455/
+      \endverb
+      \verb{url}
+      \verb https://www.intelrealsense.com/depth-camera-d455/
+      \endverb
+    \endentry
+    \entry{unitree_go1}{online}{}
+      \name{author}{1}{}{%
+        {{hash=1816738b3d76b98cee588de847aee6f0}{%
+           family={{Unitree Robotics}},
+           familyi={U\bibinitperiod}}}%
+      }
+      \strng{namehash}{1816738b3d76b98cee588de847aee6f0}
+      \strng{fullhash}{1816738b3d76b98cee588de847aee6f0}
+      \strng{bibnamehash}{1816738b3d76b98cee588de847aee6f0}
+      \strng{authorbibnamehash}{1816738b3d76b98cee588de847aee6f0}
+      \strng{authornamehash}{1816738b3d76b98cee588de847aee6f0}
+      \strng{authorfullhash}{1816738b3d76b98cee588de847aee6f0}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Unitree Go1}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.unitree.com/go1
+      \endverb
+      \verb{url}
+      \verb https://www.unitree.com/go1
+      \endverb
+    \endentry
+    \entry{llamacpp}{online}{}
+      \name{author}{2}{}{%
+        {{hash=04310eba93e5dc1c0adb659291d1aeca}{%
+           family={Gerganov},
+           familyi={G\bibinitperiod},
+           given={Georgi},
+           giveni={G\bibinitperiod}}}%
+        {{hash=3879ef7a3d22ff061fe4ac6a2b338424}{%
+           family={{llama.cpp contributors}},
+           familyi={l\bibinitperiod}}}%
+      }
+      \strng{namehash}{b5c1f0e5e1a9fc3296ca943462c5289b}
+      \strng{fullhash}{b5c1f0e5e1a9fc3296ca943462c5289b}
+      \strng{bibnamehash}{b5c1f0e5e1a9fc3296ca943462c5289b}
+      \strng{authorbibnamehash}{b5c1f0e5e1a9fc3296ca943462c5289b}
+      \strng{authornamehash}{b5c1f0e5e1a9fc3296ca943462c5289b}
+      \strng{authorfullhash}{b5c1f0e5e1a9fc3296ca943462c5289b}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{llama.cpp: {LLM} Inference in {C/C++}}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://github.com/ggml-org/llama.cpp
+      \endverb
+      \verb{url}
+      \verb https://github.com/ggml-org/llama.cpp
+      \endverb
+    \endentry
   \enddatalist
 \endrefsection
 \endinput
