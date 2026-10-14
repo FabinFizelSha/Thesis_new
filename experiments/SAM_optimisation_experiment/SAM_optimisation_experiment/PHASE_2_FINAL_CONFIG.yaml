@@ -1,0 +1,99 @@
+# Phase 2: Final Optimized NanoSAM Configuration
+# Generated: 2026-08-21
+# Status: Production ready for real-time throughput optimization
+
+# =============================================================================
+# BACKEND CONFIGURATION
+# =============================================================================
+backend: nanosam
+device: cuda
+
+# TensorRT engine paths (pre-optimized for inference)
+image_encoder_engine: /home/student/rsg_models/nanosam/resnet18_image_encoder.engine
+mask_decoder_engine: /home/student/rsg_models/nanosam/mobile_sam_mask_decoder.engine
+
+# =============================================================================
+# OPTIMIZED PARAMETERS (Result of Phase 2 systematic testing)
+# =============================================================================
+
+# Points Per Side (PPS): Grid density for SAM prompts
+# Phase 1 Baseline: 6×6 = 36 prompts per image
+# Phase 2 Optimized: 4×4 = 16 prompts per image
+# Impact: -8.8% F1, +80% FPS (largest speed driver)
+# Rationale: Reduces encoder forward passes; balances detail vs. speed
+points_per_side: 4
+
+# Maximum Masks Per Frame
+# Phase 1 Baseline: 24
+# Phase 2 Optimized: 12
+# Impact: 0% F1 loss, +1% FPS (zero-cost optimization)
+# Rationale: Suite 1 dataset rarely exceeds 8 objects; no saturation risk
+max_masks: 12
+
+# Mask Confidence Threshold
+# Phase 1 Baseline: 0.80
+# Phase 2 Optimized: 0.70
+# Impact: +0.04% F1, 0% FPS change (minor tuning)
+# Rationale: Lower threshold increases recall, optimizes confidence distribution
+mask_threshold: 0.70
+
+# Minimum Mask Size in Pixels
+# Phase 1 Baseline: 3500
+# Phase 2 Optimized: 3500 (confirmed optimal)
+# Impact: 0% change (Phase 2.6 testing verified baseline)
+# Rationale: Lower thresholds admit low-quality masks; 3500 is appropriate
+min_mask_pixels: 3500
+
+# Non-Maximum Suppression IoU Threshold
+# Phase 1 Baseline: 0.20
+# Phase 2 Optimized: 0.30
+# Impact: +0.8% F1, +1.4% FPS (partial F1 recovery)
+# Rationale: Looser suppression retains valid adjacent masks
+nms_iou: 0.30
+
+# =============================================================================
+# PERFORMANCE METRICS (vs Phase 1 Baseline)
+# =============================================================================
+
+# Final Performance
+# F1 Score: 0.5017 (vs 0.5817 baseline = -13.8%)
+# Precision: 0.6214 (vs 0.6181 baseline = +0.5%)
+# Recall: 0.4417 (vs 0.5758 baseline = -23.3%)
+# FPS: 3.15 (vs 1.53 baseline = +105.9% ✅)
+# Latency: 317.4 ms/frame (vs 653.6 ms = -51.4% ✅)
+
+# =============================================================================
+# OPTIMIZATION NOTES
+# =============================================================================
+
+# Trade-off Rationale
+# This configuration prioritizes THROUGHPUT over ACCURACY:
+# - Doubled FPS (1.53 → 3.15) through aggressive parameter reduction
+# - Sacrificed 13.8% F1 score for 2x speed improvement
+# - Suitable for: real-time monitoring, throughput-critical applications
+# - Not suitable for: high-accuracy critical detection, safety systems
+
+# Optimization Path
+# 1. Phase 2.1: PPS 6→4 (primary speed gain, -8.8% F1)
+# 2. Phase 2.2: Masks 24→12 (zero-cost, no F1 loss)
+# 3. Phase 2.3: Threshold 0.80→0.70 (fine-tuning, +0.04% F1)
+# 4. Phase 2.5: NMS 0.20→0.30 (recovery, +0.8% F1)
+# 5. Phase 2.6: Min Px 3500 (confirmed baseline optimal)
+
+# All parameters tested; no further optimization without algorithm changes
+
+# =============================================================================
+# COMPARISON WITH PHASE 1
+# =============================================================================
+
+# Phase 1 (High Accuracy, Lower Speed)
+# points_per_side: 6, max_masks: 24, threshold: 0.80, nms_iou: 0.20
+# F1: 0.5817, FPS: 1.53
+# Use when: Accuracy critical, speed not primary concern
+
+# Phase 2 (High Speed, Lower Accuracy)
+# points_per_side: 4, max_masks: 12, threshold: 0.70, nms_iou: 0.30
+# F1: 0.5017, FPS: 3.15
+# Use when: Throughput critical, can tolerate accuracy trade-off
+
+# =============================================================================

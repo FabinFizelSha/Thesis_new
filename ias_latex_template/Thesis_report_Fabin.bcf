@@ -2547,6 +2547,8 @@
     <bcf:citekey order="182" intorder="1">hughes2022hydra</bcf:citekey>
     <bcf:citekey order="183" intorder="1">llamacpp</bcf:citekey>
     <bcf:citekey order="184" intorder="1">llamacpp</bcf:citekey>
+    <bcf:citekey order="185" intorder="1">rosinol2021kimera</bcf:citekey>
+    <bcf:citekey order="186" intorder="1">nanosam2023</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="none">

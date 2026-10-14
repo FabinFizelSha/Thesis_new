@@ -1,15 +1,15 @@
 [0] Config.pm:307> INFO - This is Biber 2.19
 [0] Config.pm:310> INFO - Logfile is 'Thesis_report_Fabin.blg'
-[51] biber:340> INFO - === Tue Oct 13, 2026, 21:58:11
-[64] Biber.pm:419> INFO - Reading 'Thesis_report_Fabin.bcf'
-[115] Biber.pm:979> INFO - Found 64 citekeys in bib section 0
-[124] Biber.pm:4419> INFO - Processing section 0
-[133] Biber.pm:4610> INFO - Looking for bibtex file 'bibliography.bib' for section 0
-[136] bibtex.pm:1713> INFO - LaTeX decoding ...
-[175] bibtex.pm:1519> INFO - Found BibTeX data source 'bibliography.bib'
-[553] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
-[553] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
-[553] Biber.pm:4239> INFO - Sorting list 'none/global//global/global' of type 'entry' with template 'none' and locale 'en-US'
-[553] Biber.pm:4245> INFO - No sort tailoring available for locale 'en-US'
-[581] bbl.pm:660> INFO - Writing 'Thesis_report_Fabin.bbl' with encoding 'UTF-8'
-[602] bbl.pm:763> INFO - Output to Thesis_report_Fabin.bbl
+[50] biber:340> INFO - === Wed Oct 14, 2026, 23:31:39
+[60] Biber.pm:419> INFO - Reading 'Thesis_report_Fabin.bcf'
+[112] Biber.pm:979> INFO - Found 64 citekeys in bib section 0
+[120] Biber.pm:4419> INFO - Processing section 0
+[126] Biber.pm:4610> INFO - Looking for bibtex file 'bibliography.bib' for section 0
+[129] bibtex.pm:1713> INFO - LaTeX decoding ...
+[168] bibtex.pm:1519> INFO - Found BibTeX data source 'bibliography.bib'
+[560] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[560] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[560] Biber.pm:4239> INFO - Sorting list 'none/global//global/global' of type 'entry' with template 'none' and locale 'en-US'
+[560] Biber.pm:4245> INFO - No sort tailoring available for locale 'en-US'
+[586] bbl.pm:660> INFO - Writing 'Thesis_report_Fabin.bbl' with encoding 'UTF-8'
+[606] bbl.pm:763> INFO - Output to Thesis_report_Fabin.bbl

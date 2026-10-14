@@ -1,0 +1,72 @@
+# Phase 2: Final Optimized NanoSAM Configuration
+# Generated: 2026-08-21
+# Status: Production ready for real-time throughput optimization
+
+backend: nanosam
+device: cuda
+image_encoder_engine: /home/student/rsg_models/nanosam/resnet18_image_encoder.engine
+mask_decoder_engine: /home/student/rsg_models/nanosam/mobile_sam_mask_decoder.engine
+
+# ============================================================================
+# OPTIMIZED PARAMETERS (Result of Phase 2 systematic testing)
+# ============================================================================
+
+# Points Per Side: Grid density for SAM prompts
+# Phase 1: 6×6 = 36 prompts | Phase 2: 4×4 = 16 prompts
+# Impact: -8.8% F1, +80% FPS (primary speed driver)
+points_per_side: 4
+
+# Maximum Masks Per Frame
+# Phase 1: 24 | Phase 2: 12
+# Impact: 0% F1 loss, +1% FPS (zero-cost optimization)
+max_masks: 12
+
+# Mask Confidence Threshold
+# Phase 1: 0.80 | Phase 2: 0.70
+# Impact: +0.04% F1, balanced precision/recall
+mask_threshold: 0.70
+
+# Minimum Mask Size (pixels)
+# Phase 1 & 2: 3500 (confirmed optimal)
+# Impact: Baseline optimal; reduction hurts F1
+min_mask_pixels: 3500
+
+# Non-Maximum Suppression IoU Threshold
+# Phase 1: 0.20 | Phase 2: 0.30 (looser)
+# Impact: +0.8% F1, +1.4% FPS (partial recovery + speed)
+nms_iou: 0.30
+
+# ============================================================================
+# PERFORMANCE METRICS (vs Phase 1 Baseline)
+# ============================================================================
+# F1 Score:  0.5017 (-13.8%)
+# Precision: 0.6214 (+0.5%)
+# Recall:    0.4417 (-23.3%)
+# FPS:       3.15 (+105.9%)
+# Latency:   317.4 ms (-51.4%)
+
+# ============================================================================
+# OPTIMIZATION SUMMARY
+# ============================================================================
+# Phase 2.1 (PPS 6→4):           -8.8% F1, +80% FPS
+# Phase 2.2 (Masks 24→12):       0% F1, +1% FPS
+# Phase 2.3 (Threshold 0.80→0.70): +0.04% F1
+# Phase 2.5 (NMS 0.20→0.30):     +0.8% F1, +1.4% FPS
+# Phase 2.6 (Min Px 3500):       Confirmed optimal
+#
+# Total: -13.8% F1, +105.9% FPS
+
+# ============================================================================
+# DEPLOYMENT NOTES
+# ============================================================================
+# Use this config for:
+# - Real-time throughput (2+ FPS required)
+# - Edge/embedded hardware (resource-constrained)
+# - Can tolerate 5-10% detection miss rate
+# - Continuous monitoring/screening
+
+# Use Phase 1 config for:
+# - High accuracy required (F1 > 0.55)
+# - Safety-critical applications
+# - Resources available (high-end GPU)
+# - Acceptable to wait ~650ms per frame

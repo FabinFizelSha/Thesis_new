@@ -1,0 +1,818 @@
+# Prompt Optimisation Experiment — VLM Object Classification (Fresh Run)
+
+**Single source of truth for this experiment. Do not create additional main documents — append to this file.**
+
+- **Started:** 2026-08-31
+- **Author:** Fabin Fizel Sha
+- **Supersedes:** the frozen 2026-08-30 campaign in
+  `debug/VLM-PROMPT-OPTIMIZATION-DOCUMENTATION/` (Qwen3-VL-8B only, uneven
+  methodology — see §2).
+- **Status:** SCAFFOLD READY — 0 / 9 runs complete.
+
+---
+
+## 1. Objective
+
+Measure how VLM object-classification quality and inference latency vary across
+**3 prompt formulations × 3 model profiles** on the RSG Phase 1 pipeline, under a
+controlled VLM-only setting, with a consistent methodology (fixed run length,
+fixed sample target, mandatory latency logging, manual verification with typed
+error categories).
+
+Primary questions:
+
+1. Does the newer **Qwen 3.5** family (4B, 9B) break the ~50 % accuracy ceiling
+   and the persistent `ceiling` → `ceiling_light` visual-salience error that
+   Qwen3-VL-8B could not escape through prompt engineering alone?
+2. Which of the 3 prompts is best **per model** (the best prompt may differ by
+   model)?
+3. What is the accuracy ↔ latency trade-off across the 3 models (4B Q4 vs 9B Q4
+   vs 8B FP16)?
+
+Out of scope: RAP retrieval quality, crop-scoring/quality gate tuning (frozen —
+see `debug/CROP_SCORING_DOCUMENTATION/`), Hydra fusion.
+
+---
+
+## 2. Relationship to the prior campaign
+
+The 2026-08-30 campaign tested 6 prompts on **Qwen3-VL-8B-Instruct FP16** and
+concluded prompt tuning plateaued at ~46–52 % accuracy, dominated by the
+`ceiling_light` error. Its weaknesses, which this experiment fixes:
+
+| Prior weakness | Fix here |
+|---|---|
+| Non-deterministic crop set — every prompt saw different crops | Same 700 s bag, same pipeline config, same slow replay rate for all 9 runs; sample target fixed at ~50 |
+| Tiny/uneven N (30–55), v4 only 30/58 verified | Fixed target **~50 verified samples per run**, verify all or mark `crop_quality` exclusion explicitly |
+| Latency logged inconsistently, absent for v4–v6 | **Mandatory** `vlm_inference_ms` + `end_to_end_ms` every row |
+| Free-text error notes, not tallyable | Typed `error_category` vocabulary (§9) + free-text `manual_notes` |
+| Raw CSVs / crops not archived | **Per-run `crops/` + `vlm_results.csv` committed** under `runs/` |
+| v2/v3/v5 prompts never stored verbatim | All 3 prompts frozen in `prompts_under_test.yaml` and §4 below |
+
+Prompts carried forward (chosen 2026-08-31) as a **complexity gradient**, all
+re-worked to be **open-vocabulary** (no enumerated label lists — see §4):
+
+- **P1** — from v1_simplified: short, zero-shot.
+- **P2** — from v5_examples_based: minimal rules + many worked examples.
+- **P3** — from v6_structural_priority: full reasoning strategy + confidence
+  calibration + grouped examples.
+
+v2 (marginal), v3 (regressed −9.3 %), v4 (unverifiable) are dropped.
+
+Prior Qwen3-VL-8B numbers, for the source prompts, reference only (**not**
+directly comparable — the prompts were re-worded, label lists removed, and the
+boundary colour differs; see §4 and §14):
+
+| Source prompt | Prior 8B accuracy | Prior `ceiling_light` errors |
+|---|---|---|
+| v1_simplified (→ P1) | 46.9 % (23/49) | 9 |
+| v5_examples_based (→ P2) | 51.8 % (N not recorded) | 16 |
+| v6_structural_priority (→ P3) | 50.0 % (N not recorded) | 14 |
+
+---
+
+## 3. Models under test
+
+One local llama.cpp OpenAI-compatible server on `http://127.0.0.1:8000/v1/chat/completions`.
+**Only one model loaded at a time.** Profile is selected in
+`src/rsg/config/rsg_pipeline.yaml` → `phase1.vlm.active_profile`, then rebuild.
+
+| Short name | `active_profile` | Weights | Quant | Notes |
+|---|---|---|---|---|
+| **qwen3vl8b** | `qwen3_vl_8b_f16` | Qwen3-VL-8B-Instruct + FP16 vision projector | FP16 | Prior campaign model. Needs ≥32 GB; do not run on 16 GB Orin. |
+| **qwen35_4b** | `qwen3_5_4b_q4` | Qwen3.5-VL-4B-Instruct | Q4_K_M | `~/rsg_models/qwen3_5_4b/Qwen3.5-4B-Q4_K_M.gguf` + `mmproj-BF16.gguf` |
+| **qwen35_9b** | `qwen3_5_9b_q4` | Qwen3.5-VL-9B-Instruct | Q4_K_M | `~/rsg_models/qwen3_5_9b/Qwen3.5-9B-Q4_K_M.gguf` + `mmproj-BF16.gguf` |
+
+Shared VLM request settings (do not change between runs): `temperature: 0.0`,
+`max_tokens: 96` (**512 from R6, 5000 from R8** — see §14), `jpeg_quality: 100`, `timeout_sec: 60`.
+
+---
+
+## 4. Prompts under test
+
+Authoritative full text: [`prompts_under_test.yaml`](prompts_under_test.yaml).
+The blocks below are the same text; run from the YAML.
+
+**Design of the set:**
+
+- **Complexity gradient** — the one deliberate axis: P1 minimal / zero-shot →
+  P2 minimal rules + many worked examples → P3 full reasoning strategy +
+  confidence calibration + grouped examples.
+- **No enumerated label lists** in any prompt. Every prompt tells the model to
+  name whatever the object is with a concise lowercase label and states "there
+  is no fixed list of labels". Restricted vocabularies were shown to hurt
+  generalisation in the prior campaign; this experiment keeps all three prompts
+  open-vocabulary so the comparison is about *strategy*, not *vocabulary*.
+- **JSON output** — all three give the exact JSON schema **and** end with
+  "Return only the JSON object. No markdown…". Output-format compliance is held
+  constant so it is not a confound.
+- **Shared core** — identical cyan-boundary reference, identical JSON schema
+  string, identical mobility definitions, `VLM_no_result` + 0.0 fallback.
+- Examples in P2/P3 are labelled *"not a list of allowed labels"* and both
+  include one `dynamic` (person) example so mobility has at least one exemplar.
+- P1 is derived from v1_simplified (label enumeration removed, JSON-only line
+  added); P2 from v5_examples_based (label list removed, examples broadened);
+  P3 from the live v6_structural_priority (structural-label enumeration
+  generalised to a description, dynamic example added). None is byte-verbatim.
+
+> **Decision (2026-08-31):** boundary colour is **cyan**, as in the original
+> 2026-08-30 campaign. All 3 prompts refer to a "cyan boundary".
+>
+> **Required pipeline change before run R1:** the live contour is currently
+> white. Set it to cyan so the rendered contour matches the prompt wording:
+> ```yaml
+> # src/rsg/config/rsg_pipeline.yaml  ->  phase1.semantic_crop
+> target_contour_rgb: [0, 255, 255]        # was [255, 255, 255]
+> ```
+> Rebuild `rsg` after the edit. Keep cyan fixed for all 9 runs.
+
+### P1 — simple (short, zero-shot, general)
+
+```text
+Classify the single SAM-segmented target in this indoor crop.
+
+The target object is the one outlined by the cyan boundary. Identify only this object. The surrounding area may be used as context to help identify it.
+
+Assume an indoor setting.
+
+Name the object with a concise, singular, lowercase snake_case label that best describes what it actually is. There is no fixed list of labels. Do not describe colour, material, position, condition or activity. Use a confidence above 0.90 only when the identification is unmistakable. If the target is unclear, truncated or unidentifiable, use the label VLM_no_result with confidence 0.0.
+
+Mobility:
+- "dynamic": a human, an animal, or a self-propelled robot only
+- "static": everything else
+- "unknown": when the label is unknown or mobility cannot be determined
+
+Output exactly one JSON object:
+{"label": "<label>", "label_confidence": <0-1>, "mobility_class": "<static|dynamic|unknown>", "mobility_confidence": <0-1>}
+
+Return only the JSON object. No markdown, explanations, or extra text.
+```
+
+### P2 — example-driven (boundary-focus + generalisation, reworked against R1)
+
+Reworked after R1 (P1 @ 48 %). Targets the three R1 failure clusters: boundary
+violations (5), sub-part-instead-of-surface (8), and 0.95-confidence hallucination
+on ambiguous crops (subset of 13 `wrong_class`). Still open-vocabulary — no label list.
+
+```text
+Identify the object that the cyan boundary encloses in this indoor crop.
+
+WHICH OBJECT TO NAME
+- The cyan boundary marks one region of the image. Name only what lies inside that boundary.
+- Everything outside the boundary is background. A large, obvious object outside the boundary - a chair, a shelf, a bookcase, a whiteboard, a plant - is NOT the answer. Use the surroundings only to understand what the enclosed region is, never as the label itself.
+- First decide what the enclosed region mainly shows, then name that.
+
+HOW TO CHOOSE THE LABEL
+- Name the largest, most complete thing the boundary covers. If the boundary encloses only part of a bigger structure, name the bigger structure.
+- If the boundary spans many repeated units of one surface - several ceiling tiles or panels, a run of floor, a stretch of wall - name the surface itself ("ceiling", "floor", "wall"), not a single unit ("ceiling_tile").
+- If the boundary covers a surface that carries a smaller mounted or attached item - a wall bearing a whiteboard, sign, monitor or vent; a ceiling holding a light or diffuser; a floor with a rug on it - name the surface, not the attached item. Name the attached item only when it clearly fills the boundary on its own.
+- When you are torn between a specific object and the surface or structure behind it, choose the surface or structure.
+- Use a concise, singular, lowercase label that best fits what you actually see. There is no fixed list of labels - name whatever it is.
+
+CONFIDENCE ("label_confidence") - be honest, do not default to 0.95
+- 0.90-1.00: unmistakable; the enclosed region can only be this.
+- 0.60-0.85: probable, but a competing reading exists.
+- 0.30-0.55: genuinely ambiguous, low detail, or a guess.
+- 0.0 with label VLM_no_result: too blurred, dark, or truncated to identify at all.
+Do not report 0.90+ on a crop you would not bet on.
+
+Mobility:
+- "dynamic": a human, an animal, or a self-propelled robot only
+- "static": everything else
+- "unknown": when the label is unknown or mobility cannot be determined
+
+Output exactly one JSON object:
+{"label": "<label>", "label_confidence": <0-1>, "mobility_class": "<static|dynamic|unknown>", "mobility_confidence": <0-1>}
+
+WORKED EXAMPLES (these show the reasoning, not a list of allowed labels):
+- Boundary on a wall plane; an armchair sits in front of it, outside the boundary -> {"label": "wall", ...}
+- Boundary on the floor; a shelf unit stands beyond it, outside the boundary -> {"label": "floor", ...}
+- Boundary spans a panelled ceiling covering many tiles and a light fixture -> {"label": "ceiling", ...}
+- Boundary covers a wall area with a whiteboard mounted on part of it -> {"label": "wall", ...}
+- Boundary covers a single whiteboard that fills almost the whole region -> {"label": "whiteboard", ...}
+- Boundary on a flat vertical surface with little detail - cabinet front / pillar / wall -> {"label": "wall", "label_confidence": 0.4, ...}
+- Boundary shows a reflective rectangular panel on a wall - mirror or whiteboard -> {"label": "wall", "label_confidence": 0.4, ...}
+- Recessed light set into a ceiling panel -> {"label": "ceiling", ...}
+- Floor with a rug on it -> {"label": "floor", ...}
+- Potted plant that fills the region -> {"label": "potted_plant", ...}
+- Door and its frame -> {"label": "door", ...}
+- Person standing in the space -> {"label": "person", "mobility_class": "dynamic", ...}
+- Blurred, dark or cut-off region with no identifiable object -> {"label": "VLM_no_result", ...}
+
+Return only the JSON object. No markdown, explanations, or extra text.
+```
+
+(Full example JSON with confidences is in `prompts_under_test.yaml`.)
+
+### P3 — detailed (structural priority + calibration + grouped examples + format enforcement) — **MAIN**
+
+Built on P2 (R2 @ 72 %). Keeps P2's wins (boundary discipline; generalise
+repeated surface units; surface over mounted fixture) and adds the three R2
+fixes: (1) **distinctive infrastructure that fills the boundary is named, not
+generalised** — pipes / vents / ducts → `ceiling` was wrong 4×; (2) **glass
+partitions / glass-panelled doors get a glass label** — 5 R2 misses; (3) a
+**discriminative cue for the flat-surface cabinet-vs-wall/pillar** case (handle /
+seam / toe-kick → furniture; none → wall/pillar) with a wider honest confidence
+band. It also carries **hard output-format enforcement** — a leading `OUTPUT RULE`
+block, a "reason through this silently" note on `APPROACH`, and a GOOD/BAD
+reply-example block — because a small model without a thinking channel will
+otherwise narrate the strategy back instead of emitting JSON. Still
+open-vocabulary — no label list. **Best run in the matrix: qwen35_4b, R6, 88 %.**
+
+```text
+OUTPUT RULE — READ THIS FIRST
+Your entire reply is ONE JSON object and nothing else. First char "{", last char "}". No preamble, no analysis, no numbered steps, no "Based on the visual evidence…", no markdown code fences. Reason through the approach below silently; output only the result.
+
+This is an indoor object-classification task. Identify the object that the cyan boundary encloses.
+
+APPROACH (reason through this silently - do not write any of it)
+1. Look only inside the cyan boundary. Everything outside it is background - never name it, however large or obvious.
+2. Decide what the enclosed region mainly shows.
+3. Choose the label using the priority order below.
+
+PRIORITY ORDER
+a. Room-defining structure over incidental detail. Large room planes + their openings/supports outrank small things on them. Many repeated units of one surface (ceiling tiles, a run of floor, a stretch of wall) -> name the surface ("ceiling"/"wall"/"floor"), not one unit.
+b. BUT distinctive infrastructure that fills the boundary is named, not generalised. Exposed pipes, ductwork, a large vent/diffuser, a fire hose reel, a big fixture dominating the region -> name that thing. Collapse to the surface only when the fixture is small/incidental.
+c. Furniture over objects on it - but only with a furniture cue. A flat vertical surface with no handle, seam, gap, toe-kick or visible depth is a wall or pillar, not a cabinet.
+d. When readings compete, choose the larger, more dominant, more structural one.
+
+MATERIAL AND AMBIGUITY CUES
+- Transparent/translucent panel, framed glass screen, glazed partition, glass-panelled door -> name it as glass ("glass_wall", "glass_partition", "glass_door").
+- Judge transparency directly: if the room / objects / people / light behind the panel are visible through it - even dimly, even with a frame or faint reflection - it is glass; a panel you cannot see through at all is solid.
+- Reflects the room / shows a mirror image -> mirror. Plain matte white or lightly-marked panel -> whiteboard. Can't tell -> name the wall it sits on, low confidence.
+- Low detail / shadow / blur / heavy truncation -> structural reading (wall/floor/ceiling) at low confidence, or VLM_no_result.
+
+LABEL FORM
+- Concise, singular, lowercase; no fixed list of labels; no colour/condition/activity.
+
+CONFIDENCE CALIBRATION for "label_confidence" - report it honestly
+- 0.90-1.00: unmistakable.
+- 0.70-0.90: clear, minor uncertainty.
+- 0.45-0.70: plausible, competing reading exists - the right band for cabinet-vs-wall and mirror-vs-whiteboard.
+- 0.20-0.45: genuinely ambiguous, or a guess.
+- 0.0 with VLM_no_result: incomprehensible crop.
+A low confidence on a hard crop beats a confident wrong answer. Do not default to 0.90+.
+
+Mobility:
+- "dynamic": only a human, an animal, or a self-propelled moving object
+- "static": any stationary object, including all surfaces, structures, furniture, glass and fixtures
+- "unknown": when the label is unknown
+
+OUTPUT - exactly one JSON object, nothing before "{" or after "}":
+{"label": "<label>", "label_confidence": <0-1>, "mobility_class": "<static|dynamic|unknown>", "mobility_confidence": <0-1>}
+
+GOOD (the whole reply):  {"label": "wall", "label_confidence": 0.85, "mobility_class": "static", "mobility_confidence": 0.99}
+BAD - never: "Based on the visual evidence... 1. Analysis: ... {..}"  |  "The object is a wall. {..}"  |  the JSON wrapped in ```code fences```
+
+WORKED EXAMPLES (illustrating the approach, not a list of allowed labels):
+
+Room-defining structure over incidental detail:
+- Panelled ceiling, many tiles + a recessed light -> {"label": "ceiling", ...}
+- Wall area with a whiteboard mounted on part of it -> {"label": "wall", ...}
+- Wall plane; an armchair in front of it, outside the boundary -> {"label": "wall", ...}
+- Floor area with a rug on it -> {"label": "floor", ...}
+
+Distinctive infrastructure that fills the boundary - name it:
+- Exposed pipes / ductwork across the ceiling, filling the boundary -> {"label": "pipes", ...}
+- A large air vent / diffuser dominating the region -> {"label": "air_vent", ...}
+- A fire hose reel on the wall, filling the boundary -> {"label": "fire_hose_reel", ...}
+
+Glass and reflective surfaces:
+- A framed glass partition dividing two areas -> {"label": "glass_wall", ...}
+- A glass-panelled door in a frame -> {"label": "glass_door", ...}
+- A panel showing a mirror image of the room -> {"label": "mirror", ...}
+- A plain white panel on a wall, no reflection -> {"label": "whiteboard", ...}
+
+Furniture vs plain surface:
+- Office chair filling the frame -> {"label": "office_chair", ...}
+- Desk seen clearly, items on top -> {"label": "desk", ...}
+- Flat vertical surface with a visible handle, seam and toe-kick -> {"label": "cabinet", ...}
+- Flat vertical surface with no handles, seams or depth cues -> {"label": "wall", "label_confidence": 0.5, ...}
+
+Moving agents:
+- A person in the space -> {"label": "person", "mobility_class": "dynamic", ...}
+
+Unclear:
+- Blurred / dark / truncated, nothing identifiable -> {"label": "VLM_no_result", ...}
+
+Return only the JSON object. No markdown, explanations, or additional text.
+```
+
+(Full text with all example JSON is in `prompts_under_test.yaml`.)
+
+---
+
+## 5. Fixed experimental conditions
+
+Identical for all 9 runs. If any of these changes mid-experiment, record it in
+§15 Changelog and re-run affected rows.
+
+| Condition | Value | Where |
+|---|---|---|
+| Dataset | `~/datasets/uhumans2/uHumans2_office_s1_00h_ros2` (ROS 2 bag, converted from `uHumans2_office_s1_00h.bag`) | — |
+| RAP | **disabled** (`phase1.rap.enabled: false` or experiment flag) — every crop goes to the VLM | `rsg_pipeline.yaml` |
+| VLM | enabled, `mode: qwen_http`, `async: true` | `rsg_pipeline.yaml` |
+| Run length | **700 s wall time** per run (hard cap) | manual timer / `timeout 700s` |
+| Sample target | **~50 verified objects** per run (stop verifying at 50 good crops; if the run yields <50, note it) | verification step |
+| Bag replay rate | `--rate 0.1` (inherited from prior campaign) — 700 s wall ≈ 70 s bag-time. Raise only if <50 objects are produced; if changed, keep the new rate fixed for all 9 runs and note in §15. | `ros2 bag play` |
+| Crop context ratio | `0.10` | `phase1.vlm.crop_context_ratio` |
+| Context suppression | greyscale + `vlm_context_alpha: 0.12` | `phase1.semantic_crop` |
+| Target contour | **cyan `[0,255,255]`**, 2 px (change from live `[255,255,255]` — see §4) | `phase1.semantic_crop` |
+| Temperature | `0.0` | `phase1.vlm` |
+| max_tokens | `96` for R1–R5; **`512` R6–R7, `5000` from R8** (see §14 — the 4B narrates P3's reasoning strategy before the JSON). 96 sufficed for every R1–R5 response, so the change adds headroom only. | `phase1.vlm` |
+| result_validation | unchanged from live (`min_label_confidence: 0.80`, `min_mobility_confidence: 0.70`) | `phase1.vlm.result_validation` |
+| RAP memory / visual store | **cleared before every run** | see §6 step 2 |
+
+---
+
+## 6. Procedure (per run)
+
+Repeat for each of the 9 rows in the matrix (§7). `RUN_ID` = e.g. `R1__qwen3vl8b__v1_simplified`.
+
+**1. Select model profile** (only when the model changes — i.e. before R1, R4, R7):
+```bash
+# edit phase1.vlm.active_profile in src/rsg/config/rsg_pipeline.yaml
+cd ~/rsg_ros2_ws
+colcon build --packages-select rsg --symlink-install
+source install/setup.bash
+```
+Confirm no other llama-server is running on :8000. Start the server for the
+selected profile (profile-aware launcher or `rsg_all` launch). Wait until the
+model is fully loaded (first request succeeds).
+
+**2. Clear RAP + visual memory** (before every run):
+```bash
+rm -f  ~/rsg_ros2_ws/debug/phase1_rap_memory.jsonl
+rm -rf ~/rsg_ros2_ws/visual_memory/* && mkdir -p ~/rsg_ros2_ws/visual_memory
+rm -rf ~/rsg_ros2_ws/VLM-Test-Session && mkdir -p ~/rsg_ros2_ws/VLM-Test-Session/crops
+```
+
+**3. Set the active prompt:** set `active: true` for the target prompt in
+`prompts_under_test.yaml` (and `false` for the other two), or paste the prompt
+text into `phase1.vlm.prompt`. Rebuild if the prompt lives in the source YAML.
+
+**4. Run (700 s):**
+```bash
+# terminal A — pipeline (VLM-only, RAP disabled)
+ros2 run rsg rsg_phase1.py            # add --vlm-prompt-optimization if using the harness flag
+
+# terminal B — replay, capped at 700 s
+timeout 700s ros2 bag play ~/datasets/uhumans2/uHumans2_office_s1_00h_ros2 \
+  --rate 0.1 --qos-profile-overrides-path ~/.tf_overrides.yaml
+```
+Every VLM call auto-logs a crop to `VLM-Test-Session/crops/` and a row to
+`VLM-Test-Session/vlm_results.csv` with **both** timing fields (see §8).
+
+**5. Archive raw outputs immediately:**
+```bash
+DST=~/Thesis_new/debug/prompt_optimisation_experiment/runs/$RUN_ID
+cp -r ~/rsg_ros2_ws/VLM-Test-Session/crops/*        $DST/crops/
+cp    ~/rsg_ros2_ws/VLM-Test-Session/vlm_results.csv $DST/vlm_results.csv
+```
+
+**6. Manual verification** (target ~50 rows). For each verified row fill:
+- `manual_label` — ground-truth class (what the object actually is)
+- `manual_is_correct` — `true` if `vlm_label` matches `manual_label`, else `false`
+- `error_category` — one value from §9 (`ok` when correct)
+- `manual_notes` — what specifically is wrong / why (free text)
+
+Rows you skip: leave `manual_is_correct` blank. Rows too blurred/truncated to
+judge: `error_category = crop_quality`, excluded from accuracy.
+
+**7. Fill the run’s results block** in §11 (accuracy, error tally, latency
+percentiles) and write 3–6 bullet observations.
+
+**8. Update the matrix (§7) status and the Changelog (§15).**
+
+---
+
+## 7. Run matrix
+
+Order: finish all 3 prompts on one model before switching model (minimises
+rebuilds / model reloads).
+
+| Run | Model | Prompt | Folder | Status | Verified N | Accuracy | `ceiling_light` errs | median inference ms |
+|-----|-------|--------|--------|--------|-----------|----------|----------------------|---------------------|
+| R1 | qwen3vl8b | P1 v1_simplified | `runs/R1__qwen3vl8b__v1_simplified/session_20260901_195516/` | ☑ **complete** | 50 | **48 %** | 6 (+2 as `ceiling`) | 6250 |
+| R2 | qwen3vl8b | P2 v5_examples_based (reworked) | `runs/R2__qwen3vl8b__v5_examples_based/session_20260901_204248/` | ☑ **complete** | 50 | **72 %** | 2 | 4826 |
+| R3 | qwen3vl8b | P3 v6_structural_priority (tuned on R1+R2) | `runs/R3__qwen3vl8b__v6_structural_priority/session_20260901_211319/` | ☑ **complete** | 49 | **63 %** | 3 | 4806 |
+| R4 | qwen35_4b | P1 v1_simplified | `runs/R4__qwen35_4b__v1_simplified/session_20260901_215455/` | ☑ **complete** | 50 | **64 %** | 4 | 2691 |
+| R5 | qwen35_4b | P2 v5_examples_based | `runs/R5__qwen35_4b__v5_examples_based/session_20260901_221739/` | ☑ **complete** | 50 | **80 %** | 6 | 2959 |
+| R6 | qwen35_4b | P3 v6_structural_priority (format-hardened) | `runs/R6__qwen35_4b__v6_structural_priority/session_20260902_001845/` | ☑ **complete** | 50 | **88 %** | 3 | 2942 |
+| R7 | qwen35_9b | P1 v1_simplified | `runs/R7__qwen35_9b__v1_simplified/session_20260902_181502/` | ☑ **complete** | 50 | **64 %** | 1 | 3656 |
+| R8 | qwen35_9b | P2 v5_examples_based | `runs/R8__qwen35_9b__v5_examples_based/session_20260902_193816/` | ☑ **complete** | 50 | **68 %** | 6 | 4464 |
+| R9 | qwen35_9b | P3 v6_structural_priority | `runs/R9__qwen35_9b__v6_structural_priority/session_20260902_200256/` | ☑ **complete** | 50 | **68 %** | 2 | 4053 |
+
+“maybe more if needed” — add R10+ rows here for extra prompts/models; keep the
+same folder + CSV convention.
+
+---
+
+## 8. Data layout & CSV schema
+
+```
+debug/prompt_optimisation_experiment/
+├── EXPERIMENT_REPORT.md          <- this file (the only main document)
+├── prompts_under_test.yaml       <- the 3 prompts, loadable
+├── vlm_results_TEMPLATE.csv      <- header-only template
+└── runs/
+    └── R{n}__{model}__{prompt}/
+        ├── crops/               <- scaffold placeholder (.gitkeep)
+        ├── vlm_results.csv      <- scaffold placeholder (header only)
+        └── session_<YYYYmmdd_HHMMSS>/   <- one per pipeline start
+            ├── crops/           <- every crop JPEG for that session
+            └── vlm_results.csv  <- one row per VLM call (schema below)
+```
+
+`runs/*/session_*/` is git-ignored so scratch/smoke sessions don't clutter the
+tree; a **completed, annotated** session is committed deliberately with
+`git add -f <session_dir>` and recorded in §7 / §11.
+
+`vlm_results.csv` columns:
+
+| Column | Filled by | Meaning |
+|---|---|---|
+| `object_id` | pipeline | unique object/track id |
+| `crop_filename` | pipeline | JPEG in `crops/` |
+| `frame_timestamp` | pipeline | bag time of the crop |
+| `run_id` | pipeline/manual | e.g. `R1__qwen3vl8b__v1_simplified` |
+| `model_profile` | pipeline/manual | `qwen3_vl_8b_f16` \| `qwen3_5_4b_q4` \| `qwen3_5_9b_q4` |
+| `prompt_version` | pipeline/manual | `P1_v1_simplified` \| `P2_v5_examples_based` \| `P3_v6_structural_priority` |
+| `vlm_label` | pipeline | predicted label |
+| `label_confidence` | pipeline | 0–1 |
+| `mobility_class` | pipeline | static \| dynamic \| unknown |
+| `mobility_confidence` | pipeline | 0–1 |
+| **`vlm_inference_ms`** | pipeline | **MANDATORY** — model compute time. Use llama.cpp `timings.prompt_ms + timings.predicted_ms` if the server returns them; else blank and rely on `end_to_end_ms`. |
+| **`end_to_end_ms`** | pipeline | **MANDATORY** — client `perf_counter` around the whole HTTP call (request build → response parsed) |
+| `success` | pipeline | VLM call + JSON parse ok |
+| `validation_status` | pipeline | accepted \| rejected (result_validation) |
+| `raw_response` | pipeline | raw model text (trim to ~200 chars) |
+| `manual_label` | **human** | ground truth |
+| `manual_is_correct` | **human** | true \| false \| (blank = not verified) |
+| `error_category` | **human** | one token from §9 |
+| `manual_notes` | **human** | what is wrong / notable |
+
+---
+
+## 9. Error category vocabulary (`error_category`)
+
+| Token | Use when |
+|---|---|
+| `ok` | prediction matches ground truth (label correct; mobility also correct) |
+| `ceiling_light` | ground truth is `ceiling` but model returned the embedded light/fixture (the prior campaign’s signature failure) |
+| `surface_vs_fixture` | other surface↔attachment confusion: `wall`↔whiteboard/sign/AC/monitor, `floor`↔rug/carpet, `door`↔handle, etc. |
+| `boundary_violation` | model labelled an object **outside** the cyan contour |
+| `unknown_overuse` | model returned `VLM_no_result`/`unknown_object` but the object was clearly identifiable |
+| `wrong_class` | plain misclassification not covered above (e.g. `chair`→`desk`) |
+| `mobility_wrong` | label correct but `mobility_class` wrong (e.g. person → static) |
+| `hallucinated_object` | label names something not present in the crop at all |
+| `crop_quality` | crop too blurred/truncated/dark to verify — **excluded from accuracy denominator** |
+| `other` | anything else — explain in `manual_notes` |
+
+---
+
+## 10. Metrics (compute per run, then compare)
+
+- **Accuracy** = `count(manual_is_correct == true) / count(verified rows excluding crop_quality)`.
+- **Accuracy (label-only)** = same, but ignoring `mobility_wrong` (label correct
+  counts as correct). Report both this and strict accuracy.
+- **Rejection rate** = `count(validation_status == rejected) / count(all VLM
+  calls)`. Report accuracy **including** rejected rows (rejected = wrong) **and
+  excluding** them, so the `min_label_confidence: 0.80` gate does not silently
+  favour the prompt with more explicit confidence-band wording (P3) over the
+  leaner ones (P1, P2).
+- **Error tally** = count per `error_category` (absolute + % of verified).
+- **Ceiling-light rate** = `count(error_category == ceiling_light) / count(rows whose ground truth is ceiling)`.
+- **Confidence calibration** = accuracy split at `label_confidence` ≥ 0.90 vs 0.80–0.90 vs <0.80.
+- **Latency** = median, p90, p95, max of `vlm_inference_ms` (and of `end_to_end_ms`); also mean.
+- **Throughput** = verified objects produced per 700 s run.
+- 95 % CI on accuracy at N≈50 ≈ ±14 pp — treat differences smaller than that as
+  not significant; prefer error-category shifts as the finer signal.
+
+---
+
+## 11. Per-run results
+
+> Fill one block per run. Keep the prose to observations that the CSV cannot show.
+
+### R1 — qwen3vl8b × P1 v1_simplified  ✅ COMPLETE
+- Run date / wall time: 2026-09-01 · ~700 s wall @ `--rate 0.1` · session `session_20260901_195516`
+- Data: `runs/R1__qwen3vl8b__v1_simplified/session_20260901_195516/` (59 crops + `vlm_results.csv`)
+- Objects classified: 59 | Verified: 50 (rows 51–59 not annotated) | Excluded (`crop_quality`): 0
+- **Accuracy: 24/50 = 48 %** (strict). Label-only accuracy identical — every row is `mobility_class: static` and every mobility call is correct, so mobility contributes no errors.
+- Rejection rate: **0/59** — every call `accepted`. `label_confidence` is **0.95 or 0.99 on every single crop**, including the 52 % that are wrong. The confidence field carries no signal, so the `min_label_confidence: 0.80` gate never fires and cannot help. Accuracy is therefore the same with or without rejected rows.
+- Latency (`vlm_inference_ms`): median 6250 | p90 6525 | p95 6650 | max 6955 | mean 6119 (min 4903)
+- Latency (`end_to_end_ms`): median 6461 | p90 7194 | max 7447 | mean 6428
+- Throughput: 59 crops / 700 s ≈ one every ~12 s wall (≈ 6.2 s of that is model compute).
+- Error tally (of 26 wrong): `ceiling_light`* 6 | `surface_vs_fixture` 2 | `boundary_violation` 5 | `unknown_overuse` 0 | `wrong_class` 13 | `mobility_wrong` 0 | `other` 0
+  - *\*`ceiling_light` bucket used for the same failure mode with a different sub-part token:* all 6 are `ceiling_tile` returned where the contour spans a whole panelled ceiling (ground truth `ceiling`) — rows 1, 7, 9, 14, 32, 43. Of the 9 ground-truth-`ceiling` crops in the run, only 1 (row 33) was labelled `ceiling`; `ceiling_panel` on row 19 was accepted as correct by the annotator. Panelled-ceiling failure from the prior campaign is **fully reproduced**.
+- Observations:
+  - **Boundary violations (5):** the model names a salient object that is *in the frame but outside the cyan contour* — armchair (rows 2, 6), shelf (35), whiteboard (38), bookshelf (47). The contour target was a wall/floor plane behind/around the named object. P1's "identify only this object … the surrounding area may be used as context" is not strong enough — the model treats the whole crop as fair game.
+  - **Sub-part instead of the enclosing surface (6 + 2):** `ceiling_tile` for a panelled ceiling (×6); `whiteboard` for a wall region that merely contains a whiteboard (rows 26, 48). When the contour encloses many repeated instances or a surface-with-a-fixture, the model picks the small nameable thing, not the general term.
+  - **Hallucination on low-information crops (subset of the 13 `wrong_class`):** mirror↔whiteboard confusion twice (39, 42), `keyboard` invented from a ceiling panel (22), `refrigerator`/`cabinet` for what the annotator read as a wall/pillar (13, 21, 29), `fireplace` for a cabinet (20), `glass_surface` missed as `shelf` (49). The model commits to a specific object at 0.95 even when the crop is ambiguous rather than backing off to the dominant structure or `VLM_no_result`.
+  - **Mobility is a non-issue** for this scene — everything static, all correct.
+  - Latency is tight and predictable (~6.1–6.3 s inference, low variance) — not a differentiator to worry about for the 8B FP16 profile.
+
+### R2 — qwen3vl8b × P2 v5_examples_based (reworked)  ✅ COMPLETE
+- Run date / wall time: 2026-09-01 · ~700 s wall @ `--rate 0.1` · session `session_20260901_204248`
+- Data: `runs/R2__qwen3vl8b__v5_examples_based/session_20260901_204248/` (53 crops + `vlm_results.csv`)
+- Objects classified: 53 | Verified: 50 (rows 51–53 not annotated) | Excluded (`crop_quality`): 0
+- **Accuracy: 36/50 = 72 %** (strict). Label-only identical — all `static`, every mobility call correct.
+- **vs R1 (P1): 48 % → 72 %, +24 pp** — larger than the ±14 pp CI, so a real prompt effect, not noise.
+- Rejection rate: **0/53**. Confidence now spreads — 0.85 ×9, 0.92 ×17, 0.95 ×27 (R1 was a flat 0.95/0.99) — but still nothing below the 0.80 gate, so rejection still contributes no signal. The 0.85 rows are a mix of right and wrong, so the spread is not yet a usable reliability signal.
+- Latency (`vlm_inference_ms`): median 4826 | p90 5624 | p95 5882 | max 8099 (cold first call) | mean 4997 (min 4438)
+- Latency (`end_to_end_ms`): median 5450 | p90 5921 | max 8159 | mean 5522
+- **Faster than R1** (median 4826 vs 6250 ms) despite the longer prompt — the more directive instructions yield shorter completions.
+- Error tally (of 14 wrong): `ceiling_light`* 2 | `surface_vs_fixture` 0 | `boundary_violation` **0** | `unknown_overuse` 0 | `wrong_class` 12 | `mobility_wrong` 0 | `other` 0
+  - *\*ceiling-related: rows 23, 37 — a `rug`/`wall` returned where the ground truth was `ceiling_tile` (orientation confusion). The R1 failure mode (panelled ceiling → `ceiling_tile`) is **gone** — R2 says `ceiling` and is correct on those crops.*
+- Observations:
+  - **Boundary violations eliminated (5 → 0).** The elaborated "name only what the cyan boundary encloses; a salient object outside it is background, never the answer" section did its job — no armchair/shelf/bookshelf-behind-the-plane mistakes this run.
+  - **Panelled-ceiling fixed.** R1: `ceiling_tile` ×6, all wrong. R2: `ceiling` on the same class of crop, marked correct (rows 1, 2, 6, 9, 14, 25, 28, 29, 42, 49 …). ceiling→sub-part rate fell from 8/9 to ~2/13.
+  - **Surface-with-fixture fixed.** whiteboard-on-a-wall now returns `wall` (R1 rows 26, 48 were wrong); standalone whiteboards still correctly `whiteboard` (rows 36, 43).
+  - **New dominant error — glass partitions (5): rows 20, 21, 32, 44, 46.** The scene has glass partition walls / glass-panelled doors; the model has no example for them and falls back to `wall` / `door` / `shelf` / `ceiling`. The annotator flagged this exact gap in R1 (row 49). Needs a `glass_wall` / `glass_partition` exemplar.
+  - **Flat-vertical-surface ambiguity persists (3): rows 22 (`cabinet`, truth wall/pillar), 34 (`curtain`, truth cabinet), 40 (`wall`, truth cabinet).** P2's low-confidence "cabinet/pillar/wall → wall @ 0.4" example did not move the model — it still answered 0.85–0.95 here.
+  - **Generalisation rule over-fired on distinctive infrastructure (4): rows 10, 30 (exposed pipes → `ceiling`), 17 (air vent → `ceiling`), 20 (→ `ceiling`).** "Name the surface, not the fixture" is right for a light in a panel but wrong when exposed ductwork/pipes/vents fill the boundary and the annotator wants them named. P3 must thread this: generalise repeated *surface units*, still name distinctive attached infrastructure that dominates the crop.
+  - **mirror ↔ whiteboard** still misfires once (row 50) — down from 2 in R1.
+  - Mobility remains a non-issue for this scene.
+
+### R3 — qwen3vl8b × P3 v6_structural_priority (tuned on R1+R2)  ✅ COMPLETE
+- Run date / wall time: 2026-09-01 · ~700 s wall @ `--rate 0.1` · session `session_20260901_211319`
+- Data: `runs/R3__qwen3vl8b__v6_structural_priority/session_20260901_211319/` (56 crops saved, 49 in CSV, all 49 annotated)
+- Objects classified: 49 | Verified: 49 | Excluded (`crop_quality`): 0
+- **Accuracy: 31/49 = 63 %** (strict, as annotated — the annotator credited the model's *raw* answer on the 2 rows the pipeline gate rejected).
+- **vs R2 (P2 @ 72 %): −9 pp — P3 regressed.** Within the ±14 pp CI so not "significant", but the direction is backed by the error analysis below.
+- Accuracy excluding the 2 rejected rows: 29/47 = 62 %. **Pipeline-effective** accuracy (rejected label = `unknown_object` = unusable): 29/49 = **59 %**.
+- Rejection: **2/49** — rows 21 (`wall` @ 0.50) and 28 (`whiteboard` @ 0.70). Both raw answers were **correct**; P3's honest calibration pushed them below `min_label_confidence: 0.80` and the gate discarded them. Better calibration cost 2 correct answers.
+- Latency (`vlm_inference_ms`): median 4806 | p90 4910 | p95 5097 | max 7433 (cold first call) | mean 4872 (min 4611) — essentially identical to R2.
+- Latency (`end_to_end_ms`): median 5407 | p90 5841 | max 8000 | mean 5438
+- Confidence distribution: 0.50 ×1, 0.70 ×1, 0.80 ×6, 0.82 ×3, **0.85 ×16**, 0.90 ×2, **0.92 ×19**, 0.95 ×1 — P3's calibration guidance clearly landed (R1 was flat 0.95/0.99; R2 reached 0.85/0.92/0.95; R3 finally uses the whole band, including sub-0.80).
+- Error tally (of 18 wrong): `ceiling_light`* 3 | `surface_vs_fixture` 1 | `boundary_violation` **0** | `unknown_overuse` 0 | `wrong_class` 14 | `mobility_wrong` 0 | `other` 0
+  - *\*ceiling-related: rows 9, 10, 17 — exposed pipe / ceiling light / air vent all returned as `ceiling`.*
+- Observations:
+  - **cabinet ↔ wall/pillar got worse: 7 misses (R2 had 3).** Rows 12, 16, 23, 29 all returned `cabinet` where the truth was a flat wall/pillar; rows 37, 44 the inverse (`wall` for a real cabinet); row 5 `glass_wall` for a wall/pillar. **P3's furniture section backfired** — adding the "flat surface with a handle/seam/toe-kick → cabinet" worked-example appears to have *primed* `cabinet` on ambiguous flat surfaces rather than disciplined it. This is the single biggest reason P3 < P2.
+  - **Rule (b) "name distinctive infrastructure, don't generalise" still does not work: 3 misses** (pipe, ceiling light, air vent → `ceiling`) — same as R2 despite the dedicated example group. The model will not name ceiling infrastructure.
+  - **Glass: net-neutral.** New correct behaviour — `glass_door` ×3, all right (rows 19, 22, 36). But `glass_wall` over-applied once (row 5) and 2 glass panels still missed → `wall` (rows 34, 48). The transparency line did not move the misses.
+  - **New cluster — "door part" (3): rows 18, 20, 45** — partial/edge-on door crops returned as `ceiling` / `wall`.
+  - **Boundary discipline retained** — 0 violations, same as R2.
+  - **Calibration vs the operational gate is now a real tension.** P3 is the first prompt to produce honest sub-0.80 confidence; the pipeline's `min_label_confidence: 0.80` then rejects those rows as `unknown_object` even when the label was right (2/2 here). For the *experiment* this is fine (annotator sees the raw answer); for *production* it means P3 + the current gate throws away correct hard-case labels. See §13.
+  - **Verdict: for qwen3vl8b, P2 (72 %) > P3 (63 %) > P1 (48 %).** P3's added structural machinery did not pay for itself and its furniture rule actively hurt.
+
+### R4 — qwen35_4b × P1 v1_simplified  ✅ COMPLETE
+- Run date / wall time: 2026-09-01 · ~700 s wall @ `--rate 0.1` · session `session_20260901_215455`
+  - *(First attempt `session_20260901_213914` was void — 57/57 empty responses from Qwen3.5's default thinking mode; fixed with `--reasoning off` + `enable_thinking=false`. See §15.)*
+- Data: `runs/R4__qwen35_4b__v1_simplified/session_20260901_215455/` (61 crops saved, 50 in CSV, all 50 annotated)
+- Objects classified: 50 | Verified: 50 | Excluded (`crop_quality`): 0
+- **Accuracy: 32/50 = 64 %** (strict). All `static`, all mobility correct.
+- **vs R1 (8B × P1 @ 48 %): +16 pp — the 4B is *better* than the 8B on the zero-shot prompt.**
+- Rejection: **0/50** — the thinking-mode fix works; every response parsed. Row 23 came back markdown-fenced (```` ```json ````) and the validator's fence-strip handled it.
+- Latency (`vlm_inference_ms`): median **2691** | p90 3134 | p95 3332 | max 3535 | mean 2773 (min 2425) — **~2.3× faster than the 8B** (P1 6250, P2/P3 ~4800). e2e median 3260.
+- Confidence distribution: **0.95 ×50** — completely flat, no calibration at all (worse than the 8B's P1, which at least varied 0.95/0.99). P1's "confidence above 0.90 only when unmistakable" line is ignored by the 4B.
+- Error tally (of 18 wrong): `ceiling_light`* 4 | `surface_vs_fixture` 1 | `boundary_violation` 1 | `unknown_overuse` 0 | `wrong_class` 12 | `mobility_wrong` 0 | `other` 0
+  - *\*ceiling-related: `ceiling_light`→`ceiling` (row 1), and rows 13/18/19 — pipe / air vent / door-part all returned as `ceiling`.*
+- Observations:
+  - **Dominant failure — hallucinating a specific object on a plain surface (11).** On bare wall / floor / ceiling crops the 4B invents `clothes_rack`, `whiteboard`, `flag`, `mirror`, `desk`, `table` ×2, `sofa`, `monitor` ×3, `screen` (rows 12, 14, 17, 27, 30, 35, 37, 39, 42, 45, 46). The 8B did this too but less often and less wildly — the 4B is markedly more prone to confabulating furniture/screens where there is none.
+  - **Ceiling infrastructure still collapses to `ceiling` (3)** — pipe, air vent, door-part (rows 13, 18, 19). Same failure as every 8B prompt; model-independent so far. The 4B is also *inconsistent*: row 10 it labels a wall crop `pipe` (pipe visible but outside the contour — 1 boundary violation), row 13 it labels an actual pipe `ceiling`.
+  - **Boundary discipline is decent** — only 1 violation (row 10), vs 5 for the 8B on P1. P1's lone "identify only this object" line lands better on the 4B.
+  - **`ceiling_vent` correct once (row 38)** — the 4B will name a ceiling sub-part when it's the whole crop, but defaults to `ceiling` for infra.
+  - **Speed is the headline.** 2.7 s/call vs the 8B's 4.8–6.2 s, for +16 pp accuracy on this prompt. If P2 holds its 8B lead on the 4B, the 4B becomes the obvious production pick.
+
+### R5 — qwen35_4b × P2 v5_examples_based  ✅ COMPLETE
+- Run date / wall time: 2026-09-01 · ~700 s wall @ `--rate 0.1` · session `session_20260901_221739`
+- Data: `runs/R5__qwen35_4b__v5_examples_based/session_20260901_221739/` (57 crops saved, 50 in CSV, all 50 annotated)
+- Objects classified: 50 | Verified: 50 | Excluded (`crop_quality`): 0
+- **Accuracy: 40/50 = 80 %** (strict). All `static`, all mobility correct. **Best run in the matrix so far** (8B P2 72 %, 4B P1 64 %).
+- Rejection: **0/50**, 0 empty — thinking fix holding.
+- Latency (`vlm_inference_ms`): median 2959 | p90 3114 | p95 3138 | max 4934 | mean 2984 (min 2686) — a touch slower than R4 (2691) from the longer P2 prompt, still ~1.6× faster than the 8B on P2.
+- Confidence distribution: 0.90 ×35, 0.92 ×2, 0.95 ×13 — the 4B **does** partly follow P2's calibration guidance (mostly 0.90 now, not R4's flat 0.95), though still nothing below 0.90.
+- Error tally (of 10 wrong): `ceiling_light`* 6 | `surface_vs_fixture` 2 | `boundary_violation` 0 | `unknown_overuse` 0 | `wrong_class` 2 | `mobility_wrong` 0 | `other` 0
+  - *\*all 6 are the same failure — see below.*
+- Observations:
+  - **`ceiling` over-use is 6 of the 10 errors.** `ceiling` predicted 14×, wrong 6×: pipe (10), ceiling light (11), air vent (19), door part (18, 20), partition (46). **The P2 prompt causes this directly** — four reinforcing spots all push `ceiling`:
+    1. *"a ceiling holding a light or diffuser — name the surface, not the attached item"* and *"…whiteboard, sign, monitor **or vent**…"* (the "surface over fixture" rule) — this literally instructs light→`ceiling` (id11) and vent→`ceiling` (id19); the annotator's ground truth ("ceiling light", "air vent") is the *opposite* of what P2 says to do.
+    2. *"many repeated units of one surface — several **ceiling tiles or panels** … name the surface itself ('ceiling'…)"* — `ceiling` is the headline example of "generalise".
+    3. Two of the 13 worked examples map *ceiling + a light* → `{"label": "ceiling"}` (lines 33, 38); there is no counter-example where a ceiling fixture is named.
+    4. `ceiling` appears 8× in the P2 text as the archetype surface. The 4B follows examples heavily, so it reaches for `ceiling` on anything overhead — including pipes, door-tops and a partition-top that are not ceiling at all (id10, 18, 20, 46).
+    This is a **deliberate spec vs annotation-convention conflict**: the "surface over fixture" rule is what took the 8B from 48 % (P1, `ceiling_tile` everywhere) to 72 % (P2). It over-fires on the 4B because the 4B leans on the examples more. Not changed — P2 is frozen for the model comparison.
+  - **Glass (2): rows 23, 42 → `wall`.** P2 has no glass concept (only P3 does), so glass partition / glass panel default to `wall`. Expected.
+  - **2 `wrong_class`:** mirror for a door part (22), door for a cabinet (43).
+  - **No boundary violations, no hallucinated furniture on plain surfaces** — P2's boundary discipline + example grounding fixed the two things the 4B was worst at on P1 (R4 had 1 + 11).
+
+### R6 — qwen35_4b × P3 v6_structural_priority  ✅ COMPLETE — best run in the matrix
+- Run date / wall time: 2026-09-02 · ~700 s wall @ `--rate 0.1` · session `session_20260902_001845`
+- Data: `runs/R6__qwen35_4b__v6_structural_priority/session_20260902_001845/` (51 crops saved, 50 in CSV, all annotated; misses-only convention)
+- Prompt: **P3** — the structural-priority prompt, including its `OUTPUT RULE` format-enforcement block ("your entire reply is ONE JSON object… first char `{`, last char `}`… no preamble, no numbered steps, no 'Based on the visual evidence…', no code fences"), the "reason through this silently" note on `APPROACH`, and the GOOD/BAD reply-example block. On the 4B this hard enforcement matters: **without** it the model narrates the strategy instead of emitting JSON (see the token-budget history below — that enforcement was added while debugging the 4B runs).
+- Objects classified: 50 | Verified: 50 | Excluded: 0
+- **Accuracy: 44/50 = 88 % — the highest of every run** (prev. best: 4B/P2 R5 @ 80 %, 8B/P2 R2 @ 72 %).
+- **Format: 50/50 bare `{…}` JSON — zero fences, zero prose preamble.** The OUTPUT RULE block fixed it completely; latency is back to normal (median 2942 ms, no 12–13 s narration blow-ups).
+- Rejections: **2/50**, both `whiteboard` @ 0.75 → below the `min_label_confidence: 0.80` gate (recorded `unknown_object`). Not format failures — the honest-calibration-vs-strict-gate tension (§13).
+- Confidence distribution: 0.75 ×2, 0.85 ×28, 0.92 ×10, 0.95 ×10 — a real spread; P3's calibration guidance is landing on the 4B.
+- Latency (`vlm_inference_ms`): median 2942 | p90 3551 | max 5805 | mean 3109 — on par with R4/R5.
+- Error tally (of 6 wrong): `ceiling_light`* 3 | `surface_vs_fixture` 1 | `boundary_violation` 0 | `unknown_overuse` 0 | `wrong_class` 2 | `mobility_wrong` 0 | `other` 0
+- Observations:
+  - **Glass parts are now identified — the headline improvement.** 6 glass predictions, **5/6 correct**: `glass_door` ×1 (id20), `glass_wall` ×4 (id22, 31, 32, 47); one wrong (id49 `glass_wall` for a `cabinet`). P2 (R5) had **no** glass concept and sent every glass partition to `wall`. P3's glass cues + the direct see-through transparency test finally take on the 4B.
+  - **Distinctive infrastructure is named**, not collapsed: `pipe` (id8, correct), `air_vent` (id16, correct). Rule (b) working here.
+  - **`pillar` used correctly once** (id41) — the flat-surface handle/seam/toe-kick discriminator distinguishing pillar from cabinet.
+  - **Residual ceiling-infra collapse (3 of the 6 misses):** id17, id19 `ceiling` for a door-part; id43 `ceiling` for a pipe. Reduced from R5's 6 but not gone — still the most persistent failure across every model/prompt.
+  - Other 3 misses: `wall`→`whiteboard` (id39), `wall`→`table` (id46), `glass_wall`→`cabinet` (id49).
+- **How the `OUTPUT RULE` block earned its place (4B debugging history):**
+
+  | session | `max_tokens` | P3 `OUTPUT RULE` block | accepted | format-rejected | outcome |
+  |---|---|---|---|---|---|
+  | `_233159` | 96 | not yet added | 27/51 | 21 | void — 4B narrates the APPROACH, no JSON |
+  | `_234911` | 256 | not yet added | 44/50 | 3 | better, still narrating |
+  | (512) | 512 | not yet added | — | recurring | more tokens alone does not fix it |
+  | **`_001845`** | 512 | **present** | **48/50** | **0** | ✅ 88 %, all bare JSON |
+
+  Takeaway for §13: a small model with no `<think>` channel needs the JSON-only rule stated **first and hard**, with a BAD example of the exact failure — a "return only JSON" line at the *end* is not enough. With the rule in place, P3's structural guidance is the best-performing prompt on the 4B.
+
+### R7 — qwen35_9b × P1 v1_simplified  ✅ COMPLETE
+- Run date / wall time: 2026-09-02 · ~700 s wall @ `--rate 0.1` · session `session_20260902_181502`
+- Data: `runs/R7__qwen35_9b__v1_simplified/session_20260902_181502/` (50 crops, 50 in CSV, all annotated; misses-only convention)
+- Objects classified: 50 | Verified: 50 | Excluded: 0
+- **Accuracy: 32/50 = 64 %** — **identical to the 4B on P1 (R4 @ 64 %)**, and both beat the 8B on P1 (48 %). The extra 5 B of parameters buy nothing on the zero-shot prompt.
+- Format: **50/50 bare `{…}` JSON, 0 rejected, 0 empty** — the `--reasoning off` + 512-token setup carries straight over from the 4B; P1 is terse anyway.
+- Confidence: **flat 0.95 on every one of the 50 rows** — zero calibration, the same behaviour as the 4B on P1 (and worse than the 8B's P1, which at least varied 0.95/0.99). P1's "use confidence above 0.90 only when unmistakable" line is ignored.
+- Latency (`vlm_inference_ms`): median 3656 | p90 3851 | max 4559 | mean 3623 — between the 4B (2691) and 8B (6250), as expected for a 9B Q4.
+- Error tally (of 18 wrong): `ceiling_light`* 1 | `surface_vs_fixture` 0 | `boundary_violation` 2 | `unknown_overuse` 0 | `wrong_class` 15 | `mobility_wrong` 0 | `other` 0
+  - *\*id30: model said `vent`, annotator wanted `ceiling` — the *inverse* of the usual infra-collapse. P1 has no rule either way.*
+- Observations:
+  - **Glass panels missed — 5** (id20 `window`, id21 `mirror`, id23 `ceiling`, id40 `shelf`, id48 `plant`, all truth `glass panel`). P1 has no glass concept, so the 9B invents whatever the shape suggests. Same failure as the 4B on P1; only P3's glass cues fixed it (R6).
+  - **`pillar` missed — 4** (id14 `curtain`, id15/22 `cabinet`, id27 `wall`, all truth `piller`). The flat-vertical-surface ambiguity, no discriminator in P1.
+  - **Panel → `mirror` habit — 3** (id38, id42 `mirror` for a `whiteboard`; id21 `mirror` for glass). The 9B reaches for `mirror` on any flat reflective-looking rectangle.
+  - **Boundary violations — 2** (id7 named a `chair` outside the contour; id36 a `whiteboard` outside it). Modest — P1's single "identify only this object" line mostly holds.
+  - **Does name ceiling infrastructure when it fills the crop:** `pipe` ×2 (id6, id11), `ceiling_light` (id10), `ceiling_beam` (id25) — all accepted by the annotator. The infra-collapse that plagued P2/P3 is not a P1 problem.
+  - **Takeaway:** on the zero-shot prompt, model size (4B → 9B) is a wash; the wins in this experiment come from the *prompt* (P2/P3 structure), not the model.
+
+### R8 — qwen35_9b × P2 v5_examples_based  ✅ COMPLETE
+- Run date / wall time: 2026-09-02 · ~700 s wall @ `--rate 0.1` · session `session_20260902_193816` (first attempt `_192605` was void — 503, server not ready)
+- Data: `runs/R8__qwen35_9b__v5_examples_based/session_20260902_193816/` (50 crops, 50 in CSV, all annotated; misses-only convention)
+- Objects classified: 50 | Verified: 50 | Excluded: 0
+- **Accuracy: 34/50 = 68 % — the *worst* P2 result.** 4B/P2 = 80 %, 8B/P2 = 72 %, **9B/P2 = 68 %**. Bigger is not better in the 3.5 family: the 9B also matched the 4B on P1 (both 64 %) and now falls *below* it on P2.
+- Format: **50/50 bare `{…}` JSON, 0 rejected, 0 empty** — `--reasoning off` + the raised token budget hold up on the 9B.
+- Confidence: 0.90 ×19, 0.92 ×2, 0.95 ×29 — some spread (P2's "be honest" line partly lands), nothing below 0.90. Better than the 9B's flat-0.95 on P1.
+- Latency (`vlm_inference_ms`): median 4464 | p90 5167 | max 6716 | mean 4598 — the slowest 3.5 config so far (9B on the longer P2 prompt; cf. 4B/P2 2959, 9B/P1 3656).
+- Error tally (of 16 wrong): `ceiling_light`* 6 | `surface_vs_fixture` 0 | `boundary_violation` 0 | `unknown_overuse` 0 | `wrong_class` 10 | `mobility_wrong` 0 | `other` 0
+- Observations:
+  - **P2's `ceiling` over-use, again.** `ceiling` predicted 13×, wrong 7× — **6 of the 16 misses are `ceiling`←infra/door** (pipe ×3, air vent ×1, door-part ×2). This is the *same* failure P2 produced on the 4B (R5: `ceiling` 14×, 6 wrong). The "surface over fixture" rule + ceiling examples over-fire regardless of model.
+  - **Glass unhandled — 5** (id28, id43, id48 `wall`; id30 `mirror`; id49 `floor`; truths `glass panel` / `partition`). P2 has no glass concept — this is what P3's cues fixed on the 4B (R6).
+  - **Panel → `mirror` habit — 3** (id16 for a door panel, id39 & id45 for a whiteboard) — the 9B's recurring reflex for flat rectangular panels (also in R7).
+  - `pillar` missed once (id13 → `cabinet`).
+  - **Takeaway:** on P2, model size *inverts* — 4B (80 %) > 8B (72 %) > 9B (68 %). The 9B Q4 is the weakest vision model of the three for this task; the experiment's gains stay with the *prompt*, and the 4B is the standout profile.
+
+### R9 — qwen35_9b × P3 v6_structural_priority  ✅ COMPLETE — final cell
+- Run date / wall time: 2026-09-02 · ~700 s wall @ `--rate 0.1` · session `session_20260902_200256`
+- Data: `runs/R9__qwen35_9b__v6_structural_priority/session_20260902_200256/` (50 crops, 50 in CSV, all annotated; misses-only convention)
+- Objects classified: 50 | Verified: 50 | Excluded: 0
+- **Accuracy: 34/50 = 68 %** (strict) — **the same as the 9B on P2 (R8, 68 %)**. P3's structure does **not** lift the 9B the way it lifted the 4B (80 → 88 %). The 9B is capped ~68 % regardless of prompt.
+- Pipeline-effective (5 rejected rows as unusable): 33/50 = 66 %.
+- Format: **50/50 bare `{…}` JSON, 0 empty** — P3's `OUTPUT RULE` block works on the 9B too; no narration.
+- Rejections: **5/50** — `whiteboard` @ 0.75/0.70 (id30, id35), `mirror` @ 0.75 (id42) below the 0.80 gate; `VLM_no_result` @ 0.0 (id31 — a **correct abstention** on a genuinely no-result crop; id43 — should have been `table`). Of these, id35 is a *correct* raw answer discarded by the gate — the same calibration-vs-gate tension as R3/R6.
+- Confidence: 0.0 ×2, 0.70 ×1, 0.75 ×2, **0.85 ×19, 0.95 ×26** — the widest spread of any 9B run (R7 was flat 0.95, R8 was 0.90/0.95), and the first 9B run to produce genuine sub-0.80 values. P3's calibration guidance lands.
+- Latency (`vlm_inference_ms`): median 4053 | p90 4511 | max 8244 (cold first call) | mean 4186 — faster than the 9B on P2 (4464).
+- Error tally (of 16 wrong): `ceiling_light`* 2 | `surface_vs_fixture` 0 | `boundary_violation` 0 | `unknown_overuse` 2 | `wrong_class` 12 | `mobility_wrong` 0 | `other` 0
+- Observations:
+  - **P3 *did* cut the `ceiling` over-fire on the 9B: 7 wrong (R8/P2) → 2 wrong (id17 door-part, id18 air vent).** Exposed pipes correctly labelled `pipes` (id10). Rule (b) works here.
+  - **Glass vocabulary picked up but imprecise.** `glass_wall`/`glass_door` predicted 7×: 4 right (id19, 24, 29, 44), but **`glass_wall` over-applied to `cabinet` twice** (id41, id46) and 2 real glass partitions still went to `ceiling`/`wall` (id49, id50). Net: the 9B learned the glass labels from P3's cues (as the 4B did in R6) but applies them loosely.
+  - **`whiteboard` → `mirror` still misfires ×3** (id38, id42, id48) — the 9B's persistent flat-reflective-panel reflex; P3's mirror-vs-whiteboard cue does not fix it on this model. (Seen in R7 and R8 too.)
+  - Orientation confusion ×2 (id26 `floor` for a ceiling tile; id36 `wall` for a ceiling).
+  - **Net:** P3 fixed the ceiling over-fire and added calibration + glass labels, but the `mirror` reflex and loose glass application cancelled the gains — **accuracy flat at 68 %.** Confirms the 9B ceiling of ~68 %.
+
+---
+
+## 12. Cross-run comparison — **all 9 runs complete**
+
+### 12.1 Accuracy — model × prompt
+
+| Accuracy | P1 v1_simplified | P2 v5_examples_based | P3 v6_structural_priority | best prompt |
+|---|---|---|---|---|
+| qwen3vl8b | 48 % (24/50) | **72 % (36/50)** | 63 % (31/49) · 59 % pipeline-eff. | **P2** (P2 > P3 > P1) |
+| qwen35_4b | 64 % (32/50) | 80 % (40/50) | **88 % (44/50)** — format-hardened P3 | **P3** (P3 > P2 > P1); best cell in the table |
+| qwen35_9b | 64 % (32/50) | 68 % (34/50) | 68 % (34/50) | P2 ≈ P3; capped ~68 % — every cell below the 4B |
+| best prompt-per-model | P1: **4B/9B tie 64 %** | P2: **4B 80 %** | P3: **4B 88 %** | **4B × P3 = 88 %** |
+
+**Headline:** the winner is **qwen35_4b × P3 (format-hardened) — 88 %**. Model size does not help: in the 3.5 family 4B ≥ 9B on every prompt; the 8B (FP16) sits between them. The gains in this experiment are **prompt-driven** (P1 → P2 → P3 structure), not model-driven.
+
+### 12.2 `ceiling_light` error rate — model × prompt
+
+| ceiling→sub-part rate | P1 | P2 | P3 |
+|---|---|---|---|
+| qwen3vl8b | 8/9 (89 %) — 6×`ceiling_tile`, +`keyboard`, +`shelf`; 1×`ceiling` correct | ~2/13 (15 %) — `ceiling` now the default; misses are `rug`/`wall` for `ceiling_tile` crops. But 4 *new* over-generalisations: exposed pipes/vents → `ceiling` | pipe / ceiling light / air vent → `ceiling` ×3. Rule (b) "name distinctive infrastructure" had **no effect** — model will not name ceiling infra even with a worked-example group |
+| qwen35_4b | `ceiling_light`→`ceiling` ×1; pipe/vent/door-part→`ceiling` ×3; `ceiling_vent` correct ×1. Same infra-collapse as the 8B — model-independent | **`ceiling` predicted 14×, wrong 6×** (pipe, ceiling light, air vent, door-part ×2, partition). P2's "surface over fixture" rule + 2 ceiling examples + 8 `ceiling` mentions over-fire on the 4B. 6/10 of R5's errors | **`ceiling`→infra ×3** (door-part ×2, pipe ×1) — 3/6 of R6's errors. Reduced from R5's 6 but still the most persistent failure. `pipe` and `air_vent` *are* named correctly elsewhere in the run. |
+| qwen35_9b | `vent`→(annotator wanted `ceiling`) ×1 — inverse of the usual collapse; `pipe`/`ceiling_light`/`ceiling_beam` all named & accepted. Not a P1 problem | **`ceiling` predicted 13×, wrong 7×** (pipe ×3, vent ×1, door-part ×2, table ×1) — 6/16 of R8's misses. Same P2 over-fire as the 4B (R5). | **`ceiling` wrong ×2** (door-part, air vent) — **P3's rule (b) cut it 7 → 2**; `pipes` correctly labelled. Best ceiling behaviour of any 9B run. |
+
+### 12.3 Latency — model × prompt (median `vlm_inference_ms`)
+
+| median inf. ms | P1 | P2 | P3 |
+|---|---|---|---|
+| qwen3vl8b | 6250 (mean 6119, p95 6650) | 4826 (mean 4997, p95 5882) | 4806 (mean 4872, p95 5097) |
+| qwen35_4b | **2691** (mean 2773, p95 3332) | 2959 (mean 2984, p95 3138) | 2942 (mean 3109, p95 ~3.5k) — format-hardened P3, no prose bloat |
+| qwen35_9b | 3656 (mean 3623, p90 3851) | 4464 (mean 4598, p90 5167) | 4053 (mean 4186, p90 4511) |
+
+### 12.4 Accuracy ↔ latency
+
+| Model | best accuracy (prompt) | median inf. ms at that prompt | verified objects / 700 s |
+|---|---|---|---|
+| qwen3vl8b | 72 % (P2) | 4826 | 50 (P2 run) |
+| qwen35_4b | **88 % (P3, format-hardened)** — best overall, and fastest | 2942 | 50 (P3 run) |
+| qwen35_9b | 68 % (P2 = P3) | 4053–4464 | 45 usable (P3 run: 5 rejected) |
+
+---
+
+## 13. Findings & recommendation (fill at the end)
+
+- Q1 — does Qwen 3.5 break the ~50 % ceiling / `ceiling_light` error?  **Yes, but it's the *prompt* that does it, not the model.** On the zero-shot P1, every model still collapses ceiling infrastructure to `ceiling` (or invents objects on plain surfaces). What fixes it is P3's explicit "name distinctive infrastructure" rule + worked examples: on the 4B it took `ceiling`-misses from 6 (P2) to 3 (P3), on the 9B from 7 (P2) to 2 (P3), and `pipes`/`air_vent` get named directly. Model size alone (8B→4B→9B) does nothing for this failure.
+- Q2 — best prompt per model:
+  - **qwen3vl8b → P2 (72 %). P2 > P3 (63 %) > P1 (48 %).** The example-driven prompt beats both the zero-shot P1 and the elaborate structural-priority P3. On the 8B, P3's extra machinery did not pay for itself: its "distinctive-infrastructure" rule had no measurable effect, and its furniture-discriminator worked-example *primed* `cabinet` over-prediction (7 misses vs P2's 3). The 8B had no output-format problem — it emits clean JSON on every prompt regardless of the `OUTPUT RULE` block.
+  - **qwen35_4b → P3 (88 %). P3 > P2 (80 %) > P1 (64 %).** But *only after* P3 was format-hardened: the original P3 made the small model narrate its reasoning instead of emitting JSON (21/51 rejected at `max_tokens` 96, still recurring at 512). With a leading `OUTPUT RULE` block + BAD-example the 4B produced 50/50 clean bare-JSON and P3's structural guidance then delivered the **best run in the whole matrix** — including the first correct glass-partition labels of any run (`glass_wall`/`glass_door`, 5/6 right; P2 sent all glass to `wall`).
+  - **qwen35_9b → P2 = P3 (68 %); P1 = 64 %.** The 9B Q4 is the **weakest** vision model of the three and is **capped at ~68 % regardless of prompt**. P3 *did* help where it helped the 4B — ceiling over-fire 7→2, glass labels acquired, real confidence calibration — but the 9B's persistent "flat panel → `mirror`" reflex (also R7, R8) and loose `glass_wall`-for-`cabinet` over-application cancelled the gains, so accuracy stayed flat. Slowest of the three prompts to no benefit.
+  - **Cross-model takeaway:** structural-priority (P3) is the strongest prompt on the 4B, example-driven (P2) on the 8B — but the differences are prompt-driven, not size-driven. **Model size does not help: 4B ≥ 9B on every prompt; the 8B (FP16) sits between.** The universal wins are P3's format enforcement (the small models narrate without it) and P3's glass cues + infrastructure rule (cuts the `ceiling` over-fire on both 3.5 models). The universal failure is the `mirror`-vs-`whiteboard` / flat-reflective-panel confusion, which no prompt or model fixed.
+- Q3 — **Recommended production profile + prompt: `qwen3_5_4b_q4` + P3 (format-hardened) — 88 % accuracy, ~2.9 s/call.** It is both the most accurate cell (44/50) and the fastest, and it is the only run that correctly labels glass partitions. The 8B (P2, 72 %, ~4.8 s) and the 9B (P2/P3, 68 %, ~4.1–4.5 s) are dominated on both axes. The 4B also needs the least memory (`min_system_memory_gib 8`).
+- Any prompt change to promote into `rsg_pipeline.yaml`:  **Promote P3 (format-hardened) with the `qwen3_5_4b_q4` profile.** One operational caveat: P3's honest calibration produces some sub-0.80 confidences that the `min_label_confidence: 0.80` gate then discards as `unknown_object` even when the label was right (id35 in R9; 2/2 in R3; 2/2 in R6). Before promoting, either lower that gate to ~0.70 or route sub-threshold-but-plausible labels to a softer path.
+- **Unsolved by any prompt or model:** flat-reflective-panel → `mirror`/`whiteboard` confusion; loose `glass_wall` over-application (glass label applied to opaque cabinets on the 9B); flat-surface cabinet ↔ wall/pillar. These look like model-capability limits, not prompt problems.
+
+**Experiment status: all 9 runs complete (R1–R9). Winner: qwen3_5_4b_q4 × P3 (format-hardened), 88 %.**
+
+---
+
+## 14. Deviations & risks
+
+- **Boundary colour: cyan** (matches the frozen campaign). Requires setting the
+  live pipeline contour back to `[0,255,255]` before R1 (§4, §5); it is currently
+  white. Verify the rendered crops actually show a cyan contour on the first run.
+- **All 3 prompts are re-worked, not verbatim.** Deliberate: label enumerations
+  removed (open-vocabulary, for generalisation), JSON-output instruction made
+  uniform, one `dynamic` example added to P2 and P3. P3 is therefore no longer
+  the byte-exact production prompt — it is the production *strategy* without the
+  structural-label list. Prior 8B numbers (§2) are for the source prompts only.
+- **P1↔P2↔P3 differ on more than one axis** (examples, and amount of reasoning
+  guidance). They are three holistic strategies along a complexity gradient, not
+  minimal pairs. Phrase §13 conclusions as "strategy P_x beats P_y on model M",
+  never "examples help" / "calibration helps".
+- **No `dynamic` exemplar in P1** (it has no examples at all — inherent to the
+  gradient, not a fixable confound). P2 and P3 each carry exactly one.
+- **Q4 vs FP16**: qwen35_4b/9b are 4-bit; qwen3vl8b is FP16. Model *and* quant
+  differ together — a 4B-vs-8B accuracy gap cannot be cleanly attributed to size
+  alone. Note this in §13.
+- **Bag coverage**: 700 s wall @ `--rate 0.1` ≈ 70 s of the office scene. If a run
+  produces <50 objects, raising `--rate` is allowed but must then be held fixed
+  for all 9 runs (re-run any already-done rows). Record in §15.
+- **Single annotator, single scene** (office_s1). Accuracy is skewed by whatever
+  classes dominate this scene (historically: lots of panelled ceiling).
+- **One model at a time** on :8000 — never launch two llama-servers.
+- `qwen3_vl_8b_f16` needs ≥32 GB; if it will not load, record R1–R3 as blocked
+  rather than dropping to the 2B profile mid-experiment.
+- **Prompts are frozen after the 8B sweep.** P1/P2/P3 are *not* re-tuned per model.
+  R4–R9 run the exact same three templates so the comparison is model × prompt,
+  not model × prompt-variant. Any per-model prompt idea goes into a fresh R10+ row.
+- **Qwen3.5 is a thinking model** — its profiles carry `server.extra_args:
+  ["--reasoning","off"]` and the backend sends `enable_thinking=false`. Without
+  both, `max_tokens: 96` is consumed by `<think>` and every response is empty
+  (see the void R4 attempt, §15). Verify the first crop of any 3.5 run returns
+  non-empty `raw_response` before trusting the session.
+- **`max_tokens` raised 96 → 512 from R6** (96 → 256 first, then 256 → 512). The first R6 attempt
+  (`session_20260901_233159`) had 21/51 rejected because the 4B, given P3's
+  step-by-step "APPROACH" framing and no `<think>` channel (`--reasoning off`),
+  narrates the analysis in the visible content ("Based on the visual evidence…
+  1. Analysis… 2. Check for furniture cues…") and overran 96 tokens before
+  emitting the JSON. P1/P2 (directive/example-based) had 0 format rejections on
+  the same 4B, and every R1–R5 response was complete JSON well inside 96, so the
+  bump is pure headroom — R1–R5 are **not** re-run. Capping P3 at 96 would have
+  artificially handicapped the most verbose prompt. 256 cut format rejections
+  21→3 (of 50) but a few narrations still overran; **512** gives full headroom.
+  Held fixed for R6–R9. The 96- and 256-run R6 sessions are discarded.
+
+---
+
+## 15. Changelog
+
+| Date | Change |
+|---|---|
+| 2026-08-31 | Scaffold created: folder tree, 9 run dirs (`runs/R1..R9`), CSV template, `prompts_under_test.yaml`, this report. Prompts chosen: v1_simplified, v5_examples_based, v6_structural_priority. 0/9 runs done. Depends on `uHumans2_office_s1_00h_ros2` bag conversion (in progress) and Qwen 3.5 4B/9B weights being present under `~/rsg_models/`. |
+| 2026-08-31 | Boundary colour set to **cyan** (was drafted as white). All 3 prompts now say "cyan boundary"; live pipeline `target_contour_rgb` must be changed `[255,255,255]` → `[0,255,255]` before R1. |
+| 2026-08-31 | Prompts re-worked to a clean design: (a) **complexity gradient** P1 simple → P2 +many examples → P3 detailed strategy+calibration; (b) **all enumerated label lists removed** — every prompt is open-vocabulary ("no fixed list of labels") for generalisation; (c) JSON output format + "return only JSON" line now in **all three**; (d) one `dynamic` (person) example added to P2 and P3; (e) shared JSON schema / mobility defs / `VLM_unknown` fallback unified. P3 is no longer byte-verbatim from `rsg_pipeline.yaml`. §10 now also requires accuracy reported with/without `rejected` rows. |
+| 2026-09-01 | Model-abstention label renamed `VLM_unknown` → **`VLM_no_result`** across all three prompts, `rsg_pipeline.yaml` `phase1.vlm.prompt`, and this report. `vlm_result.py` now recognises `vlm_no_result`/`vlm_unknown` as abstention sentinels and records the rejected result as `label="VLM_no_result"` (distinct from `unknown_object`, which stays reserved for parse failures, HTTP/worker errors, and sub-threshold real guesses). Lets CSV review separate "model looked and could not identify" from "no VLM result at all". |
+| 2026-09-01 | **R1 complete** (session `session_20260901_195516`, 59 crops, 50 annotated). Accuracy **48 %** (24/50). Dominant failures: `wrong_class` 13 (hallucination on ambiguous crops), `ceiling`→sub-part 6+ (panelled-ceiling failure reproduced), `boundary_violation` 5, `surface_vs_fixture` 2. Confidence is a constant 0.95/0.99 — zero rejection signal. Latency median 6.25 s. §11 R1 + §12.1/12.2/12.3 (qwen3vl8b row) filled. |
+| 2026-09-01 | **P2 reworked** against R1 findings: elaborated boundary-focus section (name only what the contour encloses; salient context objects are *not* the target), explicit "multiple instances / surface-with-fixture → name the general enclosing surface" rule, calibrated-confidence table so ambiguous crops stop returning 0.95, and worked examples drawn from real R1 misses (armchair-behind-wall, `ceiling_tile`→`ceiling`, whiteboard-on-wall→`wall`, mirror↔whiteboard, wall/pillar↔cabinet). Still open-vocabulary — no label list. `active: true` moved P1 → P2; `rsg_pipeline.yaml` `phase1.vlm.prompt` + `prompt_optimisation.{run_id,prompt_version}` switched to R2. |
+| 2026-09-01 | **R2 complete** (session `session_20260901_204248`, 53 crops, 50 annotated). Accuracy **72 %** (36/50) — **+24 pp over R1**. `boundary_violation` 5 → 0; panelled-ceiling and whiteboard-on-wall fixed. Remaining errors (14): glass partitions 5 (new — no exemplar), flat-surface cabinet↔wall/pillar 3, generalisation over-firing on exposed pipes/vents → `ceiling` 4, `ceiling_tile` inversions 2, mirror↔whiteboard 1. Latency median 4826 ms (faster than R1's 6250). Confidence now spreads 0.85/0.92/0.95 but still no <0.80. §7 / §11 / §12.1–12.3 filled. |
+| 2026-09-01 | **P3 updated against R2 findings** (still open-vocabulary). Kept P2's wins; added: (b) "distinctive infrastructure that fills the boundary is named, not generalised" with a pipes/vent/fire-hose example group (fixes R2's 4 pipes/vents → `ceiling`); a glass-surface cue + `glass_wall`/`glass_door`/mirror-vs-whiteboard example group (fixes R2's 5 glass misses); (c) a handle/seam/toe-kick discriminator for cabinet-vs-wall/pillar plus a wider 0.45–0.70 honest-confidence band for it (R2's low-confidence example didn't move the model). §4 P3 text refreshed. `active` still on P2 — P3 not yet wired into `rsg_pipeline.yaml`. |
+| 2026-09-01 | P3: added a direct see-through transparency test (room/objects/light visible through the panel → glass; opaque → solid) — R2's glass misses were framed, lightly-reflective partitions read as `wall`. |
+| 2026-09-01 | **P3 wired for R3.** `prompts_under_test.yaml` `active` flipped P2 → P3. `rsg_pipeline.yaml` `phase1.vlm.prompt` = P3 template (verified byte-identical), `prompt_optimisation.run_id = R3__qwen3vl8b__v6_structural_priority`, `prompt_version = P3_v6_structural_priority`. Crops + CSV for the next run land in `runs/R3__qwen3vl8b__v6_structural_priority/session_<ts>/`. Needs a phase1 coordinator restart. |
+| 2026-09-01 | **R3 complete** (session `session_20260901_211319`, 56 crops, 49 in CSV, all annotated). Accuracy **63 %** (31/49) — **−9 pp vs R2**, so P3 regressed. P3's calibration guidance finally landed (confidence spans 0.50–0.95, 2 honest sub-0.80 answers — both correct, both rejected by the 0.80 gate). But the furniture-discriminator example primed `cabinet` over-prediction (7 misses vs R2's 3), and rule (b) "name distinctive infrastructure" had no effect (pipe/vent/light → `ceiling` ×3). Glass net-neutral (`glass_door` ×3 right; `glass_wall` over-applied ×1; 2 still missed). New cluster: "door part" ×3. **qwen3vl8b sweep done: P2 (72 %) > P3 (63 %) > P1 (48 %) — P2 is the recommended prompt.** §7 / §11 / §12.1–12.4 (qwen3vl8b) / §13 Q2 filled. Pipeline left on P3/R3 — flip to a 4B/9B profile for R4–R9. |
+| 2026-09-01 | **Switched to Qwen 3.5 4B for R4.** `rsg_pipeline.yaml` `phase1.vlm.active_profile = qwen3_5_4b_q4` (weights present at `~/rsg_models/qwen3_5_4b/`, `llama-server -m Qwen3.5-4B-Q4_K_M.gguf --mmproj mmproj-BF16.gguf`). `phase1.vlm.prompt` reset to P1 template (verified byte-identical), `run_id = R4__qwen35_4b__v1_simplified`, `prompt_version = P1_v1_simplified`; `prompts_under_test.yaml` `active` P3 → P1. Full P1/P2/P3 sweep on 4B, run manually (R4 → R5 → R6). Needs VLM-server relaunch (new model) + phase1 restart. |
+| 2026-09-01 | **First R4 attempt (`session_20260901_213914`) VOID — 57/57 empty responses, all rejected.** Root cause: Qwen3.5-4B is a *reasoning* model; llama.cpp's default `--reasoning auto` makes it emit `<think>…</think>` and put only post-`</think>` text in `message.content`. At `max_tokens: 96` (fine for the non-thinking Qwen3-VL-8B) the 4B spends the whole budget thinking → `content=""` → validator rejects every crop as `unknown_object` @ 0.0. Fix: `server.extra_args: ["--reasoning","off"]` on the qwen3_5 profiles (via new `rsg_vlm_server` support) + `chat_template_kwargs.enable_thinking=false` in the request payload (no-op for R1–R3's model). Session `_213914` discarded, not counted as R4. Re-run after relaunching the 4B server with `--reasoning off`. |
+| 2026-09-01 | **R4 complete** (re-run `session_20260901_215455`, 61 crops, 50 in CSV, all annotated). Accuracy **64 %** (32/50) — **+16 pp over the 8B on P1** (R1 @ 48 %). Thinking fix confirmed: 0 empty, 0 rejected. Latency median **2691 ms** — ~2.3× faster than the 8B. Confidence flat 0.95 on all 50 (no calibration). Errors: hallucinated furniture/screens on plain surfaces 11, ceiling-infra→`ceiling` 3, 1 boundary violation. Prompts frozen for 3.5 (P1/P2/P3 unchanged). §7 / §11 / §12.1–12.4 (qwen35_4b P1) / §13 Q1 filled. Next: R5 (4B × P2). |
+| 2026-09-01 | **Wired R5** — `phase1.vlm.prompt` = P2 template (verified byte-identical), `run_id = R5__qwen35_4b__v5_examples_based`, `prompt_version = P2_v5_examples_based`; `active` P1 → P2. Profile stays `qwen3_5_4b_q4` (VLM server already loaded). Needs a phase1 restart only. |
+| 2026-09-01 | **R5 complete** (session `session_20260901_221739`, 57 crops, 50 in CSV, all annotated). Accuracy **80 % (40/50)** — best run so far (8B/P2 72 %, 4B/P1 64 %). 0 rejected, latency median 2959 ms. **`ceiling` over-used: predicted 14×, wrong 6× (pipe, ceiling light, air vent, door-part ×2, partition) = 6/10 of all errors.** Traced to P2 itself — the "surface over fixture" rule literally says "a ceiling holding a light or diffuser → name the surface", lists "vent" as a thing to generalise past, has 2 ceiling→`ceiling` examples and 8 `ceiling` mentions; the 4B follows examples harder than the 8B did so it over-applies. Deliberate spec vs annotation conflict (that rule is what took the 8B 48→72 %); P2 frozen, not changed. Also: glass ×2 → `wall` (P2 has no glass concept), 2 misc wrong_class. No boundary violations, no plain-surface hallucination (both were the 4B's P1 weaknesses). §7 / §11 / §12.1–12.4 (qwen35_4b P2) updated. Next: R6 (4B × P3). |
+| 2026-09-01 | **Wired R6** — `phase1.vlm.prompt` = P3 template (verified byte-identical), `run_id = R6__qwen35_4b__v6_structural_priority`, `prompt_version = P3_v6_structural_priority`; `active` P2 → P3. Profile stays `qwen3_5_4b_q4` (4B server loaded, `--reasoning off`). Phase1 restart only. |
+| 2026-09-01 | **First R6 attempt (`session_20260901_233159`) VOID — format non-compliance.** 24/51 rejected; 21 because the 4B narrates P3's step-by-step APPROACH in the visible content ("Based on the visual evidence… 1. Analysis…") and runs out of `max_tokens: 96` before the JSON. P1/P2 on the same 4B had 0 format rejections. **Fix: `phase1.vlm.max_tokens` 96 → 256, held fixed R6–R9.** R1–R5 all produced complete JSON inside 96 → not re-run (headroom only; capping P3 at 96 would have handicapped the most verbose prompt). §5 / §14 / §11 R6 updated. Session discarded. Re-run R6. |
+| 2026-09-02 | **`max_tokens` 256 → 512.** The 256-token R6 re-run (`session_20260901_234911`) landed 44/50 accepted (format rejections 21→3), but a few P3 narrations still hit the 256 cap (12–13 s inference, no JSON). Raised to **512** for full headroom, held fixed R6–R9. Both interim R6 sessions (`_233159`, `_234911`) discarded. |
+| 2026-09-02 | **First P3-on-4B attempts abandoned — output-syntax failure.** P3's step-by-step APPROACH made the 4B narrate the analysis ("Based on the visual evidence… 1. Analysis…") instead of emitting JSON: 21/51 rejected at `max_tokens` 96, still recurring at 256/512. P1/P2 on the same 4B had 0 format rejections. Fix = **format-harden P3**: leading `OUTPUT RULE — READ THIS FIRST` block (entire reply is one JSON object, first char `{`, last char `}`, no preamble/numbered steps/"Based on the visual evidence…"/code fences), `APPROACH` marked "reason silently", a GOOD/BAD reply-example block (BAD = the exact prose failure), stronger closing line. Same reasoning / priority order / cues / calibration / worked examples. |
+| 2026-09-02 | **R6 complete — 88 %, best run in the matrix; P3 (hardened) promoted to MAIN.** `session_20260902_001845` (qwen35_4b): 44/50 = 88 %, **50/50 clean bare-JSON**, 2 rejections both confidence-gate. First run to identify glass parts (`glass_wall`/`glass_door`, 5/6 correct); `pipe`/`air_vent`/`pillar` also named correctly. P3 (`prompts_under_test.yaml` `P3_v6_structural_priority`) carries the `OUTPUT RULE` block that was authored while debugging these 4B runs (the interim `P3b` id is retired). The abandoned P3-on-4B session (`_000244`) is deleted and the successful session moved into `runs/R6__qwen35_4b__v6_structural_priority/`. `rsg_pipeline.yaml`: `run_id = R6__qwen35_4b__v6_structural_priority`, `prompt_version = P3_v6_structural_priority`. §4 / §7 / §11 (R6) / §12.1–12.4 / §13 Q2 updated. |
+| 2026-09-02 | **Switched to Qwen 3.5 9B for R7.** `active_profile = qwen3_5_9b_q4` (weights present, `--reasoning off`, `min_system_memory_gib 16`). `phase1.vlm.prompt` = P1 template (byte-identical), `run_id = R7__qwen35_9b__v1_simplified`, `prompt_version = P1_v1_simplified`; `active` P3 → P1. `max_tokens` stays 512 (held R6–R9; P1 fits in 96, headroom only). Needs VLM-server relaunch (new model) + phase1 restart. Starts the 9B leg (R7 P1 / R8 P2 / R9 P3). |
+| 2026-09-02 | **R7 complete** (session `session_20260902_181502`, 50 crops, all annotated). Accuracy **64 % (32/50)** — **exactly the 4B's P1 score** (R4 @ 64 %); the 8B on P1 was 48 %. 50/50 bare JSON, 0 rejected, confidence flat 0.95 on all 50. Latency median 3656 ms. Errors: glass panels missed ×5 (P1 has no glass concept), `pillar` missed ×4, panel→`mirror` ×3, 2 boundary violations. **On the zero-shot prompt, 4B→9B is a wash — the experiment's gains come from the prompt, not model size.** §7 / §11 / §12.1–12.3 (qwen35_9b P1) updated. Next: R8 (9B × P2). |
+| 2026-09-02 | **Wired R8** — `phase1.vlm.prompt` = P2 template (byte-identical), `run_id = R8__qwen35_9b__v5_examples_based`, `prompt_version = P2_v5_examples_based`; `active` P1 → P2. Profile stays `qwen3_5_9b_q4` (server already loaded), `max_tokens` 512. Phase1 restart only. |
+| 2026-09-02 | **First R8 attempt (`session_20260902_192605`) VOID** — 50/50 `HTTP Error 503: Service Unavailable`. The llama-server was not ready (still loading the 9B, or down) when the replay started; every VLM call got 503 → `rejected`. The 9B itself is fine (R7 ran clean on it). Fix: relaunch `rsg_vlm_server`, wait for `/health` → 200 (llama.cpp returns 503 while loading), then replay. Session discarded. |
+| 2026-09-02 | **`max_tokens` 512 → 5000 from R8.** Effectively unbounded generation room for the 3.5 models. llama.cpp clamps to `context_size - prompt tokens`; with `context_size 4096` the real budget is ~2k, i.e. "generate until EOS or context full". Held R8–R9. R1–R7 unaffected (all finished well inside their caps). |
+| 2026-09-02 | **R8 complete** (session `session_20260902_193816`; the earlier `_192605` was a 503 void). Accuracy **68 % (34/50)** — the *worst* P2 result (4B 80 %, 8B 72 %, 9B 68 %). 50/50 bare JSON, 0 rejected. Same P2 `ceiling`-over-fire as the 4B (13 predicted, 7 wrong — 6/16 misses); glass unhandled ×5; "flat panel → `mirror`" ×3. Latency median 4464 ms (slowest 3.5 config). **Finding: model size does not help in the 3.5 family — 4B ≥ 9B on every prompt tested; the 9B Q4 is the weakest vision model of the three.** §7 / §11 / §12.1–12.3 / §13 Q2/Q3 updated. Recommendation now stands: **qwen35_4b + P3 (88 %, ~2.9 s)**. Next: R9 (9B × P3), the final cell. |
+| 2026-09-02 | **Wired R9** — `phase1.vlm.prompt` = P3 (byte-identical), `run_id = R9__qwen35_9b__v6_structural_priority`, `prompt_version = P3_v6_structural_priority`; `active` P2 → P3. `qwen3_5_9b_q4`, `max_tokens` 5000, `--reasoning off`. |
+| 2026-09-02 | **R9 complete — EXPERIMENT FINISHED (all 9 runs).** Session `session_20260902_200256`, 50 crops. Accuracy **68 % (34/50)** — same as the 9B on P2; P3 did not lift the 9B the way it lifted the 4B (80 → 88 %). P3 *did* cut the 9B's `ceiling` over-fire 7 → 2 and add glass labels + real calibration (first 9B run with sub-0.80 confidences), but a persistent `whiteboard` → `mirror` reflex + loose `glass_wall`-for-`cabinet` cancelled it. 50/50 bare JSON; 5 rejected (2 `VLM_no_result`, 3 sub-0.80). Latency median 4053 ms. **FINAL RESULT: winner is `qwen3_5_4b_q4` × P3 (format-hardened) — 88 %, ~2.9 s/call — best accuracy, fastest, least memory, only run to label glass. §12 (all cells) and §13 (Q1–Q3 + promotion recommendation) filled.** |

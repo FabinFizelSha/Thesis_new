@@ -1,0 +1,150 @@
+ D .idea/.gitignore
+ D .idea/inspectionProfiles/profiles_settings.xml
+ D .idea/misc.xml
+ D .idea/modules.xml
+ D .idea/pySourceRootDetection.xml
+ D .idea/rsg_ros2_ws.iml
+ D .idea/vcs.xml
+ D README.md
+ D ias_latex_template/README.md
+ D ias_latex_template/Thesis_report_Fabin.aux
+ D ias_latex_template/Thesis_report_Fabin.bbl
+ D ias_latex_template/Thesis_report_Fabin.bbl-SAVE-ERROR
+ D ias_latex_template/Thesis_report_Fabin.bcf
+ D ias_latex_template/Thesis_report_Fabin.bcf-SAVE-ERROR
+ D ias_latex_template/Thesis_report_Fabin.blg
+ D ias_latex_template/Thesis_report_Fabin.fdb_latexmk
+ D ias_latex_template/Thesis_report_Fabin.fls
+ D ias_latex_template/Thesis_report_Fabin.lof
+ D ias_latex_template/Thesis_report_Fabin.log
+ D ias_latex_template/Thesis_report_Fabin.lot
+ D ias_latex_template/Thesis_report_Fabin.out
+ D ias_latex_template/Thesis_report_Fabin.pdf
+ D ias_latex_template/Thesis_report_Fabin.run.xml
+ D ias_latex_template/Thesis_report_Fabin.tex
+ D ias_latex_template/Thesis_report_Fabin.toc
+ D ias_latex_template/bibliography.bib
+ D ias_latex_template/chapters/Abstract.tex
+ D ias_latex_template/chapters/Experiments.tex
+ D ias_latex_template/chapters/Introduction.tex
+ D ias_latex_template/chapters/Methodology.tex
+ D ias_latex_template/chapters/Theory.tex
+ D ias_latex_template/example_figures/BlockDiagram.tex
+ D ias_latex_template/example_figures/PhasorDiagramAnalytical.tex
+ D ias_latex_template/example_figures/matlab_plot1.tex
+ D ias_latex_template/example_figures/matlab_plot2.tex
+ D ias_latex_template/example_images/HRC_safety_productivity.png
+ D ias_latex_template/example_images/conceptgraphs_pipeline.png
+ D ias_latex_template/example_images/existing_work_overview_enhanced.png
+ D ias_latex_template/example_images/hrc_safety_zones_generated.png
+ D ias_latex_template/example_images/hydra_3d_scene_graph.png
+ D ias_latex_template/example_images/opengraph_pipeline.png
+ D ias_latex_template/example_images/safetydetect_pipeline.png
+ D ias_latex_template/example_images/scene-graph-example.png
+ D ias_latex_template/example_images/scenegraphfusion_pipeline.png
+ D ias_latex_template/example_images/texstudio-languagetool-integration.png
+ D ias_latex_template/iasthesis.sty
+ D ias_latex_template/images/HRC_safety_productivity.png
+ D ias_latex_template/images/existing_work_overview.png
+ D ias_latex_template/images/hrc_safety_zones_generated.png
+ D ias_latex_template/images/unistuttgart_logo_deutsch_cmyk-eps-converted-to.pdf
+ D ias_latex_template/images/unistuttgart_logo_deutsch_cmyk.eps
+ D ias_latex_template/settings.tex
+ D ias_latex_template/template-images/logo-ias.pdf
+ D ias_latex_template/template-images/logo-unistuttgart-deutsch+ias_80x25.pdf
+ D ias_latex_template/template-images/logo-unistuttgart-deutsch+ias_80x25.svg
+ D ias_latex_template/template-images/logo-unistuttgart-englisch+ias_80x25.pdf
+ D ias_latex_template/template-images/logo-unistuttgart-englisch+ias_80x25.svg
+ M install/_local_setup_util_ps1.py
+ M install/_local_setup_util_sh.py
+ M log/latest_build
+ M src/rsg/config/rsg_pipeline.yaml
+ M src/rsg/nodes/phase1.py
+ M src/rsg/nodes/support/phase1/frame_cache.py
+ M src/rsg/nodes/support/phase1/phase1_config.py
+ M src/rsg/nodes/support/phase1/phase1_timing_recorder.py
+?? .venv/
+?? build/compile_commands.json
+?? build/config_utilities/
+?? build/config_utilities_msgs/
+?? build/config_utilities_ros/
+?? build/hydra/
+?? build/hydra_msgs/
+?? build/hydra_ros/
+?? build/hydra_visualizer/
+?? build/ianvs/
+?? build/kimera_pgmo/
+?? build/kimera_pgmo_msgs/
+?? build/kimera_pgmo_ros/
+?? build/kimera_pgmo_rviz/
+?? build/kimera_rpgo/
+?? build/pose_graph_tools/
+?? build/pose_graph_tools_msgs/
+?? build/pose_graph_tools_ros/
+?? build/risk_scene_graph_core/
+?? build/risk_scene_graph_ros/
+?? build/rsg/
+?? build/rsg_dsg_visualizer/
+?? build/rsg_semantic_adapter/
+?? build/semantic_inference/
+?? build/semantic_inference_msgs/
+?? build/spark_dsg/
+?? build/spatial_hash/
+?? build/teaserpp/
+?? datasets
+?? debug/
+?? install/config_utilities/
+?? install/config_utilities_msgs/
+?? install/config_utilities_ros/
+?? install/hydra/
+?? install/hydra_msgs/
+?? install/hydra_ros/
+?? install/hydra_visualizer/
+?? install/ianvs/
+?? install/kimera_pgmo/
+?? install/kimera_pgmo_msgs/
+?? install/kimera_pgmo_ros/
+?? install/kimera_pgmo_rviz/
+?? install/kimera_rpgo/
+?? install/pose_graph_tools/
+?? install/pose_graph_tools_msgs/
+?? install/pose_graph_tools_ros/
+?? install/risk_scene_graph_core/
+?? install/risk_scene_graph_ros/
+?? install/rsg/
+?? install/rsg_dsg_visualizer/
+?? install/rsg_semantic_adapter/
+?? install/semantic_inference/
+?? install/semantic_inference_msgs/
+?? install/spark_dsg/
+?? install/spatial_hash/
+?? install/teaserpp/
+?? install_system_dependencies.sh
+?? log/build_2026-08-05_18-30-23/
+?? log/build_2026-08-05_18-57-32/
+?? log/build_2026-08-05_20-01-31/
+?? log/build_2026-08-05_20-01-43/
+?? log/build_2026-08-05_20-20-28/
+?? log/build_2026-08-05_20-22-53/
+?? log/build_2026-08-05_20-24-53/
+?? log/build_2026-08-05_20-30-29/
+?? log/build_2026-08-05_23-27-00/
+?? log/build_2026-08-05_23-47-17/
+?? log/build_2026-08-06_00-05-16/
+?? log/build_2026-08-06_00-42-24/
+?? log/build_2026-08-06_00-42-36/
+?? log/build_2026-08-06_00-56-01/
+?? log/build_2026-08-06_01-07-00/
+?? log/build_2026-08-06_01-17-50/
+?? log/build_2026-08-06_01-31-30/
+?? rsg_pipeline.yaml
+?? src/rsg/launch/__pycache__/
+?? src/rsg/nodes/__pycache__/
+?? src/rsg/nodes/support/__pycache__/
+?? src/rsg/nodes/support/phase1/__pycache__/
+?? src/rsg/nodes/support/preprocessor/__pycache__/
+?? src/rsg/tests/__pycache__/
+?? src/rsg_dsg_visualizer_package/rsg_dsg_visualizer/__pycache__/
+?? src/rsg_semantic_adapter/rsg_semantic_adapter/__pycache__/
+?? vendor/
+?? visual_memory/

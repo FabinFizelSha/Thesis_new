@@ -1,0 +1,9 @@
+backend: vitb
+image_encoder_engine: /home/student/rsg_models/sam/vit_b_image_encoder.engine
+mask_decoder_engine: /home/student/rsg_models/sam/sam_mask_decoder.engine
+device: cuda
+points_per_side: 9
+max_masks: 30
+mask_threshold: 0.9
+min_mask_pixels: 3500
+nms_iou: 0.20
