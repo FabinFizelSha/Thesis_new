@@ -1,0 +1,10 @@
+input_scale: 1.0
+mask_threshold: 0.8
+max_masks: 49
+min_mask_pixels: 3500
+min_prompt_luma: 4
+model: nanosam
+nms_iou: 0.2
+point_margin_fraction: 0.167
+points_per_side: 5
+skip_black_points: true

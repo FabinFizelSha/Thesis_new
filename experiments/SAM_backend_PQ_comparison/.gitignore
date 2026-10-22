@@ -1,0 +1,9 @@
+__pycache__/
+# raw arrays that are regenerable / unused by the metric
+data/extra_src/
+data/frames/depth_*.npy
+# model files (engines are GPU/TensorRT-specific; ONNX/checkpoints live in ~/rsg_models, ~/third_party)
+models/
+# per-config predicted label images are large; summaries and per-frame csv are kept
+results/*/pred/
+results/archive_*/*/pred/

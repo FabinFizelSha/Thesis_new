@@ -1,0 +1,8 @@
+200 candidates; bag 11.404999999 517.5549
+rgb scanned
+depth scanned
+semantic scanned
+validate frame 0 rgb (480, 720, 3) (480, 720, 3) identical: True maxdiff 0.0
+validate frame 0 depth (480, 720) (480, 720) identical: True maxdiff 0.0
+validate frame 0 semantic (480, 720, 3) (480, 720, 3) identical: True maxdiff 0.0
+extracted 200 skipped 0
