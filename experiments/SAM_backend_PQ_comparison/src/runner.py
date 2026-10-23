@@ -37,13 +37,13 @@ def run_config(cid, model_name, overrides, n_warm=10, passes=3, limit=None, forc
     frames = load_frames(limit); model = get_model(model_name)
     for _, rgb in frames[:n_warm]: run_frame(model, rgb, cfg)
     lat = {p: [] for p in range(passes)}; enc = {p: [] for p in range(passes)}; dec = {p: [] for p in range(passes)}
-    labels1, first20 = {}, {}; nm = []
+    labels1, first20 = {}, {}; nm = []; ov = []
     for p in range(passes):
         for k, (i, rgb) in enumerate(frames):
             label, sc, t = run_frame(model, rgb, cfg)
             lat[p].append(t["total_ms"]); enc[p].append(t["enc_ms"]); dec[p].append(t["dec_ms"])
             if p == 0:
-                np.savez_compressed(f"{out}/pred/frame_{i}.npz", label=label, scores=sc); labels1[i] = label; nm.append(t["n_masks"])
+                np.savez_compressed(f"{out}/pred/frame_{i}.npz", label=label, scores=sc); labels1[i] = label; nm.append(t["n_masks"]); ov.append(t["overlap_frac"])
             elif p == 1 and k < 20:
                 first20[i] = label
         print(f"[{cid}] pass {p+1}/{passes} median {np.median(lat[p]):.1f} ms", flush=True)
@@ -57,7 +57,7 @@ def run_config(cid, model_name, overrides, n_warm=10, passes=3, limit=None, forc
     pd.DataFrame(rows).to_csv(f"{out}/per_frame.csv", index=False)
     allt = np.concatenate([lat[p] for p in range(passes)])
     summ = pq_summary(res)
-    summ.update(config_id=cid, model=model_name, n_frames=len(frames), masks_per_frame_mean=float(np.mean(nm)), masks_per_frame_median=float(np.median(nm)),
+    summ.update(config_id=cid, model=model_name, n_frames=len(frames), masks_per_frame_mean=float(np.mean(nm)), overlap_pixel_fraction_mean=float(np.mean(ov)), masks_per_frame_median=float(np.median(nm)),
                 latency_median_ms=float(np.median(allt)), latency_p95_ms=float(np.percentile(allt, 95)), FPS=float(1000 / np.median(allt)),
                 encoder_median_ms=float(np.median(np.concatenate([enc[p] for p in range(passes)]))),
                 decoder_median_ms=float(np.median(np.concatenate([dec[p] for p in range(passes)]))),

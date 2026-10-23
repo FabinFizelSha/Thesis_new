@@ -61,4 +61,6 @@ def run_frame(model, rgb, cfg):
     sc_keep = np.array([scores[i] for i in keep], np.float32)
     label = masks_to_label_image(kept, sc_keep, (H, W)) if len(keep) else np.zeros((H, W), np.int32)
     t1 = _sync()
-    return label, sc_keep, dict(total_ms=(t1 - t0) * 1e3, enc_ms=model.enc_ms, dec_ms=float(sum(model.dec_ms)), n_masks=len(keep))
+    cover = kept.sum(0) if len(keep) else None   # not timed: fraction of covered pixels that lie in >= 2 kept masks (before painting)
+    overlap = float((cover >= 2).sum() / max((cover >= 1).sum(), 1)) if cover is not None else 0.0
+    return label, sc_keep, dict(total_ms=(t1 - t0) * 1e3, enc_ms=model.enc_ms, dec_ms=float(sum(model.dec_ms)), n_masks=len(keep), overlap_frac=overlap)

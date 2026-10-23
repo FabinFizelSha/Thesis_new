@@ -1,0 +1,12 @@
+{
+  "frames": 500,
+  "shapes": [
+    "((480, 720, 3), (480, 720))"
+  ],
+  "depth_min": 0.0,
+  "depth_max": 49.971378326416016,
+  "n_class_colours": 20,
+  "mean_gt_objects": 10.462,
+  "median_gt_objects": 10.0,
+  "void_fraction": 0.10379370949074074
+}
