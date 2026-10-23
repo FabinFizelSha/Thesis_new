@@ -1,0 +1,31 @@
+{
+  "run_id": "T0_r3",
+  "profile": "uhumans2",
+  "files_nonempty": {
+    "phase1_timing.csv": true,
+    "preprocessor_timing.xlsx": true,
+    "resource_usage.csv": true,
+    "topic_rates.csv": true,
+    "vlm_server.log": true,
+    "launch.log": true,
+    "hydra_timing_stats.csv": true
+  },
+  "frame_count": 1424,
+  "avg_fps": 4.7677,
+  "recorded_span_sec": 298.68,
+  "avg_frame_latency_ms": 278.26,
+  "median_frame_latency_ms": 245.53,
+  "max_frame_latency_ms": 1019.46,
+  "avg_classifier_delay_ms": 228.92,
+  "avg_sam_inference_ms": 168.49,
+  "vlm_call_count": 492,
+  "vlm_success_count": 464,
+  "vlm_failed_count": 28,
+  "frame_drop_count": 3395,
+  "avg_gpu_pct": 85.23,
+  "peak_gpu_pct": 98.0,
+  "avg_cpu_pct": 23.87,
+  "peak_ram_used_mb": 27003.0,
+  "vlm_completed_rows_with_delay": 492,
+  "vlm_delay_ms_mean": 1364.8
+}

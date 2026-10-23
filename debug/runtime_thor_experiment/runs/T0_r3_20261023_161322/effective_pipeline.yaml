@@ -1,0 +1,666 @@
+# Shared RSG configuration for the Tesse ROS bag.
+# Authoritative geometry chain: world -> base_link_gt -> left_cam.
+# /tesse/odom provides the world -> base_link_gt pose; the calibrated static
+# base_link_gt -> left_cam transform is entered below. The rosbag TF tree remains
+# authoritative for Hydra. Do not publish a second direct world -> left_cam TF.
+
+debug:                                                                                               # Per-node debug logging switches.
+  global_debug: false                                                                                # Keep console output compact during normal runs.
+  RSG_pre_processor: false                                                                           # Enable only while debugging synchronization or frame conversion.
+  rsg_object_detection: true                                                                         # Enable Phase 1 timing instrumentation and node-specific diagnostics.
+
+preprocessing:                                                                                       # Synchronizes RGB-D, caches CameraInfo, associates odometry, and publishes prepared frames.
+  runtime:
+    source: rosbag                                                                                   # Input is replayed from a ROS 2 bag rather than a live camera.
+    use_sim_time: true                                                                               # Follow /clock published by ros2 bag play --clock.
+    publish_debug_images: false                                                                      # Avoid extra image traffic and GPU/CPU overhead.
+
+  topics:
+    rgb: /tesse/left_cam/rgb/image_raw                                                               # RGB image in the left_cam optical geometry.
+    depth: /tesse/depth_cam/mono/image_raw                                                           # Verified frame_id=left_cam; registered to RGB camera geometry.
+    camera_info: /tesse/left_cam/camera_info                                                         # Intrinsics for the RGB / left_cam image.
+    odom: /tesse/odom                                                                                # Pose source: world -> base_link_gt; compose calibrated camera extrinsic.
+    imu: /tesse/imu                                                                                  # Unused while preprocessing.imu.enabled is false; no Go1/D455 frame remains here.
+    prepared_frame: /rsg/preprocessed/frame                                                          # Unified RGB-D-odom frame sent to Phase 1.
+    status: /rsg/preprocessor/status                                                                 # Health and synchronization diagnostics.
+
+  synchronization:
+    rgb_depth_slop_sec: 0.02                                                                         # Accept RGB-depth timestamps within 20 ms.
+    sync_queue_size: 50                                                                              # Configurable RGB-depth message-filter queue; CameraInfo is cached separately.
+    odom_buffer_size: 600                                                                            # Retain sufficient odometry history for delayed replay messages.
+    odom_tolerance_sec: 0.05                                                                         # Reject frames when no odometry lies within 150 ms.
+    use_odom_interpolation: true                                                                     # Interpolate odometry to the RGB timestamp; reduces motion-induced mesh error.
+    reject_unsynchronized_frames: true                                                               # Prefer dropping bad frames over integrating geometrically inconsistent data.
+    assume_ordered_messages: true                                                                    # Safe for sequential rosbag playback; avoids unnecessary reordering work.
+
+  imu:
+    enabled: false                                                                                   # IMU is not required for this RGB-D plus odometry pipeline.
+    buffer_size: 1000                                                                                # Used only if IMU support is enabled later.
+    tolerance_sec: 0.03                                                                              # Used only if IMU support is enabled later.
+    require_for_frame: false                                                                         # Never reject a frame merely because IMU data is absent.
+
+  image:
+    output_rgb_encoding: rgb8                                                                        # Required passthrough RGB encoding; this optimized node performs no RGB conversion.
+    output_depth_encoding: 32FC1                                                                     # Required passthrough depth encoding when optional processing is disabled.
+    depth_scale_to_meter: 0.001                                                                      # Used only by optional single-pass conversion of 16UC1 depth.
+    min_depth_m: 0.30                                                                                # Used by Phase 1 and optional sampled invalid-depth analysis.
+    max_depth_m: 5.0                                                                                 # Used by Phase 1 and optional sampled invalid-depth analysis.
+    max_invalid_depth_ratio: 0.90                                                                    # Used only when optional invalid-depth checking is enabled.
+    reject_resolution_mismatch: true                                                                 # Enforce identical RGB and depth dimensions for correct projection.
+
+  validation:
+    check_resolution: true                                                                           # Confirm RGB and depth dimensions match.
+    single_pass_depth_processing_enabled: false                                                      # Default passthrough: no depth conversion, masking, or NumPy materialization.
+    compute_invalid_depth_ratio: false                                                               # Disabled by default; enable only with optional single-pass depth processing.
+    invalid_depth_ratio_every_n_frames: 5                                                            # When enabled, calculate validity only on every Nth synchronized frame.
+    check_invalid_depth_ratio: false                                                                 # Disabled by default; Phase 1 performs the authoritative depth-range filtering.
+    depth_check_stride: 8                                                                            # Sampling stride used only when optional depth-validity calculation is enabled.
+    require_odom_for_frame: true                                                                     # Hydra must never receive a frame without an associated pose.
+    require_imu_for_frame: false                                                                     # IMU remains optional.
+
+  status_output:
+    publish_published: true                                                                          # Report accepted frames for rate and latency monitoring.
+    publish_rejected: true                                                                           # Report rejected frames for synchronization debugging.
+    published_every_n_frames: 1                                                                      # Reduce status traffic by publishing every tenth accepted frame.
+
+  latency_guard:
+    enabled: false                                                                                   # Disable wall-clock dropping during bag replay; simulated time is authoritative.
+    warn_delay_ms: 100.0                                                                             # Used only if latency guard is enabled.
+    drop_delay_ms: 250.0                                                                             # Used only if latency guard is enabled.
+    drop_exceeded_frames: false                                                                      # Used only if latency guard is enabled.
+    record_dropped_to_excel: false                                                                   # Avoid spreadsheet I/O during runtime.
+
+  frames:
+    world_frame: world                                                                               # Confirmed /tesse/odom.header.frame_id; global pose reference.
+    base_frame: base_link_gt                                                                         # Confirmed /tesse/odom.child_frame_id; odometry is the robot-base pose.
+    camera_frame: left_cam                                                                           # Confirmed RGB, depth, and CameraInfo geometry frame.
+    base_to_camera:
+      translation_m: [0.0, 0.05, 0.0]                                                                # Measured bag TF: base_link_gt -> left_cam translation in metres.
+      rotation_rpy_rad: [-1.57079632679, 0.0, -1.57079632679]                                        # Measured bag TF optical-frame rotation: roll=-pi/2, pitch=0, yaw=-pi/2.
+
+  tf_output:
+    publish_camera_tf: false                                                                         # Rosbag publishes world -> base_link_gt -> left_cam; prevent duplicate TF authority.
+
+  frame_id:
+    prefix: rsg                                                                                      # Prefix for generated RSG frame identifiers.
+    session_date: ''                                                                                 # Empty value lets the node generate the date automatically.
+
+  performance:
+    max_publish_frequency_hz: 25.0                                                                    # Upper timestamp-based output limit; above the 16.4 Hz bag camera rate.
+    measure_timing: true                                                                             # Retain in-memory timing measurements for diagnostics.
+    publish_timing: false                                                                            # Avoid timing-topic overhead during mapping.
+    write_timing_excel: true                                                                        # Avoid file I/O while processing the bag.
+    timing_excel_path: ${WORKSPACE_ROOT}/debug/runtime_thor_experiment/runs/_current/preprocessor_timing.xlsx
+    timing_sheet_name: timing_debug                                                                  # Used only if Excel timing is enabled.
+    timing_excel_autosave_every: 0                                                                   # Disable periodic spreadsheet writes.
+
+  qos:
+    sensor_depth: 50                                                                                 # Queue depth for RGB/depth subscriptions and cached CameraInfo input.
+    odom_depth: 600                                                                                  # Match the larger odometry history requirement.
+    output_depth: 10                                                                                 # Queue depth for prepared-frame publication.
+
+phase1:                                                                                              # NanoSAM segmentation, RAP retrieval, optional VLM labeling, and Hydra semantic-frame output.
+  diagnostics:
+    enabled: false                                                                                  # MASTER SWITCH for all per-run diagnostic writers: bbox dumps, crop-evolution, tracking-quality logs, RAP/VLM crop images, and the VLM test crop+CSV. false => nothing written, near-zero overhead. Functional crop scoring / mask filtering / best-crop selection is unaffected. (The keys below are legacy and currently unwired; `enabled` governs everything.) Does NOT affect phase1.performance.measure_timing/write_timing_excel, which is a separate system (phase1_timing.csv) with its own switches.
+    log_tracking: false                                                                             # Object-tracking diagnostics sub-switch: the association/lifecycle/frames JSONL (TrackingQualityRecorder) and the periodic per-track crops. Enable together with the master `enabled` above for cross-session association-mode verification. The risk-VLM and RAP writers are independent of this and follow `enabled` above.
+    save_tracking_crops: false                                                                      # Save accepted best crops and the exact crop revisions dequeued by RAP/VLM.
+    tracking_crop_dir: ${WORKSPACE_ROOT}/debug/phase1_excel_current/tracking_crops            # Per-internal-object diagnostic image directory.
+    tracking_crop_jpeg_quality: 95                                                                  # High-quality diagnostic images; does not change VLM request encoding.
+    log_vlm_outputs: false                                                                          # Record validated VLM JSON, raw response, label confidence, and mobility confidence.
+    log_rap_outputs: false                                                                          # Record RAP label/retrieval confidence plus mobility metadata restored from visual memory.
+    log_semantic_results: false                                                                     # Record the final object-level label propagated to every local Hydra slot.
+    periodic_crop_interval: 10                                                                      # Save every Nth observation of every track (crop + raw and accumulated 3D geometry), independent of "best crop" selection -- for tracing exactly when/how a track's mask or bounding box starts absorbing a different object. Gated by the master `enabled` switch above.
+
+  profile: real_orin                                                                                 # Performance profile intended for Jetson Orin.
+  runtime:
+    use_sim_time: true                                                                               # Follow rosbag /clock consistently with preprocessing and Hydra.
+
+  debug:
+    rsg_object_detection: true                                                                       # Required because Phase 1 timing is gated by node debug mode.
+
+  topics:
+    preprocessed_frame: /rsg/preprocessed/frame                                                      # Input from the preprocessor.
+    perception_result: /rsg/phase1/object_classifier/result                                          # Per-frame object perception output.
+    vlm_result: /rsg/phase1/object_classifier/vlm_result                                             # VLM classification response stream.
+    rap_result: /rsg/objects/rap_result                                                              # Immediate RAP retrieval result stream.
+    hydra_frame: /rsg/phase1/hydra/input_frame                                                       # Optional combined Hydra-format frame.
+    unknown_candidates: /rsg/phase1/unknown_candidates                                               # Tracks that need VLM fallback.
+    rsg_object_detection_status: /rsg/phase1/object_detection/status                                 # Phase 1 runtime status.
+    rsg_object_detection_timing: /rsg/phase1/object_detection/timing                                 # Optional Phase 1 timing output.
+    debug_semantic_labels: /rsg/phase1/debug/semantic_labels                                         # Debug semantic label image topic.
+    debug_instance_labels: /rsg/phase1/debug/instance_labels                                         # Debug instance label image topic.
+    hydra_rgb: /rsg/hydra/rgb/image_raw                                                              # RGB delivered to Hydra.
+    hydra_depth: /rsg/hydra/depth_registered/image_rect                                              # Depth delivered to Hydra; must share left_cam geometry.
+    hydra_camera_info: /rsg/hydra/rgb/camera_info                                                    # Intrinsics delivered to Hydra.
+    hydra_pose: /rsg/hydra/camera_pose                                                               # Camera pose diagnostic topic; Hydra still uses TF for lookup.
+    hydra_semantic_labels: /rsg/hydra/semantic/image_raw                                             # Semantic slot-ID image for Hydra objects.
+    hydra_instance_labels: /rsg/hydra/instance/image_raw                                             # Instance-ID image for Hydra objects.
+    hydra_metadata: /rsg/hydra/metadata                                                              # Additional Phase 1 metadata for diagnostics.
+
+  qos:
+    input_depth: 10                                                                                  # Queue depth for prepared-frame input.
+    output_depth: 10                                                                                 # Queue depth for high-bandwidth Phase 1 outputs.
+    semantic_label_depth: 4096                                                                       # Reliable backlog for compact final slot-to-label events consumed by the fuser.
+
+  coordinator:
+    request_queue_size: 1                                                                            # Keep only the newest segmentation request; prevents GPU backlog.
+    frame_cache_size: 600                                                                            # Preserve associations between async results and source frames.
+    drop_oldest_when_full: true                                                                      # Prefer recent views when the pipeline cannot keep up.
+    publish_status: true                                                                             # Publish operational status.
+    status_every_n_frames: 1                                                                         # Limit status traffic.
+    publish_debug_label_images: false                                                                # Avoid high-bandwidth debug images.
+
+  hydra_output:
+    publish_combined: false                                                                          # Publish individual RGB, depth, labels, CameraInfo, and TF-compatible streams.
+    publish_separate_topics: true                                                                    # Required by the configured Hydra ROS receiver.
+    semantic_label_encoding: 16UC1                                                                   # Supports up to 10,000 stable semantic slot IDs.
+    instance_label_encoding: 16UC1                                                                   # Supports stable object instance IDs.
+    publish_camera_tf: false                                                                        # Rosbag TF is authoritative; Phase 1 never broadcasts a delayed duplicate TF.
+    depth_range_filter:
+      enabled: true                                                                                  # Apply the same valid depth range to Hydra integration.
+      min_range_m: 0.30                                                                              # Lower valid range sent to Hydra.
+      max_range_m: 5.0                                                                               # Upper valid range sent to Hydra.
+      semantic_label_id: 0                                                                           # Mark invalid-depth pixels as the unknown semantic class.
+
+  hydra_semantic:
+    unclassified_label: unknown                                                                      # Label used when Phase 1 has no semantic decision.
+    label_lookup:
+      unknown: 0                                                                                     # Hydra slot 0 is the reserved unknown label.
+    label_names:
+      0: unknown                                                                                     # Human-readable name for the reserved unknown slot.
+    label_aliases:
+      office_chair: chair                                                                            # Normalize equivalent VLM/RAP labels.
+      desk_chair: chair                                                                              # Normalize equivalent VLM/RAP labels.
+      trash_can: trashcan                                                                            # Normalize equivalent VLM/RAP labels.
+      monitor: computer_monitor                                                                      # Normalize equivalent VLM/RAP labels.
+      computer_monitor: computer_monitor                                                             # Preserve canonical monitor label.
+
+  persistent_tracking:
+    enabled: true                                                                                    # Maintain stable object tracks across frames.
+    mode: hydra_slots                                                                                # Allocate semantic slot IDs compatible with Hydra's fixed label space.
+    track_prefix: rsg_obj_                                                                           # Prefix for internal persistent track identifiers.
+    max_tracks: 10000                                                                                # Match the fixed Hydra slot capacity.
+    max_vlm_attempts: 3                                                                               # A track that fails VLM (label_confidence below result_validation.min_label_confidence) is not given up on immediately. It stays open -- crop updates keep running -- and waits indefinitely in a non-FIFO pool for a strictly better crop than the one its last attempt used before being re-queued to VLM. Only after this many total attempts fail does the track finalize as unclassified_object. Common to all profiles.
+    dynamic_track_expiry_enabled: true                                                                 # A VLM-confirmed dynamic object (person/animal/mobile robot) has likely moved once it hasn't been re-observed for a while, so keeping it in the tracker is wasted search time for every future association call. Deletes the track once its presence confidence decays below dynamic_track_expiry_confidence_threshold, and tells the fuser to drop the corresponding object from its output. The Hydra slot is never recycled, matching the existing merge/reanchor precedent. Never touches static, unknown-mobility, or still-pending tracks. Common to all profiles.
+    dynamic_track_expiry_half_life_sec: 60.0                                                           # Presence-confidence half-life used to decide when a confirmed-dynamic track is deleted. Mirrors the fuser's dynamic_presence_half_life_sec (rsg_scene_graph_fuser*.yaml) so both sides agree on what "gone" means -- this one decides deletion, that one only fades rendering.
+    dynamic_track_expiry_confidence_threshold: 0.9                                                     # Presence confidence below which a confirmed-dynamic track is deleted. High values delete soon after the object stops being re-observed: at a 60s half-life, confidence crosses 0.9 after only about 9s rather than a full half-life.
+    max_match_distance_m: 0.6                                                                        # IMPROVED: Increased from 0.5 to allow centroid shifts in overlapping mask fragments.
+    max_volume_ratio: 5.0                                                                            # IMPROVED: Increased from 4.0 to allow volume variation in overlapping 3D geometries.
+    continuation_max_age_sec: 8                                                                    # Permit a recent partial view to extend a large object track.
+    continuation_gap_m: 0.50                                                                         # Maximum horizontal gap between consecutive partial 3D footprints.
+    revisit_overlap_gap_m: 0.4                                                                      # Maximum gap for a later view to re-enter an accumulated 3D footprint.
+    max_vertical_gap_m: 0.15                                                                         # Reject footprint matches separated vertically from the tracked object.
+    max_vertical_center_delta_m: 0.15                                                                # Reject overlapping floor-level projections at a different object height.
+    max_2d_iou_age_sec: 3.0                                                                          # Use 2D IoU fallback only for recent tracks.
+    min_2d_iou: 0.30                                                                                  # Minimum 2D overlap for fallback association.
+    centroid_update_alpha: 0.5                                                                       # Smooth centroid updates while prioritizing the newest observation.
+    track_aware_redundancy_enabled: true                                                       # A2: reject an enclosing mask when smaller masks explain it and map to distinct established tracks.
+    redundancy_union_coverage_threshold: 0.80                                                   # IMPROVED: Reduced from 0.90 to allow more mask merging (child union only needs 80% coverage).
+    redundancy_child_containment_threshold: 0.75                                                # IMPROVED: Reduced from 0.85 to catch more overlapping fragments (75% vs 90% containment).
+    redundancy_min_children: 2                                                                  # Require at least two separately tracked child masks before suppressing an enclosing mask.
+    same_track_nested_suppression_enabled: true                                                  # A3: resolve nested masks that independently prefer the same established track.
+    same_track_nested_containment_threshold: 0.80                                                # IMPROVED: Reduced from 0.90 to recognize 80% overlaps as same-track duplicates (vs 90%).
+    same_track_max_parent_child_area_ratio: 3.0                                                  # Permit a coherent broader mask to inherit the track only when it is at most 3x the nested mask area.
+    same_track_min_added_area_fraction: 0.05                                                     # Broader mask must add at least 5% genuinely new area before takeover is preferred.
+    same_track_broader_max_route_priority: 2                                                     # Require accumulated, continuation, or centroid 3D support; 2D-IoU-only matches cannot take over.
+    same_track_broader_max_volume_ratio: 6.0                                                     # Reject broader-mask takeover when its 3D AABB volume is excessively inconsistent with the track.
+    global_association_enabled: true                                                           # Combine all association cues into one score instead of accepting one route independently.
+    global_min_independent_groups: 3                                                       # Require at least this many independent evidence groups before a track may continue. `vertical` passes on every row once an envelope spans the room height and `footprint` passes on nearly every row, so a quorum of 2 was satisfied before `centroid`/`image` could object. 3 rejects the floor/sofa and sofa/wall style merges, at the cost of slightly more fragmentation.
+    global_recent_min_score: 0.30                                                         # LOWERED: Match revisit threshold to allow marginal matches in recent mode.
+    global_revisit_min_score: 0.30                                                         # LOWERED: Accept weak matches for same-object-different-angle consolidation.
+    global_historical_overlap_pass: 0.50                                                  # Observation-normalised accumulated 3D overlap required for a footprint vote. Legitimate surface continuations within one track score 0.83-1.00, so this sits in open space below them.
+    global_recent_overlap_pass: 0.25                                                      # Observation-normalised recent XY overlap required for recent continuation.
+    global_min_axis_overlap: 0.20                                                         # Require meaningful overlap along both horizontal axes.
+    global_touch_gap_pass_m: -1.0                                                         # Negative disables the footprint touch shortcut, which granted a footprint vote to anything merely touching the track box. An object resting on a floor always touches it (XY gap 0, Z gap 0), so the shortcut handed a free vote to every object standing on a tracked surface. With it off, the footprint vote must be earned via global_historical_overlap_pass.
+    global_centroid_pass_m: 0.60                                                          # Centroid distance that contributes an independent position vote, AND the candidate search radius in _candidate_track_ids (persistent_object_tracker.py) -- tightening it also removes tracks from consideration entirely, which is invisible in the association log.
+    global_centroid_sigma_m: 0.50                                                         # Gaussian scale used to normalise centroid compatibility.
+    global_vertical_score_pass: 0.60                                                      # Minimum normalised vertical-compatibility vote.
+    global_vertical_sigma_m: 0.15                                                         # Gaussian scale for vertical-centre compatibility.
+    global_block_2d_on_3d_contradiction: true                                             # Prevent 2D overlap from overriding reliable contradictory 3D evidence.
+    global_recent_weight_historical: 0.70
+    global_recent_weight_recent: 0.00
+    global_recent_weight_centroid: 0.30
+    global_recent_weight_vertical: 0.00
+    global_recent_weight_image: 0.45
+    global_revisit_weight_historical: 0.60
+    global_revisit_weight_recent: 0.00
+    global_revisit_weight_centroid: 0.25
+    global_revisit_weight_vertical: 0.00
+    global_revisit_weight_image: 0.35
+    global_recent_weight_containment: 0.00
+    global_revisit_weight_containment: 0.00
+    continuation_max_age_sec: 8.0
+    global_containment_threshold: 0.92                                                    # Accumulated-overlap containment required to grant a footprint vote. Containment measures the same thing as the footprint overlap with a stricter threshold, so without a high bar a small object standing inside a big surface track's envelope collects footprint + containment + vertical as three votes for one geometric fact. Raise toward 0.935 if small-object-into-large-surface merges reappear.
+    revisit_min_2d_iou: 0.75
+    local_segments_enabled: true                                                                      # Deliberate deviation from object-tracking-optimisation-experiment FINAL_OPTIMIZED_CONFIG.yaml (false) -- needed for long-internal-object splitting into local Hydra segments. Everything else in this block still matches that experiment exactly.
+    local_segment_max_xy_span_m: 6.0                                                                 # Maximum horizontal span of one local semantic slot/section.
+    local_segment_revisit_distance_m: 1.5                                                            # Re-associate a revisited local section by centroid distance.
+    local_segment_gap_m: 0.20                                                                        # Local 3D-box gap allowed when updating the same segment.
+    local_segment_2d_fallback_enabled: true                                                          # Reuse a recent local slot by 2D IoU when either side lacks usable 3D geometry.
+    local_segment_max_2d_iou_age_sec: 2.0                                                            # Keep local 2D fallback short-term so stale image positions are not reused.
+    local_segment_min_2d_iou: 0.30                                                                   # Minimum local-segment 2D overlap; matches the physical-track fallback threshold.
+    session_persistence:                                                                             # Carry tracker state across runs so the revisit-association branch actually gets exercised.
+      enabled: false                                                                                 # Cross-run tracker resume. Disabled so each run starts fresh. rsg_all.launch.py's _launch_hydra_stack reads this same flag and auto-forces hydra_load_state_path to "none" when it is false, so this one switch also stops Hydra's own DSG resume -- no separate launch arg needed. Set true to restore revisit-association across runs.
+      state_path: ${WORKSPACE_ROOT}/memory/tracker/phase1_tracker_state.json                  # Single rolling state file, written atomically (.tmp then replace). Lives under the workspace's memory/ folder alongside the RAP store -- everything that survives a run is in one place.
+      time_shift_sec: 86400.0                                                                        # Every stored timestamp is moved this far into the past on save. REQUIRED, not cosmetic: bag replay restarts at the bag's own start time, which is EARLIER than a saved last_seen_timestamp_sec, so the raw age is negative and _find_match's max(0.0, ...) clamps it to 0 -> recent mode, the opposite of the intent. One day makes age ~= 86400 - bag_duration, far past continuation_max_age_sec (8s) -> revisit mode.
+    active_segments_topic: /rsg/objects/active_local_segments                                        # Per-frame slot observation heartbeat used by the fuser.
+    require_known_label_match: false                                                                 # Permit tracking before a semantic label has been assigned.
+    rap_evidence_weight: 0.7                                                                         # Give RAP evidence substantial, but not absolute, influence.
+    vlm_evidence_weight: 1.0                                                                         # Give VLM labels strongest influence for unknown objects.
+    slots:
+      first_label_id: 1                                                                              # Reserve slot 0 for unknown.
+      count: 10000                                                                                   # Number of fixed semantic slots exposed to Hydra.
+      label_prefix: unknown_slot_                                                                    # Initial placeholder name for each unlabelled slot.
+      label_width: 5                                                                                 # Produce names such as unknown_slot_00001.
+    semantic_result:
+      min_observations: 1                                                                            # Allow immediate semantic updates for this evaluation configuration.
+      min_consensus: 0.0                                                                             # Do not delay updates while evaluating the RAP/VLM pipeline.
+      min_evidence: 0.0                                                                              # Do not require accumulated evidence before publishing a label.
+
+  loop_closure:                                                                                     # Re-anchor the persistent-object cache when the back-end corrects drift via map->odom.
+    enabled: true                                                                                   # Armed. Inert on the current GT-odom setup (map==odom==world, no map->odom TF): the per-frame check early-returns; reanchor_all/merge are never called. Acts only once a front end publishes a non-identity map->odom (LCD on, split map/odom frames).
+    map_frame: map                                                                                  # Drift-corrected frame published by the SLAM back-end.
+    odom_frame: odom                                                                                # Continuous (drifting) odometry frame.
+    min_translation_m: 0.05                                                                         # Ignore map->odom jitter below this; only a real correction re-anchors.
+    min_rotation_deg: 0.5                                                                           # Same, for the yaw component of the correction.
+    merge_duplicates: true                                                                          # After a re-anchor, fold the revisit duplicate track into its pre-closure identity.
+    merge_recent_window_sec: 5.0                                                                    # A track last seen within this window counts as the fresh (post-correction) copy.
+    merge_distance_slack_m: 0.6                                                                     # Drift-pass search radius = |correction|*1.25 + this.
+    event_topic: /rsg/phase1/loop_closure_event                                                     # One JSON diagnostic per re-anchor (delta, track/merge counts).
+
+  metadata:
+    include_object_metadata: true                                                                    # Include object-to-slot and inference metadata.
+    include_known_objects: true                                                                      # Include objects already recognized by RAP/VLM.
+    include_VLM_unknowns: true                                                                    # Include unknown objects so VLM fallback can label them.
+    include_bbox_2d: true                                                                            # Include 2D detection bounds.
+    include_centroid_2d: true                                                                        # Include 2D mask centroids.
+    include_centroid_3d: true                                                                        # Include 3D centroids used by the fuser and track association.
+    include_bbox_3d: true                                                                            # Include 3D object boxes.
+    include_bbox_volume: true                                                                        # Include 3D box volume for matching validation.
+    include_depth_stats: true                                                                        # Include mask depth statistics for geometry diagnostics.
+    include_mask_area: true                                                                          # Include mask area for confidence and filtering diagnostics.
+    include_frame_relation_metadata: false                                                           # Avoid redundant per-frame relation metadata.
+
+  sam:
+    enabled: true                                                                                    # Run NanoSAM instance segmentation.
+    backend: nanosam                                                                                 # Use TensorRT-accelerated NanoSAM on Jetson.
+    input_scale_ratio: 0.85                                                                          # Segment at 65% resolution to improve small/thin-object recall.
+    resize_interpolation: area                                                                       # Use area interpolation for downscaling.
+    depth_filter:
+      enabled: false                                                                                  # Avoid generating object masks where depth is invalid.
+      min_depth_m: 0.30                                                                              # Match preprocessor and Hydra lower depth bound.
+      max_depth_m: 5.0                                                                               # Match preprocessor and Hydra upper depth bound.
+      min_valid_ratio: 0.05                                                                          # Require at least 5% valid depth inside a candidate region.
+      crop_to_valid_roi: true                                                                        # Focus SAMs on the valid depth region.
+      roi_margin_px: 12                                                                              # Preserve a small margin around valid depth.
+      background_value: [0, 0, 0]                                                                    # Use black for pixels outside the valid depth region.
+    model_type: vit_b                                                                                # Retained for compatibility; NanoSAM engines are used below.
+    checkpoint_path: ~/rsg_models/sam/sam_vit_b_01ec64.pth                               # Fallback checkpoint path.
+    checkpoint_cache_dir: ~/.cache/sam                                                   # Cache location for SAM assets.
+    device: cuda                                                                                     # Run segmentation on the GPU.
+    auto_download: false                                                                             # Do not download models at runtime.
+    mask_threshold: 0.80                                                                             # Per-pixel inclusion confidence for NanoSAM's mask decoder. Kept high to prevent cross-object mask fusion: lowering it shrinks the real-world separation between two nearby tracked objects, which can push their centroid gap below global_centroid_pass_m and reintroduce mis-associations.
+    padding: 0.2                                                                                     # Retained for compatibility with non-NanoSAM modes.
+    points_per_side: 3                                                                               # Grid density of SAM's automatic point prompts, and the hard ceiling on raw candidate count -- it is applied before max_masks, so setting it too low caps candidates below max_masks. The NanoSAM backend reads this value.
+    pred_iou_thresh: 0.0                                                                             # SAM optimisation experiment: disabled.
+    min_mask_pixels: 3500                                                                           # SAM optimisation experiment Phase 2.6: confirmed optimal.
+    max_masks: 8                                                                                     # Manual override (was 12, experiment Phase 2.2).
+    nanosam:
+      image_encoder_engine: ~/rsg_models/nanosam/resnet18_image_encoder.engine           # TensorRT image encoder engine.
+      mask_decoder_engine: ~/rsg_models/nanosam/mobile_sam_mask_decoder.engine           # TensorRT mask decoder engine.
+      points_per_side: 3                                                                             # Grid density of SAM's automatic point prompts, and the hard ceiling on raw candidate count -- it is applied before max_masks, so setting it too low caps candidates below max_masks. The NanoSAM backend reads this value.
+      mask_threshold: 0.80                                                                           # Per-pixel inclusion confidence for NanoSAM's mask decoder. Kept high to prevent cross-object mask fusion: lowering it shrinks the real-world separation between two nearby tracked objects, which can push their centroid gap below global_centroid_pass_m and reintroduce mis-associations.
+      nms_iou: 0.30                                                                                  # SAM optimisation experiment Phase 2.5.
+      point_margin_fraction: 0.167                                                                   # SAM optimisation experiment integration spec.
+      skip_black_points: true                                                                        # Ignore black/invalid-depth regions.
+      min_prompt_luma: 4                                                                             # Reject near-black prompt locations.
+
+  rap:
+    enabled: false
+    backend: real                                                                                    # Use the real RAP implementation rather than a test stub.
+    execution_mode: async                                                                            # Keep retrieval off the critical RGB-D-to-Hydra path.
+    async: true                                                                                      # Enable asynchronous RAP work.
+    queue_size: 300                                                                                  # Store only track IDs; raw crops remain in the per-track registry.
+    queue_drop_policy: defer_track_id                                                                # Full FIFO defers a unique track ID instead of dropping its semantic job.
+    model_name: openai/clip-vit-base-patch32                                                         # CLIP embedding model used by RAP memory.
+    device: cpu                                                                                      # CPU, not GPU: CLIP-ViT-B/32 is tiny and RAP is only called once per track, and on this Jetson its CUDA calls silently lose GPU-memory contention against NanoSAM/VLM/Hydra (CUBLAS_STATUS_ALLOC_FAILED on every query() and add_image(), so nothing ever reaches the Chroma collection). CPU avoids that contention entirely.
+    storage_path: ${WORKSPACE_ROOT}/memory/rap/chroma                                          # Persistent Chroma/RAP memory directory. Must match the --path the chroma server is launched with (rsg_full_stack.launch.py, overridable via RSG_RAP_STORAGE_PATH).
+    chroma_host: 127.0.0.1                                                                           # Local Chroma server.
+    chroma_port: 8001                                                                                # Local Chroma server port.
+    collection_name: visual_rag_orin_deploy_vlm                                                      # Persistent collection containing visual examples and labels.
+    auto_start_server: false                                                                         # Chroma is launched by the full-stack launch file.
+    confidence_threshold: 0.90                                                                        # Minimum RAP confidence for an accepted retrieval label.
+    distance_threshold: 0.10                                                                          # Maximum RAP embedding distance for an accepted retrieval label.
+    update_memory_from_vlm: false                                                                    # Freeze the learned RAP collection during this evaluation run.
+    update_min_confidence: 0.90                                                                      # Avoid storing weak VLM classifications.
+    memory_update_path: ${WORKSPACE_ROOT}/memory/rap/phase1_rap_memory.jsonl                   # Audit log of memory additions.
+
+  semantic_labeling:
+    enabled: true                                                                                    # Publish stable semantic results for the Hydra-RAP fuser.
+    min_observations: 2                                                                              # Require at least one valid observation before a semantic job can be scheduled.
+    settle_time_sec: 5.0                                                                             # Minimum bag-time wait before RAP eligibility; the best crop keeps updating until RAP/VLM dequeues its track ID.
+    force_dispatch_on_shutdown: false                                                                 # Release still-collecting tracks with their best available crop during controlled shutdown.
+    result_topic: /rsg/objects/semantic_label_result                                                 # Final semantic-label result topic consumed by the fuser.
+    shutdown_wait_sec: 0.0                                                                           # Allow queued async work to finish during controlled shutdown.
+
+  unknown_tracking:
+    enabled: true                                                                                    # Track unknown objects until VLM resolves them.
+    max_match_distance_m: 0.3
+    max_volume_ratio: 3.0                                                                            # Reject implausible geometry changes during association.
+    max_track_age_sec: 12.0                                                                           # Expire unknown tracks that are not observed again.
+    min_observations_before_vlm: 3                                                                   # Used only by the RAP-disabled legacy VLM fallback path.
+    max_wait_before_vlm_sec: 1.5                                                                     # Used only by the RAP-disabled legacy VLM fallback path.
+    call_vlm_only_once_per_track: true                                                               # Prevent repeated expensive VLM calls for one track.
+    retry_failed_tracks: true                                                                      # Avoid endless retry loops during model/service failures.
+    update_track_centroid: true                                                                      # Refine unknown-track position as new observations arrive.
+    centroid_update_alpha: 0.7                                                                       # Smooth centroid updates while favoring new measurements.
+    best_frame_selection: true                                                                       # Send the highest-quality observation to the VLM.
+    min_quality_for_vlm: 0.0                                                                         # Accept any valid observation; adjust upward if VLM labels are noisy.
+    max_tracks: 200                                                                                  # Cap unknown-track state and VLM workload.
+    use_2d_iou_fallback: true                                                                        # Use image overlap when 3D geometry is weak.
+    min_2d_iou: 0.3                                                                                  # Minimum overlap for unknown-track fallback association.
+
+  semantic_crop:
+    rap_target_only: false                                                                          # false sends the plain, unsuppressed bbox crop (full room context retained) to RAP. With target-only masking, CLIP embedding distances were intermixed between same- and cross-category crops (ceiling-vs-wall closer than genuine ceiling-vs-ceiling), leaving it unable to discriminate structural surfaces.
+    rap_background_rgb: [32, 32, 32]                                                               # Neutral RGB replacement for every non-target pixel in the RAP crop.
+    vlm_target_focus: true                                                                          # VLM sees the full-colour target with suppressed context.
+    vlm_context_alpha: 0.12                                                                         # Retain only 12% intensity in non-target context.
+    vlm_context_grayscale: true                                                                     # Remove context colour cues that could dominate target classification.
+    draw_target_contour: true                                                                       # Draw a thin cyan boundary around the exact SAM target.
+    target_contour_rgb: [0, 255, 255]                                                              # RGB contour colour (cyan); matches the "cyan boundary" wording in the VLM prompt.
+    target_contour_thickness_px: 2                                                                  # Thin contour; target pixels remain the primary evidence.
+
+  vlm:
+    enabled: true                                                                                    # Use Qwen for objects not confidently resolved by RAP. Keep risk_vlm.enabled off while this is on, so only one VLM server is doing dispatched work at a time.
+    mode: qwen_http                                                                                  # Query the selected local Qwen OpenAI-compatible HTTP endpoint.
+    active_profile: qwen3_5_4b_q4                                                                     # Winner of the prompt-optimisation experiment: qwen3_5_4b_q4 x P3 (format-hardened) -- 88% accuracy, ~2.9s/call, lowest memory. See debug/prompt_optimisation_experiment/EXPERIMENT_REPORT.md.
+    async: true                                                                                      # Keep VLM calls off the Hydra mapping path.
+    queue_size: 300                                                                                  # Store only track IDs; VLM snapshots the current best crop at dequeue time.
+    queue_drop_policy: defer_track_id                                                                # Full FIFO defers a unique track ID instead of dropping it.
+    api_key: ''                                                                                      # No key is required for the local endpoint.
+    timeout_sec: 60.0                                                                                # Allow sufficient time for Jetson inference.
+    max_tokens: 512                                                                                  # Matches R6, the actual winning run (qwen3_5_4b_q4 x P3, 88%) -- 5000 (from R8, a later 9B-leg change) was functionally equivalent since llama.cpp clamps to (context_size - prompt tokens) regardless, but this reproduces R6 exactly rather than a later, different row's value.
+    temperature: 0.0                                                                                 # Deterministic labels for consistent RAP memory entries.
+    jpeg_quality: 100                                                                                 # Good visual quality with manageable request size.
+    prompt: |
+      OUTPUT RULE — READ THIS FIRST
+      Your entire reply is ONE JSON object and nothing else. The first character you output is "{" and the last is "}". No preamble, no analysis, no numbered steps, no sentences such as "Based on the visual evidence...", and no markdown code fences. Work through the approach below silently and output only the result.
+
+      This is an indoor object-classification task. Identify the object that the cyan boundary encloses.
+
+      APPROACH (reason through this silently - do not write any of it)
+      1. Look only inside the cyan boundary. Everything outside it is background - never name it, however large or obvious. Use the surroundings only to work out what the enclosed region is.
+      2. Decide what the enclosed region mainly shows.
+      3. Choose the label using the priority order below.
+
+      PRIORITY ORDER
+      a. Room-defining structure over incidental detail. The large planes that form the room - overhead, underfoot, the vertical sides - and the openings and supports in them take priority over small things mounted on, set into, or resting against them. If the boundary spans many repeated units of one surface (several ceiling tiles or panels, a run of floor, a stretch of wall), name the surface itself ("ceiling", "wall", "floor"), not one unit ("ceiling_tile").
+      b. BUT distinctive infrastructure that fills the boundary is named, not generalised. If exposed pipes, ductwork, a large air vent or diffuser, a fire hose reel, a sprinkler main or a big fixture dominates the enclosed region, name that thing. Collapsing to "ceiling" or "wall" is only right when the fixture is small or incidental and the surface is what the boundary mostly shows.
+      c. Furniture over the objects on it - but only with a furniture cue. A freestanding piece of furniture outranks the smaller things on it. A large flat vertical surface with no handle, seam, gap, toe-kick or visible depth is a wall or a pillar, not a cabinet - do not upgrade a plain surface to furniture without a cue.
+      d. When two readings compete, choose the larger, more dominant, more structural one.
+
+      MATERIAL AND AMBIGUITY CUES
+      - A transparent or translucent panel, a framed glass screen, a glazed partition or a glass-panelled door -> name it as glass (for example "glass_wall", "glass_partition", "glass_door"). Offices often divide space with glass rather than solid wall.
+      - Judge transparency directly: if the room, objects, people or light behind the panel are visible through it - even dimly, even with a frame, mullions or a faint surface reflection - it is glass; a panel you cannot see through at all is solid (wall, door, cabinet).
+      - A rectangular panel that reflects the room or shows a mirror image -> mirror. A plain matte white or lightly-marked panel -> whiteboard. If you cannot tell, name the wall it sits on at low confidence.
+      - Low detail, deep shadow, motion blur or heavy truncation -> do not commit to a specific object; give the structural reading (wall / floor / ceiling) at low confidence, or VLM_no_result if nothing is identifiable.
+
+      LABEL FORM
+      - A concise, singular, lowercase label that best describes what it actually is. There is no fixed list of labels - name whatever it is. Do not describe colour, condition or activity.
+
+      CONFIDENCE CALIBRATION for "label_confidence" - report it honestly
+      - 0.90-1.00: unmistakable; the enclosed region can only be this.
+      - 0.70-0.90: clear, minor uncertainty.
+      - 0.45-0.70: plausible, but a competing reading exists - the right band for cabinet-vs-wall and mirror-vs-whiteboard.
+      - 0.20-0.45: genuinely ambiguous, or a guess.
+      - 0.0 with label VLM_no_result: incomprehensible crop.
+      A low confidence on a hard crop is better than a confident wrong answer. Do not default to 0.90+.
+
+      Mobility:
+      - "dynamic": only a human, an animal, or a self-propelled moving object
+      - "static": any stationary object, including all surfaces, structures, furniture, glass and fixtures
+      - "unknown": when the label is unknown
+
+      OUTPUT - exactly one JSON object, with nothing before it or after it:
+      {"label": "<label>", "label_confidence": <0-1>, "mobility_class": "<static|dynamic|unknown>", "mobility_confidence": <0-1>}
+
+      GOOD - this is the whole reply:
+      {"label": "wall", "label_confidence": 0.85, "mobility_class": "static", "mobility_confidence": 0.99}
+
+      BAD - never reply like any of these:
+      - Based on the visual evidence within the cyan boundary: 1. Analysis: ... then the JSON
+      - The object is a wall. {"label": "wall", ...}
+      - the JSON object wrapped in triple-backtick code fences
+
+      WORKED EXAMPLES (illustrating the approach, not a list of allowed labels):
+
+      Room-defining structure over incidental detail:
+      - Boundary spans a panelled ceiling covering many tiles and a recessed light -> {"label": "ceiling", "label_confidence": 0.92, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary covers a wall area with a whiteboard mounted on part of it -> {"label": "wall", "label_confidence": 0.85, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary on a wall plane; an armchair sits in front of it, outside the boundary -> {"label": "wall", "label_confidence": 0.86, "mobility_class": "static", "mobility_confidence": 0.99}
+      - Boundary on a floor area with a rug on it -> {"label": "floor", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
+
+      Distinctive infrastructure that fills the boundary - name it:
+      - Exposed pipes or ductwork running across the ceiling, filling the boundary -> {"label": "pipes", "label_confidence": 0.8, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A large air vent or diffuser that dominates the enclosed region -> {"label": "air_vent", "label_confidence": 0.82, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A fire hose reel on the wall, filling the boundary -> {"label": "fire_hose_reel", "label_confidence": 0.85, "mobility_class": "static", "mobility_confidence": 0.99}
+
+      Glass and reflective surfaces:
+      - A framed glass partition dividing two areas -> {"label": "glass_wall", "label_confidence": 0.8, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A glass-panelled door in a frame -> {"label": "glass_door", "label_confidence": 0.82, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A reflective rectangular panel showing a mirror image of the room -> {"label": "mirror", "label_confidence": 0.75, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A plain white rectangular panel on a wall, no reflection -> {"label": "whiteboard", "label_confidence": 0.7, "mobility_class": "static", "mobility_confidence": 0.99}
+
+      Furniture vs plain surface:
+      - An office chair filling most of the frame -> {"label": "office_chair", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A desk seen clearly, with items on top -> {"label": "desk", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A flat vertical surface with a visible handle, seam and toe-kick -> {"label": "cabinet", "label_confidence": 0.8, "mobility_class": "static", "mobility_confidence": 0.99}
+      - A flat vertical surface with no handles, seams or depth cues -> {"label": "wall", "label_confidence": 0.5, "mobility_class": "static", "mobility_confidence": 0.95}
+
+      Moving agents:
+      - A person in the space -> {"label": "person", "label_confidence": 0.93, "mobility_class": "dynamic", "mobility_confidence": 0.98}
+
+      Unclear:
+      - A blurred, dark or truncated region with no identifiable object -> {"label": "VLM_no_result", "label_confidence": 0.0, "mobility_class": "unknown", "mobility_confidence": 0.0}
+
+      Return only the JSON object - nothing before "{", nothing after "}". No markdown, no explanation, no numbered analysis.
+
+      ADDITIONAL FIELD - object_detail (experimental addition, V1_basic_addition)
+
+      Everything above is unchanged: still decide "label", "label_confidence",
+      "mobility_class" and "mobility_confidence" exactly as instructed.
+
+      Now also add a fifth key, "object_detail": a short phrase describing the
+      object's CURRENT VISIBLE STATE - not its identity, material or colour (the
+      label already covers that). Describe what is different about this specific
+      instance right now: items on or with it, its condition, or whether it looks
+      active or in use.
+
+      Examples:
+      - a table with a monitor and keyboard on it, tidily arranged -> "monitor and keyboard on table, organized properly"
+      - a floor with a wet patch -> "water on floor"
+      - a floor covered by a rug -> "carpet covering floor"
+      - a monitor showing an image -> "display on"
+      - a monitor with a black, blank screen -> "display off"
+      - nothing notable to report -> "no notable detail"
+
+      Keep object_detail to 10 words or fewer. Do not repeat the label inside it.
+
+      OUTPUT - exactly one JSON object, with nothing before it or after it:
+      {"label": "<label>", "label_confidence": <0-1>, "mobility_class": "<static|dynamic|unknown>", "mobility_confidence": <0-1>, "object_detail": "<short phrase>"}
+
+      GOOD - this is the whole reply:
+      {"label": "table", "label_confidence": 0.9, "mobility_class": "static", "mobility_confidence": 0.99, "object_detail": "monitor and keyboard on table, organized properly"}
+
+    prompt_optimisation:                                                                             # VLM prompt-optimisation experiment (debug/prompt_optimisation_experiment/). Set enabled: false for normal runs.
+      enabled: false                                                                                 # Route VLM crop + per-call CSV into the experiment run folder. On only while re-running the prompt matrix; off for normal production use.
+      run_id: R6__qwen35_4b__v6_structural_priority                                                        # Experiment matrix row this config now matches (the winner); inert while enabled is false.
+      prompt_version: P3_v6_structural_priority                                                            # Which prompt from prompts_under_test.yaml is active above.
+      output_root: ${WORKSPACE_ROOT}/debug/prompt_optimisation_experiment/runs                # <output_root>/<run_id>/session_<timestamp>/{crops,vlm_results.csv}
+
+    object_detail_experiment:                                                                        # object_detail prompt-addition experiment (debug/object_detail_prompt_experiment/). Set enabled: false for normal runs. See that folder's EXPERIMENT_REPORT.md for the addition text to paste into `prompt` above before enabling.
+      enabled: false                                                                                  # Off for normal runs: VLM crop/CSV output follows the normal VLM-Test-Session path rather than this experiment folder.
+      run_id: V1__qwen35_4b__basic_addition                                                                # Matches the pre-scaffolded folder under debug/object_detail_prompt_experiment/runs/.
+      prompt_version: V1_basic_addition                                                                    # Which version from object_detail_prompts_under_test.yaml is pasted into `prompt` above.
+      output_root: ${WORKSPACE_ROOT}/debug/object_detail_prompt_experiment/runs                # <output_root>/<run_id>/session_<timestamp>/{crops,vlm_results.csv}
+      crop_format: png                                                                                # Lossless -- object_detail grading depends on fine visual state cues jpeg compression can obscure.
+
+    result_validation:
+      min_label_confidence: 0.80                                                                    # Reject weak labels before they enter  memory or the fused graph.
+      min_mobility_confidence: 0.70                                                                  # Preserve the label but convert weak mobility decisions to unknown.
+      dynamic_label_hints:                                                                           # Correct contradictory static/unknown results for clear human, animal, and mobile-robot labels.
+        [person, human, man, woman, child, pedestrian, dog, cat, animal, horse, bird, mobile_robot, robot_dog, agv, amr, drone]
+      static_label_hints:                                                                            # Correct contradictory dynamic results for clear static-object labels.
+          [chair, office_chair, wheelchair, table, desk, door, window, wall,
+   floor, ceiling, curtain, fan, robot_arm, cabinet, bookshelf, shelf,
+   sofa, bed, computer_monitor, television, potted_plant, rug, cup,
+   refrigerator, microwave, washing_machine, lamp]
+    crop_context_ratio: 0.10                                                                         # Add 10% context before applying strong grayscale dimming.
+    min_crop_area_px: 6000                                                                           # Normal immediate-dispatch area; smaller objects may still use the bounded fallback below.
+    min_crop_short_side_px: 40                                                                       # Normal immediate-dispatch short-side threshold in original RGB pixels.
+    min_crop_quality_score: 0.28                                                                     # Minimum combined size/depth/fill/border quality for normal VLM dispatch.
+    target_crop_area_px: 60000                                                                       # Saturation area used to normalise crop-quality scoring without disadvantaging small objects.
+    target_crop_short_side_px: 180                                                                   # Saturation short-side used to normalise crop-quality scoring.
+    border_penalty: 0.28                                                                             # Penalty per image border touched by the raw object box.
+    quality_defer_max_wait_sec: 5.0                                                                 # Maximum additional bag-time wait after RAP-unknown before VLM receives the best available crop.
+    quality_defer_force_on_timeout: true                                                            # Prevent weak crops from waiting indefinitely when no stronger observation arrives.
+
+    profiles:
+      qwen3_vl_2b_q4:
+        endpoint: http://127.0.0.1:8000/v1/chat/completions                                          # Existing local OpenAI-compatible endpoint.
+        model: Qwen3-VL-2B-Instruct-GGUF                                                             # Existing lightweight VLM model identifier.
+        server:
+          provider: llama_cpp                                                                        # Keep the validated llama.cpp server path.
+          binary: ~/llama.cpp/build/bin/llama-server                                    # Existing CUDA-enabled llama-server binary.
+          hf_model: Qwen/Qwen3-VL-2B-Instruct-GGUF:Q4_K_M                                           # Existing 4-bit GGUF model reference.
+          model_path: ''                                                                             # Leave empty to download/load through the Hugging Face reference above.
+          mmproj_path: ''                                                                            # Automatically resolved by llama.cpp for the Hugging Face reference.
+          host: 0.0.0.0                                                                              # Listen on all local interfaces as before.
+          port: 8000                                                                                 # Preserve the current endpoint port.
+          context_size: 4096                                                                         # Existing context budget.
+          gpu_layers: 99                                                                             # Offload all supported layers to the GPU.
+          min_system_memory_gib: 0                                                                   # The current profile retains its existing memory behaviour.
+
+      qwen3_vl_8b_f16:
+        endpoint: http://127.0.0.1:8000/v1/chat/completions                                          # Same endpoint; only one selected profile is launched at a time.
+        model: Qwen3-VL-8B-Instruct-GGUF                                                             # Larger quality-oriented Qwen3-VL instruction model.
+        server:
+          provider: llama_cpp                                                                        # Reuse the current CUDA llama.cpp deployment and OpenAI-compatible API.
+          binary: ~/llama.cpp/build/bin/llama-server                                    # Must be a recent build with Qwen3-VL multimodal support.
+          hf_model: Qwen/Qwen3-VL-8B-Instruct-GGUF:F16                                              # Official FP16 GGUF language model plus matching FP16 vision projector.
+          model_path: '~/rsg_models/qwen3_vl_8b_f16/Qwen3VL-8B-Instruct-F16.gguf'                                                                             # Optional local Qwen3VL-8B-Instruct-F16.gguf path for manual downloads.
+          mmproj_path: '~/rsg_models/qwen3_vl_8b_f16/mmproj-Qwen3VL-8B-Instruct-F16.gguf'                                                                            # Optional local mmproj-Qwen3VL-8B-Instruct-F16.gguf path; required with model_path.
+          host: 0.0.0.0                                                                              # Keep the existing endpoint binding.
+          port: 8000                                                                                 # Keep the same API port so no Phase 1 code changes are needed.
+          context_size: 4096                                                                         # Match the proven 2B server context budget for identical crop requests.
+          gpu_layers: 99                                                                             # Offload all supported layers to the GPU.
+          min_system_memory_gib: 32                                                                  # FP16 8B requires a high-memory Jetson; guard against accidental 16 GB launches.
+
+      qwen3_5_4b_q4:
+        endpoint: http://127.0.0.1:8000/v1/chat/completions                                          # Same endpoint; only one selected profile is launched at a time.
+        model: Qwen3.5-VL-4B-Instruct-GGUF                                                           # Qwen 3.5 4B quantized model (faster inference).
+        server:
+          provider: llama_cpp                                                                        # Use llama.cpp for GGUF model serving.
+          binary: ~/llama.cpp/build/bin/llama-server                                    # CUDA-enabled llama-server binary.
+          model_path: '~/rsg_models/qwen3_5_4b/Qwen3.5-4B-Q4_K_M.gguf'                  # Local Qwen 3.5 4B Q4 model.
+          mmproj_path: '~/rsg_models/qwen3_5_4b/mmproj-BF16.gguf'                       # Vision projector for Qwen 3.5.
+          host: 0.0.0.0                                                                              # Listen on all local interfaces.
+          port: 8000                                                                                 # Same API port for consistency.
+          context_size: 4096                                                                         # Standard context budget.
+          gpu_layers: 99                                                                             # Offload all layers to GPU.
+          min_system_memory_gib: 8                                                                   # 4B Q4 requires less memory than 8B F16.
+          extra_args: ["--reasoning", "off", "-np", "1"]                                             # --reasoning off: Qwen3.5 is a thinking model; without this it burns the whole max_tokens budget inside <think> and returns empty content. -np 1: force a single server slot. Default (-1 = auto) resolved to 4 slots, and on cold start llama-server split one multimodal request into 2 concurrent internal tasks sharing the unified KV cache, corrupting token-position bookkeeping ("non-consecutive token position", "failed to prepare attention ubatches") -- the first ~16 VLM calls after every launch failed with HTTP 500 until it self-healed. Phase 1's own VLM dispatch is already single-threaded/serial (_vlm_loop), so this costs no real throughput.
+
+      qwen3_5_9b_q4:
+        endpoint: http://127.0.0.1:8000/v1/chat/completions                                          # Same endpoint; only one selected profile is launched at a time.
+        model: Qwen3.5-VL-9B-Instruct-GGUF                                                           # Qwen 3.5 9B quantized model (balance of speed and quality).
+        server:
+          provider: llama_cpp                                                                        # Use llama.cpp for GGUF model serving.
+          binary: ~/llama.cpp/build/bin/llama-server                                    # CUDA-enabled llama-server binary.
+          model_path: '~/rsg_models/qwen3_5_9b/Qwen3.5-9B-Q4_K_M.gguf'                  # Local Qwen 3.5 9B Q4 model.
+          mmproj_path: '~/rsg_models/qwen3_5_9b/mmproj-BF16.gguf'                       # Vision projector for Qwen 3.5.
+          host: 0.0.0.0                                                                              # Listen on all local interfaces.
+          port: 8000                                                                                 # Same API port for consistency.
+          context_size: 4096                                                                         # Standard context budget.
+          gpu_layers: 99                                                                             # Offload all layers to GPU.
+          min_system_memory_gib: 16                                                                  # 9B Q4 requires moderate memory (between 4B and 8B F16).
+          extra_args: ["--reasoning", "off", "-np", "1"]                                             # --reasoning off: Qwen3.5 is a thinking model; without this it burns the whole max_tokens budget inside <think> and returns empty content. -np 1: force a single server slot. Default (-1 = auto) resolved to 4 slots, and on cold start llama-server split one multimodal request into 2 concurrent internal tasks sharing the unified KV cache, corrupting token-position bookkeeping ("non-consecutive token position", "failed to prepare attention ubatches") -- the first ~16 VLM calls after every launch failed with HTTP 500 until it self-healed. Phase 1's own VLM dispatch is already single-threaded/serial (_vlm_loop), so this costs no real throughput.
+
+  # Risk assessment: a second, independent VLM call made only after an
+  # object is already identified (RAP hit, or the object-detection VLM
+  # above succeeds). Deliberately a separate model/server -- there is no
+  # `profiles`/`server` auto-launch section here like phase1.vlm has above;
+  # this endpoint is expected to already be running (its own llama.cpp/vLLM
+  # process, launched independently). See
+  # debug/risk_assessment_feature/DESIGN.md for the full design writeup.
+  risk_vlm:
+    enabled: false                                                                                     # Off so the object-detection VLM runs instead; phase1.vlm.enabled is the separate switch for that. Only one VLM server should be doing dispatched work at a time.
+    mode: qwen_http                                                                                    # Query an OpenAI-compatible local VLM endpoint, same protocol as phase1.vlm.
+    endpoint: http://127.0.0.1:8100/v1/chat/completions                                                # Different port from phase1.vlm's 8000 -- a genuinely separate server, auto-launched by rsg_risk_vlm_server (see `server:` below and rsg_full_stack.launch.py's start_risk_vlm argument).
+    model: Qwen3.5-VL-4B-Instruct-GGUF                                                                 # Whatever model `server:` below is actually serving.
+    api_key: ''
+    timeout_sec: 30.0
+    max_tokens: 400                                                                                    # Risk needs room for a short factors list, not just one label word.
+    temperature: 0.0
+    jpeg_quality: 85
+    queue_size: 300                                                                                    # Bounded: a slow/unreachable risk server can only ever delay or drop risk results, never block classification.
+    max_risk_factors: 5                                                                                 # Cap on how many hazard strings one assessment can report.
+    max_risk_factor_length: 120                                                                         # Cap per hazard string, in characters.
+    result_topic: /rsg/objects/risk_result                                                             # Consumed by the fuser (rsg_scene_graph_fuser.yaml's risk_result_topic must match).
+    yield_to_object_vlm: true                                                                          # Back off while phase1.vlm has pending work -- this Jetson may share one GPU across both VLM servers even though they're logically separate models. Set false only once that's confirmed not to be the case.
+    yield_backoff_sec: 0.2
+    # Auto-launched by rsg_full_stack.launch.py (rsg_risk_vlm_server script),
+    # gated by the start_risk_vlm launch argument -- same llama.cpp pattern
+    # as phase1.vlm's profiles, but flat (no profile switching) since this is
+    # always a single dedicated model/server, never one of several choices.
+    # Qwen3.5-4B chosen deliberately smaller than phase1.vlm's active 9B
+    # profile: this runs concurrently with it, adding to total GPU load.
+    server:
+      provider: llama_cpp                                                                              # Use llama.cpp for GGUF model serving.
+      binary: ~/llama.cpp/build/bin/llama-server                                          # Same CUDA-enabled llama-server binary phase1.vlm's profiles use.
+      model_path: '~/rsg_models/qwen3_5_4b/Qwen3.5-4B-Q4_K_M.gguf'                        # Local Qwen 3.5 4B Q4 model.
+      mmproj_path: '~/rsg_models/qwen3_5_4b/mmproj-BF16.gguf'                              # Vision projector for Qwen 3.5.
+      host: 0.0.0.0                                                                                    # Listen on all local interfaces.
+      port: 8100                                                                                       # Must match the endpoint above.
+      context_size: 4096                                                                               # Standard context budget.
+      gpu_layers: 99                                                                                   # Offload all layers to GPU.
+      min_system_memory_gib: 8                                                                         # 4B Q4 requires less memory than the 9B/8B profiles.
+      extra_args: ["--reasoning", "off", "-np", "1"]                                                   # See phase1.vlm.profiles' identical comment -- same fix for the same llama-server cold-start multimodal KV-cache corruption, applies to any model/profile using this binary.
+    # {label}/{mobility_class}/{source} are filled in from the object's own
+    # classification result (RAP or the object-detection VLM) before this
+    # prompt is sent -- see RiskVlmBackend._build_prompt in backends.py.
+    # Left unset here on purpose: the default in phase1_config.py already
+    # contains the full instructions and worked examples (bottle at a table
+    # edge vs. the middle of a table) and is long enough that duplicating it
+    # in YAML would just invite the two copies to drift. Uncomment and edit
+    # only if the prompt itself needs to change.
+    # prompt: |
+    #   ...
+
+  object_geometry:
+    enabled: true                                                                                    # Estimate 3D object geometry from mask and depth.
+    projection_stride: 4                                                                             # Restore the baseline depth-projection stride for a controlled SAM-only test.
+    min_valid_depth_points: 20                                                                       # Require enough depth support for a reliable 3D centroid.
+    min_depth_m: 0.30                                                                                # Match all other pipeline depth bounds.
+    max_depth_m: 5.0                                                                                 # Match all other pipeline depth bounds.
+    centroid_method: median                                                                          # Robust against foreground/background depth outliers.
+    reject_masks_fully_outside_depth_range: true                                                     # Drop a candidate mask entirely (before tracking/RAP/VLM/Hydra) when it has fewer than min_valid_depth_points inside [min_depth_m, max_depth_m] -- i.e. whenever the geometry estimator cannot produce a centroid/box for it. A candidate with no 3D can earn at most 2 evidence votes (image + temporal), so it can never meet a quorum of 3 and could only ever spawn one-observation phantom tracks. Masks are still kept when the depth gather never ran (geometry disabled / empty mask).
+
+  evidence_buffer:
+    enabled: false                                                                                   # Keep disabled; persistent tracking already aggregates evidence.
+    max_frames: 50                                                                                   # Used only if evidence buffering is enabled later.
+
+  performance:
+    measure_timing: true                                                                            # Stage/end-to-end timing instrumentation (phase1_timing.csv). Independent of the diagnostics master switch above.
+    publish_timing: false                                                                            # Avoid live timing-topic overhead.
+    write_timing_excel: true                                                                        # Buffer timing samples and write the workbook during clean shutdown.
+    write_timing_csv: true                                                                            # Runtime benchmark: Phase 1 CSV (loader falls back to write_timing_excel).
+    timing_excel_path: ${WORKSPACE_ROOT}/debug/runtime_thor_experiment/runs/_current/phase1_timing.csv
+    timing_sheet_name: phase1_timing                                                                 # Worksheet containing Phase 1 stage and end-to-end timing samples.
+    timing_excel_autosave_every: 0                                                                   # Disable periodic spreadsheet writes.
+    write_simple_csv: false                                                                           # Keep lightweight CSV diagnostics for offline review.
+    csv_debug_dir: ${WORKSPACE_ROOT}/debug/phase1_excel_current                              # Output folder for CSV timing/debug data.
+    generate_plots_on_shutdown: false                                                                # Avoid plotting overhead during automated tests.
+
+  deployment:
+    allow_dummy_fallback: false                                                                      # Fail clearly if required real models or services are unavailable.
