@@ -1,18 +1,384 @@
 \chapter{Results}
 \label{chap:results}
 
-{\small This chapter reports the main observations in four sections: object tracking quality (Section~\ref{sec:results_tracking}), runtime (Section~\ref{sec:results_runtime}), the comparison of VLMs and prompts (Section~\ref{sec:results_vlm}) and the resulting scene graphs across environments (Section~\ref{sec:results_scene_graph}). Each section states its objective and experimental setup before the results are discussed.\par}
+{\small This chapter reports the experimental results in the order of the processing pipeline. Section~\ref{sec:results_segmentation} examines the segmentation backend and its configuration, Section~\ref{sec:results_tracking} object tracking and crop selection, Section~\ref{sec:results_vlm} the comparison of vision-language models and prompts, Section~\ref{sec:results_visual} the resulting scene graphs across environments, and Section~\ref{sec:results_runtime} the runtime performance of the complete pipeline. Since the experiments differ in data, configuration and purpose, each section first states its own experimental setup.\par}
 
-\section{Object Tracking Quality}
+% ===========================================================================
+% Chart data: PQ benchmark on the Jetson AGX Thor (comparison.csv, comparison_B.csv)
+% ===========================================================================
+\definecolor{rsgblue}{RGB}{0,114,178}
+\definecolor{rsgorange}{RGB}{230,159,0}
+
+% Experiment A: backend comparison
+\pgfplotstableread{
+grid  nanoPQ  nanoSQ  nanoRQ  nanoLat  vitPQ  vitSQ  vitRQ  vitLat
+g3    0.298   0.830   0.359   29.2     0.214  0.848  0.252  610
+g5    0.352   0.825   0.427   57.7     0.283  0.834  0.340  1037
+g7    0.375   0.821   0.456   101.2    0.308  0.830  0.372  1677
+}\pqBackendTable
+
+% Experiment B1: NanoSAM grid sweep
+\pgfplotstableread{
+grid  PQ     FPS
+g7    0.359  9.7
+g6    0.347  12.7
+g5    0.344  16.6
+g4    0.320  23.7
+g3    0.294  33.9
+}\pqGridTable
+
+% Experiment B3: NMS IoU sweep (4x4 grid, threshold 0.80)
+\pgfplotstableread{
+nms   PQ     overlap
+n000  0.298  0.0
+n010  0.320  1.3
+n015  0.320  2.0
+n030  0.319  3.9
+}\pqNmsTable
+
+% ===========================================================================
+\section{Segmentation Backend and Configuration}
+\label{sec:results_segmentation}
+
+{\small The segmentation models used for object proposals (Section~\ref{subsec:method_proposals}) were evaluated offline on stored frames rather than inside the running pipeline, so that their masks could be measured against ground truth and their latency without interference from other components. The benchmark consists of 500 frames of the uHumans2 office scene~\cite{rosinol2021kimera} at $720 \times 480$ pixels, taken at intervals of about 0.75\,s of recording time. The simulator's segmentation image assigns every pixel to a class but does not separate individual objects, so each connected region of one class was treated as one ground-truth object. Regions smaller than 3500 pixels were excluded from the evaluation; a mask on them counts neither as correct nor as wrong. This yields 5231 ground-truth objects, on average 10.5 per frame; Figure~\ref{fig:results_gt_example} shows an example.\par}
+
+\begin{figure}[htbp]
+	\centering
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{example_images/gt_example_rgb.png}
+		\caption{RGB image.}
+		\label{fig:results_gt_example_rgb}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{example_images/gt_example_instances.png}
+		\caption{Ground-truth objects.}
+		\label{fig:results_gt_example_gt}
+	\end{subfigure}
+	\caption{Example frame of the segmentation benchmark from the uHumans2 office scene. Each colour marks one ground-truth object, that is, one connected region of a single class in the simulator's segmentation image, outlined in white; hatched regions, here the picture and the exit sign, are smaller than 3500 pixels and excluded from the evaluation. The two touching water dispensers form a single object, since they belong to the same class.}
+	\label{fig:results_gt_example}
+\end{figure}
+
+{\small The masks were scored with the panoptic quality (PQ) of Kirillov et~al.~\cite{kirillov2019panoptic}, applied without class labels. A mask $p$ and a ground-truth object $g$ match if their intersection over union (IoU) exceeds 0.5; since neither masks nor objects overlap, each object has at most one such mask, and the result is independent of the order of the masks. Unmatched objects count as false negatives ($\mathit{FN}$), unmatched masks as false positives ($\mathit{FP}$). Pooled over all frames,
+\begin{equation}
+	\mathrm{PQ} =
+	\underbrace{\frac{\sum_{(p,g) \in \mathit{TP}} \mathrm{IoU}(p,g)}{|\mathit{TP}|}}_{\text{segmentation quality (SQ)}}
+	\times
+	\underbrace{\frac{|\mathit{TP}|}{|\mathit{TP}| + \tfrac{1}{2}|\mathit{FP}| + \tfrac{1}{2}|\mathit{FN}|}}_{\text{recognition quality (RQ)}} ,
+	\label{eq:pq}
+\end{equation}
+where $\mathit{TP}$ is the set of matched pairs. SQ measures how closely the found objects are outlined, RQ, an F1 score, how many objects are found without spurious masks. Since the score is class-agnostic and pooled, it is not comparable with published PQ results. All runs were performed on a Jetson AGX Thor (JetPack~7.2, TensorRT~10.16) in its maximum power mode without other workload. The latency covers the complete processing of a frame, from the image in memory to the final masks, and is the median over three passes after ten warm-up frames.\par}
+
+{\small In a first experiment, NanoSAM~\cite{nanosam2023}, executed with TensorRT engines built on the device and a half-precision image encoder~\cite{nvidia_tensorrt}, was compared with the original SAM with a ViT-B encoder~\cite{kirillov2023segmentanything} at full precision in PyTorch. Both models were prompted with grids of $3 \times 3$, $5 \times 5$ and $7 \times 7$ points and post-processed identically: each prompt yields the single-mask output, a pixel belongs to the mask if its logit exceeds 0.80, masks below 3500 pixels are discarded, duplicates are removed by non-maximum suppression (NMS) at an IoU of 0.10, and the cap of 49 masks is never reached.\par}
+
+{\small NanoSAM achieves the higher PQ at every grid density (Figure~\ref{fig:results_sam_backend}). The difference lies entirely in recognition quality, whereas the segmentation quality of ViT-B is equal or slightly higher: an object found by ViT-B is outlined at least as well. Both models keep a similar number of masks (10.4 and 10.7 per frame at $7 \times 7$), but both precision (0.384 against 0.478) and recall (0.360 against 0.437) are lower for ViT-B. With identical prompts, ViT-B thus more often returns a mask that covers an object only partly or extends beyond it, rather than more masks. Since the thresholds were chosen for NanoSAM, part of this gap may be due to the shared settings. NanoSAM is also 17 to 21 times faster; at $7 \times 7$, the ViT-B encoder alone takes about 370\,ms against 11\,ms, and the 49 decoder calls about 1300\,ms against 81\,ms. PQ grows with the grid density with diminishing returns, and even $7 \times 7$ recovers only 2286 of the 5231 objects, since many prompts fall on the same large surfaces and yield duplicate masks. These measurements confirm the choice of NanoSAM motivated in Section~\ref{sec:nanosam}.\par}
+
+\begin{figure}[htbp]
+	\centering
+	\pgfplotsset{
+		pqbars/.style={
+			ybar, width=\linewidth, height=4.6cm, bar width=8pt,
+			symbolic x coords={g3,g5,g7}, xtick=data,
+			xticklabels={$3\times3$,$5\times5$,$7\times7$},
+			enlarge x limits=0.25, xlabel={Prompt grid},
+			tick label style={font=\scriptsize}, label style={font=\scriptsize},
+			legend style={at={(0.5,1.03)}, anchor=south, legend columns=-1, draw=none, font=\scriptsize},
+			nodes near coords,
+			nodes near coords style={font=\tiny, rotate=90, anchor=west, /pgf/number format/fixed, /pgf/number format/fixed zerofill, /pgf/number format/precision=2},
+		},
+		nanobar/.style={draw=rsgblue!80!black, fill=rsgblue},
+		vitbar/.style={draw=rsgorange!80!black, fill=rsgorange},
+	}
+	\begin{subfigure}[t]{0.48\linewidth}
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[pqbars, ymin=0, ymax=0.6, ylabel={PQ}]
+				\addplot[nanobar] table[x=grid, y=nanoPQ] {\pqBackendTable};
+				\addplot[vitbar] table[x=grid, y=vitPQ] {\pqBackendTable};
+				\legend{NanoSAM, ViT-B}
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Panoptic quality.}
+		\label{fig:results_sam_backend_pq}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.48\linewidth}
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[pqbars, ymode=log, log origin=infty, ymin=10, ymax=20000,
+				ylabel={Latency per frame (ms)}, point meta=rawy,
+				nodes near coords style={/pgf/number format/precision=0, /pgf/number format/fixed zerofill=false, /pgf/number format/1000 sep={}}]
+				\addplot[nanobar] table[x=grid, y=nanoLat] {\pqBackendTable};
+				\addplot[vitbar] table[x=grid, y=vitLat] {\pqBackendTable};
+				\legend{NanoSAM, ViT-B}
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Median latency (log scale).}
+		\label{fig:results_sam_backend_latency}
+	\end{subfigure}
+
+	\vspace{2mm}
+	\begin{subfigure}[t]{0.48\linewidth}
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[pqbars, ymin=0, ymax=0.7, ylabel={RQ}]
+				\addplot[nanobar] table[x=grid, y=nanoRQ] {\pqBackendTable};
+				\addplot[vitbar] table[x=grid, y=vitRQ] {\pqBackendTable};
+				\legend{NanoSAM, ViT-B}
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Recognition quality.}
+		\label{fig:results_sam_backend_rq}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.48\linewidth}
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[pqbars, ymin=0, ymax=1.2, ylabel={SQ}]
+				\addplot[nanobar] table[x=grid, y=nanoSQ] {\pqBackendTable};
+				\addplot[vitbar] table[x=grid, y=vitSQ] {\pqBackendTable};
+				\legend{NanoSAM, ViT-B}
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Segmentation quality.}
+		\label{fig:results_sam_backend_sq}
+	\end{subfigure}
+	\caption{Comparison of NanoSAM and SAM with a ViT-B encoder at three prompt-grid densities on 500 frames of the uHumans2 office scene, measured on the Jetson AGX Thor. Recognition and segmentation quality are the two factors of the panoptic quality (Equation~\ref{eq:pq}).}
+	\label{fig:results_sam_backend}
+\end{figure}
+
+{\small A second experiment searched for a faster NanoSAM configuration. The input scale of 0.85, the cap of 8 masks and the minimum mask size of 3500 pixels were taken from the pipeline configuration, and three parameters were varied one at a time, each step retaining the values selected before: the grid density, the mask threshold (0.70, 0.80, 0.90) and the NMS IoU (0, 0.10, 0.15, 0.30). Within a step, the value with the highest PQ was selected, and among values within 0.005 of it the fastest; the grid density was chosen as a trade-off. Since the input scale and the mask cap differ from the first experiment, the two experiments are not directly comparable.\par}
+
+{\small The grid density dominates the trade-off (Figure~\ref{fig:results_sam_grid}). PQ falls with sparser grids almost entirely through recall, while SQ (0.82 to 0.83) and precision (0.51 to 0.53) remain nearly constant: sparser prompting misses objects rather than producing poorer masks. The latency grows almost linearly with the number of prompts, since the encoder takes a constant 11\,ms. The loss is gradual down to $5 \times 5$ and steeper below; a $4 \times 4$ grid was selected as a balance between PQ and latency, with a 95th-percentile latency of only 44\,ms. The mask threshold changed PQ by at most 0.003 between 0.70 and 0.90, so 0.80 was kept. For the NMS, only the complete suppression of overlaps lowers PQ, since it discards about one valid mask per frame; between 0.10 and 0.30, PQ is unchanged, while the overlap between the kept masks triples. The selection rule picked 0.30 on a negligible latency difference, although 0.10 to 0.15 achieve the same PQ with less overlap between the resulting object crops. The resulting configuration, a $4 \times 4$ grid with a mask threshold of 0.80 and an NMS IoU of 0.30, reaches a PQ of 0.319 at 23.6 frames per second.\par}
+
+\begin{figure}[htbp]
+	\centering
+	\begin{subfigure}[t]{0.53\linewidth}
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[
+				ybar, width=0.78\linewidth, height=4.6cm, bar width=10pt,
+				ymin=0, ymax=0.6, axis y line*=left,
+				ylabel={PQ}, ylabel style={text=rsgblue!80!black}, y tick label style={text=rsgblue!80!black},
+				xlabel={Prompt grid},
+				symbolic x coords={g7,g6,g5,g4,g3}, xtick=data,
+				xticklabels={$7\times7$,$6\times6$,$5\times5$,$4\times4$,$3\times3$},
+				enlarge x limits=0.13,
+				nodes near coords,
+				nodes near coords style={font=\tiny, /pgf/number format/fixed, /pgf/number format/fixed zerofill, /pgf/number format/precision=3},
+				tick label style={font=\scriptsize}, label style={font=\scriptsize},
+				]
+				\addplot[draw=rsgblue!80!black, fill=rsgblue!70] table[x=grid, y=PQ] {\pqGridTable};
+			\end{axis}
+			\begin{axis}[
+				width=0.78\linewidth, height=4.6cm,
+				ymin=0, ymax=80, axis y line*=right, axis x line=none,
+				ylabel={Throughput (FPS)}, ylabel style={text=rsgorange!80!black}, y tick label style={text=rsgorange!80!black},
+				symbolic x coords={g7,g6,g5,g4,g3}, enlarge x limits=0.13,
+				legend style={at={(0.5,1.03)}, anchor=south, legend columns=-1, draw=none, font=\scriptsize},
+				tick label style={font=\scriptsize}, label style={font=\scriptsize},
+				]
+				\addlegendimage{ybar, ybar legend, draw=rsgblue!80!black, fill=rsgblue!70}
+				\addlegendentry{PQ}
+				\addplot[very thick, rsgorange!90!black, mark=*, mark size=2pt, mark options={fill=rsgorange, draw=rsgorange!70!black}] table[x=grid, y=FPS] {\pqGridTable};
+				\addlegendentry{Throughput}
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Grid density (threshold 0.80, NMS IoU 0.10).}
+		\label{fig:results_sam_grid_pps}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[
+				ybar, width=0.78\linewidth, height=4.6cm, bar width=10pt,
+				ymin=0, ymax=0.6, axis y line*=left,
+				ylabel={PQ}, ylabel style={text=rsgblue!80!black}, y tick label style={text=rsgblue!80!black},
+				xlabel={NMS IoU},
+				symbolic x coords={n000,n010,n015,n030}, xtick=data,
+				xticklabels={0,0.10,0.15,0.30},
+				enlarge x limits=0.18,
+				nodes near coords,
+				nodes near coords style={font=\tiny, /pgf/number format/fixed, /pgf/number format/fixed zerofill, /pgf/number format/precision=3},
+				tick label style={font=\scriptsize}, label style={font=\scriptsize},
+				]
+				\addplot[draw=rsgblue!80!black, fill=rsgblue!70] table[x=nms, y=PQ] {\pqNmsTable};
+			\end{axis}
+			\begin{axis}[
+				width=0.78\linewidth, height=4.6cm,
+				ymin=0, ymax=12, axis y line*=right, axis x line=none,
+				ylabel={Overlapping pixels (\%)}, ylabel style={text=rsgorange!80!black}, y tick label style={text=rsgorange!80!black},
+				symbolic x coords={n000,n010,n015,n030}, enlarge x limits=0.18,
+				legend style={at={(0.5,1.03)}, anchor=south, legend columns=-1, draw=none, font=\scriptsize},
+				tick label style={font=\scriptsize}, label style={font=\scriptsize},
+				]
+				\addlegendimage{ybar, ybar legend, draw=rsgblue!80!black, fill=rsgblue!70}
+				\addlegendentry{PQ}
+				\addplot[very thick, rsgorange!90!black, mark=*, mark size=2pt, mark options={fill=rsgorange, draw=rsgorange!70!black}] table[x=nms, y=overlap] {\pqNmsTable};
+				\addlegendentry{Overlap}
+			\end{axis}
+		\end{tikzpicture}
+		\caption{NMS IoU ($4\times4$ grid, threshold 0.80).}
+		\label{fig:results_sam_grid_nms}
+	\end{subfigure}
+	\caption{Parameter study of NanoSAM on 500 frames of the uHumans2 office scene, measured on the Jetson AGX Thor, with an input scale of 0.85 and at most 8 masks. Overlapping pixels are the share of pixels covered by more than one kept mask before the masks are made disjoint.}
+	\label{fig:results_sam_grid}
+\end{figure}
+
+{\small The pipeline itself uses a $3 \times 3$ grid instead of the selected $4 \times 4$; all other values agree with the study. Apart from the NMS IoU, which has no measurable effect in this range, this corresponds to the $3 \times 3$ point of Figure~\ref{fig:results_sam_grid_pps}: it gives up 0.026 in PQ for about 13\,ms less per frame, in order to leave more GPU time to Hydra and the vision-language model, with which segmentation shares the device (Section~\ref{sec:results_runtime}). The mask threshold of 0.80 is additionally supported by the tracking investigation, since a lower value enlarges the masks of touching objects and reduces the separation between their tracks. The consequences of the lower recall for tracking, in particular masks that merge touching surfaces, are examined in Section~\ref{sec:results_tracking}.\par}
+
+{\small Three limitations apply to both experiments. Ground-truth objects are connected regions of one class, so that touching objects of the same class form a single object; all frames come from one recording and are not independent; and objects smaller than 3500 pixels are not evaluated. In addition, the parameter study selected and reports its values on the same frames, so that its PQ values are slightly optimistic.\par}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Object Tracking and Crop Selection}
 \label{sec:results_tracking}
 
-{\small The tracking evaluation addresses two questions: why object nodes occasionally contain two physical objects, and how reliably objects are re-identified when the pipeline is restarted in an environment it has already mapped. Both were examined on the uHumans2 office bag~\cite{rosinol2021kimera}, replayed at a reduced rate with ground-truth odometry on the Jetson AGX Orin, % TODO: verify hardware and playback rate of the tracking campaign
-using the association of Section~\ref{sec:method_tracking}. Two instruments were used: a log with one record per mask-to-track decision, including the branch taken and the cue scores, and periodic per-track crops, saved every tenth observation, which show the raw single-frame mask and thus allow it to be distinguished from the accumulated extent of the track. All measurements come from a single environment, and since run lengths differ, track counts are normalised per 100 frames.\par}
+{\small This section evaluates the tracking of Section~\ref{sec:method_tracking}, which determines the geometry of each scene-graph node, and the view selection of Section~\ref{subsec:method_view_selection}, which determines the crop from which its label and risk attributes are derived. All tests replay the uHumans2 office sequence~\cite{rosinol2021kimera} at a rate of 0.1 on an NVIDIA Jetson AGX Orin (Section~\ref{subsec:impl_phase1}) with ground-truth odometry.\par}
 
-{\small Inspection of the baseline configuration, which accepts a match when two of the five association verdicts agree and uses a centroid gate of 0.75\,m, showed that two mechanically distinct failure modes produce the same symptom, a single node whose box contains two objects. In \emph{segmentation-time fusion}, NanoSAM~\cite{nanosam2023} returns one mask spanning two touching surfaces, such as floor and sofa, wall and plant, or ceiling and pipe. Six or more instances were confirmed; the fusion persisted under every segmentation parameter tried and could begin mid-track, after about 50 clean observations, depending on the viewing angle. Since only one candidate reaches the tracker, no tracking parameter can repair it. In one floor track, both failure modes occurred about 20 observations apart.\par}
+\subsection{Association Failure Modes and Tuning}
+\label{subsec:results_assoc}
 
-{\small In \emph{cross-track association merge}, a clean track absorbs a separately segmented object, as confirmed for a floor absorbing a wall and a sofa. For an object resting on a surface, the overlap, containment and height cues express one geometric fact: the height test passed on all 582 recorded associations, so the quorum of two was met before the centroid and image cues, the only ones able to object, had any influence. A single marginal acceptance (0.326 against a gate of 0.30) then dragged the floor track towards the sofa. Reweighting was not a remedy, since the centroid score of an erroneous merge (0.45) exceeded those of correct continuations (0.07, 0.24). The remedy therefore had to act on the acceptance condition itself.\par}
+{\small The association (Section~\ref{subsec:method_association}) was first tuned to reduce duplicate tracks of objects seen from different viewpoints. The duplicates turned out to be scored in the recent mode rather than the revisit mode, so only adjusting the recent-mode threshold, weights and continuation window was effective; this reduced the number of tracks by about a quarter.\par}
 
-{\small Accordingly, the acceptance condition was tightened step by step over seven runs, each retaining the previous changes: a quorum of three with a centroid gate of 0.55\,m, a partial-overlap threshold of 0.50 with the centroid gate relaxed to 0.60\,m, the touch shortcut of the overlap test disabled, and finally the depth gate aligned with the minimum number of valid depth points required for geometry. The outcome is a deliberate trade. Raising the quorum increased fragmentation from 3.2 to between 8.0 and 9.9 tracks per 100 frames, and disabling the touch shortcut raised it to a maximum of 11.1. Part of this increase consisted of depth-less tracks, 16 of 101 in that run: masks of distant objects passed the original depth gate with only a few valid depth points, yielded no geometry and opened a new track at every observation. The aligned depth gate removed them entirely, leaving about 8.5 tracks per 100 frames, while the confirmed over-merges (floor and sofa, floor and trash can, wall and plant, ceiling and pipe) no longer occurred. This follows the asymmetric-error principle of Section~\ref{sec:method_tracking}: fragments can be merged later, whereas an over-merged node has wrong geometry, crop and label. Segmentation-time fusion remains unresolved (Chapter~\ref{chap:limitations}).\par}
+{\small A review of the per-track crops and the logged cue scores then showed that some nodes contained two physical objects, caused by two distinct mechanisms. In \emph{segmentation-time fusion}, NanoSAM~\cite{nanosam2023} returns one mask covering two touching surfaces, which no association setting can undo (Section~\ref{sec:results_segmentation}).\par}
 
-{\small With this final configuration, re-identification was tested in five consecutive sessions, each replaying the same 300\,s wall-clock segment at a playback rate of 0.1, corresponding to 147 to 148 processed frames, with session persistence enabled (Section~\ref{subsec:method_sessions}). Memory was cleared only before session~1; session persistence is disabled in all other experiments of this chapter. In session~1, all 53 objects necessarily opened new tracks. Across sessions 2 to 5, only 1, 3, 0 and 1 new tracks were created, so that 199 of 204 re-encountered objects (97.5\,\%) were re-identified and the total number of tracks grew only from 53 to 58. Three of the five misses lie within about 1\,m of each other above 3.3\,m height, suggesting one tall structure whose centroid shifts beyond the gate between viewpoints. VLM calls fell monotonically from 28 to 11, 5, 2 and finally 1, since restored tracks keep their labels, while throughput stayed at about 0.49 frames per second (Section~\ref{sec:results_runtime}).\par}
+{\small In \emph{cross-track merges}, a clean track absorbs a separately segmented object, such as a floor absorbing a sofa. The analysis showed that the height and overlap votes pass for almost any object standing on a surface, so the quorum of two was met before the discriminating centroid and image cues could object.\par}
+
+{\small The acceptance condition was therefore tightened step by step, mainly by raising the quorum to three, disabling the touch shortcut of the overlap vote and rejecting masks without usable depth. Unlike the first stage, this deliberately accepted more tracks, following the asymmetric-error principle of Section~\ref{sec:method_tracking}: a fragment can be merged later, whereas an over-merged node is wrong irreversibly.\par}
+
+\subsection{Fragmentation versus Over-Merging}
+\label{subsec:results_fragmentation}
+
+{\small Figure~\ref{fig:results_tracking_campaign} shows how fragmentation and phantom tracks developed over the seven cumulative runs of this stage.\par}
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.78\linewidth, height=3.6cm,
+    ybar, bar width=9pt, grid=none,
+    font=\scriptsize,
+    symbolic x coords={R1,R2,R3,R4,R5,R6,R7},
+    xtick=data, enlarge x limits=0.08,
+    ymin=0, ymax=14,
+    ylabel={Tracks per 100 frames},
+    axis y line*=left, axis x line*=bottom,
+    nodes near coords, nodes near coords style={font=\tiny},
+    every axis plot/.append style={thin},
+    legend columns=2, legend style={at={(0.5,1.03)}, anchor=south, font=\scriptsize, draw=none},
+]
+\addplot[draw=black, fill=gray!45] coordinates {(R1,3.2) (R2,9.9) (R3,8.0) (R4,9.2) (R5,11.1) (R6,9.4) (R7,8.3)};
+\addlegendentry{Tracks per 100 frames (left)}
+\addlegendimage{black, thick, dashed, mark=square*, mark options={solid, fill=white}}
+\addlegendentry{Depth-less tracks (right)}
+\end{axis}
+\begin{axis}[
+    width=0.78\linewidth, height=3.6cm,
+    grid=none, font=\scriptsize,
+    symbolic x coords={R1,R2,R3,R4,R5,R6,R7},
+    xtick=\empty, enlarge x limits=0.08,
+    ymin=0, ymax=40,
+    ylabel={Depth-less tracks},
+    axis y line*=right, axis x line=none,
+]
+\addplot[black, thick, dashed, mark=square*, mark options={solid, fill=white}] coordinates {(R1,1) (R2,5) (R3,1) (R4,21) (R5,16) (R6,0) (R7,0)};
+\end{axis}
+\end{tikzpicture}
+\caption{Fragmentation (bars) and depth-less tracks (line) over the cumulative runs. R1: quorum of two; R2: quorum of three, centroid gate 0.55\,m; R3: repetition of R2; R4: overlap threshold 0.50, centroid gate 0.60\,m; R5: touch shortcut disabled; R6, R7: aligned depth gate (final).}
+\label{fig:results_tracking_campaign}
+\end{figure}
+
+{\small The stricter acceptance roughly tripled fragmentation, partly through depth-less masks that each opened a short-lived track; the final depth gate removed these entirely. In exchange, the observed over-merges no longer occurred.\par}
+
+\subsection{Identity Persistence across Sessions}
+\label{subsec:results_revisit}
+
+{\small Re-identification was tested by replaying the same segment in five consecutive sessions with session persistence (Section~\ref{subsec:method_sessions}) enabled, which is disabled in all other experiments.\par}
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.80\linewidth, height=3.6cm,
+    ybar, bar width=8pt, grid=none,
+    font=\scriptsize,
+    symbolic x coords={S1,S2,S3,S4,S5},
+    xtick=data, enlarge x limits=0.15,
+    ymin=0, ymax=65,
+    ylabel={Count per session},
+    axis x line*=bottom, axis y line*=left,
+    nodes near coords, nodes near coords style={font=\tiny},
+    every axis plot/.append style={thin},
+    legend columns=3,
+    legend style={at={(0.5,1.03)}, anchor=south, font=\scriptsize, draw=none},
+]
+\addplot[draw=black, fill=gray!70] coordinates {(S1,53) (S2,1) (S3,3) (S4,0) (S5,1)};
+\addplot[draw=black, fill=white] coordinates {(S1,0) (S2,47) (S3,50) (S4,52) (S5,50)};
+\addplot[draw=black, pattern=north east lines] coordinates {(S1,28) (S2,11) (S3,5) (S4,2) (S5,1)};
+\legend{New tracks, Revisit associations, VLM labelling calls}
+\end{axis}
+\end{tikzpicture}
+\caption{New tracks, revisit associations and labelling calls over five consecutive sessions (recent-mode associations, 777 to 790 per session, omitted).}
+\label{fig:results_revisit}
+\end{figure}
+
+{\small As Figure~\ref{fig:results_revisit} shows, almost all objects created in the first session were recognised as revisits in the following ones (97.5\,\%), and since restored tracks keep their labels, the number of labelling calls dropped to nearly zero without affecting throughput (Section~\ref{sec:results_runtime}).\par}
+
+\subsection{Crop Selection}
+\label{subsec:results_crop}
+
+{\small For view selection, the earlier score was replaced by the additive score of Equation~\ref{eq:crop_score}, and the margin term was redefined to measure object pixels in a narrow edge zone rather than on the exact border, so that it distinguishes tightly cut views from well-framed ones. It was evaluated on the crop log of one run recorded without hysteresis.\par}
+
+{\small The new score reduced the number of crop replacements per track (Figure~\ref{fig:results_crop}). The log also showed that, without hysteresis, many replacements exchanged nearly identical views, which motivated the relative improvement margin $h = 0.005$ of the deployed configuration. The scoring cost is negligible compared with model inference.\par}
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.55\linewidth, height=3.6cm,
+    ybar, bar width=12pt, grid=none,
+    font=\scriptsize,
+    symbolic x coords={Track 1,Track 3},
+    xtick=data, enlarge x limits=0.45,
+    ymin=0, ymax=7.5,
+    ylabel={Selected crops per track},
+    axis x line*=bottom, axis y line*=left,
+    nodes near coords, nodes near coords style={font=\tiny},
+    every axis plot/.append style={thin},
+    legend columns=2, legend style={at={(0.5,1.03)}, anchor=south, font=\scriptsize, draw=none},
+]
+\addplot[draw=black, fill=gray!60] coordinates {(Track 1,6) (Track 3,6)};
+\addplot[draw=black, pattern=north east lines] coordinates {(Track 1,3) (Track 3,2)};
+\legend{Previous score, Additive score ($h = 0$)}
+\end{axis}
+\end{tikzpicture}
+\caption{Selected crops per track, including the initial crop, under the previous score and the additive score without hysteresis.}
+\label{fig:results_crop}
+\end{figure}
+
+{\small The selected crops are the input of the semantic labelling evaluated in Section~\ref{sec:results_vlm}.\par}

@@ -87,10 +87,10 @@ preprocessing:                                                                  
 
   performance:
     max_publish_frequency_hz: 25.0                                                                    # Upper timestamp-based output limit; above the 16.4 Hz bag camera rate.
-    measure_timing: false                                                                             # Retain in-memory timing measurements for diagnostics.
+    measure_timing: true                                                                             # Retain in-memory timing measurements for diagnostics.
     publish_timing: false                                                                            # Avoid timing-topic overhead during mapping.
-    write_timing_excel: false                                                                        # Avoid file I/O while processing the bag.
-    timing_excel_path: ${WORKSPACE_ROOT}/debug/RSG_pre_processor_debug_{session_date}_{creation_time}.xlsx  # Used only if Excel timing is enabled.
+    write_timing_excel: true                                                                        # Avoid file I/O while processing the bag.
+    timing_excel_path: ${WORKSPACE_ROOT}/debug/runtime_thor_experiment/runs/_current/preprocessor_timing.xlsx
     timing_sheet_name: timing_debug                                                                  # Used only if Excel timing is enabled.
     timing_excel_autosave_every: 0                                                                   # Disable periodic spreadsheet writes.
 
@@ -651,10 +651,11 @@ phase1:                                                                         
     max_frames: 50                                                                                   # Used only if evidence buffering is enabled later.
 
   performance:
-    measure_timing: false                                                                            # Stage/end-to-end timing instrumentation (phase1_timing.csv). Independent of the diagnostics master switch above.
+    measure_timing: true                                                                            # Stage/end-to-end timing instrumentation (phase1_timing.csv). Independent of the diagnostics master switch above.
     publish_timing: false                                                                            # Avoid live timing-topic overhead.
-    write_timing_excel: false                                                                        # Buffer timing samples and write the workbook during clean shutdown.
-    timing_excel_path: ${WORKSPACE_ROOT}/debug/{node_name}_debug_{session_date}_{creation_time}.xlsx  # Used only if Excel timing is enabled.
+    write_timing_excel: true                                                                        # Buffer timing samples and write the workbook during clean shutdown.
+    write_timing_csv: true                                                                            # Runtime benchmark: Phase 1 CSV (loader falls back to write_timing_excel).
+    timing_excel_path: ${WORKSPACE_ROOT}/debug/runtime_thor_experiment/runs/_current/phase1_timing.csv
     timing_sheet_name: phase1_timing                                                                 # Worksheet containing Phase 1 stage and end-to-end timing samples.
     timing_excel_autosave_every: 0                                                                   # Disable periodic spreadsheet writes.
     write_simple_csv: false                                                                           # Keep lightweight CSV diagnostics for offline review.
