@@ -22,6 +22,15 @@
 \contentsline {figure}{\numberline {4.4}{\ignorespaces Sequence of the modified Hydra pipeline with session persistence.}}{64}{figure.caption.26}%
 \contentsline {figure}{\numberline {4.5}{\ignorespaces Sequence of the scene graph fuser.}}{65}{figure.caption.27}%
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Example benchmark frame. Each colour is one ground-truth object; hatched regions are below 3500 pixels and ignored.}}{67}{figure.caption.28}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces NanoSAM against SAM ViT-B on the benchmark: (a) PQ, (b) median latency (log scale), (c) RQ, (d) SQ.}}{68}{figure.caption.29}%
+\contentsline {figure}{\numberline {5.3}{\ignorespaces Parameter study of NanoSAM (input scale 0.85, at most 8 masks): (a) grid density at threshold 0.80 and NMS IoU 0.10, (b) mask threshold with a $4\times 4$ grid, (c) NMS IoU with a $4\times 4$ grid and threshold 0.80. Overlap is the share of pixels covered by more than one mask.}}{69}{figure.caption.30}%
+\contentsline {figure}{\numberline {5.4}{\ignorespaces Tracking results: (a) fragmentation over the tightening runs R1 to R6 of the second experiment; (b) new tracks, revisit associations and labelling calls over five sessions.}}{71}{figure.caption.31}%
+\contentsline {figure}{\numberline {5.5}{\ignorespaces Comparison of the three prompts on models of two generations, Qwen3 (blue) and Qwen3.5 (orange and green), on the office sequence ($N \approx 50$ crops per run): (a) strict accuracy, (b) median inference latency.}}{73}{figure.caption.32}%
+\contentsline {figure}{\numberline {5.6}{\ignorespaces Scene graphs of the uHumans2 office (a--d) and apartment (e, f) sequences and of the OpenLORIS-Scene office1-1 sequence (g, h) at the end of each run, displayed in RViz. From bottom to top: objects, places (+10\,m) and rooms (+20\,m). Objects are coloured by label (grey: unlabelled), their opacity follows the presence confidence, and a grey halo marks currently observed objects. Black lines: hierarchy and Hydra edges; amber double arrows: contact relations; blue dotted lines: identity relations. \textbf {[TODO: adapt to what the panels actually show.]}}}{76}{figure.caption.34}%
+\contentsline {figure}{\numberline {5.7}{\ignorespaces \small \add@extra@listi {sml}Runtime at saturated input: (a) throughput (Thor: mean $\pm $ std of three runs), (b) Phase~1 latency (Orin indicative).}}{77}{figure.caption.35}%
+\contentsline {figure}{\numberline {5.8}{\ignorespaces \small \add@extra@listi {sml}Mean Phase~1 frame time by stage group (``Other'': message construction, crop scoring and minor stages; Orin indicative).}}{77}{figure.caption.36}%
+\contentsline {figure}{\numberline {5.9}{\ignorespaces \small \add@extra@listi {sml}Object-labelling VLM (Qwen3.5-4B, Q4\_K\_M, prompt P3). (a) Time per call on Orin without segmentation load and on Thor within the running pipeline. (b) Split of a Thor call into prompt processing and token generation, taken from the server log.}}{78}{figure.caption.37}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

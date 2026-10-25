@@ -1,7 +1,7 @@
 \babel@toc {english}{}\relax 
 \contentsline {chapter}{Abstract}{ii}{chapter*.1}%
 \contentsline {chapter}{\nonumberline List of Figures}{vi}{chapter*.3}%
-\contentsline {chapter}{\nonumberline List of Tables}{viii}{chapter*.4}%
+\contentsline {chapter}{\nonumberline List of Tables}{ix}{chapter*.4}%
 \contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}%
 \contentsline {section}{\numberline {1.1}Motivation}{1}{section.1.1}%
 \contentsline {section}{\numberline {1.2}Relevance}{2}{section.1.2}%
@@ -85,8 +85,16 @@
 \contentsline {subsection}{\numberline {4.2.5}Scene Graph Fuser}{64}{subsection.4.2.5}%
 \contentsline {subsection}{\numberline {4.2.6}Portability and Extensibility}{66}{subsection.4.2.6}%
 \contentsline {chapter}{\numberline {5}Results}{67}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Object Tracking Quality}{67}{section.5.1}%
-\contentsline {chapter}{\numberline {6}Conclusions}{69}{chapter.6}%
-\contentsline {chapter}{\nonumberline Bibliography}{70}{chapter*.28}%
-\contentsline {chapter}{\numberline {A}Example appendix chapter}{76}{appendix.A}%
+\contentsline {section}{\numberline {5.1}Segmentation Backend and Configuration}{67}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Object Tracking and Crop Selection}{70}{section.5.2}%
+\contentsline {section}{\numberline {5.3}VLM Model and Prompt Comparison}{72}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Visual Results across Environments}{74}{section.5.4}%
+\contentsline {section}{\numberline {5.5}Runtime Performance}{75}{section.5.5}%
+\contentsline {chapter}{\numberline {6}Conclusions}{79}{chapter.6}%
+\contentsline {chapter}{\nonumberline Bibliography}{80}{chapter*.38}%
+\contentsline {chapter}{\numberline {A}Prompts of the VLM Comparison}{86}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Zero-Shot Prompt (P1)}{86}{section.A.1}%
+\contentsline {section}{\numberline {A.2}Example-Driven Prompt (P2)}{86}{section.A.2}%
+\contentsline {section}{\numberline {A.3}Structural-Priority Prompt (P3)}{88}{section.A.3}%
+\contentsline {section}{\numberline {A.4}Deployed Prompt with Visual-State Description}{90}{section.A.4}%
 \providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

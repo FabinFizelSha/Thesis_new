@@ -1516,6 +1516,7 @@
       \strng{authorbibnamehash}{692138df0ed19b3bc1376656faef591c}
       \strng{authornamehash}{ae3509cef74d700bc72e166cef519778}
       \strng{authorfullhash}{35aa6f56cd021270d387680af0c2260a}
+      \field{extraname}{1}
       \field{sortinit}{8}
       \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
       \field{labelnamesource}{author}
@@ -3076,6 +3077,52 @@
       \endverb
       \verb{url}
       \verb https://github.com/ggml-org/llama.cpp
+      \endverb
+    \endentry
+    \entry{kirillov2019panoptic}{inproceedings}{}
+      \name{author}{5}{}{%
+        {{hash=28c5859f568975f174c8668976ed369d}{%
+           family={Kirillov},
+           familyi={K\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+        {{hash=6b4b60e909e78633945f3f9c9dc83e01}{%
+           family={He},
+           familyi={H\bibinitperiod},
+           given={Kaiming},
+           giveni={K\bibinitperiod}}}%
+        {{hash=bd5dadbe57bedc5957c19a3154c4d424}{%
+           family={Girshick},
+           familyi={G\bibinitperiod},
+           given={Ross},
+           giveni={R\bibinitperiod}}}%
+        {{hash=574542c2f7c4308c28c190f314a2de4c}{%
+           family={Rother},
+           familyi={R\bibinitperiod},
+           given={Carsten},
+           giveni={C\bibinitperiod}}}%
+        {{hash=ecd149fdcb3e0503881d49e545744c3d}{%
+           family={Dollár},
+           familyi={D\bibinitperiod},
+           given={Piotr},
+           giveni={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{ae3509cef74d700bc72e166cef519778}
+      \strng{fullhash}{5cb8b3e1d99942e5b3b022a11f5c4aa0}
+      \strng{bibnamehash}{5cb8b3e1d99942e5b3b022a11f5c4aa0}
+      \strng{authorbibnamehash}{5cb8b3e1d99942e5b3b022a11f5c4aa0}
+      \strng{authornamehash}{ae3509cef74d700bc72e166cef519778}
+      \strng{authorfullhash}{5cb8b3e1d99942e5b3b022a11f5c4aa0}
+      \field{extraname}{2}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)}
+      \field{title}{Panoptic Segmentation}
+      \field{year}{2019}
+      \verb{doi}
+      \verb 10.1109/CVPR.2019.00963
       \endverb
     \endentry
   \enddatalist

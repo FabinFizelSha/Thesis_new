@@ -36,11 +36,19 @@ n015  0.320  2.0
 n030  0.319  3.9
 }\pqNmsTable
 
+% Experiment B2: mask threshold sweep (4x4 grid, NMS IoU 0.10)
+\pgfplotstableread{
+thr   PQ     FPS
+t070  0.321  23.3
+t080  0.320  23.7
+t090  0.318  23.4
+}\pqThrTable
+
 % ===========================================================================
 \section{Segmentation Backend and Configuration}
 \label{sec:results_segmentation}
 
-{\small The segmentation models used for object proposals (Section~\ref{subsec:method_proposals}) were evaluated offline on stored frames rather than inside the running pipeline, so that their masks could be measured against ground truth and their latency without interference from other components. The benchmark consists of 500 frames of the uHumans2 office scene~\cite{rosinol2021kimera} at $720 \times 480$ pixels, taken at intervals of about 0.75\,s of recording time. The simulator's segmentation image assigns every pixel to a class but does not separate individual objects, so each connected region of one class was treated as one ground-truth object. Regions smaller than 3500 pixels were excluded from the evaluation; a mask on them counts neither as correct nor as wrong. This yields 5231 ground-truth objects, on average 10.5 per frame; Figure~\ref{fig:results_gt_example} shows an example.\par}
+{\small The segmentation models for object proposals (Section~\ref{subsec:method_proposals}) were evaluated offline on stored frames, outside the running pipeline, so that their masks could be compared with ground truth and their latency measured in isolation. The benchmark consists of 500 frames of the uHumans2 office scene~\cite{rosinol2021kimera} at $720 \times 480$ pixels, sampled about every 0.75\,s. The simulator provides a segmentation image that labels each pixel with a class but does not distinguish objects of the same class. Each connected region of one class was therefore taken as one ground-truth object; as a consequence, touching objects of the same class, such as the two water dispensers in Figure~\ref{fig:results_gt_example}, form a single object. Regions smaller than 3500 pixels were ignored in the evaluation. This gives 5231 objects, on average 10.5 per frame (Figure~\ref{fig:results_gt_example}).\par}
 
 \begin{figure}[htbp]
 	\centering
@@ -57,7 +65,7 @@ n030  0.319  3.9
 		\caption{Ground-truth objects.}
 		\label{fig:results_gt_example_gt}
 	\end{subfigure}
-	\caption{Example frame of the segmentation benchmark from the uHumans2 office scene. Each colour marks one ground-truth object, that is, one connected region of a single class in the simulator's segmentation image, outlined in white; hatched regions, here the picture and the exit sign, are smaller than 3500 pixels and excluded from the evaluation. The two touching water dispensers form a single object, since they belong to the same class.}
+	\caption{Example benchmark frame. Each colour is one ground-truth object; hatched regions are below 3500 pixels and ignored.}
 	\label{fig:results_gt_example}
 \end{figure}
 
@@ -69,168 +77,161 @@ n030  0.319  3.9
 	\underbrace{\frac{|\mathit{TP}|}{|\mathit{TP}| + \tfrac{1}{2}|\mathit{FP}| + \tfrac{1}{2}|\mathit{FN}|}}_{\text{recognition quality (RQ)}} ,
 	\label{eq:pq}
 \end{equation}
-where $\mathit{TP}$ is the set of matched pairs. SQ measures how closely the found objects are outlined, RQ, an F1 score, how many objects are found without spurious masks. Since the score is class-agnostic and pooled, it is not comparable with published PQ results. All runs were performed on a Jetson AGX Thor (JetPack~7.2, TensorRT~10.16) in its maximum power mode without other workload. The latency covers the complete processing of a frame, from the image in memory to the final masks, and is the median over three passes after ten warm-up frames.\par}
+where $\mathit{TP}$ is the set of matched pairs. SQ measures how closely the found objects are outlined, RQ, an F1 score, how many objects are found without spurious masks. All runs were performed on a Jetson AGX Thor (JetPack~7.2, TensorRT~10.16) in its maximum power mode without other workload. The latency covers the complete processing of a frame, from the image in memory to the final masks, and is the median over three passes after ten warm-up frames.\par}
 
-{\small In a first experiment, NanoSAM~\cite{nanosam2023}, executed with TensorRT engines built on the device and a half-precision image encoder~\cite{nvidia_tensorrt}, was compared with the original SAM with a ViT-B encoder~\cite{kirillov2023segmentanything} at full precision in PyTorch. Both models were prompted with grids of $3 \times 3$, $5 \times 5$ and $7 \times 7$ points and post-processed identically: each prompt yields the single-mask output, a pixel belongs to the mask if its logit exceeds 0.80, masks below 3500 pixels are discarded, duplicates are removed by non-maximum suppression (NMS) at an IoU of 0.10, and the cap of 49 masks is never reached.\par}
+{\small In a first experiment, NanoSAM~\cite{nanosam2023} was compared with SAM with a ViT-B encoder~\cite{kirillov2023segmentanything} (PyTorch, full precision), both prompted with $3 \times 3$, $5 \times 5$ and $7 \times 7$ grids and post-processed identically: single-mask output per prompt, logit threshold 0.80, minimum mask size 3500 pixels and non-maximum suppression (NMS) at an IoU of 0.10. At every grid density, NanoSAM is more accurate and about ten times faster than ViT-B (Figure~\ref{fig:results_sam_backend}). The difference comes from how many objects are found, not from how well they are outlined. Both models produce about the same number of masks per frame, and the objects that ViT-B does find are outlined just as well. However, fewer of its masks correspond to a real object: they more often cover only part of an object or spill over onto its neighbours. Denser grids help both models with diminishing returns, as many prompts fall on the same large surfaces, and even the densest grid finds fewer than half of the objects. These results confirm the choice of NanoSAM (Section~\ref{sec:nanosam}).\par}
 
-{\small NanoSAM achieves the higher PQ at every grid density (Figure~\ref{fig:results_sam_backend}). The difference lies entirely in recognition quality, whereas the segmentation quality of ViT-B is equal or slightly higher: an object found by ViT-B is outlined at least as well. Both models keep a similar number of masks (10.4 and 10.7 per frame at $7 \times 7$), but both precision (0.384 against 0.478) and recall (0.360 against 0.437) are lower for ViT-B. With identical prompts, ViT-B thus more often returns a mask that covers an object only partly or extends beyond it, rather than more masks. Since the thresholds were chosen for NanoSAM, part of this gap may be due to the shared settings. NanoSAM is also 17 to 21 times faster; at $7 \times 7$, the ViT-B encoder alone takes about 370\,ms against 11\,ms, and the 49 decoder calls about 1300\,ms against 81\,ms. PQ grows with the grid density with diminishing returns, and even $7 \times 7$ recovers only 2286 of the 5231 objects, since many prompts fall on the same large surfaces and yield duplicate masks. These measurements confirm the choice of NanoSAM motivated in Section~\ref{sec:nanosam}.\par}
-
-\begin{figure}[htbp]
+\begin{figure}[!htb]
 	\centering
 	\pgfplotsset{
 		pqbars/.style={
-			ybar, width=\linewidth, height=4.6cm, bar width=8pt,
+			ybar, scale only axis, width=0.66\linewidth, height=3.2cm, bar width=4.5pt,
 			symbolic x coords={g3,g5,g7}, xtick=data,
 			xticklabels={$3\times3$,$5\times5$,$7\times7$},
-			enlarge x limits=0.25, xlabel={Prompt grid},
-			tick label style={font=\scriptsize}, label style={font=\scriptsize},
-			legend style={at={(0.5,1.03)}, anchor=south, legend columns=-1, draw=none, font=\scriptsize},
+			enlarge x limits=0.28, xlabel={Prompt grid},
+			tick label style={font=\tiny}, label style={font=\scriptsize},
 			nodes near coords,
 			nodes near coords style={font=\tiny, rotate=90, anchor=west, /pgf/number format/fixed, /pgf/number format/fixed zerofill, /pgf/number format/precision=2},
 		},
 		nanobar/.style={draw=rsgblue!80!black, fill=rsgblue},
 		vitbar/.style={draw=rsgorange!80!black, fill=rsgorange},
 	}
-	\begin{subfigure}[t]{0.48\linewidth}
+	\begin{subfigure}[t]{0.24\linewidth}
 		\centering
 		\begin{tikzpicture}
-			\begin{axis}[pqbars, ymin=0, ymax=0.6, ylabel={PQ}]
+			\begin{axis}[pqbars, ymin=0, ymax=0.6, ylabel={PQ}, legend to name=samlegend, legend columns=-1, legend style={draw=none, font=\scriptsize, /tikz/every even column/.append style={column sep=3mm}}]
 				\addplot[nanobar] table[x=grid, y=nanoPQ] {\pqBackendTable};
 				\addplot[vitbar] table[x=grid, y=vitPQ] {\pqBackendTable};
 				\legend{NanoSAM, ViT-B}
 			\end{axis}
 		\end{tikzpicture}
-		\caption{Panoptic quality.}
+		\caption{PQ.}
 		\label{fig:results_sam_backend_pq}
 	\end{subfigure}
 	\hfill
-	\begin{subfigure}[t]{0.48\linewidth}
+	\begin{subfigure}[t]{0.24\linewidth}
 		\centering
 		\begin{tikzpicture}
 			\begin{axis}[pqbars, ymode=log, log origin=infty, ymin=10, ymax=20000,
-				ylabel={Latency per frame (ms)}, point meta=rawy,
+				ylabel={Latency (ms)}, point meta=rawy,
 				nodes near coords style={/pgf/number format/precision=0, /pgf/number format/fixed zerofill=false, /pgf/number format/1000 sep={}}]
 				\addplot[nanobar] table[x=grid, y=nanoLat] {\pqBackendTable};
 				\addplot[vitbar] table[x=grid, y=vitLat] {\pqBackendTable};
-				\legend{NanoSAM, ViT-B}
 			\end{axis}
 		\end{tikzpicture}
-		\caption{Median latency (log scale).}
+		\caption{Latency.}
 		\label{fig:results_sam_backend_latency}
 	\end{subfigure}
-
-	\vspace{2mm}
-	\begin{subfigure}[t]{0.48\linewidth}
+	\hfill
+	\begin{subfigure}[t]{0.24\linewidth}
 		\centering
 		\begin{tikzpicture}
 			\begin{axis}[pqbars, ymin=0, ymax=0.7, ylabel={RQ}]
 				\addplot[nanobar] table[x=grid, y=nanoRQ] {\pqBackendTable};
 				\addplot[vitbar] table[x=grid, y=vitRQ] {\pqBackendTable};
-				\legend{NanoSAM, ViT-B}
 			\end{axis}
 		\end{tikzpicture}
-		\caption{Recognition quality.}
+		\caption{RQ.}
 		\label{fig:results_sam_backend_rq}
 	\end{subfigure}
 	\hfill
-	\begin{subfigure}[t]{0.48\linewidth}
+	\begin{subfigure}[t]{0.24\linewidth}
 		\centering
 		\begin{tikzpicture}
 			\begin{axis}[pqbars, ymin=0, ymax=1.2, ylabel={SQ}]
 				\addplot[nanobar] table[x=grid, y=nanoSQ] {\pqBackendTable};
 				\addplot[vitbar] table[x=grid, y=vitSQ] {\pqBackendTable};
-				\legend{NanoSAM, ViT-B}
 			\end{axis}
 		\end{tikzpicture}
-		\caption{Segmentation quality.}
+		\caption{SQ.}
 		\label{fig:results_sam_backend_sq}
 	\end{subfigure}
-	\caption{Comparison of NanoSAM and SAM with a ViT-B encoder at three prompt-grid densities on 500 frames of the uHumans2 office scene, measured on the Jetson AGX Thor. Recognition and segmentation quality are the two factors of the panoptic quality (Equation~\ref{eq:pq}).}
+
+	\vspace{1mm}
+	\pgfplotslegendfromname{samlegend}
+	\caption{NanoSAM against SAM ViT-B on the benchmark: (a) PQ, (b) median latency (log scale), (c) RQ, (d) SQ.}
 	\label{fig:results_sam_backend}
 \end{figure}
 
-{\small A second experiment searched for a faster NanoSAM configuration. The input scale of 0.85, the cap of 8 masks and the minimum mask size of 3500 pixels were taken from the pipeline configuration, and three parameters were varied one at a time, each step retaining the values selected before: the grid density, the mask threshold (0.70, 0.80, 0.90) and the NMS IoU (0, 0.10, 0.15, 0.30). Within a step, the value with the highest PQ was selected, and among values within 0.005 of it the fastest; the grid density was chosen as a trade-off. Since the input scale and the mask cap differ from the first experiment, the two experiments are not directly comparable.\par}
+{\small A second experiment aimed to find a NanoSAM configuration that is fast enough for the pipeline while keeping as much of the segmentation quality as possible, and to check whether the overlap between the generated masks can be reduced without losing accuracy. It used the same frames, scoring and timing as the first experiment, but took the input scale of 0.85, the cap of 8 masks and the minimum mask size of 3500 pixels from the pipeline configuration; the two experiments are therefore not directly comparable. Three parameters were varied one at a time, each step keeping the values chosen before. The grid density was varied from $7 \times 7$ to $3 \times 3$ and chosen as a trade-off between PQ and latency. The mask threshold (0.70, 0.80, 0.90) was then tested for its effect on PQ. Finally, the NMS IoU (0, 0.10, 0.15, 0.30) was varied to determine how strongly overlapping masks can be suppressed without reducing PQ, since overlapping masks lead to overlapping object crops.\par}
 
-{\small The grid density dominates the trade-off (Figure~\ref{fig:results_sam_grid}). PQ falls with sparser grids almost entirely through recall, while SQ (0.82 to 0.83) and precision (0.51 to 0.53) remain nearly constant: sparser prompting misses objects rather than producing poorer masks. The latency grows almost linearly with the number of prompts, since the encoder takes a constant 11\,ms. The loss is gradual down to $5 \times 5$ and steeper below; a $4 \times 4$ grid was selected as a balance between PQ and latency, with a 95th-percentile latency of only 44\,ms. The mask threshold changed PQ by at most 0.003 between 0.70 and 0.90, so 0.80 was kept. For the NMS, only the complete suppression of overlaps lowers PQ, since it discards about one valid mask per frame; between 0.10 and 0.30, PQ is unchanged, while the overlap between the kept masks triples. The selection rule picked 0.30 on a negligible latency difference, although 0.10 to 0.15 achieve the same PQ with less overlap between the resulting object crops. The resulting configuration, a $4 \times 4$ grid with a mask threshold of 0.80 and an NMS IoU of 0.30, reaches a PQ of 0.319 at 23.6 frames per second.\par}
+{\small Sparser grids lose PQ almost entirely through recall (Figure~\ref{fig:results_sam_grid}), while SQ and precision stay nearly constant: fewer prompts miss objects rather than producing poorer masks. Since the encoder takes a constant 11\,ms, the latency is governed by the number of prompts. The loss of PQ steepens below $5 \times 5$, and a $4 \times 4$ grid was chosen as the balance, with a 95th-percentile latency of only 44\,ms. The mask threshold has almost no effect on PQ, so a conservative value of 0.80 was chosen. For the NMS, only the complete suppression of overlaps costs accuracy, because it removes about one valid mask per frame; any IoU from 0.10 upwards gives the same PQ, and 0.30 was chosen, since it keeps slightly more masks per frame while the overlap remains a few per cent of the pixels.\par}
 
-\begin{figure}[htbp]
+\begin{figure}[!htb]
 	\centering
-	\begin{subfigure}[t]{0.53\linewidth}
+	\pgfplotsset{
+		pqdual/.style={
+			ybar, scale only axis, width=0.56\linewidth, height=3.2cm, bar width=5.5pt,
+			ymin=0, ymax=0.6, axis y line*=left,
+			ylabel={PQ}, ylabel style={text=rsgblue!80!black}, y tick label style={text=rsgblue!80!black},
+			xtick=data, enlarge x limits=0.2,
+			nodes near coords,
+			nodes near coords style={font=\tiny, rotate=90, anchor=west, /pgf/number format/fixed, /pgf/number format/fixed zerofill, /pgf/number format/precision=3},
+			tick label style={font=\tiny}, label style={font=\scriptsize},
+		},
+		pqline/.style={
+			scale only axis, width=0.56\linewidth, height=3.2cm,
+			axis y line*=right, axis x line=none, enlarge x limits=0.2,
+			ylabel style={text=rsgorange!80!black}, y tick label style={text=rsgorange!80!black},
+			tick label style={font=\tiny}, label style={font=\scriptsize},
+			legend style={at={(0.5,1.03)}, anchor=south, legend columns=-1, draw=none, font=\tiny},
+		},
+		pqbarstyle/.style={draw=rsgblue!80!black, fill=rsgblue!70},
+		pqlinestyle/.style={very thick, rsgorange!90!black, mark=*, mark size=1.6pt, mark options={fill=rsgorange, draw=rsgorange!70!black}},
+	}
+	\begin{subfigure}[t]{0.325\linewidth}
 		\centering
 		\begin{tikzpicture}
-			\begin{axis}[
-				ybar, width=0.78\linewidth, height=4.6cm, bar width=10pt,
-				ymin=0, ymax=0.6, axis y line*=left,
-				ylabel={PQ}, ylabel style={text=rsgblue!80!black}, y tick label style={text=rsgblue!80!black},
-				xlabel={Prompt grid},
-				symbolic x coords={g7,g6,g5,g4,g3}, xtick=data,
-				xticklabels={$7\times7$,$6\times6$,$5\times5$,$4\times4$,$3\times3$},
-				enlarge x limits=0.13,
-				nodes near coords,
-				nodes near coords style={font=\tiny, /pgf/number format/fixed, /pgf/number format/fixed zerofill, /pgf/number format/precision=3},
-				tick label style={font=\scriptsize}, label style={font=\scriptsize},
-				]
-				\addplot[draw=rsgblue!80!black, fill=rsgblue!70] table[x=grid, y=PQ] {\pqGridTable};
+			\begin{axis}[pqdual, xlabel={Prompt grid}, symbolic x coords={g7,g6,g5,g4,g3},
+				xticklabels={$7{\times}7$,$6{\times}6$,$5{\times}5$,$4{\times}4$,$3{\times}3$}, enlarge x limits=0.13]
+				\addplot[pqbarstyle] table[x=grid, y=PQ] {\pqGridTable};
 			\end{axis}
-			\begin{axis}[
-				width=0.78\linewidth, height=4.6cm,
-				ymin=0, ymax=80, axis y line*=right, axis x line=none,
-				ylabel={Throughput (FPS)}, ylabel style={text=rsgorange!80!black}, y tick label style={text=rsgorange!80!black},
-				symbolic x coords={g7,g6,g5,g4,g3}, enlarge x limits=0.13,
-				legend style={at={(0.5,1.03)}, anchor=south, legend columns=-1, draw=none, font=\scriptsize},
-				tick label style={font=\scriptsize}, label style={font=\scriptsize},
-				]
-				\addlegendimage{ybar, ybar legend, draw=rsgblue!80!black, fill=rsgblue!70}
-				\addlegendentry{PQ}
-				\addplot[very thick, rsgorange!90!black, mark=*, mark size=2pt, mark options={fill=rsgorange, draw=rsgorange!70!black}] table[x=grid, y=FPS] {\pqGridTable};
-				\addlegendentry{Throughput}
+			\begin{axis}[pqline, ymin=0, ymax=80, ylabel={FPS}, symbolic x coords={g7,g6,g5,g4,g3}, enlarge x limits=0.13]
+				\addlegendimage{ybar, ybar legend, pqbarstyle}\addlegendentry{PQ}
+				\addplot[pqlinestyle] table[x=grid, y=FPS] {\pqGridTable};\addlegendentry{FPS}
 			\end{axis}
 		\end{tikzpicture}
-		\caption{Grid density (threshold 0.80, NMS IoU 0.10).}
+		\caption{Grid density.}
 		\label{fig:results_sam_grid_pps}
 	\end{subfigure}
 	\hfill
-	\begin{subfigure}[t]{0.45\linewidth}
+	\begin{subfigure}[t]{0.325\linewidth}
 		\centering
 		\begin{tikzpicture}
-			\begin{axis}[
-				ybar, width=0.78\linewidth, height=4.6cm, bar width=10pt,
-				ymin=0, ymax=0.6, axis y line*=left,
-				ylabel={PQ}, ylabel style={text=rsgblue!80!black}, y tick label style={text=rsgblue!80!black},
-				xlabel={NMS IoU},
-				symbolic x coords={n000,n010,n015,n030}, xtick=data,
-				xticklabels={0,0.10,0.15,0.30},
-				enlarge x limits=0.18,
-				nodes near coords,
-				nodes near coords style={font=\tiny, /pgf/number format/fixed, /pgf/number format/fixed zerofill, /pgf/number format/precision=3},
-				tick label style={font=\scriptsize}, label style={font=\scriptsize},
-				]
-				\addplot[draw=rsgblue!80!black, fill=rsgblue!70] table[x=nms, y=PQ] {\pqNmsTable};
+			\begin{axis}[pqdual, xlabel={Mask threshold}, symbolic x coords={t070,t080,t090},
+				xticklabels={0.70,0.80,0.90}, enlarge x limits=0.3]
+				\addplot[pqbarstyle] table[x=thr, y=PQ] {\pqThrTable};
 			\end{axis}
-			\begin{axis}[
-				width=0.78\linewidth, height=4.6cm,
-				ymin=0, ymax=12, axis y line*=right, axis x line=none,
-				ylabel={Overlapping pixels (\%)}, ylabel style={text=rsgorange!80!black}, y tick label style={text=rsgorange!80!black},
-				symbolic x coords={n000,n010,n015,n030}, enlarge x limits=0.18,
-				legend style={at={(0.5,1.03)}, anchor=south, legend columns=-1, draw=none, font=\scriptsize},
-				tick label style={font=\scriptsize}, label style={font=\scriptsize},
-				]
-				\addlegendimage{ybar, ybar legend, draw=rsgblue!80!black, fill=rsgblue!70}
-				\addlegendentry{PQ}
-				\addplot[very thick, rsgorange!90!black, mark=*, mark size=2pt, mark options={fill=rsgorange, draw=rsgorange!70!black}] table[x=nms, y=overlap] {\pqNmsTable};
-				\addlegendentry{Overlap}
+			\begin{axis}[pqline, ymin=0, ymax=80, ylabel={FPS}, symbolic x coords={t070,t080,t090}, enlarge x limits=0.3]
+				\addlegendimage{ybar, ybar legend, pqbarstyle}\addlegendentry{PQ}
+				\addplot[pqlinestyle] table[x=thr, y=FPS] {\pqThrTable};\addlegendentry{FPS}
 			\end{axis}
 		\end{tikzpicture}
-		\caption{NMS IoU ($4\times4$ grid, threshold 0.80).}
+		\caption{Mask threshold.}
+		\label{fig:results_sam_grid_thr}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.325\linewidth}
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[pqdual, xlabel={NMS IoU}, symbolic x coords={n000,n010,n015,n030},
+				xticklabels={0,0.10,0.15,0.30}, enlarge x limits=0.2]
+				\addplot[pqbarstyle] table[x=nms, y=PQ] {\pqNmsTable};
+			\end{axis}
+			\begin{axis}[pqline, ymin=0, ymax=12, ylabel={Overlap (\%)}, ylabel shift=-3pt, symbolic x coords={n000,n010,n015,n030}, enlarge x limits=0.2]
+				\addlegendimage{ybar, ybar legend, pqbarstyle}\addlegendentry{PQ}
+				\addplot[pqlinestyle] table[x=nms, y=overlap] {\pqNmsTable};\addlegendentry{Overlap}
+			\end{axis}
+		\end{tikzpicture}
+		\caption{NMS IoU.}
 		\label{fig:results_sam_grid_nms}
 	\end{subfigure}
-	\caption{Parameter study of NanoSAM on 500 frames of the uHumans2 office scene, measured on the Jetson AGX Thor, with an input scale of 0.85 and at most 8 masks. Overlapping pixels are the share of pixels covered by more than one kept mask before the masks are made disjoint.}
+	\caption{Parameter study of NanoSAM (input scale 0.85, at most 8 masks): (a) grid density at threshold 0.80 and NMS IoU 0.10, (b) mask threshold with a $4\times4$ grid, (c) NMS IoU with a $4\times4$ grid and threshold 0.80. Overlap is the share of pixels covered by more than one mask.}
 	\label{fig:results_sam_grid}
 \end{figure}
 
 {\small The pipeline itself uses a $3 \times 3$ grid instead of the selected $4 \times 4$; all other values agree with the study. Apart from the NMS IoU, which has no measurable effect in this range, this corresponds to the $3 \times 3$ point of Figure~\ref{fig:results_sam_grid_pps}: it gives up 0.026 in PQ for about 13\,ms less per frame, in order to leave more GPU time to Hydra and the vision-language model, with which segmentation shares the device (Section~\ref{sec:results_runtime}). The mask threshold of 0.80 is additionally supported by the tracking investigation, since a lower value enlarges the masks of touching objects and reduces the separation between their tracks. The consequences of the lower recall for tracking, in particular masks that merge touching surfaces, are examined in Section~\ref{sec:results_tracking}.\par}
 
-{\small Three limitations apply to both experiments. Ground-truth objects are connected regions of one class, so that touching objects of the same class form a single object; all frames come from one recording and are not independent; and objects smaller than 3500 pixels are not evaluated. In addition, the parameter study selected and reports its values on the same frames, so that its PQ values are slightly optimistic.\par}
 
 
 
@@ -255,130 +256,550 @@ where $\mathit{TP}$ is the set of matched pairs. SQ measures how closely the fou
 
 
 
+
+
+
+% ===========================================================================
+% Chart data: tracking and crop-selection experiments (Jetson AGX Orin)
+% ===========================================================================
+% Colours shared with Section~5.1 (defined there; provided here for standalone use)
+\providecolor{rsgblue}{RGB}{0,114,178}
+\providecolor{rsgorange}{RGB}{230,159,0}
+\providecolor{rsggreen}{RGB}{0,158,115}
+
+% Experiment 2: cumulative tightening of the acceptance condition
+\pgfplotstableread{
+run  rate
+R1   3.2
+R2   9.9
+R3   8.0
+R4   9.2
+R5   11.1
+R6   9.4
+}\trkCampaignTable
+
+% Experiment 3: five consecutive sessions with session persistence
+\pgfplotstableread{
+session  newtracks  revisits  vlmcalls
+S1       53         0         28
+S2       1          47        11
+S3       3          50        5
+S4       0          52        2
+S5       1          50        1
+}\trkRevisitTable
+
+% ===========================================================================
 \section{Object Tracking and Crop Selection}
 \label{sec:results_tracking}
 
-{\small This section evaluates the tracking of Section~\ref{sec:method_tracking}, which determines the geometry of each scene-graph node, and the view selection of Section~\ref{subsec:method_view_selection}, which determines the crop from which its label and risk attributes are derived. All tests replay the uHumans2 office sequence~\cite{rosinol2021kimera} at a rate of 0.1 on an NVIDIA Jetson AGX Orin (Section~\ref{subsec:impl_phase1}) with ground-truth odometry.\par}
+{\small Tracking and view selection (Sections~\ref{sec:method_tracking} and~\ref{subsec:method_view_selection}) were evaluated online, in the running pipeline, since both depend on the sequence of observations rather than on individual frames. All experiments replay the office sequence of uHumans2~\cite{rosinol2021kimera} with ground-truth odometry at a rate of 0.1 (about 1.6\,fps camera input) on a Jetson AGX Orin, using the implementation of Section~\ref{subsec:impl_phase1}. Because the odometry is exact, the map and odometry frames coincide and loop-closure re-anchoring is never triggered, so that the results reflect the association alone. Two records were used throughout: a log with one entry per mask-to-track decision, containing the association mode and the individual cue scores, and crops of each track saved at regular intervals, which show the raw single-frame mask. Where runs of different length are compared, the number of tracks is normalised per 100 processed frames.\par}
 
-\subsection{Association Failure Modes and Tuning}
-\label{subsec:results_assoc}
+{\small To evaluate the quality of the tracking, an inspection setup was first established: after a run on a 300\,s segment, the stored crops of all tracks were arranged in a gallery, one row per track, so that the tracks could be compared visually. For the initial configuration (A1), this inspection revealed duplicate tracks, that is, several tracks for one object seen from different viewpoints. A first experiment therefore tuned the parameters of the association score (Equation~\ref{eq:association_score}, Section~\ref{subsec:method_association}) to remove them. Since every run replays the same segment, the total number of tracks served as the measure. The parameters were changed in five steps, A2 to A6; after each step, the number of tracks was recorded, the association log showed in which mode, recent or revisit, the duplicates had been evaluated, and the gallery was inspected again. The first two steps addressed the revisit mode: lowering its threshold $s_{\min}$ from 0.75 to 0.40 (A2) and raising its image weight to 0.35 (A3) raised the number of tracks from 86 to 93 and 92. The log showed why: the duplicates were created about 0.5\,s after the last update of the original track, within the continuation window of 15\,s, and were therefore evaluated in the recent mode. The remaining steps addressed this mode. Lowering its threshold to 0.40 and raising its image weight from 0.25 to 0.35 (A4) gave 79 tracks; lowering the threshold to 0.30 and shortening the continuation window to 8\,s (A5) gave 64, 26\,\% below the initial value; and rebalancing the weights towards the volumetric overlap (A6) gave 63. The recent-mode weights $w_k$ finally adopted are 0.70 for the volumetric overlap, 0.30 for the centroid and 0.45 for the image overlap.\par}
 
-{\small The association (Section~\ref{subsec:method_association}) was first tuned to reduce duplicate tracks of objects seen from different viewpoints. The duplicates turned out to be scored in the recent mode rather than the revisit mode, so only adjusting the recent-mode threshold, weights and continuation window was effective; this reduced the number of tracks by about a quarter.\par}
+{\small The number of tracks, however, does not guarantee that each track contains only one object. A second experiment therefore inspected the content of the tracks, with the aim of finding nodes that combine two physical objects and removing their cause. For every track, the crop of every tenth observation was saved with the contour of that frame's own mask, together with the 3D box of the observation and the accumulated box of the track, and inspected manually. If the mask of a single frame already outlined two objects, the error came from the segmentation: in this \emph{mask fusion}, anticipated in Section~\ref{sec:results_segmentation}, NanoSAM returns one mask covering two touching surfaces, which the tracker cannot separate. If every mask was correct but the box of the track had grown around a second object, the association had added the mask of another object to the track; the frame at which this happened was located in the decision log by a sudden jump of the object position and an abrupt change of the mask size. Each inspected observation was manually marked as a wrong merge or a correct continuation. The log showed why such \emph{cross-track merges} occurred: two of the five tests of Section~\ref{subsec:method_association} sufficed for a match, and two of them, height compatibility and box overlap, are passed by almost any object standing on a large surface, so the centroid distance and the image overlap, the only tests that distinguish a surface from an object resting on it, had no influence. Since changing the weights did not prevent this, the acceptance rule was made stricter in successive runs, R1 to R6, each building on the previous one (Figure~\ref{fig:results_tracking_campaign}): R2 required three agreeing tests and a stricter centroid limit, R3 repeated this setting, R4 raised the required box overlap, R5 disabled a shortcut that counted touching boxes as overlapping, and R6 discarded masks without enough valid depth for a 3D box. Each change was kept only if, replayed on the logged decisions, it rejected all marked wrong merges and accepted all marked correct continuations. After R6, the crops showed none of the confirmed merges, and its configuration was adopted as final. Following the asymmetric-error principle of Section~\ref{sec:method_tracking}, the resulting fragmentation was accepted: it rose from 3.2 to at most 11.1 tracks per 100 frames and settled at 9.4.\par}
 
-{\small A review of the per-track crops and the logged cue scores then showed that some nodes contained two physical objects, caused by two distinct mechanisms. In \emph{segmentation-time fusion}, NanoSAM~\cite{nanosam2023} returns one mask covering two touching surfaces, which no association setting can undo (Section~\ref{sec:results_segmentation}).\par}
-
-{\small In \emph{cross-track merges}, a clean track absorbs a separately segmented object, such as a floor absorbing a sofa. The analysis showed that the height and overlap votes pass for almost any object standing on a surface, so the quorum of two was met before the discriminating centroid and image cues could object.\par}
-
-{\small The acceptance condition was therefore tightened step by step, mainly by raising the quorum to three, disabling the touch shortcut of the overlap vote and rejecting masks without usable depth. Unlike the first stage, this deliberately accepted more tracks, following the asymmetric-error principle of Section~\ref{sec:method_tracking}: a fragment can be merged later, whereas an over-merged node is wrong irreversibly.\par}
-
-\subsection{Fragmentation versus Over-Merging}
-\label{subsec:results_fragmentation}
-
-{\small Figure~\ref{fig:results_tracking_campaign} shows how fragmentation and phantom tracks developed over the seven cumulative runs of this stage.\par}
-
-\begin{figure}[htb]
-\centering
-\begin{tikzpicture}
-\begin{axis}[
-    width=0.78\linewidth, height=3.6cm,
-    ybar, bar width=9pt, grid=none,
-    font=\scriptsize,
-    symbolic x coords={R1,R2,R3,R4,R5,R6,R7},
-    xtick=data, enlarge x limits=0.08,
-    ymin=0, ymax=14,
-    ylabel={Tracks per 100 frames},
-    axis y line*=left, axis x line*=bottom,
-    nodes near coords, nodes near coords style={font=\tiny},
-    every axis plot/.append style={thin},
-    legend columns=2, legend style={at={(0.5,1.03)}, anchor=south, font=\scriptsize, draw=none},
-]
-\addplot[draw=black, fill=gray!45] coordinates {(R1,3.2) (R2,9.9) (R3,8.0) (R4,9.2) (R5,11.1) (R6,9.4) (R7,8.3)};
-\addlegendentry{Tracks per 100 frames (left)}
-\addlegendimage{black, thick, dashed, mark=square*, mark options={solid, fill=white}}
-\addlegendentry{Depth-less tracks (right)}
-\end{axis}
-\begin{axis}[
-    width=0.78\linewidth, height=3.6cm,
-    grid=none, font=\scriptsize,
-    symbolic x coords={R1,R2,R3,R4,R5,R6,R7},
-    xtick=\empty, enlarge x limits=0.08,
-    ymin=0, ymax=40,
-    ylabel={Depth-less tracks},
-    axis y line*=right, axis x line=none,
-]
-\addplot[black, thick, dashed, mark=square*, mark options={solid, fill=white}] coordinates {(R1,1) (R2,5) (R3,1) (R4,21) (R5,16) (R6,0) (R7,0)};
-\end{axis}
-\end{tikzpicture}
-\caption{Fragmentation (bars) and depth-less tracks (line) over the cumulative runs. R1: quorum of two; R2: quorum of three, centroid gate 0.55\,m; R3: repetition of R2; R4: overlap threshold 0.50, centroid gate 0.60\,m; R5: touch shortcut disabled; R6, R7: aligned depth gate (final).}
-\label{fig:results_tracking_campaign}
+\begin{figure}[!htb]
+	\centering
+	\pgfplotsset{
+		trkbase/.style={
+			scale only axis, height=2.8cm,
+			tick label style={font=\tiny}, label style={font=\scriptsize},
+			legend style={at={(0.5,1.03)}, anchor=south, legend columns=-1, draw=none, font=\tiny, /tikz/every even column/.append style={column sep=1mm}},
+		},
+		trkvals/.style={nodes near coords, nodes near coords style={font=\tiny, rotate=90, anchor=west}},
+		trkblue/.style={draw=rsgblue!80!black, fill=rsgblue!70},
+		trkorange/.style={draw=rsgorange!80!black, fill=rsgorange!70},
+		trkgreen/.style={draw=rsggreen!80!black, fill=rsggreen!70},
+			}
+	\begin{subfigure}[t]{0.48\linewidth}
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[trkbase, width=0.72\linewidth, ybar, bar width=6pt,
+				symbolic x coords={R1,R2,R3,R4,R5,R6}, xtick=data, enlarge x limits=0.08, xlabel={Run},
+				ymin=0, ymax=15, ylabel={Tracks / 100 frames},
+				trkvals, nodes near coords style={/pgf/number format/fixed, /pgf/number format/fixed zerofill, /pgf/number format/precision=1}]
+				\addplot[trkblue] table[x=run, y=rate] {\trkCampaignTable};
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Tightening runs.}
+		\label{fig:results_tracking_campaign}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.48\linewidth}
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[trkbase, width=0.72\linewidth, ybar, bar width=4pt,
+				symbolic x coords={S1,S2,S3,S4,S5}, xtick=data, enlarge x limits=0.13, xlabel={Session},
+				ymin=0, ymax=72, ylabel={Count}, trkvals]
+				\addplot[trkorange] table[x=session, y=newtracks] {\trkRevisitTable};
+				\addplot[trkblue] table[x=session, y=revisits] {\trkRevisitTable};
+				\addplot[trkgreen] table[x=session, y=vlmcalls] {\trkRevisitTable};
+				\legend{New tracks, Revisits, Labelling calls}
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Sessions with persistence.}
+		\label{fig:results_revisit}
+	\end{subfigure}
+	\caption{Tracking results: (a) fragmentation over the tightening runs R1 to R6 of the second experiment; (b) new tracks, revisit associations and labelling calls over five sessions.}
+	\label{fig:results_tracking}
 \end{figure}
 
-{\small The stricter acceptance roughly tripled fragmentation, partly through depth-less masks that each opened a short-lived track; the final depth gate removed these entirely. In exchange, the observed over-merges no longer occurred.\par}
+{\small A third experiment measured how reliably objects are re-identified when the pipeline is restarted in an environment it has already mapped. The same 300\,s segment, corresponding to 147 to 148 processed frames, was replayed in five consecutive sessions with the final association configuration. Session persistence (Section~\ref{subsec:method_sessions}) was enabled for this experiment only, and the memory was cleared only before the first session. Each later session resumed from the state saved by the previous one, with the stored timestamps shifted so that restored tracks were first evaluated in the revisit mode. A re-encountered object counts as re-identified if it is associated with a stored track in the revisit mode instead of opening a new track. As Figure~\ref{fig:results_revisit} shows, the first session created all tracks, whereas the following sessions created almost none and associated nearly every re-encountered object as a revisit. In total, 97.5\,\% of the re-encountered objects were re-identified; three of the five misses lie close together above 3.3\,m and probably belong to one tall structure whose centroid shifts beyond the centroid limit as the viewpoint changes. Since restored tracks keep their labels, the number of labelling calls dropped to nearly zero, while the throughput remained unchanged across sessions (Section~\ref{sec:results_runtime}).\par}
 
-\subsection{Identity Persistence across Sessions}
-\label{subsec:results_revisit}
+{\small To evaluate the view selection of Section~\ref{subsec:method_view_selection}, which chooses the crop passed to the vision-language model for each track, the crops selected during a run were logged together with the individual terms of their score. A fourth experiment used this log to tune the additive score of Equation~\ref{eq:crop_score}, a weighted sum of pixel count, sharpness, measured as the variance of the Laplacian~\cite{pechpacheco2000laplacian}, and margin. The margin term was first redefined to count object pixels in a 3\,px edge zone instead of on the exact crop border, which spread its values from 0.943--0.991 to 0.476--0.967 and thus made it able to separate tightly cut views from well-framed ones. The weights were then adjusted qualitatively on the crop log of one run with 16 tracks. Since the log contains the three terms of every selected crop, each candidate weighting could be replayed offline, and the replacements it would have accepted were inspected visually. Six ratios $w_P : w_S : w_M$ were compared, namely 1:1:1, 3:1:1, 4:1:1, 5:1:1, 2:2:1 and 2:2:0.5, using two criteria: a replacement that clearly improves the view must still be accepted, such as a gain of 0.59\,\% in Track~1 caused by better framing, whereas replacements between nearly identical views from consecutive frames should be avoided. Equal weights met the first criterion but not the second, as they still accepted many replacements between nearly identical views. Ratios dominated by the pixel term (3:1:1 to 5:1:1) met the second but not the first: they penalised small objects strongly and rejected genuine improvements, including the one in Track~1. The ratios 2:2:1 and 2:2:0.5 met both criteria and selected almost identical crops. The ratio 2:2:1, that is, $w_P = w_S = 0.4$ and $w_M = 0.2$, was adopted. It gives pixel count and sharpness equal and dominant weight, since both determine how much the vision-language model can see, while the margin term acts as a secondary criterion that favours better framing without rejecting a crop that is large and sharp but tightly cut; of the two equivalent ratios, the round value 1 for the margin was kept for clarity. The score takes about 1\,ms per crop.\par}
 
-{\small Re-identification was tested by replaying the same segment in five consecutive sessions with session persistence (Section~\ref{subsec:method_sessions}) enabled, which is disabled in all other experiments.\par}
+{\small The pipeline uses the final association configuration of the second experiment (quorum of three, centroid gate 0.60\,m, overlap threshold 0.50, containment threshold 0.92, touch shortcut disabled) and the crop score with $h = 0.005$. Session persistence is disabled by default, so that every run in the following sections starts from an empty map. The selected crops form the input of the labelling evaluated in Section~\ref{sec:results_vlm}; tracks affected by mask fusion receive a crop that shows two objects.\par}
 
-\begin{figure}[htb]
-\centering
-\begin{tikzpicture}
-\begin{axis}[
-    width=0.80\linewidth, height=3.6cm,
-    ybar, bar width=8pt, grid=none,
-    font=\scriptsize,
-    symbolic x coords={S1,S2,S3,S4,S5},
-    xtick=data, enlarge x limits=0.15,
-    ymin=0, ymax=65,
-    ylabel={Count per session},
-    axis x line*=bottom, axis y line*=left,
-    nodes near coords, nodes near coords style={font=\tiny},
-    every axis plot/.append style={thin},
-    legend columns=3,
-    legend style={at={(0.5,1.03)}, anchor=south, font=\scriptsize, draw=none},
-]
-\addplot[draw=black, fill=gray!70] coordinates {(S1,53) (S2,1) (S3,3) (S4,0) (S5,1)};
-\addplot[draw=black, fill=white] coordinates {(S1,0) (S2,47) (S3,50) (S4,52) (S5,50)};
-\addplot[draw=black, pattern=north east lines] coordinates {(S1,28) (S2,11) (S3,5) (S4,2) (S5,1)};
-\legend{New tracks, Revisit associations, VLM labelling calls}
-\end{axis}
-\end{tikzpicture}
-\caption{New tracks, revisit associations and labelling calls over five consecutive sessions (recent-mode associations, 777 to 790 per session, omitted).}
-\label{fig:results_revisit}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% ===========================================================================
+% Chart data: prompt and model comparison (Jetson AGX Orin)
+% ===========================================================================
+% Colours shared with Section~5.1 (defined there; provided here for standalone use)
+\providecolor{rsgblue}{RGB}{0,114,178}
+\providecolor{rsgorange}{RGB}{230,159,0}
+\providecolor{rsggreen}{RGB}{0,158,115}
+
+% Strict accuracy (%) and median inference latency (s) per prompt, runs R1--R9
+% Qwen3 generation: Qwen3-VL-8B (FP16); Qwen3.5 generation: 4B and 9B (Q4_K_M)
+\pgfplotstableread{
+prompt  acc8  acc4  acc9  lat8  lat4  lat9
+P1      48    64    64    6.3   2.7   3.7
+P2      72    80    68    4.8   3.0   4.5
+P3      63    88    68    4.8   2.9   4.1
+}\vlmTable
+
+% Plot styles shared by both figures of this section
+\pgfplotsset{
+	vlmbase/.style={
+		scale only axis, width=0.72\linewidth, height=3cm,
+		ybar, clip=false,
+		symbolic x coords={P1,P2,P3}, xtick=data, enlarge x limits=0.25, xlabel={Prompt},
+		tick label style={font=\tiny}, label style={font=\scriptsize},
+		nodes near coords, nodes near coords style={font=\tiny, rotate=90, anchor=west},
+	},
+	accvals/.style={nodes near coords style={/pgf/number format/fixed, /pgf/number format/precision=0}},
+	latvals/.style={nodes near coords style={/pgf/number format/fixed, /pgf/number format/fixed zerofill, /pgf/number format/precision=1}},
+	vlmblue/.style={draw=rsgblue!80!black, fill=rsgblue!70},
+	vlmorange/.style={draw=rsgorange!80!black, fill=rsgorange!70},
+	vlmgreen/.style={draw=rsggreen!80!black, fill=rsggreen!70},
+}
+
+% ===========================================================================
+\section{VLM Model and Prompt Comparison}
+\label{sec:results_vlm}
+
+{\small The vision-language model and its prompt were evaluated online, in the running pipeline, so that the model received exactly the crops produced by the tracking and view selection of Section~\ref{sec:results_tracking}. Every run replayed the office sequence of uHumans2~\cite{rosinol2021kimera} at a rate of 0.1 on a Jetson AGX Orin and was stopped after 700\,s of wall-clock time, about 70\,s of scene time, so that all runs covered the same part of the scene and produced about 50 object crops each. Retrieval was disabled and its memory cleared before every run, so that every unlabelled object was sent to the vision-language model. All other settings were those of the production configuration; only the model and the prompt were changed. The benchmark concerns the identification of objects only: the prompts compared request the label, the mobility class and their confidences, but no risk-relevant information, so the visual-state description of Section~\ref{subsec:method_vlm_contract} was not part of it.\par}
+
+{\small For every labelling call, the pipeline saved the crop as sent to the model, together with the returned label, mobility class and confidences, the validation result and the inference time reported by llama.cpp~\cite{llamacpp}. After each run, the crops were inspected manually, the correct label was recorded and every wrong answer was assigned to an error type. Accuracy is strict: an answer counts as correct only if both label and mobility class are right, although, since all objects in this scene are static, mobility never cost a point.\par}
+
+\begin{figure}[!htb]
+	\centering
+	\begin{subfigure}[t]{0.48\linewidth}
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[vlmbase, bar width=5pt, ymin=0, ymax=100, ylabel={Accuracy (\%)}, accvals,
+				legend to name=vlmlegend,
+				legend style={legend columns=-1, draw=none, font=\tiny, /tikz/every even column/.append style={column sep=2mm}}]
+				\addplot[vlmblue] table[x=prompt, y=acc8] {\vlmTable};
+				\addplot[vlmorange] table[x=prompt, y=acc4] {\vlmTable};
+				\addplot[vlmgreen] table[x=prompt, y=acc9] {\vlmTable};
+				\legend{Qwen3: Qwen3-VL-8B (FP16), Qwen3.5: Qwen3.5-4B (Q4), Qwen3.5: Qwen3.5-9B (Q4)}
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Accuracy.}
+		\label{fig:results_vlm_acc}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.48\linewidth}
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[vlmbase, bar width=5pt, ymin=0, ymax=8, ylabel={Median latency (s)}, latvals]
+				\addplot[vlmblue] table[x=prompt, y=lat8] {\vlmTable};
+				\addplot[vlmorange] table[x=prompt, y=lat4] {\vlmTable};
+				\addplot[vlmgreen] table[x=prompt, y=lat9] {\vlmTable};
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Latency.}
+		\label{fig:results_vlm_latency}
+	\end{subfigure}
+
+	\vspace{1mm}
+	\pgfplotslegendfromname{vlmlegend}
+	\caption{Comparison of the three prompts on models of two generations, Qwen3 (blue) and Qwen3.5 (orange and green), on the office sequence ($N \approx 50$ crops per run): (a) strict accuracy, (b) median inference latency.}
+	\label{fig:results_vlm}
 \end{figure}
 
-{\small As Figure~\ref{fig:results_revisit} shows, almost all objects created in the first session were recognised as revisits in the following ones (97.5\,\%), and since restored tracks keep their labels, the number of labelling calls dropped to nearly zero without affecting throughput (Section~\ref{sec:results_runtime}).\par}
+{\small A first experiment used Qwen3-VL-8B at full precision (FP16)~\cite{bai2025qwen3vl}, the model of the baseline pipeline. Three prompts of increasing complexity, P1 to P3, were compared; they are given in Appendix~\ref{app:vlm_prompts}. P2 and P3 were each revised once against the errors of the preceding prompt on this model and then fixed. As the Qwen3 bars in Figure~\ref{fig:results_vlm_acc} show, P2 raised the accuracy from 48 to 72\,\%, whereas P3 fell back to 63\,\%. The rules and examples of P2 removed the main errors of P1, in which the model named an object outside the contour or a part instead of the whole object, whereas the additional guidance of P3 introduced new confusions between similar classes rather than resolving the remaining errors. P1 also yielded a nearly constant confidence on every crop, wrong answers included, so the validation gate never fired; only P3 produced values below 0.80, and both answers rejected for this reason were correct. At 4.8 to 6.3\,s per call, the model was also slow.\par}
 
-\subsection{Crop Selection}
-\label{subsec:results_crop}
+{\small A second experiment repeated the unchanged prompts with Qwen3.5-4B and Qwen3.5-9B~\cite{qwen2026qwen35}, both quantised to 4 bits (Q4\_K\_M) and run with reasoning disabled, since the thinking block otherwise consumed the token budget. As the Qwen3.5 bars in Figure~\ref{fig:results_vlm} show, the accuracy of the 4B model rose with every more detailed prompt, from 64\,\% with P1 to 88\,\% with P3, whereas the 9B model reached only 64 to 68\,\% with all three prompts. The larger model was thus not more accurate. On both Qwen3.5 models, P2 removed the main errors of P1 and P3 removed most of the remaining ones. The 9B, however, kept confusing visually similar classes whatever the prompt, which indicates a limitation of the model itself. As with the 8B, only P3 led the models to report confidences below the threshold of 0.80. One problem occurred only on the smaller models: with the first version of P3, the 4B wrote out its step-by-step reasoning in the reply and used up the token budget before giving the JSON answer. A rule at the beginning of the prompt stating that the reply must consist of exactly one JSON object, illustrated by a good and a bad example, solved this, and all answers were then valid.\par}
 
-{\small For view selection, the earlier score was replaced by the additive score of Equation~\ref{eq:crop_score}, and the margin term was redefined to measure object pixels in a narrow edge zone rather than on the exact border, so that it distinguishes tightly cut views from well-framed ones. It was evaluated on the crop log of one run recorded without hysteresis.\par}
+{\small The 4B model with the format-hardened P3 reached 88\,\% at a median of 2.9\,s and is the most accurate, fastest and least memory-intensive pair. The pipeline therefore uses the profile \texttt{qwen3\_5\_4b\_q4} with reasoning disabled, a temperature of 0, 512 tokens and P3 as the basis of its prompt; the minimum label confidence was kept at 0.80, so that uncertain labels are retried with a better crop. Since Qwen3.5-4B was at least as accurate as the baseline Qwen3-VL-8B with every prompt and 1.6 to 2.3 times faster, and was adopted by changing only the model profile and the prompt, the comparison supports the expectation of Section~\ref{subsec:qwen} that newer model generations improve the pipeline without changes to its other components. Its latency in the complete pipeline is reported in Section~\ref{sec:results_runtime}.\par}
 
-{\small The new score reduced the number of crop replacements per track (Figure~\ref{fig:results_crop}). The log also showed that, without hysteresis, many replacements exchanged nearly identical views, which motivated the relative improvement margin $h = 0.005$ of the deployed configuration. The scoring cost is negligible compared with model inference.\par}
+{\small The risk-relevant information was built on top of the prompt selected in this comparison. For the risk assessment, the deployed prompt asks the model, in addition to the label and the mobility class, for the visual-state description of Section~\ref{subsec:method_vlm_contract}, a short phrase stating what is visibly particular about the object at the time of observation, for instance items placed on a table or whether a monitor is switched on. The description was added as a separate section appended to P3, so that the selected prompt itself remains unchanged and only the output contract is extended by a fifth field; the complete active prompt is given in Appendix~\ref{app:vlm_prompt_deployed}. Since this extension was introduced after the comparison, neither its effect on the label accuracy reported above nor the quality of the descriptions has been measured.\par}
 
-\begin{figure}[htb]
-\centering
-\begin{tikzpicture}
-\begin{axis}[
-    width=0.55\linewidth, height=3.6cm,
-    ybar, bar width=12pt, grid=none,
-    font=\scriptsize,
-    symbolic x coords={Track 1,Track 3},
-    xtick=data, enlarge x limits=0.45,
-    ymin=0, ymax=7.5,
-    ylabel={Selected crops per track},
-    axis x line*=bottom, axis y line*=left,
-    nodes near coords, nodes near coords style={font=\tiny},
-    every axis plot/.append style={thin},
-    legend columns=2, legend style={at={(0.5,1.03)}, anchor=south, font=\scriptsize, draw=none},
-]
-\addplot[draw=black, fill=gray!60] coordinates {(Track 1,6) (Track 3,6)};
-\addplot[draw=black, pattern=north east lines] coordinates {(Track 1,3) (Track 3,2)};
-\legend{Previous score, Additive score ($h = 0$)}
-\end{axis}
-\end{tikzpicture}
-\caption{Selected crops per track, including the initial crop, under the previous score and the additive score without hysteresis.}
-\label{fig:results_crop}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% ===========================================================================
+% Section 5.4 -- Visual Results across Environments
+% (insert in chapters/Results.tex between Sections 5.3 and 5.5)
+% ===========================================================================
+% Chart data: final graph counts per environment (from res_<env>_stats.txt)
+% Enable the bar chart only if the stats files cover at least two environments.
+% \pgfplotstableread{
+% env        mainobj  unclassified  contacts  rooms
+% office     ?        ?             ?         ?
+% apartment  ?        ?             ?         ?
+% openloris  ?        ?             ?         ?
+% }\visTable
+
+\section{Visual Results across Environments}
+\label{sec:results_visual}
+
+{\small The preceding sections evaluated the components of the pipeline individually. This section shows the scene graphs that the complete pipeline produces in its final configuration and examines qualitatively what they contain and where they are wrong. The office and apartment sequences of uHumans2~\cite{rosinol2021kimera} and the office1-1 sequence of OpenLORIS-Scene~\cite{shi2020openloris} were each replayed once at a rate of 0.1, which corresponds to a camera input of about 1.6\,Hz for uHumans2 and about 3\,Hz for OpenLORIS, on a \textbf{[TODO: platform; Jetson AGX Thor, to be confirmed from the stats files]}. All runs used the final configuration of Sections~\ref{sec:results_segmentation} to~\ref{sec:results_vlm}: NanoSAM with a $3 \times 3$ prompt grid, the final association configuration, and Qwen3.5-4B with prompt P3 for labelling, with retrieval and the risk VLM disabled. For OpenLORIS, the camera pose is obtained from the wheel odometry recorded with the dataset and the calibrated base-to-camera transform (Section~\ref{subsec:impl_datasets}). The images were taken in RViz at the end of each run, after all pending labelling requests had been processed; Hydra~\cite{hughes2022hydra} provides the spatial layers, and the Fuser (Section~\ref{subsec:method_graph_fusion}) the labels, relations and presence confidences shown on them.\par}
+
+{\small Since not all of this information can be read from the images, the content of the visualisation is summarised here. The graph is drawn in three layers that keep the horizontal position of every node and differ only in height. The lowest layer contains the \emph{object nodes} at their reconstructed position. Each object is a small sphere, or a cube if its mobility class is dynamic, coloured by its label; objects that have not yet received a label are grey and carry the text \texttt{object\_unknown}. The opacity of an object follows its presence confidence (Equation~\ref{eq:presence_decay}), so that objects not seen for some time fade but are never removed, and a translucent grey halo marks objects observed within the last few seconds. The text beside each object gives the label with its confidence, the mobility class with its confidence and, where available, the visual-state description (Section~\ref{subsec:method_vlm_contract}). The middle layer, 10\,m above the objects, contains the \emph{place nodes} of Hydra~\cite{hughes2022hydra}, which represent the free space through which the robot can move; each place takes the colour of the room it belongs to, or grey if it belongs to none. The top layer, 20\,m above the objects, contains the \emph{room nodes}, larger spheres with one distinct colour per room and the labels Room1, Room2 and so on. The edges between these nodes are listed in Table~\ref{tab:results_visual_edges}.\par}
+
+\begin{table}[!htb]
+	\centering
+	\small
+	\caption{Edges in the visualisation. $^{*}$Completed by the Fuser where missing, if no wall lies between the nodes (Section~\ref{subsec:method_graph_fusion}).}
+	\label{tab:results_visual_edges}
+	\begin{tabular}{@{}llll@{}}
+		\toprule
+		Edge & Meaning & Source & Drawn as \\
+		\midrule
+		Room--place    & Place in room        & Hydra$^{*}$ & Black line \\
+		Place--object  & Object at place      & Hydra$^{*}$ & Black line \\
+		Place--place   & Free-space link      & Hydra       & Black line \\
+		Object--object & Hydra adjacency      & Hydra       & Black line \\
+		Room--room     & Adjacent rooms       & Hydra       & Black line \\
+		Contact        & Objects touch        & Fuser       & Amber double arrow \\
+		Identity       & Same physical object & Fuser       & Blue dotted line \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+
+% Full-page figure with all eight panels. To insert a real image, replace each
+% \fbox{...} with:
+%   \includegraphics[width=\linewidth,height=0.15\textheight,keepaspectratio]{example_images/res_<env>_<view>.png}
+% The height cap keeps all four rows on one page (checked with the thesis geometry).
+\begin{figure}[p]
+	\centering
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
+		\caption{Office: fused scene graph.}
+		\label{fig:results_visual_office_overview}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
+		\caption{Office: Hydra layers.}
+		\label{fig:results_visual_office_layers}
+	\end{subfigure}
+
+	\vspace{1mm}
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
+		\caption{Office: detail.}
+		\label{fig:results_visual_office_closeup}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
+		\caption{Office: camera view.}
+		\label{fig:results_visual_office_camera}
+	\end{subfigure}
+
+	\vspace{1mm}
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
+		\caption{Apartment: fused scene graph.}
+		\label{fig:results_visual_apartment_overview}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
+		\caption{Apartment: detail.}
+		\label{fig:results_visual_apartment_closeup}
+	\end{subfigure}
+
+	\vspace{1mm}
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
+		\caption{OpenLORIS office1-1: fused scene graph.}
+		\label{fig:results_visual_openloris_overview}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
+		\caption{OpenLORIS office1-1: detail.}
+		\label{fig:results_visual_openloris_closeup}
+	\end{subfigure}
+	\caption{Scene graphs of the uHumans2 office (a--d) and apartment (e, f) sequences and of the OpenLORIS-Scene office1-1 sequence (g, h) at the end of each run, displayed in RViz. From bottom to top: objects, places (+10\,m) and rooms (+20\,m). Objects are coloured by label (grey: unlabelled), their opacity follows the presence confidence, and a grey halo marks currently observed objects. Black lines: hierarchy and Hydra edges; amber double arrows: contact relations; blue dotted lines: identity relations. \textbf{[TODO: adapt to what the panels actually show.]}}
+	\label{fig:results_visual}
 \end{figure}
 
-{\small The selected crops are the input of the semantic labelling evaluated in Section~\ref{sec:results_vlm}.\par}
+% ---------------------------------------------------------------------------
+% PARAGRAPH: office. Write only after inspecting res_office_*.png and
+% res_office_stats.txt. Structure: (1) what the graph shows, with the counts
+% from the stats file (main objects, unclassified objects, contact and identity
+% relations, rooms, places); (2) what works and why; (3) what fails and why.
+% Each failure in one clause plus reference, only if it is visible:
+%   merged surfaces          -> mask fusion, Section~\ref{sec:results_tracking}
+%   wall in several segments -> one main object, Section~\ref{subsec:method_graph_fusion}
+%   faded spheres            -> presence decay, Equation~\ref{eq:presence_decay}
+%   object_unknown labels    -> confidence gate (Section~\ref{sec:results_vlm})
+%                               or labelling backlog (Section~\ref{sec:results_runtime})
+% ---------------------------------------------------------------------------
+{\small \textbf{[TODO: office paragraph; requires res\_office\_overview/layers/closeup/camera.png and res\_office\_stats.txt.]}\par}
+
+% ---------------------------------------------------------------------------
+% PARAGRAPH: uHumans2 apartment. Same structure as the office paragraph;
+% requires res_apartment_overview/closeup.png and res_apartment_stats.txt.
+% ---------------------------------------------------------------------------
+{\small \textbf{[TODO: apartment paragraph; requires res\_apartment\_overview/closeup.png and res\_apartment\_stats.txt.]}\par}
+
+
+% ---------------------------------------------------------------------------
+% PARAGRAPH: OpenLORIS. Same structure; requires res_openloris_overview/closeup.png
+% and res_openloris_stats.txt.
+% ---------------------------------------------------------------------------
+{\small \textbf{[TODO: OpenLORIS paragraph; requires res\_openloris\_overview/closeup.png and res\_openloris\_stats.txt.]}\par}
+
+% ---------------------------------------------------------------------------
+% PARAGRAPH: comparison. Simulation (office, apartment) vs. real sensor
+% (OpenLORIS): depth noise, reflections, label quality, number of objects,
+% using the counts from the three stats files. With three stats files, the
+% optional bar chart (\visTable at the top) can be enabled.
+% ---------------------------------------------------------------------------
+{\small \textbf{[TODO: comparison paragraph; requires the three stats files.]}\par}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% ====================================================================
+% Section 5.5 -- Runtime Performance (last section of chapters/Results.tex)
+% ====================================================================
+% Shared palette (identical to Sections 5.1--5.4; \providecolor keeps an
+% earlier definition if the colours are already declared in the preamble)
+\providecolor{rsgblue}{RGB}{31,119,180}
+\providecolor{rsgorange}{RGB}{255,127,14}
+\providecolor{rsggreen}{RGB}{44,160,44}
+\providecolor{rsgred}{RGB}{214,39,40}
+\providecolor{rsgpurple}{RGB}{148,103,189}
+
+\section{Runtime Performance}
+\label{sec:results_runtime}
+
+{\small This section quantifies the throughput, per-frame latency and resource demand of the pipeline described in Chapter~\ref{chap:implementation} on the two embedded platforms. In all runs, the uHumans2 office bag~\cite{rosinol2021kimera} (\texttt{office\_s1\_00h\_v2}, 506\,s, RGB at 16.41\,Hz) was replayed at a rate of 1.0, so that the input exceeds the processing capacity of either platform, frames are dropped and the maximum sustained throughput is measured. The Jetson AGX Thor~\cite{nvidia_jetson_thor} (power mode MAXN) was evaluated in three runs of 300\,s, each starting from an empty memory, in the final configuration (object VLM Qwen3.5-4B~\cite{qwen2026qwen35}, Q4\_K\_M, prompt P3); the first 20 frames of each run are excluded as warm-up. The Jetson AGX Orin~\cite{nvidia_jetson_orin} (power mode MODE\_50W) serves as the reference. Timings come from the per-frame trace of the pipeline, resource figures from \texttt{tegrastats} and \texttt{nvidia-smi}.\par}
+
+{\small Only the throughput figures are strictly like-for-like, since both platforms ran the same final configuration. Thor processes about twice as many frames per second as Orin (factor 2.03, Figure~\ref{fig:results_runtime_throughput}a), that is, about 30\,\% of the input frames instead of 14\,\%; the variation across the three Thor runs is small, all dropped frames were discarded by the drop-oldest policy of the input queue, and no frame failed. The per-frame Phase~1 latency, measured from frame arrival until publication to Hydra (Section~\ref{subsec:impl_phase1}), is reduced by a factor of about 2.6 on average (Figure~\ref{fig:results_runtime_throughput}b).\par}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[b]{0.36\textwidth}
+    \centering
+    \begin{tikzpicture}
+      \begin{axis}[
+          width=\linewidth, height=3.9cm,
+          ybar, bar width=16pt, bar shift=0pt,
+          symbolic x coords={Orin,Thor}, xtick={Orin,Thor},
+          enlarge x limits=0.5,
+          ymin=0, ymax=6.2,
+          ylabel={Processed frames/s},
+          tick label style={font=\scriptsize, /pgf/number format/1000 sep={}}, label style={font=\scriptsize}, legend cell align=left,
+          nodes near coords, nodes near coords style={font=\scriptsize},
+          legend style={font=\scriptsize, at={(0.5,1.03)}, anchor=south, legend columns=2, draw=none},
+          legend image code/.code={\draw[#1] (0cm,-0.1cm) rectangle (0.2cm,0.12cm);},
+        ]
+        \addplot[fill=rsgblue!70, draw=rsgblue!90!black] coordinates {(Orin,2.36)};
+        \addplot[fill=rsgorange!70, draw=rsgorange!90!black,
+                 error bars/.cd, y dir=both, y explicit]
+                 coordinates {(Thor,4.79) +- (0,0.06)};
+        \legend{AGX Orin, AGX Thor}
+      \end{axis}
+    \end{tikzpicture}
+    \caption{\small Throughput, final configuration}
+  \end{subfigure}\hfill
+  \begin{subfigure}[b]{0.6\textwidth}
+    \centering
+    \begin{tikzpicture}
+      \begin{axis}[
+          width=\linewidth, height=3.9cm,
+          ybar, bar width=12pt,
+          symbolic x coords={Mean,Median,95th pct.}, xtick=data,
+          enlarge x limits=0.25,
+          ymin=0, ymax=1100,
+          ylabel={Phase 1 latency [ms]},
+          tick label style={font=\scriptsize, /pgf/number format/1000 sep={}}, label style={font=\scriptsize}, legend cell align=left,
+          nodes near coords, nodes near coords style={font=\scriptsize},
+          legend style={font=\scriptsize, at={(0.5,1.03)}, anchor=south, legend columns=2, draw=none},
+          legend image code/.code={\draw[#1] (0cm,-0.1cm) rectangle (0.2cm,0.12cm);},
+        ]
+        \addplot[fill=rsgblue!70, draw=rsgblue!90!black]
+          coordinates {(Mean,729) (Median,718) (95th pct.,925)};
+        \addplot[fill=rsgorange!70, draw=rsgorange!90!black]
+          coordinates {(Mean,279) (Median,249) (95th pct.,490)};
+        \legend{AGX Orin (indicative), AGX Thor}
+      \end{axis}
+    \end{tikzpicture}
+    \caption{\small Per-frame latency, frame arrival to Hydra input}
+  \end{subfigure}
+  \caption{\small Runtime at saturated input: (a) throughput (Thor: mean $\pm$ std of three runs), (b) Phase~1 latency (Orin indicative).}
+  \label{fig:results_runtime_throughput}
+\end{figure}
+
+{\small Figure~\ref{fig:results_runtime_stages} decomposes the mean frame time into five stage groups. Segmentation with NanoSAM~\cite{nanosam2023} dominates on both platforms, with about two thirds of the frame time, and is about 2.6 times faster on Thor, almost entirely through faster inference. Since segmentation sets the frame time, the end-to-end reduction of the latency essentially follows the segmentation gain. The CPU-side stages shrink more strongly, by factors of about 4.7 to 7.\par}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        width=0.92\textwidth, height=3.3cm,
+        xbar stacked, bar width=12pt,
+        symbolic y coords={AGX Thor,AGX Orin}, ytick=data,
+        enlarge y limits=0.45,
+        xmin=0, xmax=820,
+        xlabel={Mean Phase 1 frame time [ms]},
+        tick label style={font=\scriptsize, /pgf/number format/1000 sep={}}, label style={font=\scriptsize}, legend cell align=left,
+        legend style={font=\scriptsize, at={(0.5,-0.42)}, anchor=north, legend columns=5, draw=none,
+                      /tikz/every even column/.append style={column sep=6pt}},
+        legend image code/.code={\draw[#1] (0cm,-0.1cm) rectangle (0.2cm,0.12cm);},
+      ]
+      \addplot[fill=rsgpurple!70, draw=rsgpurple!90!black] coordinates {(458.0,AGX Orin) (179.8,AGX Thor)};
+      \addplot[fill=rsggreen!70,  draw=rsggreen!90!black]  coordinates {(102.6,AGX Orin) (21.7,AGX Thor)};
+      \addplot[fill=rsgred!70,    draw=rsgred!90!black]    coordinates {(78.4,AGX Orin)  (15.5,AGX Thor)};
+      \addplot[fill=gray!60,      draw=gray!90!black]      coordinates {(36.1,AGX Orin)  (44.9,AGX Thor)};
+      \addplot[fill=black!12,     draw=black!50]           coordinates {(53.5,AGX Orin)  (17.1,AGX Thor)};
+      \legend{Segmentation (NanoSAM), Geometry, Association, Queueing, Other}
+      \node[anchor=west, font=\scriptsize] at (axis cs:728.5,AGX Orin) {729\,ms};
+      \node[anchor=west, font=\scriptsize] at (axis cs:279.2,AGX Thor) {279\,ms};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{\small Mean Phase~1 frame time by stage group (``Other'': message construction, crop scoring and minor stages; Orin indicative).}
+  \label{fig:results_runtime_stages}
+\end{figure}
+
+{\small With the same model and prompt, an object-labelling call on Thor is about 2.3 times faster than in the Orin measurements of Section~\ref{sec:results_vlm}, although on Thor it shares the GPU with segmentation (Figure~\ref{fig:results_runtime_vlm}a). Most of a call is spent generating the answer, at about 49 tokens/s, rather than processing the prompt (Figure~\ref{fig:results_runtime_vlm}b), as reported by the llama.cpp server~\cite{llamacpp}. Even at this speed, the VLM limits the labelling path on a first visit. Each run issues 463 to 492 calls, more than the server can handle as they arrive: the request queue, with a capacity of 300, stays close to full and the server is busy about 98\,\% of the time. A request therefore waits 199 to 210\,s on average, and the remaining backlog needs a further 330 to 380\,s to clear after the bag has ended. As a result, semantic labels lag the geometry by several minutes on a first pass. This delay is limited to first visits: objects that are already known keep their labels, so the number of calls falls sharply on revisits (from 28 to 1 over five sessions, Section~\ref{sec:results_tracking}). A mitigation for first visits is discussed in Chapter~\ref{chap:limitations}.\par}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \begin{tikzpicture}
+      \begin{axis}[
+          width=\linewidth, height=3.6cm,
+          ybar, bar width=12pt,
+          symbolic x coords={Mean,Median}, xtick=data,
+          enlarge x limits=0.45,
+          ymin=0, ymax=4,
+          ylabel={Time per call [s]},
+          tick label style={font=\scriptsize, /pgf/number format/1000 sep={}}, label style={font=\scriptsize}, legend cell align=left,
+          nodes near coords, nodes near coords style={font=\scriptsize},
+          legend style={font=\scriptsize, at={(0.5,1.03)}, anchor=south, legend columns=1, draw=none},
+          legend image code/.code={\draw[#1] (0cm,-0.1cm) rectangle (0.2cm,0.12cm);},
+        ]
+        \addplot[fill=rsgblue!70, draw=rsgblue!90!black] coordinates {(Mean,3.11) (Median,2.94)};
+        \addplot[fill=rsgorange!70, draw=rsgorange!90!black] coordinates {(Mean,1.36) (Median,1.25)};
+        \legend{AGX Orin (isolated harness), AGX Thor (full pipeline)}
+      \end{axis}
+    \end{tikzpicture}
+    \caption{\small Per-call latency}
+  \end{subfigure}\hfill
+  \begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \begin{tikzpicture}
+      \begin{axis}[
+          width=0.9\linewidth, height=3.0cm,
+          xbar stacked, bar width=12pt,
+          symbolic y coords={AGX Thor}, ytick=data,
+          enlarge y limits=0.6,
+          xmin=0, xmax=1600,
+          xlabel={Mean time per call [ms]},
+          tick label style={font=\scriptsize, /pgf/number format/1000 sep={}}, label style={font=\scriptsize}, legend cell align=left,
+          legend style={font=\scriptsize, at={(0.5,1.05)}, anchor=south, legend columns=1, draw=none},
+          legend image code/.code={\draw[#1] (0cm,-0.1cm) rectangle (0.2cm,0.12cm);},
+        ]
+        \addplot[fill=rsggreen!70, draw=rsggreen!90!black] coordinates {(305,AGX Thor)};
+        \addplot[fill=rsgpurple!70, draw=rsgpurple!90!black] coordinates {(1030,AGX Thor)};
+        \legend{Prompt processing ($\approx$325 tokens), Generation ($\approx$50 tokens)}
+      \end{axis}
+    \end{tikzpicture}
+    \caption{\small Split of a Thor call}
+  \end{subfigure}
+  \caption{\small Object-labelling VLM (Qwen3.5-4B, Q4\_K\_M, prompt P3). (a) Time per call on Orin without segmentation load and on Thor within the running pipeline. (b) Split of a Thor call into prompt processing and token generation, taken from the server log.}
+  \label{fig:results_runtime_vlm}
+\end{figure}
+
+{\small The pipeline is GPU-bound on Thor. During processing, the GPU was busy about 90\,\% of the time on average, whereas the CPU load stayed at about 40\,\%. Memory use remained at about 24\,GiB, a fraction of the 122\,GiB available. The board drew about 81\,W on average and at most 109\,W, which corresponds to about 17\,J per processed frame, and the GPU temperature did not exceed 63\,$^{\circ}$C. Downstream of Phase~1, the update rates were measured on the published topics, so they are output rates rather than internal computation times. Hydra~\cite{hughes2022hydra} (Section~\ref{subsec:impl_hydra}) published a new scene graph at about 1.4\,Hz, and a processed frame typically appeared in the next graph within about 0.4\,s (median). The Fuser updated its output at only about 0.3\,Hz instead of the configured 1\,Hz. The risk layer thus receives a refreshed scene graph at about 1.4\,Hz, but a fused, risk-annotated view only about every 3 to 4\,s. Overall, the Jetson AGX Thor processes about 4.8 frames per second, roughly twice the rate of the Orin, and geometry and object tracking keep pace with this rate, so that each processed frame reaches Hydra within about 0.3\,s on average. Semantic labelling, in contrast, lags considerably on a first visit and catches up only once objects are revisited, which defines the principal runtime limitation discussed in Chapter~\ref{chap:limitations}.\par}
