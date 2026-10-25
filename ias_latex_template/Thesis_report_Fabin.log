@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.22)  25 OCT 2026 21:48
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.22)  25 OCT 2026 22:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -2010,43 +2010,43 @@ Overfull \hbox (71.5841pt too wide) in paragraph at lines 619--619
 erview/closeup.png and res_openloris_stats.txt.] 
  []
 
-Package pgfplots info on input line 685: Using 'lua backend=false' for axis: x 
+Package pgfplots info on input line 693: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 
-Underfull \hbox (badness 1412) in paragraph at lines 693--693
+Underfull \hbox (badness 1412) in paragraph at lines 701--701
 [][][]|\T1/qpl/m/n/10 (+20) Through-put, fi-nal con-fig-u-ra-
  []
 
-Package pgfplots info on input line 709: Using 'lua backend=false' for axis: x 
+Package pgfplots info on input line 717: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 [75] [76]
-Overfull \hbox (13.25256pt too wide) in paragraph at lines 723--723
+Overfull \hbox (13.25256pt too wide) in paragraph at lines 731--731
 []\T1/qpl/m/n/10 (-20) Figure []5.8[] de-com-poses the mean frame time into fiv
 e stage groups. Seg-men-ta-tion with NanoSAM [[]33[]]
  []
 
-Package pgfplots info on input line 739: Using 'lua backend=false' for axis: st
+Package pgfplots info on input line 747: Using 'lua backend=false' for axis: st
 acked plots unsupported (yet).
-Package pgfplots info on input line 739: Using 'lua backend=false' for axis: x 
+Package pgfplots info on input line 747: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 
 LaTeX Warning: Reference `chap:limitations' on page 77 undefined on input line 
-754.
+762.
 
-Package pgfplots info on input line 772: Using 'lua backend=false' for axis: x 
+Package pgfplots info on input line 780: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
-Package pgfplots info on input line 793: Using 'lua backend=false' for axis: st
+Package pgfplots info on input line 801: Using 'lua backend=false' for axis: st
 acked plots unsupported (yet).
-Package pgfplots info on input line 793: Using 'lua backend=false' for axis: x 
+Package pgfplots info on input line 801: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 
 Package pgfplots Warning: Axis range for axis y is approximately empty; enlargi
-ng it (it is [0.0:0.0]) on input line 797.
+ng it (it is [0.0:0.0]) on input line 805.
 
  [warning /pgfplots/warning/approx empty range enlarged]
 
 LaTeX Warning: Reference `chap:limitations' on page 77 undefined on input line 
-805.
+813.
 
 [77]) [78]
 chapter 6.
