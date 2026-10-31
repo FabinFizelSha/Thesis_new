@@ -1048,128 +1048,6 @@
       \verb 10.1109/LRA.2024.3439122
       \endverb
     \endentry
-    \entry{quigley2009ros}{inproceedings}{}
-      \name{author}{8}{}{%
-        {{hash=9404eebbe5c52f5580a6f6515ebcbb80}{%
-           family={Quigley},
-           familyi={Q\bibinitperiod},
-           given={Morgan},
-           giveni={M\bibinitperiod}}}%
-        {{hash=03be3bc097356f7d1ec26652c7045241}{%
-           family={Conley},
-           familyi={C\bibinitperiod},
-           given={Ken},
-           giveni={K\bibinitperiod}}}%
-        {{hash=a8ad4a5f43253f69552460c946e34e49}{%
-           family={Gerkey},
-           familyi={G\bibinitperiod},
-           given={Brian},
-           giveni={B\bibinitperiod}}}%
-        {{hash=960c70f75f497debf10c247f8076241e}{%
-           family={Faust},
-           familyi={F\bibinitperiod},
-           given={Josh},
-           giveni={J\bibinitperiod}}}%
-        {{hash=0d11ace6e44e4742ea1692d7ddf4819e}{%
-           family={Foote},
-           familyi={F\bibinitperiod},
-           given={Tully},
-           giveni={T\bibinitperiod}}}%
-        {{hash=fae0a680822c97400d0807bb44b87838}{%
-           family={Leibs},
-           familyi={L\bibinitperiod},
-           given={Jeremy},
-           giveni={J\bibinitperiod}}}%
-        {{hash=1afca7d350a45f78259bb8af3f168e7d}{%
-           family={Wheeler},
-           familyi={W\bibinitperiod},
-           given={Rob},
-           giveni={R\bibinitperiod}}}%
-        {{hash=49e889356ff39df159461bc2895c7e16}{%
-           family={Ng},
-           familyi={N\bibinitperiod},
-           given={Andrew\bibnamedelima Y.},
-           giveni={A\bibinitperiod\bibinitdelim Y\bibinitperiod}}}%
-      }
-      \strng{namehash}{b774a9d43f5be3e4c87661f157618116}
-      \strng{fullhash}{a91a45c430d95c385cb29e58b6b9fd6e}
-      \strng{bibnamehash}{a91a45c430d95c385cb29e58b6b9fd6e}
-      \strng{authorbibnamehash}{a91a45c430d95c385cb29e58b6b9fd6e}
-      \strng{authornamehash}{b774a9d43f5be3e4c87661f157618116}
-      \strng{authorfullhash}{a91a45c430d95c385cb29e58b6b9fd6e}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{booktitle}{ICRA Workshop on Open Source Software}
-      \field{title}{ROS: An Open-Source Robot Operating System}
-      \field{year}{2009}
-    \endentry
-    \entry{puck2021ros2realtime}{inproceedings}{}
-      \name{author}{8}{}{%
-        {{hash=a9cff24c6e89d957f89b704fd4122665}{%
-           family={Puck},
-           familyi={P\bibinitperiod},
-           given={Lennart},
-           giveni={L\bibinitperiod}}}%
-        {{hash=eede491ec57a372fff789ed02fca232b}{%
-           family={Keller},
-           familyi={K\bibinitperiod},
-           given={Philip},
-           giveni={P\bibinitperiod}}}%
-        {{hash=bec7774d6f2ab7e172861dff732d38e5}{%
-           family={Schnell},
-           familyi={S\bibinitperiod},
-           given={Tristan},
-           giveni={T\bibinitperiod}}}%
-        {{hash=d21c891721732243ebbbf78ddb6bc90e}{%
-           family={Plasberg},
-           familyi={P\bibinitperiod},
-           given={C.},
-           giveni={C\bibinitperiod}}}%
-        {{hash=0cdaade491e56a644638551f11d2ac12}{%
-           family={Tanev},
-           familyi={T\bibinitperiod},
-           given={A.},
-           giveni={A\bibinitperiod}}}%
-        {{hash=e89cf28cd113c9e69cd896ea4a5cc77a}{%
-           family={Heppner},
-           familyi={H\bibinitperiod},
-           given={G.},
-           giveni={G\bibinitperiod}}}%
-        {{hash=f01dd0f05b058e2e33033378b567aedb}{%
-           family={Roennau},
-           familyi={R\bibinitperiod},
-           given={Arne},
-           giveni={A\bibinitperiod}}}%
-        {{hash=4f1d7c0e9dbdf64ba7a54e1f1a3b76d5}{%
-           family={Dillmann},
-           familyi={D\bibinitperiod},
-           given={Ruediger},
-           giveni={R\bibinitperiod}}}%
-      }
-      \list{publisher}{1}{%
-        {IEEE}%
-      }
-      \strng{namehash}{38eb72ff02f67cf4e605a4f7a9b6609c}
-      \strng{fullhash}{ed54e4619130547e5c8a038bdb62d331}
-      \strng{bibnamehash}{ed54e4619130547e5c8a038bdb62d331}
-      \strng{authorbibnamehash}{ed54e4619130547e5c8a038bdb62d331}
-      \strng{authornamehash}{38eb72ff02f67cf4e605a4f7a9b6609c}
-      \strng{authorfullhash}{ed54e4619130547e5c8a038bdb62d331}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{booktitle}{2021 IEEE 17th International Conference on Automation Science and Engineering (CASE)}
-      \field{title}{Performance Evaluation of Real-Time ROS2 Robotic Control in a Time-Synchronized Distributed Network}
-      \field{year}{2021}
-      \field{pages}{1670\bibrangedash 1676}
-      \range{pages}{7}
-      \verb{doi}
-      \verb 10.1109/CASE49439.2021.9551447
-      \endverb
-    \endentry
     \entry{johnson2015scenegraphs}{inproceedings}{}
       \name{author}{7}{}{%
         {{hash=90edc587e1d523d4e173b1fe6e733445}{%
@@ -1296,8 +1174,8 @@
       \strng{authorbibnamehash}{721ec71a855c8818875c91cf21d15e1f}
       \strng{authornamehash}{6e123636292d5acb3e59a2dea095df77}
       \strng{authorfullhash}{d88292d711d29fae7152180f34a925ad}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{International Journal of Computer Vision}
@@ -1586,8 +1464,8 @@
       \strng{authorbibnamehash}{3a1b2e51fcffd45628935c7b6334f944}
       \strng{authornamehash}{4e53a9c7f8f76fc36bfb13bfc9694edc}
       \strng{authorfullhash}{3a1b2e51fcffd45628935c7b6334f944}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Proceedings of the 7th Python in Science Conference}
@@ -1809,8 +1687,8 @@
       \strng{authorbibnamehash}{ffe4fa3a93a3b1a8ca1d3c8b76f864d7}
       \strng{authornamehash}{394c7f90c50c43b0c3394f0b9f423e53}
       \strng{authorfullhash}{ffe4fa3a93a3b1a8ca1d3c8b76f864d7}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{NIPS Deep Learning and Representation Learning Workshop}
@@ -1862,8 +1740,8 @@
       \strng{authorbibnamehash}{32eb20e4a8403965e36ab3c0cba3da57}
       \strng{authornamehash}{b2d6324b7e4b443e3930ae6ae0e7ad13}
       \strng{authorfullhash}{32eb20e4a8403965e36ab3c0cba3da57}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{arXiv preprint arXiv:2306.14289}
@@ -2782,123 +2660,6 @@
       \verb https://artificialanalysis.ai/articles/qwen3-5-small-models
       \endverb
     \endentry
-    \entry{nvidia_jetson_orin}{online}{}
-      \name{author}{1}{}{%
-        {{hash=a2fe9051fe051f819bd739ef3e340377}{%
-           family={{NVIDIA}},
-           familyi={N\bibinitperiod}}}%
-      }
-      \strng{namehash}{a2fe9051fe051f819bd739ef3e340377}
-      \strng{fullhash}{a2fe9051fe051f819bd739ef3e340377}
-      \strng{bibnamehash}{a2fe9051fe051f819bd739ef3e340377}
-      \strng{authorbibnamehash}{a2fe9051fe051f819bd739ef3e340377}
-      \strng{authornamehash}{a2fe9051fe051f819bd739ef3e340377}
-      \strng{authorfullhash}{a2fe9051fe051f819bd739ef3e340377}
-      \field{extraname}{2}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{title}{Jetson AGX Orin for Next-Gen Robotics}
-      \field{urlday}{1}
-      \field{urlmonth}{6}
-      \field{urlyear}{2026}
-      \field{year}{2026}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/
-      \endverb
-      \verb{url}
-      \verb https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/
-      \endverb
-    \endentry
-    \entry{schiel2026online}{thesis}{}
-      \name{author}{1}{}{%
-        {{hash=152ca874437bc9f8b0628a34864fa7a2}{%
-           family={Schiel},
-           familyi={S\bibinitperiod},
-           given={André},
-           giveni={A\bibinitperiod}}}%
-      }
-      \list{institution}{1}{%
-        {University of Stuttgart}%
-      }
-      \list{location}{1}{%
-        {Stuttgart, Germany}%
-      }
-      \strng{namehash}{152ca874437bc9f8b0628a34864fa7a2}
-      \strng{fullhash}{152ca874437bc9f8b0628a34864fa7a2}
-      \strng{bibnamehash}{152ca874437bc9f8b0628a34864fa7a2}
-      \strng{authorbibnamehash}{152ca874437bc9f8b0628a34864fa7a2}
-      \strng{authornamehash}{152ca874437bc9f8b0628a34864fa7a2}
-      \strng{authorfullhash}{152ca874437bc9f8b0628a34864fa7a2}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{title}{Online Risk-Annotated Scene Graphs for Autonomous Systems}
-      \field{type}{mathesis}
-      \field{year}{2026}
-    \endentry
-    \entry{nvidia_jetson_thor}{online}{}
-      \name{author}{1}{}{%
-        {{hash=a2fe9051fe051f819bd739ef3e340377}{%
-           family={{NVIDIA}},
-           familyi={N\bibinitperiod}}}%
-      }
-      \strng{namehash}{a2fe9051fe051f819bd739ef3e340377}
-      \strng{fullhash}{a2fe9051fe051f819bd739ef3e340377}
-      \strng{bibnamehash}{a2fe9051fe051f819bd739ef3e340377}
-      \strng{authorbibnamehash}{a2fe9051fe051f819bd739ef3e340377}
-      \strng{authornamehash}{a2fe9051fe051f819bd739ef3e340377}
-      \strng{authorfullhash}{a2fe9051fe051f819bd739ef3e340377}
-      \field{extraname}{3}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{title}{Jetson Thor: Advanced AI for Physical Robotics}
-      \field{urlday}{1}
-      \field{urlmonth}{6}
-      \field{urlyear}{2026}
-      \field{year}{2026}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-thor/
-      \endverb
-      \verb{url}
-      \verb https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-thor/
-      \endverb
-    \endentry
-    \entry{jetson_ai_lab_models}{online}{}
-      \name{author}{1}{}{%
-        {{hash=c9ce35d694a019c168938eeda4ac7325}{%
-           family={{NVIDIA Jetson AI Lab}},
-           familyi={N\bibinitperiod}}}%
-      }
-      \strng{namehash}{c9ce35d694a019c168938eeda4ac7325}
-      \strng{fullhash}{c9ce35d694a019c168938eeda4ac7325}
-      \strng{bibnamehash}{c9ce35d694a019c168938eeda4ac7325}
-      \strng{authorbibnamehash}{c9ce35d694a019c168938eeda4ac7325}
-      \strng{authornamehash}{c9ce35d694a019c168938eeda4ac7325}
-      \strng{authorfullhash}{c9ce35d694a019c168938eeda4ac7325}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{title}{Jetson AI Lab Models}
-      \field{urlday}{1}
-      \field{urlmonth}{6}
-      \field{urlyear}{2026}
-      \field{year}{2026}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://www.jetson-ai-lab.com/models/
-      \endverb
-      \verb{url}
-      \verb https://www.jetson-ai-lab.com/models/
-      \endverb
-    \endentry
     \entry{keselman2017realsense}{inproceedings}{}
       \name{author}{4}{}{%
         {{hash=b3d4eff8be3e1d5f0adb71e2f52bfb8a}{%
@@ -3123,6 +2884,66 @@
       \field{year}{2019}
       \verb{doi}
       \verb 10.1109/CVPR.2019.00963
+      \endverb
+    \endentry
+    \entry{nvidia_jetson_thor}{online}{}
+      \name{author}{1}{}{%
+        {{hash=a2fe9051fe051f819bd739ef3e340377}{%
+           family={{NVIDIA}},
+           familyi={N\bibinitperiod}}}%
+      }
+      \strng{namehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{fullhash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{bibnamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authorbibnamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authornamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authorfullhash}{a2fe9051fe051f819bd739ef3e340377}
+      \field{extraname}{2}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Jetson Thor: Advanced AI for Physical Robotics}
+      \field{urlday}{1}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-thor/
+      \endverb
+      \verb{url}
+      \verb https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-thor/
+      \endverb
+    \endentry
+    \entry{nvidia_jetson_orin}{online}{}
+      \name{author}{1}{}{%
+        {{hash=a2fe9051fe051f819bd739ef3e340377}{%
+           family={{NVIDIA}},
+           familyi={N\bibinitperiod}}}%
+      }
+      \strng{namehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{fullhash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{bibnamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authorbibnamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authornamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authorfullhash}{a2fe9051fe051f819bd739ef3e340377}
+      \field{extraname}{3}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Jetson AGX Orin for Next-Gen Robotics}
+      \field{urlday}{1}
+      \field{urlmonth}{6}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/
+      \endverb
+      \verb{url}
+      \verb https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/
       \endverb
     \endentry
   \enddatalist

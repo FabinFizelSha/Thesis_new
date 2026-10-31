@@ -212,7 +212,7 @@ At the same time, OpenGraph has a different focus from the present thesis. Its m
 
 
 
-
+\iffalse
 \section{Robot Operating System}
 
 {\small
@@ -258,7 +258,7 @@ Quality of Service is an important feature of ROS 2 communication. QoS settings 
 In the context of this thesis, ROS 2 is relevant because the risk-annotated scene graph framework must operate as part of a robotic system rather than as an isolated external service. RGB-D data, pose information, system status, and scene graph updates need to be exchanged continuously between different software components. ROS 2 provides a robot-native communication structure for this purpose, allowing the framework to be integrated with perception sensors, SLAM modules, robot state estimation, visualization tools, and downstream risk assessment mechanisms.
 
 }
-
+\fi
 
 
 
@@ -677,7 +677,7 @@ Since the baseline study, a new generation has appeared roughly every six to twe
 
 
 
-
+\iffalse
 \section{Embedded Computing Hardware: NVIDIA Jetson Platforms}
 
 {\small
@@ -705,7 +705,7 @@ NVIDIA Jetson AGX Thor is the successor platform within the Jetson family and is
 This additional capacity is potentially relevant for the proposed framework, as it may allow the perception, reasoning, and mapping components to be executed concurrently on the same embedded platform with fewer resource constraints. Jetson AGX Thor also offers improved support for transformer-based and multimodal workloads. Jetson AI Lab lists Qwen3-VL models, including Qwen3-VL 4B and Qwen3-VL 8B, as available for Jetson AGX Thor through Quick Start Runner and vLLM-based serving configurations \cite{jetson_ai_lab_models}. Since the Qwen model series was identified as the best-performing option in the baseline framework \cite{schiel2026online}, Jetson AGX Thor represents a suitable hardware basis for extending the system toward onboard robotic deployment without dependence on an external workstation for model inference.
 
 }
-
+\fi
 
 
 

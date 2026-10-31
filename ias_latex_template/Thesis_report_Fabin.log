@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.22)  25 OCT 2026 22:50
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.22)  31 OCT 2026 21:08
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1645,7 +1645,7 @@ LaTeX Font Info:    Font shape `U/msb/m/n' will be
 ]
 
 LaTeX Font Warning: Font shape `T1/qpl/m/sl' in size <10.95> not available
-(Font)              Font shape `T1/qpl/m/it' tried instead on input line 74.
+(Font)              Font shape `T1/qpl/m/it' tried instead on input line 73.
 
 [4])
 \tf@toc=\write6
@@ -1706,21 +1706,21 @@ chapter 2.
 
 
 ]
-<example_images/HRC_safety_productivity.png, id=470, 1806.75pt x 877.2775pt>
+<example_images/HRC_safety_productivity.png, id=462, 1806.75pt x 877.2775pt>
 File: example_images/HRC_safety_productivity.png Graphic file (type png)
 <use example_images/HRC_safety_productivity.png>
 Package pdftex.def Info: example_images/HRC_safety_productivity.png  used on in
 put line 26.
 (pdftex.def)             Requested size: 418.25555pt x 203.08142pt.
  [5 <./example_images/HRC_safety_productivity.png (PNG copy)>] [6]
-<example_images/hrc_safety_zones_generated.png, id=489, 1541.76pt x 1027.84pt>
+<example_images/hrc_safety_zones_generated.png, id=481, 1541.76pt x 1027.84pt>
 File: example_images/hrc_safety_zones_generated.png Graphic file (type png)
 <use example_images/hrc_safety_zones_generated.png>
 Package pdftex.def Info: example_images/hrc_safety_zones_generated.png  used on
  input line 56.
 (pdftex.def)             Requested size: 418.25555pt x 278.83792pt.
  [7 <./example_images/hrc_safety_zones_generated.png (PNG copy)>] [8] [9]
-<example_images/scenegraphfusion_pipeline.png, id=509, 1212.53pt x 270.00874pt>
+<example_images/scenegraphfusion_pipeline.png, id=501, 1212.53pt x 270.00874pt>
 
 File: example_images/scenegraphfusion_pipeline.png Graphic file (type png)
 <use example_images/scenegraphfusion_pipeline.png>
@@ -1728,7 +1728,7 @@ Package pdftex.def Info: example_images/scenegraphfusion_pipeline.png  used on
 input line 123.
 (pdftex.def)             Requested size: 418.25555pt x 93.13663pt.
  [10 <./example_images/scenegraphfusion_pipeline.png>] [11]
-<example_images/conceptgraphs_pipeline.png, id=526, 1153.30875pt x 462.72874pt>
+<example_images/conceptgraphs_pipeline.png, id=518, 1153.30875pt x 462.72874pt>
 
 File: example_images/conceptgraphs_pipeline.png Graphic file (type png)
 <use example_images/conceptgraphs_pipeline.png>
@@ -1736,29 +1736,28 @@ Package pdftex.def Info: example_images/conceptgraphs_pipeline.png  used on inp
 ut line 163.
 (pdftex.def)             Requested size: 418.25555pt x 167.81078pt.
  [12 <./example_images/conceptgraphs_pipeline.png>]
-<example_images/opengraph_pipeline.png, id=535, 1069.9975pt x 364.36125pt>
+<example_images/opengraph_pipeline.png, id=527, 1069.9975pt x 364.36125pt>
 File: example_images/opengraph_pipeline.png Graphic file (type png)
 <use example_images/opengraph_pipeline.png>
 Package pdftex.def Info: example_images/opengraph_pipeline.png  used on input l
 ine 184.
 (pdftex.def)             Requested size: 418.25555pt x 142.42833pt.
- [13 <./example_images/opengraph_pipeline.png>] [14] [15]
-<example_images/scene-graph-example.png, id=558, 1787.67876pt x 886.31125pt>
+ [13 <./example_images/opengraph_pipeline.png>]
+<example_images/scene-graph-example.png, id=537, 1787.67876pt x 886.31125pt>
 File: example_images/scene-graph-example.png Graphic file (type png)
 <use example_images/scene-graph-example.png>
 Package pdftex.def Info: example_images/scene-graph-example.png  used on input 
 line 285.
 (pdftex.def)             Requested size: 418.25555pt x 207.36354pt.
-
-[16] [17 <./example_images/scene-graph-example.png (PNG copy)>]
-<example_images/hydra_3d_scene_graph.png, id=577, 1075.01625pt x 775.89874pt>
+ [14] [15 <./example_images/scene-graph-example.png (PNG copy)>]
+<example_images/hydra_3d_scene_graph.png, id=554, 1075.01625pt x 775.89874pt>
 File: example_images/hydra_3d_scene_graph.png Graphic file (type png)
 <use example_images/hydra_3d_scene_graph.png>
 Package pdftex.def Info: example_images/hydra_3d_scene_graph.png  used on input
  line 321.
 (pdftex.def)             Requested size: 418.25555pt x 301.87709pt.
- [18 <./example_images/hydra_3d_scene_graph.png>] [19] [20] [21]
-<example_images/existing_work_overview_enhanced.png, id=615, 1805.74625pt x 108
+ [16 <./example_images/hydra_3d_scene_graph.png>] [17] [18]
+<example_images/existing_work_overview_enhanced.png, id=588, 1805.74625pt x 108
 4.05pt>
 File: example_images/existing_work_overview_enhanced.png Graphic file (type png
 )
@@ -1766,114 +1765,115 @@ File: example_images/existing_work_overview_enhanced.png Graphic file (type png
 Package pdftex.def Info: example_images/existing_work_overview_enhanced.png  us
 ed on input line 415.
 (pdftex.def)             Requested size: 418.25555pt x 251.07962pt.
- [22 <./example_images/existing_work_overview_enhanced.png>] [23] [24] [25]
-<example_images/SAM.png, id=662, 1710.39pt x 337.26pt>
+ [19] [20 <./example_images/existing_work_overview_enhanced.png>] [21] [22]
+<example_images/SAM.png, id=635, 1710.39pt x 337.26pt>
 File: example_images/SAM.png Graphic file (type png)
 <use example_images/SAM.png>
 Package pdftex.def Info: example_images/SAM.png  used on input line 493.
 (pdftex.def)             Requested size: 418.25555pt x 82.47246pt.
- [26 <./example_images/SAM.png>]
-[27] [28] [29] [30]
-<example_images/rap_retrieval_flow.png, id=723, 499.3857pt x 169.1118pt>
+ [23] [24 <./example_images/SAM.png>] [25] [26] [27]
+[28]
+<example_images/rap_retrieval_flow.png, id=700, 499.3857pt x 169.1118pt>
 File: example_images/rap_retrieval_flow.png Graphic file (type png)
 <use example_images/rap_retrieval_flow.png>
 Package pdftex.def Info: example_images/rap_retrieval_flow.png  used on input l
 ine 608.
 (pdftex.def)             Requested size: 418.25555pt x 141.64006pt.
- [31] [32 <./example_images/rap_retrieval_flow.png (PNG copy)>] [33] [34]
-LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 9.37807pt on input line 703.
-LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 7.29405pt on input line 703.
-LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 5.21004pt on input line 703.
-LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 9.37807pt on input line 703.
-LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 7.29405pt on input line 703.
-LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 5.21004pt on input line 703.
- [35]
-<example_images/safetydetect_pipeline.png, id=789, 1329.96875pt x 313.17pt>
+ [29] [30 <./example_images/rap_retrieval_flow.png (PNG copy)>] [31]
+[32]
+<example_images/safetydetect_pipeline.png, id=752, 1329.96875pt x 313.17pt>
 File: example_images/safetydetect_pipeline.png Graphic file (type png)
 <use example_images/safetydetect_pipeline.png>
 Package pdftex.def Info: example_images/safetydetect_pipeline.png  used on inpu
 t line 738.
 (pdftex.def)             Requested size: 418.25555pt x 98.48659pt.
- [36]) (./chapters/Methodology.tex [37 <./example_images/safetydetect_pipeline.
-png>]
+ [33 <./example_images/safetydetect_pipeline.png>])
+(./chapters/Methodology.tex [34]
 chapter 3.
 
-LaTeX Warning: Reference `sec:goal_of_thesis' on page 38 undefined on input lin
+LaTeX Warning: Reference `sec:goal_of_thesis' on page 35 undefined on input lin
 e 8.
 
 
-LaTeX Warning: Reference `sec:goal_of_thesis' on page 38 undefined on input lin
+LaTeX Warning: Reference `sec:goal_of_thesis' on page 35 undefined on input lin
 e 8.
 
-<example_images/method_framework_overview.png, id=824, 646.8165pt x 279.6849pt>
+<example_images/method_framework_overview.png, id=786, 646.8165pt x 279.6849pt>
 
 File: example_images/method_framework_overview.png Graphic file (type png)
 <use example_images/method_framework_overview.png>
 Package pdftex.def Info: example_images/method_framework_overview.png  used on 
 input line 17.
 (pdftex.def)             Requested size: 418.25555pt x 180.85414pt.
-[38
+[35
 
 
-] [39 <./example_images/method_framework_overview.png (PNG copy)>] [40]
-[41]
-<example_images/preprocessing_flow.png, id=857, 710.4141pt x 209.3421pt>
+] [36 <./example_images/method_framework_overview.png (PNG copy)>]
+LaTeX Font Info:    Font shape `U/msa/m/n' will be
+(Font)              scaled to size 9.37807pt on input line 41.
+LaTeX Font Info:    Font shape `U/msa/m/n' will be
+(Font)              scaled to size 7.29405pt on input line 41.
+LaTeX Font Info:    Font shape `U/msa/m/n' will be
+(Font)              scaled to size 5.21004pt on input line 41.
+LaTeX Font Info:    Font shape `U/msb/m/n' will be
+(Font)              scaled to size 9.37807pt on input line 41.
+LaTeX Font Info:    Font shape `U/msb/m/n' will be
+(Font)              scaled to size 7.29405pt on input line 41.
+LaTeX Font Info:    Font shape `U/msb/m/n' will be
+(Font)              scaled to size 5.21004pt on input line 41.
+ [37]
+[38]
+<example_images/preprocessing_flow.png, id=817, 710.4141pt x 209.3421pt>
 File: example_images/preprocessing_flow.png Graphic file (type png)
 <use example_images/preprocessing_flow.png>
 Package pdftex.def Info: example_images/preprocessing_flow.png  used on input l
 ine 103.
 (pdftex.def)             Requested size: 418.25555pt x 123.24883pt.
- [42 <./example_images/preprocessing_flow.png (PNG copy)>]
+ [39 <./example_images/preprocessing_flow.png (PNG copy)>]
 
-LaTeX Warning: Reference `chap:experiments' on page 43 undefined on input line 
+LaTeX Warning: Reference `chap:experiments' on page 40 undefined on input line 
 156.
 
-[43] [44] [45] [46] [47] [48]
+[40] [41] [42] [43] [44] [45]
 
-LaTeX Warning: Reference `chap:evaluation' on page 49 undefined on input line 2
+LaTeX Warning: Reference `chap:evaluation' on page 46 undefined on input line 2
 81.
 
-[49] [50] [51]
+[46] [47] [48]
 Underfull \hbox (badness 10000) in paragraph at lines 377--377
 []\T1/qpl/m/n/10 (+20) Spatial rep-re-sen-ta-
  []
 
-[52]
+[49]
 
-LaTeX Warning: Reference `subsec:hydra_loop_closure' on page 53 undefined on in
+LaTeX Warning: Reference `subsec:hydra_loop_closure' on page 50 undefined on in
 put line 449.
 
-[53] [54]) (./chapters/Implementation.tex [55]
+[50] [51]) (./chapters/Implementation.tex [52]
 chapter 4.
 
-LaTeX Warning: Reference `chap:methodology' on page 56 undefined on input line 
+LaTeX Warning: Reference `chap:methodology' on page 53 undefined on input line 
 4.
 
 
-LaTeX Warning: Reference `sec:impl_optimisation' on page 56 undefined on input 
+LaTeX Warning: Reference `sec:impl_optimisation' on page 53 undefined on input 
 line 4.
 
-[56
+[53
 
 
 ]
 
-LaTeX Warning: Reference `chap:evaluation' on page 57 undefined on input line 5
+LaTeX Warning: Reference `chap:evaluation' on page 54 undefined on input line 5
 2.
 
-[57]
+[54]
 
-LaTeX Warning: Reference `chap:methodology' on page 58 undefined on input line 
+LaTeX Warning: Reference `chap:methodology' on page 55 undefined on input line 
 87.
 
 
-LaTeX Warning: Reference `chap:methodology' on page 58 undefined on input line 
+LaTeX Warning: Reference `chap:methodology' on page 55 undefined on input line 
 87.
 
 LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 9
@@ -1885,13 +1885,13 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `cmtt' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-<example_images/impl_class_overview.png, id=1008, 501.26472pt x 592.03584pt>
+<example_images/impl_class_overview.png, id=970, 501.26472pt x 592.03584pt>
 File: example_images/impl_class_overview.png Graphic file (type png)
 <use example_images/impl_class_overview.png>
 Package pdftex.def Info: example_images/impl_class_overview.png  used on input 
 line 104.
 (pdftex.def)             Requested size: 458.70627pt x 541.77072pt.
- [58{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-t1.enc}] [59 <./example
+ [55{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-t1.enc}] [56 <./example
 _images/impl_class_overview.png (PNG copy)>]
 Overfull \hbox (10.11766pt too wide) in paragraph at lines 119--119
 \T1/cmtt/m/n/10 PreprocessorNode \T1/qpl/m/n/10 (-20) holds a \T1/cmtt/m/n/10 P
@@ -1899,56 +1899,56 @@ reprocessorConfig \T1/qpl/m/n/10 (-20) and del-e-gates tem-po-ral as-so-ci-a-ti
 on to \T1/cmtt/m/n/10 OdomBuffer\T1/qpl/m/n/10 (-20) ,
  []
 
-<example_images/impl_seq_preprocessor.pdf, id=1023, 484.6055pt x 320.71819pt>
+<example_images/impl_seq_preprocessor.pdf, id=984, 484.6055pt x 320.71819pt>
 File: example_images/impl_seq_preprocessor.pdf Graphic file (type pdf)
 <use example_images/impl_seq_preprocessor.pdf>
 Package pdftex.def Info: example_images/impl_seq_preprocessor.pdf  used on inpu
 t line 123.
 (pdftex.def)             Requested size: 418.25555pt x 276.8106pt.
-[60 <./example_images/impl_seq_preprocessor.pdf>] [61]
-<example_images/impl_seq_phase1_frame.pdf, id=1061, 484.6055pt x 307.34523pt>
+[57 <./example_images/impl_seq_preprocessor.pdf>] [58]
+<example_images/impl_seq_phase1_frame.pdf, id=1022, 484.6055pt x 307.34523pt>
 File: example_images/impl_seq_phase1_frame.pdf Graphic file (type pdf)
 <use example_images/impl_seq_phase1_frame.pdf>
 Package pdftex.def Info: example_images/impl_seq_phase1_frame.pdf  used on inpu
 t line 149.
 (pdftex.def)             Requested size: 385.1634pt x 244.27731pt.
-<example_images/impl_seq_phase1_label.pdf, id=1062, 484.6055pt x 341.48882pt>
+<example_images/impl_seq_phase1_label.pdf, id=1023, 484.6055pt x 341.48882pt>
 File: example_images/impl_seq_phase1_label.pdf Graphic file (type pdf)
 <use example_images/impl_seq_phase1_label.pdf>
 Package pdftex.def Info: example_images/impl_seq_phase1_label.pdf  used on inpu
 t line 158.
 (pdftex.def)             Requested size: 384.71973pt x 271.10193pt.
- [62] [63 <./example_images/impl_seq_phase1_frame.pdf> <./example_images/impl_s
+ [59] [60 <./example_images/impl_seq_phase1_frame.pdf> <./example_images/impl_s
 eq_phase1_label.pdf>]
-<example_images/impl_seq_hydra.pdf, id=1096, 484.6055pt x 364.25085pt>
+<example_images/impl_seq_hydra.pdf, id=1058, 484.6055pt x 364.25085pt>
 File: example_images/impl_seq_hydra.pdf Graphic file (type pdf)
 <use example_images/impl_seq_hydra.pdf>
 Package pdftex.def Info: example_images/impl_seq_hydra.pdf  used on input line 
 182.
 (pdftex.def)             Requested size: 418.25555pt x 314.38345pt.
 
-[64 <./example_images/impl_seq_hydra.pdf>]
-<example_images/impl_seq_fuser.pdf, id=1116, 484.6055pt x 367.09648pt>
+[61 <./example_images/impl_seq_hydra.pdf>]
+<example_images/impl_seq_fuser.pdf, id=1077, 484.6055pt x 367.09648pt>
 File: example_images/impl_seq_fuser.pdf Graphic file (type pdf)
 <use example_images/impl_seq_fuser.pdf>
 Package pdftex.def Info: example_images/impl_seq_fuser.pdf  used on input line 
 194.
 (pdftex.def)             Requested size: 418.25555pt x 316.83951pt.
- [65 <./example_images/impl_seq_fuser.pdf>]) (./chapters/Results.tex [66]
+ [62 <./example_images/impl_seq_fuser.pdf>]) (./chapters/Results.tex [63]
 chapter 5.
-<example_images/gt_example_rgb.png, id=1148, 722.7pt x 481.8pt>
+<example_images/gt_example_rgb.png, id=1109, 722.7pt x 481.8pt>
 File: example_images/gt_example_rgb.png Graphic file (type png)
 <use example_images/gt_example_rgb.png>
 Package pdftex.def Info: example_images/gt_example_rgb.png  used on input line 
 57.
 (pdftex.def)             Requested size: 204.94751pt x 136.6307pt.
-<example_images/gt_example_instances.png, id=1149, 722.7pt x 481.8pt>
+<example_images/gt_example_instances.png, id=1110, 722.7pt x 481.8pt>
 File: example_images/gt_example_instances.png Graphic file (type png)
 <use example_images/gt_example_instances.png>
 Package pdftex.def Info: example_images/gt_example_instances.png  used on input
  line 64.
 (pdftex.def)             Requested size: 204.94751pt x 136.6307pt.
-[67
+[64
 
 
  <./example_images/gt_example_rgb.png (PNG copy)> <./example_images/gt_example_
@@ -1963,7 +1963,7 @@ Package pgfplots info on input line 129: Using 'lua backend=false' for axis: x
 coord trafo unsupported.
 Package pgfplots info on input line 141: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
- [68]
+ [65]
 Package pgfplots info on input line 186: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 Package pgfplots info on input line 189: Using 'lua backend=false' for axis: x 
@@ -1976,12 +1976,12 @@ Package pgfplots info on input line 218: Using 'lua backend=false' for axis: x
 coord trafo unsupported.
 Package pgfplots info on input line 221: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
- [69] [70]
+ [66] [67]
 Package pgfplots info on input line 320: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 Package pgfplots info on input line 333: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
- [71] [72]
+ [68] [69]
 Package pgfplots info on input line 423: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 Package pgfplots info on input line 437: Using 'lua backend=false' for axis: x 
@@ -1992,7 +1992,7 @@ Overfull \hbox (4.05962pt too wide) in paragraph at lines 457--457
 e there-fore uses the pro-file \T1/cmtt/m/n/10 qwen3_5_4b_q4
  []
 
-[73] [74]
+[70] [71]
 Overfull \hbox (70.70642pt too wide) in paragraph at lines 606--606
 []\T1/qpl/b/n/10 (-20) [TODO: of-fice para-graph; re-quires res_office_overview
 /layers/closeup/camera.png and res_office_stats.txt.] 
@@ -2019,20 +2019,16 @@ Underfull \hbox (badness 1412) in paragraph at lines 701--701
 
 Package pgfplots info on input line 717: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
-[75] [76]
+[72] [73]
 Overfull \hbox (13.25256pt too wide) in paragraph at lines 731--731
 []\T1/qpl/m/n/10 (-20) Figure []5.8[] de-com-poses the mean frame time into fiv
-e stage groups. Seg-men-ta-tion with NanoSAM [[]33[]]
+e stage groups. Seg-men-ta-tion with NanoSAM [[]31[]]
  []
 
 Package pgfplots info on input line 747: Using 'lua backend=false' for axis: st
 acked plots unsupported (yet).
 Package pgfplots info on input line 747: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
-
-LaTeX Warning: Reference `chap:limitations' on page 77 undefined on input line 
-762.
-
 Package pgfplots info on input line 780: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 Package pgfplots info on input line 801: Using 'lua backend=false' for axis: st
@@ -2044,12 +2040,13 @@ Package pgfplots Warning: Axis range for axis y is approximately empty; enlargi
 ng it (it is [0.0:0.0]) on input line 805.
 
  [warning /pgfplots/warning/approx empty range enlarged]
-
-LaTeX Warning: Reference `chap:limitations' on page 77 undefined on input line 
-813.
-
-[77]) [78]
+[74]) (./chapters/Conclusion.tex [75]
 chapter 6.
+[76
+
+
+] [77]) [78]
+chapter 7.
 [79
 
 
@@ -2060,7 +2057,7 @@ Package microtype Info: Character `029' is missing
 (microtype)             Ignoring protrusion settings for this character.
 
 Package biblatex Warning: No driver for 'standard'.
-(biblatex)                Using fallback driver on input line 68.
+(biblatex)                Using fallback driver on input line 69.
 
 [80
 
@@ -2068,7 +2065,7 @@ Package biblatex Warning: No driver for 'standard'.
 
 
 {/usr/share/texmf/fonts/enc/dvips/tex-gyre/q-ec-sc.enc}]
-Overfull \hbox (1.18694pt too wide) in paragraph at lines 69--69
+Overfull \hbox (1.18694pt too wide) in paragraph at lines 70--70
 \T1/qpl/m/n/10.95 (-20) making in au-tonomous sys-tems,^^Q in \T1/qpl/m/it/10.9
 5 (-20) Com-puter Safety, Re-li-a-bil-ity, and Se-cu-rity\T1/qpl/m/n/10.95 (-20
 ) , ser. Lec-
@@ -2076,25 +2073,25 @@ Overfull \hbox (1.18694pt too wide) in paragraph at lines 69--69
 
 
 Package biblatex Warning: No driver for 'standard'.
-(biblatex)                Using fallback driver on input line 68.
+(biblatex)                Using fallback driver on input line 69.
 
 
 Package biblatex Warning: No driver for 'standard'.
-(biblatex)                Using fallback driver on input line 68.
+(biblatex)                Using fallback driver on input line 69.
 
 
 Package biblatex Warning: No driver for 'standard'.
-(biblatex)                Using fallback driver on input line 68.
+(biblatex)                Using fallback driver on input line 69.
 
 [81]
-Overfull \hbox (23.86905pt too wide) in paragraph at lines 69--69
+Overfull \hbox (23.86905pt too wide) in paragraph at lines 70--70
 []\T1/qpl/m/n/10.95 (-20) A. Kir-illov, E. Mintun, N. Ravi, \T1/qpl/m/it/10.95 
 (-20) et al.\T1/qpl/m/n/10.95 (-20) , ^^P  Seg-ment any-thing,^^Q \T1/qpl/m/it/
 10.95 (-20) arXiv preprint arXiv:2304.02643\T1/qpl/m/n/10.95 (-20) ,
  []
 
 [82] [83]
-Overfull \hbox (29.82353pt too wide) in paragraph at lines 69--69
+Overfull \hbox (29.82353pt too wide) in paragraph at lines 70--70
 []\T1/qpl/m/n/10.95 (-20) S. Bai, K. Chen, X. Liu, \T1/qpl/m/it/10.95 (-20) et 
 al.\T1/qpl/m/n/10.95 (-20) , ^^P  Qwen2.5-vl tech-ni-cal re-port,^^Q \T1/qpl/m/
 it/10.95 (-20) arXiv preprint arXiv:2502.13923\T1/qpl/m/n/10.95 (-20) ,
@@ -2124,11 +2121,11 @@ Package logreq Info: Writing requests to 'Thesis_report_Fabin.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 52606 strings out of 474222
- 1164826 string characters out of 5748733
- 2591600 words of memory out of 5000000
- 73137 multiletter control sequences out of 15000+600000
- 696830 words of font info for 357 fonts, out of 8000000 for 9000
+ 52581 strings out of 474222
+ 1164035 string characters out of 5748733
+ 2590588 words of memory out of 5000000
+ 73120 multiletter control sequences out of 15000+600000
+ 693689 words of font info for 355 fonts, out of 8000000 for 9000
  1143 hyphenation exceptions out of 8191
  108i,21n,107p,10914b,2898s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></us
@@ -2148,10 +2145,10 @@ vr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/uhvro8a.pfb></
 usr/share/texlive/texmf-dist/fonts/type1/urw/palatino/uplb8a.pfb></usr/share/te
 xlive/texmf-dist/fonts/type1/urw/palatino/uplr8a.pfb></usr/share/texlive/texmf-
 dist/fonts/type1/urw/palatino/uplri8a.pfb>
-Output written on Thesis_report_Fabin.pdf (104 pages, 9900932 bytes).
+Output written on Thesis_report_Fabin.pdf (104 pages, 9900255 bytes).
 PDF statistics:
- 2178 PDF objects out of 2487 (max. 8388607)
- 1956 compressed objects within 20 object streams
- 576 named destinations out of 1000 (max. 500000)
- 66968 words of extra memory for PDF output out of 74296 (max. 10000000)
+ 2193 PDF objects out of 2487 (max. 8388607)
+ 1971 compressed objects within 20 object streams
+ 567 named destinations out of 1000 (max. 500000)
+ 64888 words of extra memory for PDF output out of 74296 (max. 10000000)
 
