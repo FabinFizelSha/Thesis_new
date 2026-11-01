@@ -9,88 +9,87 @@
 \contentsline {section}{\numberline {1.4}Contributions}{3}{section.1.4}%
 \contentsline {chapter}{\numberline {2}Theoretical Background}{4}{chapter.2}%
 \contentsline {section}{\numberline {2.1}Autonomous Systems and Safety}{4}{section.2.1}%
-\contentsline {subsection}{\numberline {2.1.1}Human-Robot Collaboration}{5}{subsection.2.1.1}%
-\contentsline {subsection}{\numberline {2.1.2}Conventional Risk Assessment and Risk Reduction}{6}{subsection.2.1.2}%
-\contentsline {subsection}{\numberline {2.1.3}Existing Safety Measures in HRC}{6}{subsection.2.1.3}%
-\contentsline {subsection}{\numberline {2.1.4}Impact of Artificial Intelligence}{8}{subsection.2.1.4}%
-\contentsline {section}{\numberline {2.2}Existing Work on Spatial Scene Graphs}{9}{section.2.2}%
-\contentsline {subsection}{\numberline {2.2.1}3D Scene Graph by Armeni et al.}{9}{subsection.2.2.1}%
-\contentsline {subsection}{\numberline {2.2.2}SceneGraphFusion}{10}{subsection.2.2.2}%
-\contentsline {subsection}{\numberline {2.2.3}ConceptGraphs}{11}{subsection.2.2.3}%
-\contentsline {subsection}{\numberline {2.2.4}OpenGraph}{13}{subsection.2.2.4}%
-\contentsline {section}{\numberline {2.3}Scene Graphs}{14}{section.2.3}%
-\contentsline {section}{\numberline {2.4}Hydra-Based Spatial Scene Graph Generation}{15}{section.2.4}%
-\contentsline {subsection}{\numberline {2.4.1}Input Data and Processing Overview}{16}{subsection.2.4.1}%
-\contentsline {subsection}{\numberline {2.4.2}Layered 3D Scene Graph Representation}{17}{subsection.2.4.2}%
-\contentsline {subsection}{\numberline {2.4.3}Incremental Construction of Spatial Layers}{17}{subsection.2.4.3}%
-\contentsline {subsection}{\numberline {2.4.4}Loop Closure, Optimization, and Real-Time Architecture}{18}{subsection.2.4.4}%
-\contentsline {subsection}{\numberline {2.4.5}Relevance to the Proposed Framework}{19}{subsection.2.4.5}%
-\contentsline {section}{\numberline {2.5}Risk-Annotated Scene Graph Framework Baseline}{19}{section.2.5}%
-\contentsline {subsection}{\numberline {2.5.1}Information Flow in the Baseline Framework}{19}{subsection.2.5.1}%
-\contentsline {subsection}{\numberline {2.5.2}FastAPI}{21}{subsection.2.5.2}%
-\contentsline {subsection}{\numberline {2.5.3}Scene Graph Construction and Risk Annotation}{21}{subsection.2.5.3}%
-\contentsline {subsection}{\numberline {2.5.4}Limitations of the Baseline Framework}{22}{subsection.2.5.4}%
-\contentsline {section}{\numberline {2.6}Lightweight Promptable Segmentation with NanoSAM}{23}{section.2.6}%
-\contentsline {subsection}{\numberline {2.6.1}Architecture of the Segment Anything Model}{23}{subsection.2.6.1}%
-\contentsline {subsection}{\numberline {2.6.2}Knowledge Distillation and MobileSAM}{24}{subsection.2.6.2}%
-\contentsline {subsection}{\numberline {2.6.3}NanoSAM}{25}{subsection.2.6.3}%
-\contentsline {subsection}{\numberline {2.6.4}Limitations}{26}{subsection.2.6.4}%
-\contentsline {section}{\numberline {2.7}Multi-Object Tracking and Data Association}{26}{section.2.7}%
-\contentsline {subsection}{\numberline {2.7.1}The Data Association Problem}{27}{subsection.2.7.1}%
-\contentsline {subsection}{\numberline {2.7.2}Object-Level SLAM with Fusion++}{27}{subsection.2.7.2}%
-\contentsline {subsection}{\numberline {2.7.3}Limitations of Fusion++}{28}{subsection.2.7.3}%
-\contentsline {subsection}{\numberline {2.7.4}Relevance for Persistent Scene Representations}{28}{subsection.2.7.4}%
-\contentsline {section}{\numberline {2.8}Visual Retrieval and Vision-Language Models}{29}{section.2.8}%
-\contentsline {subsection}{\numberline {2.8.1}Retrieval-Augmented Perception}{29}{subsection.2.8.1}%
-\contentsline {subsection}{\numberline {2.8.2}Vision-Language Models}{31}{subsection.2.8.2}%
-\contentsline {subsection}{\numberline {2.8.3}The Qwen Vision-Language Model Family}{32}{subsection.2.8.3}%
-\contentsline {section}{\numberline {2.9}Scene Graphs for Downstream Safety Reasoning}{33}{section.2.9}%
-\contentsline {chapter}{\numberline {3}Methodology}{35}{chapter.3}%
-\contentsline {section}{\numberline {3.1}Framework Overview}{35}{section.3.1}%
-\contentsline {subsection}{\numberline {3.1.1}Framework Architecture}{35}{subsection.3.1.1}%
-\contentsline {subsection}{\numberline {3.1.2}Central Design Decisions}{37}{subsection.3.1.2}%
-\contentsline {section}{\numberline {3.2}Data Acquisition and Preprocessing}{39}{section.3.2}%
-\contentsline {section}{\numberline {3.3}Object Segmentation and Persistent Tracking}{40}{section.3.3}%
-\contentsline {subsection}{\numberline {3.3.1}Object Proposals and 3D Observations}{41}{subsection.3.3.1}%
-\contentsline {subsection}{\numberline {3.3.2}Evidence-Based Association}{42}{subsection.3.3.2}%
-\contentsline {subsection}{\numberline {3.3.3}Track Representation and Local Segments}{44}{subsection.3.3.3}%
-\contentsline {subsection}{\numberline {3.3.4}Transfer of Object Observations to Hydra}{45}{subsection.3.3.4}%
-\contentsline {section}{\numberline {3.4}Semantic Labelling and Risk-Relevant Object Information}{45}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}Selection and Presentation of the Object View}{45}{subsection.3.4.1}%
-\contentsline {subsection}{\numberline {3.4.2}Structured Output and Risk-Relevant Object Information}{46}{subsection.3.4.2}%
-\contentsline {section}{\numberline {3.5}Scene Graph Fusion and Uncertainty Modelling}{47}{section.3.5}%
-\contentsline {subsection}{\numberline {3.5.1}Scene Graph Fusion}{47}{subsection.3.5.1}%
-\contentsline {subsection}{\numberline {3.5.2}Uncertainty and Persistence Modelling}{48}{subsection.3.5.2}%
-\contentsline {subsection}{\numberline {3.5.3}Treatment of Static and Dynamic Objects}{49}{subsection.3.5.3}%
-\contentsline {section}{\numberline {3.6}Loop Closure and Multi-Session Consistency}{50}{section.3.6}%
-\contentsline {subsection}{\numberline {3.6.1}Consistency under Loop Closure}{50}{subsection.3.6.1}%
-\contentsline {subsection}{\numberline {3.6.2}Persistence across Sessions}{52}{subsection.3.6.2}%
-\contentsline {chapter}{\numberline {4}Implementation}{53}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Data Collection and Substitute Datasets}{53}{section.4.1}%
-\contentsline {subsection}{\numberline {4.1.1}Planned Data-Collection Campaign}{53}{subsection.4.1.1}%
-\contentsline {subsection}{\numberline {4.1.2}Limitations Encountered}{54}{subsection.4.1.2}%
-\contentsline {subsection}{\numberline {4.1.3}Substitute Datasets}{54}{subsection.4.1.3}%
-\contentsline {section}{\numberline {4.2}Software Implementation}{55}{section.4.2}%
-\contentsline {subsection}{\numberline {4.2.1}Package Structure and Deployment}{55}{subsection.4.2.1}%
-\contentsline {subsection}{\numberline {4.2.2}Preprocessor}{57}{subsection.4.2.2}%
-\contentsline {subsection}{\numberline {4.2.3}Phase~1 Coordinator}{58}{subsection.4.2.3}%
-\contentsline {subsection}{\numberline {4.2.4}Hydra Integration and Session Persistence}{59}{subsection.4.2.4}%
-\contentsline {subsection}{\numberline {4.2.5}Scene Graph Fuser}{61}{subsection.4.2.5}%
-\contentsline {subsection}{\numberline {4.2.6}Portability and Extensibility}{63}{subsection.4.2.6}%
-\contentsline {chapter}{\numberline {5}Results}{64}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Segmentation Backend and Configuration}{64}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Object Tracking and Crop Selection}{67}{section.5.2}%
-\contentsline {section}{\numberline {5.3}VLM Model and Prompt Comparison}{69}{section.5.3}%
-\contentsline {section}{\numberline {5.4}Visual Results across Environments}{71}{section.5.4}%
-\contentsline {section}{\numberline {5.5}Runtime Performance}{72}{section.5.5}%
-\contentsline {chapter}{\numberline {6}Conclusion and Future Work}{76}{chapter.6}%
-\contentsline {section}{\numberline {6.1}Conclusion}{76}{section.6.1}%
-\contentsline {section}{\numberline {6.2}Limitations and Future Work}{77}{section.6.2}%
-\contentsline {chapter}{\numberline {7}Conclusions}{79}{chapter.7}%
-\contentsline {chapter}{\nonumberline Bibliography}{80}{chapter*.38}%
-\contentsline {chapter}{\numberline {A}Prompts of the VLM Comparison}{86}{appendix.A}%
-\contentsline {section}{\numberline {A.1}Zero-Shot Prompt (P1)}{86}{section.A.1}%
-\contentsline {section}{\numberline {A.2}Example-Driven Prompt (P2)}{86}{section.A.2}%
-\contentsline {section}{\numberline {A.3}Structural-Priority Prompt (P3)}{88}{section.A.3}%
-\contentsline {section}{\numberline {A.4}Deployed Prompt with Visual-State Description}{90}{section.A.4}%
+\contentsline {subsection}{\numberline {2.1.1}Human-Robot Collaboration}{4}{subsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.1.2}Conventional Risk Assessment and Risk Reduction}{5}{subsection.2.1.2}%
+\contentsline {subsection}{\numberline {2.1.3}Existing Safety Measures in HRC}{5}{subsection.2.1.3}%
+\contentsline {subsection}{\numberline {2.1.4}Impact of Artificial Intelligence}{6}{subsection.2.1.4}%
+\contentsline {section}{\numberline {2.2}Scene Graphs}{7}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Existing Work on Spatial Scene Graphs}{8}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}3D Scene Graph by Armeni et al.}{8}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}SceneGraphFusion}{9}{subsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.3.3}ConceptGraphs}{10}{subsection.2.3.3}%
+\contentsline {subsection}{\numberline {2.3.4}OpenGraph}{12}{subsection.2.3.4}%
+\contentsline {section}{\numberline {2.4}Hydra-Based Spatial Scene Graph Generation}{13}{section.2.4}%
+\contentsline {subsection}{\numberline {2.4.1}Input Data and Processing Overview}{13}{subsection.2.4.1}%
+\contentsline {subsection}{\numberline {2.4.2}Layered 3D Scene Graph Representation}{14}{subsection.2.4.2}%
+\contentsline {subsection}{\numberline {2.4.3}Incremental Construction of Spatial Layers}{15}{subsection.2.4.3}%
+\contentsline {subsection}{\numberline {2.4.4}Loop Closure, Optimization, and Real-Time Architecture}{16}{subsection.2.4.4}%
+\contentsline {section}{\numberline {2.5}Risk-Annotated Scene Graph Framework Baseline}{16}{section.2.5}%
+\contentsline {subsection}{\numberline {2.5.1}Information Flow in the Baseline Framework}{16}{subsection.2.5.1}%
+\contentsline {subsection}{\numberline {2.5.2}FastAPI}{18}{subsection.2.5.2}%
+\contentsline {subsection}{\numberline {2.5.3}Scene Graph Construction and Risk Annotation}{18}{subsection.2.5.3}%
+\contentsline {subsection}{\numberline {2.5.4}Limitations of the Baseline Framework}{19}{subsection.2.5.4}%
+\contentsline {section}{\numberline {2.6}Lightweight Promptable Segmentation with NanoSAM}{20}{section.2.6}%
+\contentsline {subsection}{\numberline {2.6.1}Architecture of the Segment Anything Model}{20}{subsection.2.6.1}%
+\contentsline {subsection}{\numberline {2.6.2}Knowledge Distillation and MobileSAM}{21}{subsection.2.6.2}%
+\contentsline {subsection}{\numberline {2.6.3}NanoSAM}{22}{subsection.2.6.3}%
+\contentsline {subsection}{\numberline {2.6.4}Limitations}{22}{subsection.2.6.4}%
+\contentsline {section}{\numberline {2.7}Multi-Object Tracking and Data Association}{23}{section.2.7}%
+\contentsline {subsection}{\numberline {2.7.1}The Data Association Problem}{23}{subsection.2.7.1}%
+\contentsline {subsection}{\numberline {2.7.2}Object-Level SLAM with Fusion++}{24}{subsection.2.7.2}%
+\contentsline {subsection}{\numberline {2.7.3}Limitations of Fusion++}{25}{subsection.2.7.3}%
+\contentsline {subsection}{\numberline {2.7.4}Relevance for Persistent Scene Representations}{25}{subsection.2.7.4}%
+\contentsline {section}{\numberline {2.8}Visual Retrieval and Vision-Language Models}{25}{section.2.8}%
+\contentsline {subsection}{\numberline {2.8.1}Retrieval-Augmented Perception}{26}{subsection.2.8.1}%
+\contentsline {subsection}{\numberline {2.8.2}Vision-Language Models}{27}{subsection.2.8.2}%
+\contentsline {subsection}{\numberline {2.8.3}The Qwen Vision-Language Model Family}{28}{subsection.2.8.3}%
+\contentsline {section}{\numberline {2.9}Scene Graphs for Downstream Safety Reasoning}{29}{section.2.9}%
+\contentsline {chapter}{\numberline {3}Methodology}{31}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Framework Overview}{31}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}Framework Architecture}{31}{subsection.3.1.1}%
+\contentsline {subsection}{\numberline {3.1.2}Central Design Decisions}{33}{subsection.3.1.2}%
+\contentsline {section}{\numberline {3.2}Data Acquisition and Preprocessing}{35}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Object Segmentation and Persistent Tracking}{36}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Object Proposals and 3D Observations}{37}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}Evidence-Based Association}{38}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}Evidence-Based Association}{39}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}Track Representation and Local Segments}{42}{subsection.3.3.4}%
+\contentsline {subsection}{\numberline {3.3.5}Transfer of Object Observations to Hydra}{43}{subsection.3.3.5}%
+\contentsline {section}{\numberline {3.4}Semantic Labelling and Risk-Relevant Object Information}{43}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}Selection and Presentation of the Object View}{43}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}Structured Output and Risk-Relevant Object Information}{44}{subsection.3.4.2}%
+\contentsline {section}{\numberline {3.5}Scene Graph Fusion and Uncertainty Modelling}{45}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}Scene Graph Fusion}{45}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}Uncertainty and Persistence Modelling}{46}{subsection.3.5.2}%
+\contentsline {subsection}{\numberline {3.5.3}Treatment of Static and Dynamic Objects}{47}{subsection.3.5.3}%
+\contentsline {section}{\numberline {3.6}Loop Closure and Multi-Session Consistency}{49}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}Consistency under Loop Closure}{49}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}Persistence across Sessions}{50}{subsection.3.6.2}%
+\contentsline {chapter}{\numberline {4}Implementation}{51}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Data Collection and Substitute Datasets}{51}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Planned Data-Collection Campaign}{51}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Limitations Encountered}{52}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}Substitute Datasets}{52}{subsection.4.1.3}%
+\contentsline {section}{\numberline {4.2}Software Implementation}{53}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Package Structure and Deployment}{53}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}Preprocessor}{55}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Phase~1 Coordinator}{56}{subsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.2.4}Hydra Integration and Session Persistence}{57}{subsection.4.2.4}%
+\contentsline {subsection}{\numberline {4.2.5}Scene Graph Fuser}{59}{subsection.4.2.5}%
+\contentsline {subsection}{\numberline {4.2.6}Portability and Extensibility}{61}{subsection.4.2.6}%
+\contentsline {chapter}{\numberline {5}Results}{62}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Segmentation Backend and Configuration}{62}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Object Tracking and Crop Selection}{65}{section.5.2}%
+\contentsline {section}{\numberline {5.3}VLM Model and Prompt Comparison}{67}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Visual Results across Environments}{69}{section.5.4}%
+\contentsline {section}{\numberline {5.5}Runtime Performance}{70}{section.5.5}%
+\contentsline {chapter}{\numberline {6}Conclusion and Future Work}{74}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Conclusion}{74}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Limitations and Future Work}{75}{section.6.2}%
+\contentsline {chapter}{\nonumberline Bibliography}{77}{chapter*.40}%
+\contentsline {chapter}{\numberline {A}Prompts of the VLM Comparison}{83}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Zero-Shot Prompt (P1)}{83}{section.A.1}%
+\contentsline {section}{\numberline {A.2}Example-Driven Prompt (P2)}{83}{section.A.2}%
+\contentsline {section}{\numberline {A.3}Structural-Priority Prompt (P3)}{85}{section.A.3}%
+\contentsline {section}{\numberline {A.4}Deployed Prompt with Visual-State Description}{87}{section.A.4}%
 \providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

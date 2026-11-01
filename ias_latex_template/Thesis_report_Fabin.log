@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.22)  31 OCT 2026 21:08
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.22)  1 NOV 2026 11:43
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -782,6 +782,14 @@ Package caption Info: New subtype `subfigure' on input line 238.
 Package caption Info: New subtype `subtable' on input line 238.
 \c@subtable=\count431
 )
+(/usr/share/texlive/texmf-dist/tex/latex/wrapfig/wrapfig.sty
+\wrapoverhang=\dimen178
+\WF@size=\dimen179
+\c@WF@wrappedlines=\count432
+\WF@box=\box62
+\WF@everypar=\toks30
+Package: wrapfig 2003/01/31  v 3.6
+)
 (/usr/share/texlive/texmf-dist/tex/latex/placeins/placeins.sty
 Package: placeins 2005/04/18  v 2.2
 )
@@ -789,12 +797,12 @@ Package: placeins 2005/04/18  v 2.2
 (/usr/share/texlive/texmf-dist/tex/latex/pgf/basiclayer/pgf.sty
 (/usr/share/texlive/texmf-dist/tex/latex/pgf/utilities/pgfrcs.sty
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfutil-common.tex
-\pgfutil@everybye=\toks30
-\pgfutil@tempdima=\dimen178
-\pgfutil@tempdimb=\dimen179
+\pgfutil@everybye=\toks31
+\pgfutil@tempdima=\dimen180
+\pgfutil@tempdimb=\dimen181
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfutil-latex.def
-\pgfutil@abb=\box62
+\pgfutil@abb=\box63
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfrcs.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/pgf.revision.tex)
@@ -808,33 +816,33 @@ Package: pgf 2023-01-15 v3.1.10 (3.1.10)
 Package: pgfsys 2023-01-15 v3.1.10 (3.1.10)
 
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfkeys.code.tex
-\pgfkeys@pathtoks=\toks31
-\pgfkeys@temptoks=\toks32
+\pgfkeys@pathtoks=\toks32
+\pgfkeys@temptoks=\toks33
 
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfkeyslibraryfiltered
 .code.tex
-\pgfkeys@tmptoks=\toks33
+\pgfkeys@tmptoks=\toks34
 ))
-\pgf@x=\dimen180
-\pgf@y=\dimen181
-\pgf@xa=\dimen182
-\pgf@ya=\dimen183
-\pgf@xb=\dimen184
-\pgf@yb=\dimen185
-\pgf@xc=\dimen186
-\pgf@yc=\dimen187
-\pgf@xd=\dimen188
-\pgf@yd=\dimen189
+\pgf@x=\dimen182
+\pgf@y=\dimen183
+\pgf@xa=\dimen184
+\pgf@ya=\dimen185
+\pgf@xb=\dimen186
+\pgf@yb=\dimen187
+\pgf@xc=\dimen188
+\pgf@yc=\dimen189
+\pgf@xd=\dimen190
+\pgf@yd=\dimen191
 \w@pgf@writea=\write4
 \r@pgf@reada=\read4
-\c@pgf@counta=\count432
-\c@pgf@countb=\count433
-\c@pgf@countc=\count434
-\c@pgf@countd=\count435
-\t@pgf@toka=\toks34
-\t@pgf@tokb=\toks35
-\t@pgf@tokc=\toks36
-\pgf@sys@id@count=\count436
+\c@pgf@counta=\count433
+\c@pgf@countb=\count434
+\c@pgf@countc=\count435
+\c@pgf@countd=\count436
+\t@pgf@toka=\toks35
+\t@pgf@tokb=\toks36
+\t@pgf@tokc=\toks37
+\pgf@sys@id@count=\count437
  (/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgf.cfg
 File: pgf.cfg 2023-01-15 v3.1.10 (3.1.10)
 )
@@ -849,8 +857,8 @@ File: pgfsys-common-pdf.def 2023-01-15 v3.1.10 (3.1.10)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.
 tex
 File: pgfsyssoftpath.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgfsyssoftpath@smallbuffer@items=\count437
-\pgfsyssoftpath@bigbuffer@items=\count438
+\pgfsyssoftpath@smallbuffer@items=\count438
+\pgfsyssoftpath@bigbuffer@items=\count439
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsysprotocol.code.
 tex
@@ -880,12 +888,12 @@ Package: pgfcore 2023-01-15 v3.1.10 (3.1.10)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathutil.code.tex)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathparser.code.tex
-\pgfmath@dimen=\dimen190
-\pgfmath@count=\count439
-\pgfmath@box=\box63
-\pgfmath@toks=\toks37
-\pgfmath@stack@operand=\toks38
-\pgfmath@stack@operation=\toks39
+\pgfmath@dimen=\dimen192
+\pgfmath@count=\count440
+\pgfmath@box=\box64
+\pgfmath@toks=\toks38
+\pgfmath@stack@operand=\toks39
+\pgfmath@stack@operation=\toks40
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.code.tex)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.basic.code
@@ -906,26 +914,26 @@ tex)
 thmetics.code.tex)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathcalc.code.tex)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfloat.code.tex
-\c@pgfmathroundto@lastzeros=\count440
+\c@pgfmathroundto@lastzeros=\count441
 ))
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfint.code.tex)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepoints.code.te
 x
 File: pgfcorepoints.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgf@picminx=\dimen191
-\pgf@picmaxx=\dimen192
-\pgf@picminy=\dimen193
-\pgf@picmaxy=\dimen194
-\pgf@pathminx=\dimen195
-\pgf@pathmaxx=\dimen196
-\pgf@pathminy=\dimen197
-\pgf@pathmaxy=\dimen198
-\pgf@xx=\dimen199
-\pgf@xy=\dimen256
-\pgf@yx=\dimen257
-\pgf@yy=\dimen258
-\pgf@zx=\dimen259
-\pgf@zy=\dimen260
+\pgf@picminx=\dimen193
+\pgf@picmaxx=\dimen194
+\pgf@picminy=\dimen195
+\pgf@picmaxy=\dimen196
+\pgf@pathminx=\dimen197
+\pgf@pathmaxx=\dimen198
+\pgf@pathminy=\dimen199
+\pgf@pathmaxy=\dimen256
+\pgf@xx=\dimen257
+\pgf@xy=\dimen258
+\pgf@yx=\dimen259
+\pgf@yy=\dimen260
+\pgf@zx=\dimen261
+\pgf@zy=\dimen262
 LaTeX Font Info:    Trying to load font information for T1+qpl on input line 92
 6.
  (/usr/share/texmf/tex/latex/tex-gyre/t1qpl.fd
@@ -934,34 +942,34 @@ File: t1qpl.fd 2009/09/25 v1.2 font definition file for T1/qpl
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathconstruct.
 code.tex
 File: pgfcorepathconstruct.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgf@path@lastx=\dimen261
-\pgf@path@lasty=\dimen262
+\pgf@path@lastx=\dimen263
+\pgf@path@lasty=\dimen264
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathusage.code
 .tex
 File: pgfcorepathusage.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgf@shorten@end@additional=\dimen263
-\pgf@shorten@start@additional=\dimen264
+\pgf@shorten@end@additional=\dimen265
+\pgf@shorten@start@additional=\dimen266
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorescopes.code.te
 x
 File: pgfcorescopes.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgfpic=\box64
-\pgf@hbox=\box65
-\pgf@layerbox@main=\box66
-\pgf@picture@serial@count=\count441
+\pgfpic=\box65
+\pgf@hbox=\box66
+\pgf@layerbox@main=\box67
+\pgf@picture@serial@count=\count442
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoregraphicstate.c
 ode.tex
 File: pgfcoregraphicstate.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgflinewidth=\dimen265
+\pgflinewidth=\dimen267
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoretransformation
 s.code.tex
 File: pgfcoretransformations.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgf@pt@x=\dimen266
-\pgf@pt@y=\dimen267
-\pgf@pt@temp=\dimen268
+\pgf@pt@x=\dimen268
+\pgf@pt@y=\dimen269
+\pgf@pt@temp=\dimen270
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorequick.code.tex
 File: pgfcorequick.code.tex 2023-01-15 v3.1.10 (3.1.10)
@@ -977,13 +985,13 @@ File: pgfcorepathprocessing.code.tex 2023-01-15 v3.1.10 (3.1.10)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorearrows.code.te
 x
 File: pgfcorearrows.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgfarrowsep=\dimen269
+\pgfarrowsep=\dimen271
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreshade.code.tex
 File: pgfcoreshade.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgf@max=\dimen270
-\pgf@sys@shading@range@num=\count442
-\pgf@shadingcount=\count443
+\pgf@max=\dimen272
+\pgf@sys@shading@range@num=\count443
+\pgf@shadingcount=\count444
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreimage.code.tex
 File: pgfcoreimage.code.tex 2023-01-15 v3.1.10 (3.1.10)
@@ -991,7 +999,7 @@ File: pgfcoreimage.code.tex 2023-01-15 v3.1.10 (3.1.10)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreexternal.code.
 tex
 File: pgfcoreexternal.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgfexternal@startupbox=\box67
+\pgfexternal@startupbox=\box68
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorelayers.code.te
 x
@@ -1010,15 +1018,15 @@ File: pgfcorerdf.code.tex 2023-01-15 v3.1.10 (3.1.10)
 )))
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmoduleshapes.code.tex
 File: pgfmoduleshapes.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgfnodeparttextbox=\box68
+\pgfnodeparttextbox=\box69
 ) (/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmoduleplot.code.tex
 File: pgfmoduleplot.code.tex 2023-01-15 v3.1.10 (3.1.10)
 )
 (/usr/share/texlive/texmf-dist/tex/latex/pgf/compatibility/pgfcomp-version-0-65
 .sty
 Package: pgfcomp-version-0-65 2023-01-15 v3.1.10 (3.1.10)
-\pgf@nodesepstart=\dimen271
-\pgf@nodesepend=\dimen272
+\pgf@nodesepstart=\dimen273
+\pgf@nodesepend=\dimen274
 )
 (/usr/share/texlive/texmf-dist/tex/latex/pgf/compatibility/pgfcomp-version-1-18
 .sty
@@ -1030,10 +1038,10 @@ Package: pgfcomp-version-1-18 2023-01-15 v3.1.10 (3.1.10)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex))
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgffor.code.tex
 Package: pgffor 2023-01-15 v3.1.10 (3.1.10)
-\pgffor@iter=\dimen273
-\pgffor@skip=\dimen274
-\pgffor@stack=\toks40
-\pgffor@toks=\toks41
+\pgffor@iter=\dimen275
+\pgffor@skip=\dimen276
+\pgffor@stack=\toks41
+\pgffor@toks=\toks42
 ))
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/tikz.code.tex
 Package: tikz 2023-01-15 v3.1.10 (3.1.10)
@@ -1041,33 +1049,33 @@ Package: tikz 2023-01-15 v3.1.10 (3.1.10)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryplothandlers
 .code.tex
 File: pgflibraryplothandlers.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgf@plot@mark@count=\count444
-\pgfplotmarksize=\dimen275
+\pgf@plot@mark@count=\count445
+\pgfplotmarksize=\dimen277
 )
-\tikz@lastx=\dimen276
-\tikz@lasty=\dimen277
-\tikz@lastxsaved=\dimen278
-\tikz@lastysaved=\dimen279
-\tikz@lastmovetox=\dimen280
-\tikz@lastmovetoy=\dimen281
-\tikzleveldistance=\dimen282
-\tikzsiblingdistance=\dimen283
-\tikz@figbox=\box69
-\tikz@figbox@bg=\box70
-\tikz@tempbox=\box71
-\tikz@tempbox@bg=\box72
-\tikztreelevel=\count445
-\tikznumberofchildren=\count446
-\tikznumberofcurrentchild=\count447
-\tikz@fig@count=\count448
+\tikz@lastx=\dimen278
+\tikz@lasty=\dimen279
+\tikz@lastxsaved=\dimen280
+\tikz@lastysaved=\dimen281
+\tikz@lastmovetox=\dimen282
+\tikz@lastmovetoy=\dimen283
+\tikzleveldistance=\dimen284
+\tikzsiblingdistance=\dimen285
+\tikz@figbox=\box70
+\tikz@figbox@bg=\box71
+\tikz@tempbox=\box72
+\tikz@tempbox@bg=\box73
+\tikztreelevel=\count446
+\tikznumberofchildren=\count447
+\tikznumberofcurrentchild=\count448
+\tikz@fig@count=\count449
 
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmodulematrix.code.tex
 File: pgfmodulematrix.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgfmatrixcurrentrow=\count449
-\pgfmatrixcurrentcolumn=\count450
-\pgf@matrix@numberofcolumns=\count451
+\pgfmatrixcurrentrow=\count450
+\pgfmatrixcurrentcolumn=\count451
+\pgf@matrix@numberofcolumns=\count452
 )
-\tikz@expandcount=\count452
+\tikz@expandcount=\count453
 
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
 zlibrarytopaths.code.tex
@@ -1079,12 +1087,12 @@ Package: pgfplots 2021/05/15 v1.18.1 Data Visualization (1.18.1)
 
 (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotscore.code.tex
-\t@pgfplots@toka=\toks42
-\t@pgfplots@tokb=\toks43
-\t@pgfplots@tokc=\toks44
-\pgfplots@tmpa=\dimen284
-\c@pgfplots@coordindex=\count453
-\c@pgfplots@scanlineindex=\count454
+\t@pgfplots@toka=\toks43
+\t@pgfplots@tokb=\toks44
+\t@pgfplots@tokc=\toks45
+\pgfplots@tmpa=\dimen286
+\c@pgfplots@coordindex=\count454
+\c@pgfplots@scanlineindex=\count455
 
 (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/sys/pgfplotssysgeneric.code
 .tex))
@@ -1095,9 +1103,9 @@ gfsupp_loader.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryfpu.code.tex
 )
 Package pgfplots: loading complementary utilities for your pgf version...
-\t@pgf@toka=\toks45
-\t@pgf@tokb=\toks46
-\t@pgf@tokc=\toks47
+\t@pgf@toka=\toks46
+\t@pgf@tokb=\toks47
+\t@pgf@tokc=\toks48
 
 (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/oldpgfcompatib/pgfplotsoldp
 gfsupp_pgfutil-common-lists.tex))
@@ -1108,14 +1116,14 @@ tructure.code.tex)
 tructureext.code.tex)
 (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsarray
 .code.tex
-\c@pgfplotsarray@tmp=\count455
+\c@pgfplotsarray@tmp=\count456
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsmatri
 x.code.tex)
 (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/numtable/pgfplotstableshare
 d.code.tex
-\c@pgfplotstable@counta=\count456
-\t@pgfplotstable@a=\toks48
+\c@pgfplotstable@counta=\count457
+\t@pgfplotstable@a=\toks49
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsdeque
 .code.tex)
@@ -1127,7 +1135,7 @@ de.tex))
 .tex)
 (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/libs/pgflibrarypgfplots.sur
 fshading.code.tex
-\c@pgfplotslibrarysurf@no=\count457
+\c@pgfplotslibrarysurf@no=\count458
 
 (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/sys/pgflibrarypgfplots.surf
 shading.pgfsys-pdftex.def)))
@@ -1154,16 +1162,16 @@ e.tex)
 zlibrarydecorations.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmoduledecorations.cod
 e.tex
-\pgfdecoratedcompleteddistance=\dimen285
-\pgfdecoratedremainingdistance=\dimen286
-\pgfdecoratedinputsegmentcompleteddistance=\dimen287
-\pgfdecoratedinputsegmentremainingdistance=\dimen288
-\pgf@decorate@distancetomove=\dimen289
-\pgf@decorate@repeatstate=\count458
-\pgfdecorationsegmentamplitude=\dimen290
-\pgfdecorationsegmentlength=\dimen291
+\pgfdecoratedcompleteddistance=\dimen287
+\pgfdecoratedremainingdistance=\dimen288
+\pgfdecoratedinputsegmentcompleteddistance=\dimen289
+\pgfdecoratedinputsegmentremainingdistance=\dimen290
+\pgf@decorate@distancetomove=\dimen291
+\pgf@decorate@repeatstate=\count459
+\pgfdecorationsegmentamplitude=\dimen292
+\pgfdecorationsegmentlength=\dimen293
 )
-\tikz@lib@dec@box=\box73
+\tikz@lib@dec@box=\box74
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
 zlibrarydecorations.pathmorphing.code.tex
@@ -1175,13 +1183,13 @@ zlibrarydecorations.pathreplacing.code.tex
 decorations.pathreplacing.code.tex))
 (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/libs/tikzlibrarypgfplots.co
 ntourlua.code.tex)
-\pgfplots@numplots=\count459
-\pgfplots@xmin@reg=\dimen292
-\pgfplots@xmax@reg=\dimen293
-\pgfplots@ymin@reg=\dimen294
-\pgfplots@ymax@reg=\dimen295
-\pgfplots@zmin@reg=\dimen296
-\pgfplots@zmax@reg=\dimen297
+\pgfplots@numplots=\count460
+\pgfplots@xmin@reg=\dimen294
+\pgfplots@xmax@reg=\dimen295
+\pgfplots@ymin@reg=\dimen296
+\pgfplots@ymax@reg=\dimen297
+\pgfplots@zmin@reg=\dimen298
+\pgfplots@zmax@reg=\dimen299
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
 zlibraryplotmarks.code.tex
@@ -1206,10 +1214,10 @@ File: tikzlibrarypositioning.code.tex 2023-01-15 v3.1.10 (3.1.10)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryarrows.meta.
 code.tex
 File: pgflibraryarrows.meta.code.tex 2023-01-15 v3.1.10 (3.1.10)
-\pgfarrowinset=\dimen298
-\pgfarrowlength=\dimen299
-\pgfarrowwidth=\dimen300
-\pgfarrowlinewidth=\dimen301
+\pgfarrowinset=\dimen300
+\pgfarrowlength=\dimen301
+\pgfarrowwidth=\dimen302
+\pgfarrowlinewidth=\dimen303
 )
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
 zlibrarypatterns.code.tex
@@ -1222,24 +1230,24 @@ File: pgflibrarypatterns.code.tex 2023-01-15 v3.1.10 (3.1.10)
 \figureheight=\skip95
 \figurewidth=\skip96
  (/usr/share/texlive/texmf-dist/tex/latex/listings/listings.sty
-\lst@mode=\count460
-\lst@gtempboxa=\box74
-\lst@token=\toks49
-\lst@length=\count461
-\lst@currlwidth=\dimen302
-\lst@column=\count462
-\lst@pos=\count463
-\lst@lostspace=\dimen303
-\lst@width=\dimen304
-\lst@newlines=\count464
-\lst@lineno=\count465
-\lst@maxwidth=\dimen305
+\lst@mode=\count461
+\lst@gtempboxa=\box75
+\lst@token=\toks50
+\lst@length=\count462
+\lst@currlwidth=\dimen304
+\lst@column=\count463
+\lst@pos=\count464
+\lst@lostspace=\dimen305
+\lst@width=\dimen306
+\lst@newlines=\count465
+\lst@lineno=\count466
+\lst@maxwidth=\dimen307
 
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstmisc.sty
 File: lstmisc.sty 2023/02/27 1.9 (Carsten Heinz)
-\c@lstnumber=\count466
-\lst@skipnumbers=\count467
-\lst@framebox=\box75
+\c@lstnumber=\count467
+\lst@skipnumbers=\count468
+\lst@framebox=\box76
 )
 (/usr/share/texlive/texmf-dist/tex/latex/listings/listings.cfg
 File: listings.cfg 2023/02/27 1.9 listings configuration
@@ -1263,7 +1271,7 @@ Package scrhack Info: patching \lst@MakeCaption on input line 157.
 ))
 Package scrhack Info: hyperref hack deactivated because of
 (scrhack)             detection of KOMA-Script class, that doesn't
-(scrhack)             need that hack, on input line 110.
+(scrhack)             need that hack, on input line 111.
 
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/hyperref.sty
 Package: hyperref 2024-01-20 v7.01h Hypertext links for LaTeX
@@ -1289,11 +1297,11 @@ Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
 (/usr/share/texlive/texmf-dist/tex/generic/gettitlestring/gettitlestring.sty
 Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 )
-\c@section@level=\count468
+\c@section@level=\count469
 )
-\@linkdim=\dimen306
-\Hy@linkcounter=\count469
-\Hy@pagecounter=\count470
+\@linkdim=\dimen308
+\Hy@linkcounter=\count470
+\Hy@pagecounter=\count471
 
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/pd1enc.def
 File: pd1enc.def 2024-01-20 v7.01h Hyperref: PDFDocEncoding definition (HO)
@@ -1303,7 +1311,7 @@ Now handling font encoding PD1 ...
 (/usr/share/texlive/texmf-dist/tex/generic/intcalc/intcalc.sty
 Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
 )
-\Hy@SavedSpaceFactor=\count471
+\Hy@SavedSpaceFactor=\count472
 
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/puenc.def
 File: puenc.def 2024-01-20 v7.01h Hyperref: PDF Unicode definition (HO)
@@ -1318,9 +1326,9 @@ Package hyperref Info: Plain pages OFF on input line 4194.
 Package hyperref Info: Backreferencing OFF on input line 4199.
 Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
 Package hyperref Info: Bookmarks ON on input line 4446.
-\c@Hy@tempcnt=\count472
+\c@Hy@tempcnt=\count473
 LaTeX Info: Redefining \url on input line 4784.
-\XeTeXLinkMargin=\dimen307
+\XeTeXLinkMargin=\dimen309
 
 (/usr/share/texlive/texmf-dist/tex/generic/bitset/bitset.sty
 Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
@@ -1329,9 +1337,9 @@ Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
 Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO
 )
 ))
-\Fld@menulength=\count473
-\Field@Width=\dimen308
-\Fld@charsize=\dimen309
+\Fld@menulength=\count474
+\Field@Width=\dimen310
+\Fld@charsize=\dimen311
 Package hyperref Info: Hyper figures OFF on input line 6063.
 Package hyperref Info: Link nesting OFF on input line 6068.
 Package hyperref Info: Hyper index ON on input line 6071.
@@ -1344,9 +1352,9 @@ Package hyperref Info: PDF/A mode OFF on input line 6093.
 Package: atbegshi-ltx 2021/01/10 v1.0c Emulation of the original atbegshi
 package with kernel methods
 )
-\Hy@abspage=\count474
-\c@Item=\count475
-\c@Hfootnote=\count476
+\Hy@abspage=\count475
+\c@Item=\count476
+\c@Hfootnote=\count477
 )
 Package hyperref Info: Driver (autodetected): hpdftex.
 
@@ -1358,8 +1366,8 @@ Package: atveryend-ltx 2020/08/19 v1.0a Emulation of the original atveryend pac
 kage
 with kernel methods
 )
-\Fld@listcount=\count477
-\c@bookmark@seq@number=\count478
+\Fld@listcount=\count478
+\c@bookmark@seq@number=\count479
 
 (/usr/share/texlive/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
 Package: rerunfilecheck 2022-07-10 v1.10 Rerun checks for auxiliary files (HO)
@@ -1372,22 +1380,32 @@ Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
 )
 \Hy@SectionHShift=\skip97
 )
-Package hyperref Info: Option `colorlinks' set `false' on input line 122.
-Package hyperref Info: Option `linktocpage' set `false' on input line 122.
-Package hyperref Info: Option `breaklinks' set `true' on input line 122.
-Package hyperref Info: Option `pageanchor' set `true' on input line 122.
-Package hyperref Info: Option `plainpages' set `false' on input line 122.
-Package hyperref Info: Option `bookmarksnumbered' set `true' on input line 122.
+Package hyperref Info: Option `colorlinks' set `false' on input line 123.
+Package hyperref Info: Option `linktocpage' set `false' on input line 123.
+Package hyperref Info: Option `breaklinks' set `true' on input line 123.
+Package hyperref Info: Option `pageanchor' set `true' on input line 123.
+Package hyperref Info: Option `plainpages' set `false' on input line 123.
+Package hyperref Info: Option `bookmarksnumbered' set `true' on input line 123.
 
-Package hyperref Info: Option `bookmarksopen' set `true' on input line 122.
-Package hyperref Info: Option `hypertexnames' set `true' on input line 122.
+Package hyperref Info: Option `bookmarksopen' set `true' on input line 123.
+Package hyperref Info: Option `hypertexnames' set `true' on input line 123.
 )
 Package csquotes Info: Checking for multilingual support...
 Package csquotes Info: ... found 'babel' package.
 Package csquotes Info: Adjusting default style.
 Package csquotes Info: Redefining alias 'default' -> 'english'.
 
-(./Thesis_report_Fabin.aux)
+(./Thesis_report_Fabin.aux
+
+LaTeX Warning: Label `subsec:method_association' multiply defined.
+
+
+LaTeX Warning: Label `eq:association_score' multiply defined.
+
+
+LaTeX Warning: Label `eq:assignment' multiply defined.
+
+)
 \openout1 = `Thesis_report_Fabin.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 27.
@@ -1434,8 +1452,7 @@ LaTeX Info: Redefining \showhyphens on input line 27.
 Package microtype Info: No adjustment of tracking.
 Package microtype Info: No adjustment of interword spacing.
 Package microtype Info: No adjustment of character kerning.
-
-(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-ppl.cfg
+ (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-ppl.cfg
 File: mt-ppl.cfg 2005/11/16 v1.6 microtype config. file: Palatino (RS)
 )
 Package biblatex Info: Trying to load language 'english'...
@@ -1475,17 +1492,17 @@ Package biblatex Info: Reference segment=0 on input line 27.
 
 (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count479
-\scratchdimen=\dimen310
-\scratchbox=\box76
-\nofMPsegments=\count480
-\nofMParguments=\count481
-\everyMPshowfont=\toks50
-\MPscratchCnt=\count482
-\MPscratchDim=\dimen311
-\MPnumerator=\count483
-\makeMPintoPDFobject=\count484
-\everyMPtoPDFconversion=\toks51
+\scratchcounter=\count480
+\scratchdimen=\dimen312
+\scratchbox=\box77
+\nofMPsegments=\count481
+\nofMParguments=\count482
+\everyMPshowfont=\toks51
+\MPscratchCnt=\count483
+\MPscratchDim=\dimen313
+\MPnumerator=\count484
+\makeMPintoPDFobject=\count485
+\everyMPtoPDFconversion=\toks52
 ) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
@@ -1498,12 +1515,13 @@ e
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: hyperref package is loaded.
 Package caption Info: listings package is loaded.
+Package caption Info: wrapfig package is loaded.
 Package caption Info: End \AtBeginDocument code.
 
 Package pgfplots notification 'compat/show suggested version=true': document ha
 s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 
-\c@lstlisting=\count485
+\c@lstlisting=\count486
 Package scrhack Info: undefining \float@addtolists on input line 27.
 Package hyperref Info: Link coloring OFF on input line 27.
 (./Thesis_report_Fabin.out) (./Thesis_report_Fabin.out)
@@ -1525,7 +1543,7 @@ Package: bookmark 2023-12-10 v1.31 PDF bookmarks (HO)
 (/usr/share/texlive/texmf-dist/tex/latex/bookmark/bkm-pdftex.def
 File: bkm-pdftex.def 2023-12-10 v1.31 bookmark driver for pdfTeX and luaTeX (HO
 )
-\BKM@id=\count486
+\BKM@id=\count487
 ))
 
 pdfTeX warning: pdflatex (file ./template-images/logo-ias.pdf): PDF inclusion: 
@@ -1568,13 +1586,7 @@ go-unistuttgart-englisch+ias_80x25.pdf
 pdfTeX warning: pdflatex (file ./template-images/logo-unistuttgart-englisch+ias
 _80x25.pdf): PDF inclusion: multiple pdfs with page group included in a single 
 page
->] (./chapters/Abstract.tex
-Overfull \hbox (13.04948pt too wide) in paragraph at lines 11--12
-\T1/qpl/b/n/10.95 (-20) Keywords: \T1/qpl/m/n/10.95 (-20) dy-namic risk as-sess
--ment, risk-annotated scene graph, ROS 2, Hy-dra, uncertainty-
- []
-
-) [2
+>] (./chapters/Abstract.tex) [2
 
 
 
@@ -1660,19 +1672,25 @@ Package tocbasic Info: character protrusion at lof deactivated on input line 41
 
 
 ]
-Overfull \hbox (3.69357pt too wide) in paragraph at lines 25--25
+Overfull \hbox (16.46436pt too wide) in paragraph at lines 18--18
+ [][] [][]\T1/qpl/m/n/10.95 (-20) Association of one ob-ser-va-tion with the ex
+-ist-ing tracks. The three-dimensional 
+ []
+
+
+Overfull \hbox (3.69357pt too wide) in paragraph at lines 27--27
  [][] [][]\T1/qpl/m/n/10.95 (-20) Example bench-mark frame. Each colour is one 
 ground-truth ob-ject; hatched 
  []
 
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 10.42007pt on input line 31.
+(Font)              scaled to size 10.42007pt on input line 33.
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 7.91925pt on input line 31.
+(Font)              scaled to size 7.91925pt on input line 33.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 10.42007pt on input line 31.
+(Font)              scaled to size 10.42007pt on input line 33.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 7.91925pt on input line 31.
+(Font)              scaled to size 7.91925pt on input line 33.
 )
 \tf@lof=\write7
 \openout7 = `Thesis_report_Fabin.lof'.
@@ -1706,174 +1724,172 @@ chapter 2.
 
 
 ]
-<example_images/HRC_safety_productivity.png, id=462, 1806.75pt x 877.2775pt>
+<example_images/HRC_safety_productivity.png, id=467, 1806.75pt x 877.2775pt>
 File: example_images/HRC_safety_productivity.png Graphic file (type png)
 <use example_images/HRC_safety_productivity.png>
 Package pdftex.def Info: example_images/HRC_safety_productivity.png  used on in
-put line 26.
-(pdftex.def)             Requested size: 418.25555pt x 203.08142pt.
- [5 <./example_images/HRC_safety_productivity.png (PNG copy)>] [6]
-<example_images/hrc_safety_zones_generated.png, id=481, 1541.76pt x 1027.84pt>
+put line 30.
+(pdftex.def)             Requested size: 292.7776pt x 142.16101pt.
+ [5 <./example_images/HRC_safety_productivity.png (PNG copy)>]
+<example_images/hrc_safety_zones_generated.png, id=477, 1541.76pt x 1027.84pt>
 File: example_images/hrc_safety_zones_generated.png Graphic file (type png)
 <use example_images/hrc_safety_zones_generated.png>
 Package pdftex.def Info: example_images/hrc_safety_zones_generated.png  used on
- input line 56.
-(pdftex.def)             Requested size: 418.25555pt x 278.83792pt.
- [7 <./example_images/hrc_safety_zones_generated.png (PNG copy)>] [8] [9]
-<example_images/scenegraphfusion_pipeline.png, id=501, 1212.53pt x 270.00874pt>
+ input line 54.
+(pdftex.def)             Requested size: 200.76086pt x 133.82777pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 55--55
+\T1/qpl/m/n/10 (+20) zones in a col-lab-o-ra-tive robot
+ []
+
+[6 <./example_images/hrc_safety_zones_generated.png (PNG copy)>]
+<example_images/scene-graph-example.png, id=490, 1787.67876pt x 886.31125pt>
+File: example_images/scene-graph-example.png Graphic file (type png)
+<use example_images/scene-graph-example.png>
+Package pdftex.def Info: example_images/scene-graph-example.png  used on input 
+line 97.
+(pdftex.def)             Requested size: 200.76086pt x 99.52313pt.
+ [7 <./example_images/scene-graph-example.png (PNG copy)>] [8]
+<example_images/scenegraphfusion_pipeline.png, id=508, 1212.53pt x 270.00874pt>
 
 File: example_images/scenegraphfusion_pipeline.png Graphic file (type png)
 <use example_images/scenegraphfusion_pipeline.png>
 Package pdftex.def Info: example_images/scenegraphfusion_pipeline.png  used on 
-input line 123.
+input line 167.
 (pdftex.def)             Requested size: 418.25555pt x 93.13663pt.
- [10 <./example_images/scenegraphfusion_pipeline.png>] [11]
-<example_images/conceptgraphs_pipeline.png, id=518, 1153.30875pt x 462.72874pt>
+ [9 <./example_images/scenegraphfusion_pipeline.png>] [10]
+<example_images/conceptgraphs_pipeline.png, id=525, 1153.30875pt x 462.72874pt>
 
 File: example_images/conceptgraphs_pipeline.png Graphic file (type png)
 <use example_images/conceptgraphs_pipeline.png>
 Package pdftex.def Info: example_images/conceptgraphs_pipeline.png  used on inp
-ut line 163.
+ut line 206.
 (pdftex.def)             Requested size: 418.25555pt x 167.81078pt.
- [12 <./example_images/conceptgraphs_pipeline.png>]
-<example_images/opengraph_pipeline.png, id=527, 1069.9975pt x 364.36125pt>
+ [11 <./example_images/conceptgraphs_pipeline.png>]
+<example_images/opengraph_pipeline.png, id=534, 1069.9975pt x 364.36125pt>
 File: example_images/opengraph_pipeline.png Graphic file (type png)
 <use example_images/opengraph_pipeline.png>
 Package pdftex.def Info: example_images/opengraph_pipeline.png  used on input l
-ine 184.
+ine 227.
 (pdftex.def)             Requested size: 418.25555pt x 142.42833pt.
- [13 <./example_images/opengraph_pipeline.png>]
-<example_images/scene-graph-example.png, id=537, 1787.67876pt x 886.31125pt>
-File: example_images/scene-graph-example.png Graphic file (type png)
-<use example_images/scene-graph-example.png>
-Package pdftex.def Info: example_images/scene-graph-example.png  used on input 
-line 285.
-(pdftex.def)             Requested size: 418.25555pt x 207.36354pt.
- [14] [15 <./example_images/scene-graph-example.png (PNG copy)>]
-<example_images/hydra_3d_scene_graph.png, id=554, 1075.01625pt x 775.89874pt>
+
+[12 <./example_images/opengraph_pipeline.png>] [13]
+<example_images/hydra_3d_scene_graph.png, id=553, 1075.01625pt x 775.89874pt>
 File: example_images/hydra_3d_scene_graph.png Graphic file (type png)
 <use example_images/hydra_3d_scene_graph.png>
 Package pdftex.def Info: example_images/hydra_3d_scene_graph.png  used on input
- line 321.
-(pdftex.def)             Requested size: 418.25555pt x 301.87709pt.
- [16 <./example_images/hydra_3d_scene_graph.png>] [17] [18]
-<example_images/existing_work_overview_enhanced.png, id=588, 1805.74625pt x 108
+ line 362.
+(pdftex.def)             Requested size: 250.95587pt x 181.12862pt.
+ [14 <./example_images/hydra_3d_scene_graph.png>] [15]
+<example_images/existing_work_overview_enhanced.png, id=577, 1805.74625pt x 108
 4.05pt>
 File: example_images/existing_work_overview_enhanced.png Graphic file (type png
 )
 <use example_images/existing_work_overview_enhanced.png>
 Package pdftex.def Info: example_images/existing_work_overview_enhanced.png  us
-ed on input line 415.
+ed on input line 428.
 (pdftex.def)             Requested size: 418.25555pt x 251.07962pt.
- [19] [20 <./example_images/existing_work_overview_enhanced.png>] [21] [22]
-<example_images/SAM.png, id=635, 1710.39pt x 337.26pt>
+ [16] [17 <./example_images/existing_work_overview_enhanced.png>] [18] [19]
+<example_images/SAM.png, id=624, 1710.39pt x 337.26pt>
 File: example_images/SAM.png Graphic file (type png)
 <use example_images/SAM.png>
-Package pdftex.def Info: example_images/SAM.png  used on input line 493.
+Package pdftex.def Info: example_images/SAM.png  used on input line 506.
 (pdftex.def)             Requested size: 418.25555pt x 82.47246pt.
- [23] [24 <./example_images/SAM.png>] [25] [26] [27]
-[28]
-<example_images/rap_retrieval_flow.png, id=700, 499.3857pt x 169.1118pt>
+ [20] [21 <./example_images/SAM.png>] [22] [23] [24]
+[25]
+<example_images/rap_retrieval_flow.png, id=689, 499.3857pt x 169.1118pt>
 File: example_images/rap_retrieval_flow.png Graphic file (type png)
 <use example_images/rap_retrieval_flow.png>
 Package pdftex.def Info: example_images/rap_retrieval_flow.png  used on input l
-ine 608.
+ine 622.
 (pdftex.def)             Requested size: 418.25555pt x 141.64006pt.
- [29] [30 <./example_images/rap_retrieval_flow.png (PNG copy)>] [31]
-[32]
-<example_images/safetydetect_pipeline.png, id=752, 1329.96875pt x 313.17pt>
+ [26 <./example_images/rap_retrieval_flow.png (PNG copy)>] [27] [28]
+<example_images/safetydetect_pipeline.png, id=736, 1329.96875pt x 313.17pt>
 File: example_images/safetydetect_pipeline.png Graphic file (type png)
 <use example_images/safetydetect_pipeline.png>
 Package pdftex.def Info: example_images/safetydetect_pipeline.png  used on inpu
-t line 738.
+t line 753.
 (pdftex.def)             Requested size: 418.25555pt x 98.48659pt.
- [33 <./example_images/safetydetect_pipeline.png>])
-(./chapters/Methodology.tex [34]
+
+[29]) (./chapters/Methodology.tex [30 <./example_images/safetydetect_pipeline.p
+ng>]
 chapter 3.
-
-LaTeX Warning: Reference `sec:goal_of_thesis' on page 35 undefined on input lin
-e 8.
-
-
-LaTeX Warning: Reference `sec:goal_of_thesis' on page 35 undefined on input lin
-e 8.
-
-<example_images/method_framework_overview.png, id=786, 646.8165pt x 279.6849pt>
+<example_images/method_framework_overview.png, id=771, 646.8165pt x 279.6849pt>
 
 File: example_images/method_framework_overview.png Graphic file (type png)
 <use example_images/method_framework_overview.png>
 Package pdftex.def Info: example_images/method_framework_overview.png  used on 
-input line 17.
+input line 15.
 (pdftex.def)             Requested size: 418.25555pt x 180.85414pt.
-[35
+[31
 
 
-] [36 <./example_images/method_framework_overview.png (PNG copy)>]
+] [32 <./example_images/method_framework_overview.png (PNG copy)>]
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 9.37807pt on input line 41.
+(Font)              scaled to size 9.37807pt on input line 39.
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 7.29405pt on input line 41.
+(Font)              scaled to size 7.29405pt on input line 39.
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 5.21004pt on input line 41.
+(Font)              scaled to size 5.21004pt on input line 39.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 9.37807pt on input line 41.
+(Font)              scaled to size 9.37807pt on input line 39.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 7.29405pt on input line 41.
+(Font)              scaled to size 7.29405pt on input line 39.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 5.21004pt on input line 41.
- [37]
-[38]
-<example_images/preprocessing_flow.png, id=817, 710.4141pt x 209.3421pt>
+(Font)              scaled to size 5.21004pt on input line 39.
+ [33]
+[34]
+<example_images/preprocessing_flow.png, id=802, 710.4141pt x 209.3421pt>
 File: example_images/preprocessing_flow.png Graphic file (type png)
 <use example_images/preprocessing_flow.png>
 Package pdftex.def Info: example_images/preprocessing_flow.png  used on input l
-ine 103.
+ine 99.
 (pdftex.def)             Requested size: 418.25555pt x 123.24883pt.
- [39 <./example_images/preprocessing_flow.png (PNG copy)>]
+ [35 <./example_images/preprocessing_flow.png (PNG copy)>]
 
-LaTeX Warning: Reference `chap:experiments' on page 40 undefined on input line 
-156.
+LaTeX Warning: Reference `chap:experiments' on page 36 undefined on input line 
+152.
 
-[40] [41] [42] [43] [44] [45]
+[36] [37] [38] [39] [40] [41] [42] [43]
 
-LaTeX Warning: Reference `chap:evaluation' on page 46 undefined on input line 2
-81.
+LaTeX Warning: Reference `chap:evaluation' on page 44 undefined on input line 3
+58.
 
-[46] [47] [48]
-Underfull \hbox (badness 10000) in paragraph at lines 377--377
+[44] [45] [46]
+Underfull \hbox (badness 10000) in paragraph at lines 523--523
 []\T1/qpl/m/n/10 (+20) Spatial rep-re-sen-ta-
  []
 
-[49]
+[47] [48]
 
-LaTeX Warning: Reference `subsec:hydra_loop_closure' on page 50 undefined on in
-put line 449.
+LaTeX Warning: Reference `subsec:hydra_loop_closure' on page 49 undefined on in
+put line 595.
 
-[50] [51]) (./chapters/Implementation.tex [52]
+[49]) (./chapters/Implementation.tex [50]
 chapter 4.
 
-LaTeX Warning: Reference `chap:methodology' on page 53 undefined on input line 
+LaTeX Warning: Reference `chap:methodology' on page 51 undefined on input line 
 4.
 
 
-LaTeX Warning: Reference `sec:impl_optimisation' on page 53 undefined on input 
+LaTeX Warning: Reference `sec:impl_optimisation' on page 51 undefined on input 
 line 4.
 
-[53
+[51
 
 
 ]
 
-LaTeX Warning: Reference `chap:evaluation' on page 54 undefined on input line 5
+LaTeX Warning: Reference `chap:evaluation' on page 52 undefined on input line 5
 2.
 
-[54]
+[52]
 
-LaTeX Warning: Reference `chap:methodology' on page 55 undefined on input line 
+LaTeX Warning: Reference `chap:methodology' on page 53 undefined on input line 
 87.
 
 
-LaTeX Warning: Reference `chap:methodology' on page 55 undefined on input line 
+LaTeX Warning: Reference `chap:methodology' on page 53 undefined on input line 
 87.
 
 LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 9
@@ -1885,13 +1901,13 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `cmtt' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-<example_images/impl_class_overview.png, id=970, 501.26472pt x 592.03584pt>
+<example_images/impl_class_overview.png, id=972, 501.26472pt x 592.03584pt>
 File: example_images/impl_class_overview.png Graphic file (type png)
 <use example_images/impl_class_overview.png>
 Package pdftex.def Info: example_images/impl_class_overview.png  used on input 
 line 104.
 (pdftex.def)             Requested size: 458.70627pt x 541.77072pt.
- [55{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-t1.enc}] [56 <./example
+ [53{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-t1.enc}] [54 <./example
 _images/impl_class_overview.png (PNG copy)>]
 Overfull \hbox (10.11766pt too wide) in paragraph at lines 119--119
 \T1/cmtt/m/n/10 PreprocessorNode \T1/qpl/m/n/10 (-20) holds a \T1/cmtt/m/n/10 P
@@ -1899,56 +1915,56 @@ reprocessorConfig \T1/qpl/m/n/10 (-20) and del-e-gates tem-po-ral as-so-ci-a-ti
 on to \T1/cmtt/m/n/10 OdomBuffer\T1/qpl/m/n/10 (-20) ,
  []
 
-<example_images/impl_seq_preprocessor.pdf, id=984, 484.6055pt x 320.71819pt>
+<example_images/impl_seq_preprocessor.pdf, id=986, 484.6055pt x 320.71819pt>
 File: example_images/impl_seq_preprocessor.pdf Graphic file (type pdf)
 <use example_images/impl_seq_preprocessor.pdf>
 Package pdftex.def Info: example_images/impl_seq_preprocessor.pdf  used on inpu
 t line 123.
 (pdftex.def)             Requested size: 418.25555pt x 276.8106pt.
-[57 <./example_images/impl_seq_preprocessor.pdf>] [58]
-<example_images/impl_seq_phase1_frame.pdf, id=1022, 484.6055pt x 307.34523pt>
+[55 <./example_images/impl_seq_preprocessor.pdf>] [56]
+<example_images/impl_seq_phase1_frame.pdf, id=1023, 484.6055pt x 307.34523pt>
 File: example_images/impl_seq_phase1_frame.pdf Graphic file (type pdf)
 <use example_images/impl_seq_phase1_frame.pdf>
 Package pdftex.def Info: example_images/impl_seq_phase1_frame.pdf  used on inpu
 t line 149.
 (pdftex.def)             Requested size: 385.1634pt x 244.27731pt.
-<example_images/impl_seq_phase1_label.pdf, id=1023, 484.6055pt x 341.48882pt>
+<example_images/impl_seq_phase1_label.pdf, id=1024, 484.6055pt x 341.48882pt>
 File: example_images/impl_seq_phase1_label.pdf Graphic file (type pdf)
 <use example_images/impl_seq_phase1_label.pdf>
 Package pdftex.def Info: example_images/impl_seq_phase1_label.pdf  used on inpu
 t line 158.
 (pdftex.def)             Requested size: 384.71973pt x 271.10193pt.
- [59] [60 <./example_images/impl_seq_phase1_frame.pdf> <./example_images/impl_s
+ [57] [58 <./example_images/impl_seq_phase1_frame.pdf> <./example_images/impl_s
 eq_phase1_label.pdf>]
-<example_images/impl_seq_hydra.pdf, id=1058, 484.6055pt x 364.25085pt>
+<example_images/impl_seq_hydra.pdf, id=1060, 484.6055pt x 364.25085pt>
 File: example_images/impl_seq_hydra.pdf Graphic file (type pdf)
 <use example_images/impl_seq_hydra.pdf>
 Package pdftex.def Info: example_images/impl_seq_hydra.pdf  used on input line 
 182.
 (pdftex.def)             Requested size: 418.25555pt x 314.38345pt.
 
-[61 <./example_images/impl_seq_hydra.pdf>]
-<example_images/impl_seq_fuser.pdf, id=1077, 484.6055pt x 367.09648pt>
+[59 <./example_images/impl_seq_hydra.pdf>]
+<example_images/impl_seq_fuser.pdf, id=1079, 484.6055pt x 367.09648pt>
 File: example_images/impl_seq_fuser.pdf Graphic file (type pdf)
 <use example_images/impl_seq_fuser.pdf>
 Package pdftex.def Info: example_images/impl_seq_fuser.pdf  used on input line 
 194.
 (pdftex.def)             Requested size: 418.25555pt x 316.83951pt.
- [62 <./example_images/impl_seq_fuser.pdf>]) (./chapters/Results.tex [63]
+ [60 <./example_images/impl_seq_fuser.pdf>]) (./chapters/Results.tex [61]
 chapter 5.
-<example_images/gt_example_rgb.png, id=1109, 722.7pt x 481.8pt>
+<example_images/gt_example_rgb.png, id=1111, 722.7pt x 481.8pt>
 File: example_images/gt_example_rgb.png Graphic file (type png)
 <use example_images/gt_example_rgb.png>
 Package pdftex.def Info: example_images/gt_example_rgb.png  used on input line 
 57.
 (pdftex.def)             Requested size: 204.94751pt x 136.6307pt.
-<example_images/gt_example_instances.png, id=1110, 722.7pt x 481.8pt>
+<example_images/gt_example_instances.png, id=1112, 722.7pt x 481.8pt>
 File: example_images/gt_example_instances.png Graphic file (type png)
 <use example_images/gt_example_instances.png>
 Package pdftex.def Info: example_images/gt_example_instances.png  used on input
  line 64.
 (pdftex.def)             Requested size: 204.94751pt x 136.6307pt.
-[64
+[62
 
 
  <./example_images/gt_example_rgb.png (PNG copy)> <./example_images/gt_example_
@@ -1963,7 +1979,7 @@ Package pgfplots info on input line 129: Using 'lua backend=false' for axis: x
 coord trafo unsupported.
 Package pgfplots info on input line 141: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
- [65]
+ [63]
 Package pgfplots info on input line 186: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 Package pgfplots info on input line 189: Using 'lua backend=false' for axis: x 
@@ -1976,23 +1992,23 @@ Package pgfplots info on input line 218: Using 'lua backend=false' for axis: x
 coord trafo unsupported.
 Package pgfplots info on input line 221: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
- [66] [67]
+ [64] [65]
 Package pgfplots info on input line 320: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 Package pgfplots info on input line 333: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
- [68] [69]
+ [66]
 Package pgfplots info on input line 423: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 Package pgfplots info on input line 437: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
-
+ [67]
 Overfull \hbox (4.05962pt too wide) in paragraph at lines 457--457
 \T1/qpl/m/n/10 (-20) rate, fastest and least memory-intensive pair. The pipelin
 e there-fore uses the pro-file \T1/cmtt/m/n/10 qwen3_5_4b_q4
  []
 
-[70] [71]
+[68] [69]
 Overfull \hbox (70.70642pt too wide) in paragraph at lines 606--606
 []\T1/qpl/b/n/10 (-20) [TODO: of-fice para-graph; re-quires res_office_overview
 /layers/closeup/camera.png and res_office_stats.txt.] 
@@ -2014,12 +2030,12 @@ Package pgfplots info on input line 693: Using 'lua backend=false' for axis: x
 coord trafo unsupported.
 
 Underfull \hbox (badness 1412) in paragraph at lines 701--701
-[][][]|\T1/qpl/m/n/10 (+20) Through-put, fi-nal con-fig-u-ra-
+[][]|\T1/qpl/m/n/10 (+20) Through-put, fi-nal con-fig-u-ra-
  []
 
 Package pgfplots info on input line 717: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
-[72] [73]
+[70] [71]
 Overfull \hbox (13.25256pt too wide) in paragraph at lines 731--731
 []\T1/qpl/m/n/10 (-20) Figure []5.8[] de-com-poses the mean frame time into fiv
 e stage groups. Seg-men-ta-tion with NanoSAM [[]31[]]
@@ -2040,32 +2056,27 @@ Package pgfplots Warning: Axis range for axis y is approximately empty; enlargi
 ng it (it is [0.0:0.0]) on input line 805.
 
  [warning /pgfplots/warning/approx empty range enlarged]
-[74]) (./chapters/Conclusion.tex [75]
+[72]) (./chapters/Conclusion.tex [73]
 chapter 6.
-[76
+[74
 
 
-] [77]) [78]
-chapter 7.
-[79
-
-
-]
+] [75]) [76]
 chapter without number
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/qpl/m/sc/10.95'.
 (microtype)             Ignoring protrusion settings for this character.
 
 Package biblatex Warning: No driver for 'standard'.
-(biblatex)                Using fallback driver on input line 69.
+(biblatex)                Using fallback driver on input line 67.
 
-[80
+[77
 
 
 
 
 {/usr/share/texmf/fonts/enc/dvips/tex-gyre/q-ec-sc.enc}]
-Overfull \hbox (1.18694pt too wide) in paragraph at lines 70--70
+Overfull \hbox (1.18694pt too wide) in paragraph at lines 68--68
 \T1/qpl/m/n/10.95 (-20) making in au-tonomous sys-tems,^^Q in \T1/qpl/m/it/10.9
 5 (-20) Com-puter Safety, Re-li-a-bil-ity, and Se-cu-rity\T1/qpl/m/n/10.95 (-20
 ) , ser. Lec-
@@ -2073,39 +2084,39 @@ Overfull \hbox (1.18694pt too wide) in paragraph at lines 70--70
 
 
 Package biblatex Warning: No driver for 'standard'.
-(biblatex)                Using fallback driver on input line 69.
+(biblatex)                Using fallback driver on input line 67.
 
 
 Package biblatex Warning: No driver for 'standard'.
-(biblatex)                Using fallback driver on input line 69.
+(biblatex)                Using fallback driver on input line 67.
 
 
 Package biblatex Warning: No driver for 'standard'.
-(biblatex)                Using fallback driver on input line 69.
+(biblatex)                Using fallback driver on input line 67.
 
-[81]
-Overfull \hbox (23.86905pt too wide) in paragraph at lines 70--70
+[78]
+Overfull \hbox (23.86905pt too wide) in paragraph at lines 68--68
 []\T1/qpl/m/n/10.95 (-20) A. Kir-illov, E. Mintun, N. Ravi, \T1/qpl/m/it/10.95 
 (-20) et al.\T1/qpl/m/n/10.95 (-20) , ^^P  Seg-ment any-thing,^^Q \T1/qpl/m/it/
 10.95 (-20) arXiv preprint arXiv:2304.02643\T1/qpl/m/n/10.95 (-20) ,
  []
 
-[82] [83]
-Overfull \hbox (29.82353pt too wide) in paragraph at lines 70--70
+[79] [80]
+Overfull \hbox (29.82353pt too wide) in paragraph at lines 68--68
 []\T1/qpl/m/n/10.95 (-20) S. Bai, K. Chen, X. Liu, \T1/qpl/m/it/10.95 (-20) et 
 al.\T1/qpl/m/n/10.95 (-20) , ^^P  Qwen2.5-vl tech-ni-cal re-port,^^Q \T1/qpl/m/
 it/10.95 (-20) arXiv preprint arXiv:2502.13923\T1/qpl/m/n/10.95 (-20) ,
  []
 
-[84] (./chapters/Appendix_VLM_Prompts.tex [85]
+[81] (./chapters/Appendix_VLM_Prompts.tex [82]
 chapter A.
-[86
+[83
 
 
-] [87] [88] [89] [90] [91] [92]) [93] [94
+] [84] [85] [86] [87] [88] [89]) [90] [91
 
 
-] [95] (./Thesis_report_Fabin.aux)
+] (./Thesis_report_Fabin.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2020/03/25>
@@ -2114,41 +2125,49 @@ L3 programming layer <2020/03/25>
 
 LaTeX Warning: There were undefined references.
 
+
+LaTeX Warning: There were multiply-defined labels.
+
 Package rerunfilecheck Info: File `Thesis_report_Fabin.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
 Package logreq Info: Writing requests to 'Thesis_report_Fabin.run.xml'.
 \openout1 = `Thesis_report_Fabin.run.xml'.
 
- ) 
+ )
+(\end occurred inside a group at level 2)
+
+### simple group (level 2) entered at line 337 ({)
+### simple group (level 1) entered at line 332 ({)
+### bottom level 
 Here is how much of TeX's memory you used:
- 52581 strings out of 474222
- 1164035 string characters out of 5748733
- 2590588 words of memory out of 5000000
- 73120 multiletter control sequences out of 15000+600000
- 693689 words of font info for 355 fonts, out of 8000000 for 9000
+ 52874 strings out of 474222
+ 1169120 string characters out of 5748733
+ 2593228 words of memory out of 5000000
+ 73404 multiletter control sequences out of 15000+600000
+ 699107 words of font info for 362 fonts, out of 8000000 for 9000
  1143 hyphenation exceptions out of 8191
- 108i,21n,107p,10914b,2898s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></us
-r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/shar
-e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texli
-ve/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texm
-f-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist
-/fonts/type1/public/mathpazo/fplmr.pfb></usr/share/texlive/texmf-dist/fonts/typ
-e1/public/mathpazo/fplmri.pfb></usr/share/texmf/fonts/type1/public/tex-gyre/qhv
-b.pfb></usr/share/texmf/fonts/type1/public/tex-gyre/qplb.pfb></usr/share/texmf/
-fonts/type1/public/tex-gyre/qplr.pfb></usr/share/texmf/fonts/type1/public/tex-g
-yre/qplri.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt0800.pfb></usr/
-share/texmf/fonts/type1/public/cm-super/sftt1000.pfb></usr/share/texmf/fonts/ty
-pe1/public/cm-super/sftt1095.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw
-/helvetic/uhvb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/uh
-vr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/uhvro8a.pfb></
-usr/share/texlive/texmf-dist/fonts/type1/urw/palatino/uplb8a.pfb></usr/share/te
-xlive/texmf-dist/fonts/type1/urw/palatino/uplr8a.pfb></usr/share/texlive/texmf-
-dist/fonts/type1/urw/palatino/uplri8a.pfb>
-Output written on Thesis_report_Fabin.pdf (104 pages, 9900255 bytes).
+ 108i,21n,107p,10914b,3283s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/c
+mex10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.
+pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></u
+sr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/shar
+e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texl
+ive/texmf-dist/fonts/type1/public/mathpazo/fplmr.pfb></usr/share/texlive/texmf-
+dist/fonts/type1/public/mathpazo/fplmri.pfb></usr/share/texmf/fonts/type1/publi
+c/tex-gyre/qhvb.pfb></usr/share/texmf/fonts/type1/public/tex-gyre/qplb.pfb></us
+r/share/texmf/fonts/type1/public/tex-gyre/qplr.pfb></usr/share/texmf/fonts/type
+1/public/tex-gyre/qplri.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt0
+800.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt1000.pfb></usr/share/
+texmf/fonts/type1/public/cm-super/sftt1095.pfb></usr/share/texlive/texmf-dist/f
+onts/type1/urw/helvetic/uhvb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/u
+rw/helvetic/uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/
+uhvro8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/palatino/uplb8a.pfb>
+</usr/share/texlive/texmf-dist/fonts/type1/urw/palatino/uplr8a.pfb></usr/share/
+texlive/texmf-dist/fonts/type1/urw/palatino/uplri8a.pfb>
+Output written on Thesis_report_Fabin.pdf (100 pages, 9906311 bytes).
 PDF statistics:
- 2193 PDF objects out of 2487 (max. 8388607)
- 1971 compressed objects within 20 object streams
- 567 named destinations out of 1000 (max. 500000)
- 64888 words of extra memory for PDF output out of 74296 (max. 10000000)
+ 2183 PDF objects out of 2487 (max. 8388607)
+ 1964 compressed objects within 20 object streams
+ 566 named destinations out of 1000 (max. 500000)
+ 66928 words of extra memory for PDF output out of 74296 (max. 10000000)
 

@@ -1,15 +1,19 @@
 \chapter{Theoretical Background}
 
+% Small captions for all figures and tables in this chapter (label "Figure"/"Table" and caption text)
+\captionsetup{font=small, labelfont=small}
+
+
+
+
 
 \section{Autonomous Systems and Safety}
 
 {\small
 
-Autonomous systems (AS) can be understood as systems that are capable of making decisions independently from direct human control \cite{osborne2022decisionmaking}. In robotic systems, this autonomy is typically achieved through a combination of sensing, perception, planning, decision-making, and actuation. For example, an autonomous mobile robot may perceive obstacles, select an alternative path, and continue its task without requiring continuous human input. This ability allows autonomous robots to operate more flexibly in dynamic and partially unknown environments. However, it also makes safety assurance more complex, because the system behaviour is no longer determined only by predefined commands, but also by runtime perception, environmental conditions, and decision-making processes.
+Autonomous systems (AS) can be understood as systems that are capable of making decisions independently from direct human control \cite{osborne2022decisionmaking}. In robotic systems, this autonomy is typically achieved through a combination of sensing, perception, planning, decision-making, and actuation. However, this autonomy also makes safety assurance more complex, because the system behaviour is no longer determined only by predefined commands, but also by runtime perception, environmental conditions, and decision-making processes.
 
-Safety is a fundamental requirement in AS because robots interact with humans, physical objects, infrastructure, and the surrounding environment. In dependability theory, safety is commonly defined as the absence of catastrophic consequences for users and the environment \cite{avizienis2004dependability}. In the context of autonomous robotic systems, safety therefore refers not only to whether the robot performs its intended task, but also to whether it performs the task without creating unacceptable risk. This distinction is important because a robot may be functionally successful while still being unsafe. For example, a robot arm in a shared workspace may complete a pick-and-place task correctly, but the system cannot be considered safe if its motion exposes a nearby human operator to an unacceptable collision risk.
-
-From a risk assessment perspective, safety is closely related to the identification of hazards, the estimation of risk, and the implementation of suitable risk reduction measures \cite{iso12100}. In robotic applications, this requires considering both the severity of possible harm and the likelihood that a hazardous situation may occur. Robot-specific safety standards further define requirements and protective measures for industrial and collaborative robotic systems \cite{iso10218_1_2025,iso10218_2_2025,iso15066}. However, safety in AS is strongly dependent on operational context. A motion, speed, or decision that is safe in one situation may become hazardous when a human enters the workspace, when an object is misplaced, or when perception uncertainty increases. Therefore, safety in autonomous robotic systems must be understood as a property that depends on both the technical system and the changing environment in which it operates.
+Safety is a fundamental requirement in AS because robots interact with humans, physical objects, infrastructure, and the surrounding environment. In dependability theory, safety is commonly defined as the absence of catastrophic consequences for users and the environment \cite{avizienis2004dependability}. In the context of autonomous robotic systems, safety therefore refers not only to whether the robot performs its intended task, but also to whether it performs the task without creating unacceptable risk. From a risk assessment perspective, safety is closely related to the identification of hazards, the estimation of risk, and the implementation of suitable risk reduction measures \cite{iso12100}. Robot-specific safety standards further define requirements and protective measures for industrial and collaborative robotic systems \cite{iso10218_1_2025,iso10218_2_2025,iso15066}. However, safety in AS is strongly dependent on operational context. Therefore, safety in autonomous robotic systems must be understood as a property that depends on both the technical system and the changing environment in which it operates.
 
 }
 
@@ -17,13 +21,13 @@ From a risk assessment perspective, safety is closely related to the identificat
 
 {\small
 
-Industry 5.0 is shifting industrial development toward a more human-centric, sustainable, and resilient model, while continuing to support productivity and worker well-being \cite{europeancommission2021industry5}. Within this perspective, Human-Robot Collaboration (HRC) becomes an important requirement for using robotic technologies to support and empower workers rather than simply replacing human labour \cite{europeancommission2021industry5}. Collaborative robotic systems can assist humans in repetitive, strenuous, or hazardous tasks, thereby improving workplace flexibility, ergonomics, and the distribution of work between humans and machines. In industrial settings, HRC has also been discussed as a response to skill gaps, skilled-worker retention, and the need to make manufacturing work more attractive to younger generations \cite{kumar2021hrc}. This makes HRC a relevant foundation for future autonomous systems, where robots increasingly need to interpret human presence, environmental changes, and task-specific context during operation.
+Industry 5.0 is shifting industrial development toward a more human-centric, sustainable, and resilient model, while continuing to support productivity and worker well-being \cite{europeancommission2021industry5}. Within this perspective, Human-Robot Collaboration (HRC) becomes an important requirement for using robotic technologies to support and empower workers rather than simply replacing human labour \cite{europeancommission2021industry5}. Collaborative robotic systems can assist humans in repetitive, strenuous, or hazardous tasks, thereby improving workplace flexibility, ergonomics, and the distribution of work between humans and machines.
 
-However, HRC also introduces important challenges in industrial settings. Industrial HRC must address three closely related aspects: ensuring human safety, maintaining trust in automation, and preserving productivity \cite{kumar2021hrc}. Among these, human safety remains a primary concern because close physical interaction increases the possibility of unintended human-robot collisions, unexpected robot motion, or interruptions in the robot's behaviour. Such situations can increase the risk of injury and may negatively affect the human operator's trust in the system. At the same time, safety measures must be balanced with productivity requirements, since overly restrictive measures such as excessive speed reductions, large separation distances, or frequent safety stops can reduce system efficiency and interrupt the intended collaborative workflow \cite{kumar2021hrc}. The relationship between safety, trust in automation, and productivity is illustrated in Figure~\ref{fig:hrc_challenges}. This trade-off shows that HRC cannot be addressed only as a productivity or automation problem; it also requires systematic risk assessment methods that can identify hazardous situations and define suitable risk reduction measures.
+However, industrial HRC must address three closely related aspects: ensuring human safety, maintaining trust in automation, and preserving productivity \cite{kumar2021hrc}. Among these, human safety remains a primary concern because close physical interaction increases the possibility of unintended human-robot collisions or unexpected robot motion. At the same time, safety measures must be balanced with productivity requirements, since overly restrictive measures such as excessive speed reductions or frequent safety stops can reduce system efficiency \cite{kumar2021hrc}. The relationship between safety, trust in automation, and productivity is illustrated in Figure~\ref{fig:hrc_challenges}. This trade-off shows that HRC requires systematic risk assessment methods that can identify hazardous situations and define suitable risk reduction measures.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{example_images/HRC_safety_productivity.png}
+    \includegraphics[width=0.7\textwidth]{example_images/HRC_safety_productivity.png}
     \caption{Main challenges in HRC\cite{kumar2021hrc}.}
     \label{fig:hrc_challenges}
 \end{figure}
@@ -34,33 +38,26 @@ However, HRC also introduces important challenges in industrial settings. Indust
 
 {\small
 
-Conventional risk assessment in robotic systems is generally performed before deployment and is based on the intended use, foreseeable misuse, system limits, operating environment, and known hazards of the system. According to ISO 12100, the risk assessment process includes hazard identification, risk estimation, and risk evaluation, followed by the selection of suitable risk reduction measures \cite{iso12100}. In the context of industrial and collaborative robots, this process is supported by robot-specific safety standards that define requirements for robot systems, collaborative applications, and protective measures \cite{iso10218_1_2025,iso10218_2_2025,iso15066}.
-
-Risk reduction is usually implemented through a combination of inherently safe design, technical protective measures, and information for use. In HRC, this can include limiting robot speed and force, defining safe separation distances, using protective stops, and applying physical or electronic safeguards around the robot workspace. These measures are essential because they provide a systematic way to reduce the likelihood or severity of hazardous human-robot interactions before the system is put into operation.
-
-However, conventional risk assessment is mainly based on assumptions made during design and deployment. These assumptions include expected human behaviour, known object configurations, defined workspaces, and predefined task conditions. As a result, conventional risk assessment is effective for identifying known and reasonably foreseeable hazards, but it becomes limited when the operating context changes significantly during runtime. This limitation is especially relevant for autonomous robotic systems, where the robot may operate in dynamic environments and make decisions based on sensor data and perception results.
+Conventional risk assessment in robotic systems is generally performed before deployment and is based on the intended use, foreseeable misuse, system limits, operating environment, and known hazards of the system. According to ISO 12100, the risk assessment process includes hazard identification, risk estimation, and risk evaluation, followed by the selection of suitable risk reduction measures \cite{iso12100}. Risk reduction is usually implemented through a combination of inherently safe design, technical protective measures, and information for use. In HRC, this can include limiting robot speed and force, defining safe separation distances, using protective stops, and applying physical or electronic safeguards around the robot workspace. However, conventional risk assessment is mainly based on assumptions made during design and deployment, such as expected human behaviour, known object configurations, defined workspaces, and predefined task conditions. As a result, it is effective for identifying known and reasonably foreseeable hazards, but it becomes limited when the operating context changes significantly during runtime.
 
 }
+
 \subsection{Existing Safety Measures in HRC}
 
 {\small
 
-In industrial HRC, risk reduction strategies are commonly implemented through two main approaches: the use of collaborative robots and the use of physical or electronic safeguarding measures \cite{kumar2021hrc}. Collaborative robots, also referred to as cobots, are designed to operate in direct cooperation with humans within a defined shared workspace. Their safety is supported through hardware and software features such as reduced momentum, force sensing, back-drivable actuators, and protective stop functions that interrupt robot motion when unexpected contact or resistance is detected.
+In industrial HRC, risk reduction strategies are commonly implemented through two main approaches: the use of collaborative robots and the use of physical or electronic safeguarding measures \cite{kumar2021hrc}. Collaborative robots, also referred to as cobots, are designed to operate in direct cooperation with humans within a defined shared workspace. The safeguarding-based approach focuses on monitoring the robot workspace so that robot motion can be adapted or stopped before hazardous human-robot collisions occur. Examples include light curtains, pressure-sensitive floors, 2-D scanning LiDAR, and 3-D safety vision systems. These mechanisms are important for reducing the risk of human injury, but they often rely on predefined safety zones, fixed distance thresholds, or conservative stopping rules \cite{kumar2021hrc}.
 
-The safeguarding-based approach focuses on monitoring the robot workspace so that robot motion can be adapted or stopped before hazardous human-robot collisions occur. In practice, this is achieved using physical and electronic safeguarding devices that define protected zones around the robot work cell. Examples include safeguarded perimeter door switches, light curtains, pressure-sensitive floors, 2-D scanning LiDAR, and 3-D safety vision systems. These mechanisms are important for reducing the risk of human injury, but they often rely on predefined safety zones, fixed distance thresholds, or conservative stopping rules \cite{kumar2021hrc}.
-
-A common method used for workspace monitoring is Speed and Separation Monitoring (SSM). In SSM, the distance between the human and the robot is monitored continuously, and the robot speed is reduced or stopped when the separation distance becomes too small. In a static SSM approach, the monitored zones are usually predefined before operation. For example, a robot may operate at full speed when no human is detected in the outer zone, slow down when a human enters a warning zone, and stop when the human enters a protective stop zone\cite{kumar2021hrc}. This approach is simple and practical, but it can be conservative because the safety zones are not always adapted to the actual robot motion, human motion, task state, or sensor uncertainty.
-
-\begin{figure}[htbp]
+\begin{wrapfigure}{r}{0.50\textwidth}
+    \vspace{-10pt}
     \centering
-    \includegraphics[width=\textwidth]{example_images/hrc_safety_zones_generated.png}
+    \includegraphics[width=0.48\textwidth]{example_images/hrc_safety_zones_generated.png}
     \caption{Illustrative representation of safety zones in a collaborative robot workspace.}
     \label{fig:hrc_safety_zones}
-\end{figure}
+    \vspace{-10pt}
+\end{wrapfigure}
 
-Dynamic SSM addresses this limitation by adapting the protective separation distance or the robot speed according to the current operating situation. Instead of relying only on fixed zones, dynamic SSM considers factors such as the actual distance between the human and the robot, robot velocity, human motion, stopping time, and uncertainty in the sensed position of obstacles or operators. Marvel discusses SSM performance in terms of both safety and productivity, representing collision potential through separation metrics and sensor uncertainty \cite{marvel2013ssm}. This shows that SSM is not only a binary stop-or-run mechanism, but also a method whose effectiveness depends on how accurately the system evaluates separation, uncertainty, and the productivity cost of safety actions.
-
-Although dynamic SSM provides a more flexible basis for HRC safety than purely static safety zones, it also requires reliable perception, continuous monitoring, and suitable runtime decision-making. Therefore, existing safety measures show the importance of moving from fixed protective assumptions toward context-aware risk assessment mechanisms that can consider the actual operational situation of the robot, humans, and surrounding environment.
+A common method used for workspace monitoring is Speed and Separation Monitoring (SSM). In SSM, the distance between the human and the robot is monitored continuously, and the robot speed is reduced or stopped when the separation distance becomes too small. In a static SSM approach, the monitored zones are usually predefined before operation \cite{kumar2021hrc}. This approach is simple and practical, but it can be conservative because the safety zones are not always adapted to the actual robot motion, human motion, task state, or sensor uncertainty. Dynamic SSM addresses this limitation by adapting the protective separation distance or the robot speed according to the current operating situation, considering factors such as robot velocity, human motion, stopping time, and uncertainty in the sensed position of obstacles or operators. Marvel discusses SSM performance in terms of both safety and productivity, representing collision potential through separation metrics and sensor uncertainty \cite{marvel2013ssm}. Therefore, existing safety measures show the importance of moving from fixed protective assumptions toward context-aware risk assessment mechanisms.
 
 }
 
@@ -68,15 +65,62 @@ Although dynamic SSM provides a more flexible basis for HRC safety than purely s
 
 {\small
 
-The previous subsections show that conventional risk assessment and many existing HRC safety measures are based on pre-deployment assumptions, such as intended use, expected human behaviour, known object configurations, predefined workspaces, fixed safety zones, and foreseeable hazardous scenarios. These assumptions are necessary for systematic risk assessment, but they become less reliable when autonomous robots operate in changing environments. Human positions, object locations, obstacles, task conditions, and spatial relationships may vary during operation, meaning that a risk analysis performed before deployment may no longer fully represent the actual operating situation.
+The previous subsections show that conventional risk assessment and many existing HRC safety measures are based on pre-deployment assumptions, such as intended use, expected human behaviour, predefined workspaces, and fixed safety zones. These assumptions are necessary for systematic risk assessment, but they become less reliable when autonomous robots operate in changing environments. The integration of artificial intelligence into robotic perception, planning, or control further increases this limitation. While AI-based components improve flexibility and autonomy, they also make robot behaviour harder to predict completely during design-time safety analysis. Safety assurance of AI-based systems is complicated by dataset dependence, black-box behaviour, explainability, and lifecycle assurance \cite{silvaneto2022aisafetyassurance}.
 
-The integration of artificial intelligence into robotic perception, planning, or control further increases this limitation. AI-based components can enable object detection, scene interpretation, motion prediction, task planning, and adaptive decision-making. While these capabilities improve flexibility and autonomy, they also make robot behaviour harder to predict completely during design-time safety analysis. Safety assurance of AI-based systems is complicated by dataset dependence, black-box behaviour, explainability, and lifecycle assurance \cite{silvaneto2022aisafetyassurance}. In robotic systems, this means that perception errors, low-confidence predictions, distribution shifts, previously unseen objects, changing human behaviour, or software updates after deployment can affect system decisions.
-
-As a result, conventional risk assessment should be understood as a necessary baseline rather than a complete solution for adaptive autonomous robotic systems. If the deployed system operates under conditions that were not fully represented during the original assessment, the selected safety measures may become insufficient. Therefore, dynamic and context-aware risk assessment is required to incorporate runtime information such as robot state, human presence, object locations, spatial relationships, perception uncertainty, and environmental changes. Automated and continuous risk assessment has been proposed for software-defined robotic systems, where changes in software or system behaviour may require risk assessment to be updated during operation \cite{grimmeisen2023continuousrisk}.
-
-At the same time, AI can also support dynamic risk assessment when its outputs are structured, bounded, and interpretable. AI-based perception and reasoning methods can help identify relevant objects, detect environmental changes, classify scene elements, and localise risk-relevant information around the robot. In this thesis, this motivates the use of a spatial risk-annotated scene graph, which can represent objects, spatial relations, uncertainty, and risk-related context in a machine-readable form to support dynamic risk assessment in autonomous robotic systems.
+As a result, conventional risk assessment should be understood as a necessary baseline rather than a complete solution for adaptive autonomous robotic systems. Dynamic and context-aware risk assessment is therefore required to incorporate runtime information such as robot state, human presence, object locations, spatial relationships, perception uncertainty, and environmental changes. Automated and continuous risk assessment has been proposed for software-defined robotic systems \cite{grimmeisen2023continuousrisk}. At the same time, AI can also support dynamic risk assessment when its outputs are structured, bounded, and interpretable. In this thesis, this motivates the use of a spatial risk-annotated scene graph, which can represent objects, spatial relations, uncertainty, and risk-related context in a machine-readable form to support dynamic risk assessment in autonomous robotic systems.
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Scene Graphs}
+
+{\small
+
+A scene graph is a structured representation of a visual scene in which objects are represented as nodes and relationships between objects are represented as edges \cite{johnson2015scenegraphs}. Instead of describing an image or environment only as a collection of detected objects, a scene graph also captures how these objects are related to each other. For example, a scene may contain nodes such as \textit{person}, \textit{chair}, and \textit{table}, while edges may describe relations such as \textit{sitting on}, \textit{next to}, or \textit{under}. Johnson et al. demonstrated the usefulness of scene graphs for image retrieval by representing image content through objects, attributes, and relationships rather than relying only on low-level image features or isolated object labels \cite{johnson2015scenegraphs}.
+
+\begin{wrapfigure}{r}{0.50\textwidth}
+    \vspace{-10pt}
+    \centering
+    \includegraphics[width=0.48\textwidth]{example_images/scene-graph-example.png}
+    \caption{Scene graph example. Reproduced from \cite{johnson2015scenegraphs}.}
+    \label{fig:scene_graph_example}
+    \vspace{-10pt}
+\end{wrapfigure}
+
+The main advantage of a scene graph is that it provides a machine-readable representation of both entities and context. Object detections alone can indicate which objects are present, but they do not fully describe the structure of the scene. In contrast, a scene graph can represent object attributes, spatial arrangements, and semantic relationships in a compact graph format \cite{johnson2015scenegraphs}. This makes it useful for tasks that require reasoning about the environment, because downstream modules can query not only whether an object exists, but also how it is positioned or related to other objects.
+
+Scene graphs have been used in several computer vision and language-vision tasks, including image retrieval, visual relationship understanding, visual question answering, and image captioning. Datasets such as Visual Genome support this direction by providing dense annotations of objects, attributes, relationships, region descriptions, scene graphs, and question-answer pairs \cite{krishna2017visualgenome}. Beyond 2D images, scene graphs have also been extended to 3D environments, where objects, rooms, cameras, and their relationships can be represented in a unified spatial structure \cite{armeni2019threedscenegraph}. This makes scene graphs relevant not only for image-level understanding, but also for robotic and spatial perception tasks.
+
+Scene graphs also bridge raw sensor data and higher-level reasoning, which is particularly useful in robotic systems where perception must inform planning, navigation, or risk assessment.
+
+In the context of this thesis, scene graphs are relevant because dynamic risk assessment requires more than object detection. Risk may depend on object identity, spatial proximity, support relations, containment, occlusion, human presence, and the current configuration of the environment. A graph-based representation allows such information to be stored in a structured form. When extended with spatial information, uncertainty estimates, and risk annotations, the scene graph becomes a suitable basis for representing the current operational context of an autonomous robotic system.
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -145,8 +189,7 @@ where $w_{\max}$ is the maximum allowed weight \cite{wu2021scenegraphfusion}. Th
 
 The temporal fusion strategy is relevant to this thesis as an example of how repeated observations can be combined to improve the stability of a scene graph over time. Instead of storing only a single deterministic label for each object or relationship, SceneGraphFusion preserves a probability distribution over possible classes or predicates. This allows the representation to retain information about semantic uncertainty and to reduce the effect of isolated inconsistent predictions. Such an approach is useful to study because dynamic risk assessment may depend not only on the selected object or relation label, but also on how confident the system is in that prediction.
 
-For this thesis, SceneGraphFusion is therefore considered as an important reference for alternative approaches to incremental scene graph generation. It demonstrates how RGB-D observations can be fused over time and how semantic predictions for graph nodes and edges can be stabilized using temporal probability fusion. However, its main focus remains object-relation prediction in reconstructed indoor scenes. The present thesis investigates a different objective: extending risk-annotated scene graph generation toward spatial grounding, long-term object persistence, loop-closure-aware consistency, uncertainty representation, and dynamic risk assessment in robotic environments.
-
+For this thesis, SceneGraphFusion is an important reference for incremental scene graph generation, as it shows how RGB-D observations can be fused over time and how retaining probability distributions over classes and predicates stabilises predictions while preserving semantic uncertainty, which matters for risk assessment. However, its focus remains object-relation prediction in reconstructed indoor scenes, whereas the present thesis targets spatial grounding, long-term object persistence, loop-closure-aware consistency, uncertainty representation, and dynamic risk assessment in robotic environments.
 }
 
 
@@ -274,30 +317,6 @@ In the context of this thesis, ROS 2 is relevant because the risk-annotated scen
 
 
 
-\section{Scene Graphs}
-
-{\small
-
-A scene graph is a structured representation of a visual scene in which objects are represented as nodes and relationships between objects are represented as edges \cite{johnson2015scenegraphs}. Instead of describing an image or environment only as a collection of detected objects, a scene graph also captures how these objects are related to each other. For example, a scene may contain nodes such as \textit{person}, \textit{chair}, and \textit{table}, while edges may describe relations such as \textit{sitting on}, \textit{next to}, or \textit{under}. Johnson et al. demonstrated the usefulness of scene graphs for image retrieval by representing image content through objects, attributes, and relationships rather than relying only on low-level image features or isolated object labels \cite{johnson2015scenegraphs}.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=\textwidth]{example_images/scene-graph-example.png}
-    \caption{Scene graph example. Reproduced from \cite{johnson2015scenegraphs}.}
-    \label{fig:scene_graph_example}
-\end{figure}
-
-The main advantage of a scene graph is that it provides a machine-readable representation of both entities and context. Object detections alone can indicate which objects are present, but they do not fully describe the structure of the scene. In contrast, a scene graph can represent object attributes, spatial arrangements, and semantic relationships in a compact graph format \cite{johnson2015scenegraphs}. This makes it useful for tasks that require reasoning about the environment, because downstream modules can query not only whether an object exists, but also how it is positioned or related to other objects.
-
-Scene graphs have been used in several computer vision and language-vision tasks, including image retrieval, visual relationship understanding, visual question answering, and image captioning. Datasets such as Visual Genome support this direction by providing dense annotations of objects, attributes, relationships, region descriptions, scene graphs, and question-answer pairs \cite{krishna2017visualgenome}. Beyond 2D images, scene graphs have also been extended to 3D environments, where objects, rooms, cameras, and their relationships can be represented in a unified spatial structure \cite{armeni2019threedscenegraph}. This makes scene graphs relevant not only for image-level understanding, but also for robotic and spatial perception tasks.
-
-Scene graphs are also advantageous because they provide an interpretable bridge between perception and higher-level reasoning. Raw sensor data such as images or point clouds is difficult for symbolic reasoning modules to use directly. A scene graph abstracts this raw data into nodes, edges, and attributes that can be inspected, updated, and processed algorithmically. This is especially useful in robotic systems, where perception results must often be connected to planning, navigation, manipulation, or risk assessment.
-
-In the context of this thesis, scene graphs are relevant because dynamic risk assessment requires more than object detection. Risk may depend on object identity, spatial proximity, support relations, containment, occlusion, human presence, and the current configuration of the environment. A graph-based representation allows such information to be stored in a structured form. When extended with spatial information, uncertainty estimates, and risk annotations, the scene graph becomes a suitable basis for representing the current operational context of an autonomous robotic system.
-
-}
-
-
 
 
 
@@ -315,15 +334,9 @@ In the context of this thesis, scene graphs are relevant because dynamic risk as
 Hydra is a real-time spatial perception system for constructing and optimizing 3D scene graphs from robotic sensor data \cite{hughes2022hydra}. It is relevant to this thesis because it addresses key requirements for spatial risk-annotated scene graph generation, including incremental construction, scalability to larger environments, loop closure correction, and near-real-time operation. While the baseline risk-annotated scene graph framework focuses on semantic and risk-related interpretation of RGB-D observations, Hydra provides a spatial backbone for building persistent environment-level representations.
 
 Hydra represents the environment as a layered 3D scene graph rather than only as a set of detected objects. The graph connects metric geometry, objects, agents, places, rooms, and building-level structure. This allows the system to maintain both low-level geometric information and higher-level semantic and topological abstractions, as illustrated in Figure~\ref{fig:hydra_layered_scene_graph}.
+{\small
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=\textwidth]{example_images/hydra_3d_scene_graph.png}
-    \caption{Example of a layered 3D scene graph generated by Hydra, showing abstraction levels from metric-semantic 3D mesh to objects and agents, places, rooms, and buildings. Reproduced from \cite{hughes2022hydra}.}
-    \label{fig:hydra_layered_scene_graph}
-\end{figure}
 
-}
 
 \subsection{Input Data and Processing Overview}
 
@@ -343,7 +356,17 @@ The overall processing pipeline transforms sensor-level data into graph-level sp
 
 The main output of Hydra is a layered 3D scene graph, where nodes represent spatial concepts at different levels of abstraction and edges represent relationships between them. The lowest layer is the metric-semantic 3D mesh, which represents the physical geometry of the environment together with semantic labels. Above this, the object and agent layer represents detected objects and the robot trajectory. Object nodes can include semantic labels, centroids, and bounding boxes, while the agent is represented by a pose graph describing the robot's motion \cite{hughes2022hydra}.
 
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.6\textwidth]{example_images/hydra_3d_scene_graph.png}
+    \caption{Example of a layered 3D scene graph generated by Hydra, showing abstraction levels from metric-semantic 3D mesh to objects and agents, places, rooms, and buildings. Reproduced from \cite{hughes2022hydra}.}
+    \label{fig:hydra_layered_scene_graph}
+\end{figure}
+
 The places layer provides a sparse topological representation of obstacle-free space. A place represents a traversable location in the environment, and an edge between two places indicates straight-line traversability. The room layer groups places into larger spatial regions, while the building layer provides the highest-level abstraction. This hierarchy is useful because different robotic tasks require different levels of detail: metric geometry supports local navigation, places support topological reasoning, and objects and rooms support semantic interpretation.
+
+
 
 Hydra separates scene graph construction into a frontend and a backend. The frontend incrementally assembles an odometric scene graph from the latest mesh, object, places, and agent-pose information. The backend corrects this representation when loop closures are detected by optimizing selected graph elements and propagating the correction to the remaining layers \cite{hughes2022hydra}. This separation allows continuous local graph construction while still supporting slower global correction.
 
@@ -373,16 +396,6 @@ As a robot moves through an environment, odometry errors can accumulate and caus
 Once a loop closure is accepted, Hydra optimizes the scene graph using an embedded deformation graph. This deformation graph contains selected elements such as the agent pose graph, mesh control points, and places layer. The optimization corrects accumulated drift and propagates the correction to the rest of the scene graph. Object centroids and bounding boxes can be recomputed after deformation, overlapping nodes can be merged, and rooms can be updated from the corrected places graph.
 
 Hydra is organized as a highly parallelized architecture with low-level, mid-level, and high-level perception processes. Low-level perception operates close to sensor rate and includes visual-inertial odometry, semantic segmentation, and depth reconstruction. Mid-level perception constructs local spatial structures such as the mesh, object layer, places graph, and scene graph frontend. High-level perception performs loop closure detection, backend optimization, and room detection. This separation prevents slower global operations from blocking faster local perception, which is important for near-real-time robotic operation.
-
-}
-
-\subsection{Relevance to the Proposed Framework}
-
-{\small
-
-Hydra provides a strong methodological reference for this thesis because it demonstrates how a robot can construct a persistent spatial scene graph in real time. The most relevant ideas are the layered graph representation, incremental construction of spatial layers, local active-window mapping, places extraction from free-space topology, room detection from the places graph, loop closure correction, and separation between fast local processing and slower global optimization.
-
-In this thesis, Hydra is useful as a spatial backbone for extending the existing risk-annotated scene graph framework. The baseline framework provides semantic and risk-oriented interpretation, while Hydra provides spatial consistency, scalability, and loop closure support. Combining these ideas motivates a spatial risk-annotated scene graph that can represent risk-relevant objects, semantic relations, uncertainty, and spatial context across larger robotic environments.
 
 }
 
@@ -518,6 +531,7 @@ For deployment, both components are compiled into TensorRT engines. TensorRT con
 }
 \begin{table}[htbp]
 	\centering
+	\small
 	\caption{Latency on Jetson AGX Orin and mean IoU on COCO 2017 validation with ground-truth box prompts, as reported in \cite{nanosam2023}.}
 	\label{tab:nanosam_performance}
 	\begin{tabular}{lccccc}
@@ -650,6 +664,7 @@ The Qwen models of Alibaba Cloud are published with open weights in several size
 
 \begin{table}[htbp]
 \centering
+\small
 \caption{Release history of the open-weight Qwen vision-language models.}
 \label{tab:qwen_history}
 \begin{tabular}{l l l}
@@ -746,10 +761,3 @@ This limitation is important for the present thesis. SafetyDetect mainly focuses
 
 Consequently, SafetyDetect can be understood as evidence for the downstream value of scene-graph-based representations in safety reasoning. However, it also indicates that the effectiveness of such reasoning depends strongly on the quality of the generated scene graph. This supports the central motivation of the present thesis: improving scene graph generation, spatial grounding, persistence, and uncertainty representation is a necessary step toward more reliable dynamic risk assessment in robotic systems.
 }
-
-
-
-
-
-
-

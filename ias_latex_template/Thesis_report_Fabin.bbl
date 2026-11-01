@@ -890,6 +890,146 @@
       \verb 10.1109/TASE.2013.2237904
       \endverb
     \endentry
+    \entry{johnson2015scenegraphs}{inproceedings}{}
+      \name{author}{7}{}{%
+        {{hash=90edc587e1d523d4e173b1fe6e733445}{%
+           family={Johnson},
+           familyi={J\bibinitperiod},
+           given={Justin},
+           giveni={J\bibinitperiod}}}%
+        {{hash=e9cf8ade7c94f1084ea6832928a36fef}{%
+           family={Krishna},
+           familyi={K\bibinitperiod},
+           given={Ranjay},
+           giveni={R\bibinitperiod}}}%
+        {{hash=93fa445b3e108af4e0bc57e8fc211c74}{%
+           family={Stark},
+           familyi={S\bibinitperiod},
+           given={Michael},
+           giveni={M\bibinitperiod}}}%
+        {{hash=2afdae52015b97674d81efea449edce2}{%
+           family={Li},
+           familyi={L\bibinitperiod},
+           given={Li-Jia},
+           giveni={L\bibinithyphendelim J\bibinitperiod}}}%
+        {{hash=bd5560c0c54d9552cb7194da66c1b047}{%
+           family={Shamma},
+           familyi={S\bibinitperiod},
+           given={David\bibnamedelima A.},
+           giveni={D\bibinitperiod\bibinitdelim A\bibinitperiod}}}%
+        {{hash=bb1df70dce464605ddd9cf83485d8db1}{%
+           family={Bernstein},
+           familyi={B\bibinitperiod},
+           given={Michael\bibnamedelima S.},
+           giveni={M\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
+        {{hash=cd00ce5bc45f687c432e52e0fa1a7aa6}{%
+           family={Fei-Fei},
+           familyi={F\bibinithyphendelim F\bibinitperiod},
+           given={Li},
+           giveni={L\bibinitperiod}}}%
+      }
+      \strng{namehash}{703afbca586b4470d0f3fab18063c292}
+      \strng{fullhash}{840d34aa6f771751170f4e82b0f6f543}
+      \strng{bibnamehash}{840d34aa6f771751170f4e82b0f6f543}
+      \strng{authorbibnamehash}{840d34aa6f771751170f4e82b0f6f543}
+      \strng{authornamehash}{703afbca586b4470d0f3fab18063c292}
+      \strng{authorfullhash}{840d34aa6f771751170f4e82b0f6f543}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition}
+      \field{title}{Image Retrieval Using Scene Graphs}
+      \field{year}{2015}
+      \field{pages}{3668\bibrangedash 3678}
+      \range{pages}{11}
+      \verb{doi}
+      \verb 10.1109/CVPR.2015.7298990
+      \endverb
+    \endentry
+    \entry{krishna2017visualgenome}{article}{}
+      \name{author}{12}{}{%
+        {{hash=e9cf8ade7c94f1084ea6832928a36fef}{%
+           family={Krishna},
+           familyi={K\bibinitperiod},
+           given={Ranjay},
+           giveni={R\bibinitperiod}}}%
+        {{hash=f86434cb0d86ba7eac5b0e3f3236abf0}{%
+           family={Zhu},
+           familyi={Z\bibinitperiod},
+           given={Yuke},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=3a5173ca0a5b2415dd44ff7cdb78df26}{%
+           family={Groth},
+           familyi={G\bibinitperiod},
+           given={Oliver},
+           giveni={O\bibinitperiod}}}%
+        {{hash=90edc587e1d523d4e173b1fe6e733445}{%
+           family={Johnson},
+           familyi={J\bibinitperiod},
+           given={Justin},
+           giveni={J\bibinitperiod}}}%
+        {{hash=017446a099a91877e510b892600019e6}{%
+           family={Hata},
+           familyi={H\bibinitperiod},
+           given={Kenji},
+           giveni={K\bibinitperiod}}}%
+        {{hash=8124ec435d0bb1c20f7d1c980269590c}{%
+           family={Kravitz},
+           familyi={K\bibinitperiod},
+           given={Joshua},
+           giveni={J\bibinitperiod}}}%
+        {{hash=1d08e476f1c877179a73cc102d697904}{%
+           family={Chen},
+           familyi={C\bibinitperiod},
+           given={Stephanie},
+           giveni={S\bibinitperiod}}}%
+        {{hash=27bc92f2de97cf6b5dcb5c329d6188e3}{%
+           family={Kalantidis},
+           familyi={K\bibinitperiod},
+           given={Yannis},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=2afdae52015b97674d81efea449edce2}{%
+           family={Li},
+           familyi={L\bibinitperiod},
+           given={Li-Jia},
+           giveni={L\bibinithyphendelim J\bibinitperiod}}}%
+        {{hash=bd5560c0c54d9552cb7194da66c1b047}{%
+           family={Shamma},
+           familyi={S\bibinitperiod},
+           given={David\bibnamedelima A.},
+           giveni={D\bibinitperiod\bibinitdelim A\bibinitperiod}}}%
+        {{hash=bb1df70dce464605ddd9cf83485d8db1}{%
+           family={Bernstein},
+           familyi={B\bibinitperiod},
+           given={Michael\bibnamedelima S.},
+           giveni={M\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
+        {{hash=cd00ce5bc45f687c432e52e0fa1a7aa6}{%
+           family={Fei-Fei},
+           familyi={F\bibinithyphendelim F\bibinitperiod},
+           given={Li},
+           giveni={L\bibinitperiod}}}%
+      }
+      \strng{namehash}{6e123636292d5acb3e59a2dea095df77}
+      \strng{fullhash}{d88292d711d29fae7152180f34a925ad}
+      \strng{bibnamehash}{721ec71a855c8818875c91cf21d15e1f}
+      \strng{authorbibnamehash}{721ec71a855c8818875c91cf21d15e1f}
+      \strng{authornamehash}{6e123636292d5acb3e59a2dea095df77}
+      \strng{authorfullhash}{d88292d711d29fae7152180f34a925ad}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{International Journal of Computer Vision}
+      \field{title}{Visual Genome: Connecting Language and Vision Using Crowdsourced Dense Image Annotations}
+      \field{volume}{123}
+      \field{year}{2017}
+      \field{pages}{32\bibrangedash 73}
+      \range{pages}{42}
+      \verb{doi}
+      \verb 10.1007/s11263-016-0981-7
+      \endverb
+    \endentry
     \entry{armeni2019threedscenegraph}{inproceedings}{}
       \name{author}{7}{}{%
         {{hash=60c30c11033d50a7830227e21d7de619}{%
@@ -1033,8 +1173,8 @@
       \strng{authorbibnamehash}{4a996f7772591f58353ee2858a5ceb38}
       \strng{authornamehash}{e68f18542e8e3cf23d060a87d3ee46ad}
       \strng{authorfullhash}{4a996f7772591f58353ee2858a5ceb38}
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{IEEE Robotics and Automation Letters}
@@ -1046,146 +1186,6 @@
       \range{pages}{8}
       \verb{doi}
       \verb 10.1109/LRA.2024.3439122
-      \endverb
-    \endentry
-    \entry{johnson2015scenegraphs}{inproceedings}{}
-      \name{author}{7}{}{%
-        {{hash=90edc587e1d523d4e173b1fe6e733445}{%
-           family={Johnson},
-           familyi={J\bibinitperiod},
-           given={Justin},
-           giveni={J\bibinitperiod}}}%
-        {{hash=e9cf8ade7c94f1084ea6832928a36fef}{%
-           family={Krishna},
-           familyi={K\bibinitperiod},
-           given={Ranjay},
-           giveni={R\bibinitperiod}}}%
-        {{hash=93fa445b3e108af4e0bc57e8fc211c74}{%
-           family={Stark},
-           familyi={S\bibinitperiod},
-           given={Michael},
-           giveni={M\bibinitperiod}}}%
-        {{hash=2afdae52015b97674d81efea449edce2}{%
-           family={Li},
-           familyi={L\bibinitperiod},
-           given={Li-Jia},
-           giveni={L\bibinithyphendelim J\bibinitperiod}}}%
-        {{hash=bd5560c0c54d9552cb7194da66c1b047}{%
-           family={Shamma},
-           familyi={S\bibinitperiod},
-           given={David\bibnamedelima A.},
-           giveni={D\bibinitperiod\bibinitdelim A\bibinitperiod}}}%
-        {{hash=bb1df70dce464605ddd9cf83485d8db1}{%
-           family={Bernstein},
-           familyi={B\bibinitperiod},
-           given={Michael\bibnamedelima S.},
-           giveni={M\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
-        {{hash=cd00ce5bc45f687c432e52e0fa1a7aa6}{%
-           family={Fei-Fei},
-           familyi={F\bibinithyphendelim F\bibinitperiod},
-           given={Li},
-           giveni={L\bibinitperiod}}}%
-      }
-      \strng{namehash}{703afbca586b4470d0f3fab18063c292}
-      \strng{fullhash}{840d34aa6f771751170f4e82b0f6f543}
-      \strng{bibnamehash}{840d34aa6f771751170f4e82b0f6f543}
-      \strng{authorbibnamehash}{840d34aa6f771751170f4e82b0f6f543}
-      \strng{authornamehash}{703afbca586b4470d0f3fab18063c292}
-      \strng{authorfullhash}{840d34aa6f771751170f4e82b0f6f543}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{booktitle}{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition}
-      \field{title}{Image Retrieval Using Scene Graphs}
-      \field{year}{2015}
-      \field{pages}{3668\bibrangedash 3678}
-      \range{pages}{11}
-      \verb{doi}
-      \verb 10.1109/CVPR.2015.7298990
-      \endverb
-    \endentry
-    \entry{krishna2017visualgenome}{article}{}
-      \name{author}{12}{}{%
-        {{hash=e9cf8ade7c94f1084ea6832928a36fef}{%
-           family={Krishna},
-           familyi={K\bibinitperiod},
-           given={Ranjay},
-           giveni={R\bibinitperiod}}}%
-        {{hash=f86434cb0d86ba7eac5b0e3f3236abf0}{%
-           family={Zhu},
-           familyi={Z\bibinitperiod},
-           given={Yuke},
-           giveni={Y\bibinitperiod}}}%
-        {{hash=3a5173ca0a5b2415dd44ff7cdb78df26}{%
-           family={Groth},
-           familyi={G\bibinitperiod},
-           given={Oliver},
-           giveni={O\bibinitperiod}}}%
-        {{hash=90edc587e1d523d4e173b1fe6e733445}{%
-           family={Johnson},
-           familyi={J\bibinitperiod},
-           given={Justin},
-           giveni={J\bibinitperiod}}}%
-        {{hash=017446a099a91877e510b892600019e6}{%
-           family={Hata},
-           familyi={H\bibinitperiod},
-           given={Kenji},
-           giveni={K\bibinitperiod}}}%
-        {{hash=8124ec435d0bb1c20f7d1c980269590c}{%
-           family={Kravitz},
-           familyi={K\bibinitperiod},
-           given={Joshua},
-           giveni={J\bibinitperiod}}}%
-        {{hash=1d08e476f1c877179a73cc102d697904}{%
-           family={Chen},
-           familyi={C\bibinitperiod},
-           given={Stephanie},
-           giveni={S\bibinitperiod}}}%
-        {{hash=27bc92f2de97cf6b5dcb5c329d6188e3}{%
-           family={Kalantidis},
-           familyi={K\bibinitperiod},
-           given={Yannis},
-           giveni={Y\bibinitperiod}}}%
-        {{hash=2afdae52015b97674d81efea449edce2}{%
-           family={Li},
-           familyi={L\bibinitperiod},
-           given={Li-Jia},
-           giveni={L\bibinithyphendelim J\bibinitperiod}}}%
-        {{hash=bd5560c0c54d9552cb7194da66c1b047}{%
-           family={Shamma},
-           familyi={S\bibinitperiod},
-           given={David\bibnamedelima A.},
-           giveni={D\bibinitperiod\bibinitdelim A\bibinitperiod}}}%
-        {{hash=bb1df70dce464605ddd9cf83485d8db1}{%
-           family={Bernstein},
-           familyi={B\bibinitperiod},
-           given={Michael\bibnamedelima S.},
-           giveni={M\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
-        {{hash=cd00ce5bc45f687c432e52e0fa1a7aa6}{%
-           family={Fei-Fei},
-           familyi={F\bibinithyphendelim F\bibinitperiod},
-           given={Li},
-           giveni={L\bibinitperiod}}}%
-      }
-      \strng{namehash}{6e123636292d5acb3e59a2dea095df77}
-      \strng{fullhash}{d88292d711d29fae7152180f34a925ad}
-      \strng{bibnamehash}{721ec71a855c8818875c91cf21d15e1f}
-      \strng{authorbibnamehash}{721ec71a855c8818875c91cf21d15e1f}
-      \strng{authornamehash}{6e123636292d5acb3e59a2dea095df77}
-      \strng{authorfullhash}{d88292d711d29fae7152180f34a925ad}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{journaltitle}{International Journal of Computer Vision}
-      \field{title}{Visual Genome: Connecting Language and Vision Using Crowdsourced Dense Image Annotations}
-      \field{volume}{123}
-      \field{year}{2017}
-      \field{pages}{32\bibrangedash 73}
-      \range{pages}{42}
-      \verb{doi}
-      \verb 10.1007/s11263-016-0981-7
       \endverb
     \endentry
     \entry{wang2021hrnet}{article}{}
@@ -1258,8 +1258,8 @@
       \strng{authornamehash}{39a99ef1be8bdddae38686a0699d5b28}
       \strng{authorfullhash}{c16d99da6005e6bbe11665b39f0ce755}
       \field{extraname}{1}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{IEEE Transactions on Pattern Analysis and Machine Intelligence}
@@ -1312,8 +1312,8 @@
       \strng{authorbibnamehash}{5949cce8587aaa584073114554b8cb7d}
       \strng{authornamehash}{85a01c7844076348ef51e88248410965}
       \strng{authorfullhash}{5949cce8587aaa584073114554b8cb7d}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition}
@@ -1486,8 +1486,8 @@
       \strng{authorbibnamehash}{8eded225ab18d718e8607ff5e0101ebf}
       \strng{authornamehash}{8eded225ab18d718e8607ff5e0101ebf}
       \strng{authorfullhash}{8eded225ab18d718e8607ff5e0101ebf}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{title}{NanoSAM: A Distilled Segment Anything Model for Real-Time Inference on NVIDIA Jetson}
@@ -1516,8 +1516,8 @@
       \strng{authornamehash}{a2fe9051fe051f819bd739ef3e340377}
       \strng{authorfullhash}{a2fe9051fe051f819bd739ef3e340377}
       \field{extraname}{1}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{title}{NVIDIA TensorRT Documentation}
@@ -1793,8 +1793,8 @@
       \strng{authornamehash}{5787777f45a24870423cfa4c9aa446c2}
       \strng{authorfullhash}{423899383cf07a47bef84f880cf3cbf3}
       \field{extraname}{2}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{European Conference on Computer Vision}

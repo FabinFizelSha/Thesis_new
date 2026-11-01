@@ -1,16 +1,15 @@
 \babel@toc {english}{}\relax 
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {2.1}{\ignorespaces Latency on Jetson AGX Orin and mean IoU on COCO 2017 validation with ground-truth box prompts, as reported in \blx@tocontentsinit {0}\cite {nanosam2023}.}}{26}{table.caption.14}%
-\contentsline {table}{\numberline {2.2}{\ignorespaces Release history of the open-weight Qwen vision-language models.}}{32}{table.caption.16}%
+\contentsline {table}{\numberline {2.1}{\ignorespaces Latency on Jetson AGX Orin and mean IoU on COCO 2017 validation with ground-truth box prompts, as reported in \blx@tocontentsinit {0}\cite {nanosam2023}.}}{23}{table.caption.14}%
+\contentsline {table}{\numberline {2.2}{\ignorespaces Release history of the open-weight Qwen vision-language models.}}{28}{table.caption.16}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {3.1}{\ignorespaces Information exchanged between the components of the framework.}}{37}{table.caption.19}%
-\contentsline {table}{\numberline {3.2}{\ignorespaces Differences in the treatment of static and dynamic objects.}}{49}{table.caption.21}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces Information exchanged between the components of the framework.}}{33}{table.caption.19}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces Differences in the treatment of static and dynamic objects.}}{48}{table.caption.23}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {4.1}{\ignorespaces Limitations encountered during the Go1 data-collection campaign.}}{54}{table.caption.22}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces Limitations encountered during the Go1 data-collection campaign.}}{52}{table.caption.24}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {5.1}{\ignorespaces Edges in the visualisation. $^{*}$Completed by the Fuser where missing, if no wall lies between the nodes (Section~\ref {subsec:method_graph_fusion}).}}{72}{table.caption.33}%
-\addvspace {10\p@ }
+\contentsline {table}{\numberline {5.1}{\ignorespaces Edges in the visualisation. $^{*}$Completed by the Fuser where missing, if no wall lies between the nodes (Section~\ref {subsec:method_graph_fusion}).}}{70}{table.caption.35}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
