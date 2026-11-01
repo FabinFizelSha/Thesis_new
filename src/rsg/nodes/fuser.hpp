@@ -15,6 +15,7 @@
 #include <functional>
 #include <iomanip>
 #include <limits>
+#include <map>
 #include <memory>
 #include <optional>
 #include <mutex>
@@ -414,6 +415,21 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
                          const builtin_interfaces::msg::Time& stamp, const SceneModel& model,
                          const LayeredProjection& projection) const;
   bool shouldPublishMarkers(bool force) const;
+  /** Publish the latest fused graph + metadata as JSON, at most once per graph_json_period_sec. */
+  void publishGraphJson(const SceneModel& model,
+                        const std::unordered_map<NodeId, ResolvedOverlay>& resolved,
+                        const PresenceCache& presence,
+                        const LayeredProjection& projection);
+  /**
+   * Structured, metadata-complete description of the scene behind the markers:
+   * every visible node (position, bbox, label/confidence/mobility, presence,
+   * risk, identity, raw DSG metadata, room/place assignment, display style)
+   * and every display edge (endpoints, type, origin, length, contact metadata).
+   */
+  Json buildSceneJson(const SceneModel& model,
+                      const std::unordered_map<NodeId, ResolvedOverlay>& resolved,
+                      const PresenceCache& presence,
+                      const LayeredProjection& projection) const;
   void publishFusedDsg();
   /**
    * Build and publish one fused view from immutable label cache data.
@@ -452,6 +468,10 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   std::string fused_dsg_topic_;
   std::string markers_topic_;
   std::string status_topic_;
+  std::string graph_json_topic_;
+  double graph_json_period_sec_ = 5.0;
+  uint64_t graph_json_publications_ = 0;
+  std::chrono::steady_clock::time_point last_graph_json_publish_ = std::chrono::steady_clock::now();
   std::string fallback_frame_id_;
   size_t semantic_label_qos_depth_ = 4096U;
   double semantic_refresh_rate_hz_ = 1.0;
@@ -673,6 +693,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   rclcpp::Publisher<DsgUpdate>::SharedPtr fused_dsg_pub_;
   rclcpp::Publisher<MarkerArray>::SharedPtr marker_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr status_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr graph_json_pub_;
 };
 
 }  // namespace rsg

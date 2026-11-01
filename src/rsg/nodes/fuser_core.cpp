@@ -22,6 +22,8 @@ namespace rsg {
     fused_dsg_topic_ = declare_parameter<std::string>("fused_dsg_topic", "/rsg/hydra/fused_dsg");
     markers_topic_ = declare_parameter<std::string>("markers_topic", "/rsg/scene_graph/markers");
     status_topic_ = declare_parameter<std::string>("status_topic", "/rsg/hydra/rap_fuser/status");
+    graph_json_topic_ = declare_parameter<std::string>("graph_json_topic", "/rsg/scene_graph/graph_json");
+    graph_json_period_sec_ = declare_parameter<double>("graph_json_period_sec", 5.0);
     fallback_frame_id_ = declare_parameter<std::string>("fallback_frame_id", "odom");
 
     // RViz consumes MarkerArray directly. Full DSG publication is optional.
@@ -278,6 +280,9 @@ namespace rsg {
     fused_dsg_pub_ = create_publisher<DsgUpdate>(fused_dsg_topic_, retained_qos);
     marker_pub_ = create_publisher<MarkerArray>(markers_topic_, retained_qos);
     status_pub_ = create_publisher<std_msgs::msg::String>(status_topic_, retained_qos);
+    if (graph_json_period_sec_ > 0.0) {
+      graph_json_pub_ = create_publisher<std_msgs::msg::String>(graph_json_topic_, retained_qos);
+    }
 
     const auto refresh_period = std::chrono::milliseconds(std::max<int64_t>(
         1, static_cast<int64_t>(std::llround(1000.0 / semantic_refresh_rate_hz_))));

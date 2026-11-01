@@ -171,6 +171,7 @@ namespace rsg {
     active_marker_keys_.swap(next_keys);
 
     marker_pub_->publish(markers);
+    publishGraphJson(model, resolved, presence, projection);
     ++marker_publications_;
     last_marker_publish_ = std::chrono::steady_clock::now();
   }

@@ -35,6 +35,7 @@ add_executable(rsg_scene_graph_fuser
   nodes/fuser_presence.cpp
   nodes/fuser_object_markers.cpp
   nodes/fuser_edge_markers.cpp
+  nodes/fuser_json_export.cpp
   nodes/fuser_publishing.cpp
 )
 target_compile_features(rsg_scene_graph_fuser PUBLIC cxx_std_17)
