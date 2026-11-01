@@ -128,6 +128,7 @@ namespace rsg {
     show_slot_ids_ = declare_parameter<bool>("show_slot_ids", false);
     show_presence_confidence_ = declare_parameter<bool>("show_presence_confidence", false);
     show_label_confidence_ = declare_parameter<bool>("show_label_confidence", true);
+    show_confidence_line_ = declare_parameter<bool>("show_confidence_line", true);
     show_mobility_metadata_ = declare_parameter<bool>("show_mobility_metadata", true);
     show_object_detail_ = declare_parameter<bool>("show_object_detail", true);
     static_presence_half_life_sec_ = std::max(

@@ -1,0 +1,31 @@
+{
+  "run_id": "S_openloris",
+  "profile": "openloris",
+  "files_nonempty": {
+    "phase1_timing.csv": true,
+    "preprocessor_timing.xlsx": true,
+    "resource_usage.csv": true,
+    "topic_rates.csv": true,
+    "vlm_server.log": true,
+    "launch.log": true,
+    "hydra_timing_stats.csv": false
+  },
+  "frame_count": 250,
+  "avg_fps": 2.6121,
+  "recorded_span_sec": 95.71,
+  "avg_frame_latency_ms": 259.62,
+  "median_frame_latency_ms": 188.06,
+  "max_frame_latency_ms": 982.68,
+  "avg_classifier_delay_ms": 215.62,
+  "avg_sam_inference_ms": 163.44,
+  "vlm_call_count": 19,
+  "vlm_success_count": 15,
+  "vlm_failed_count": 4,
+  "frame_drop_count": 80,
+  "avg_gpu_pct": 29.61,
+  "peak_gpu_pct": 96.0,
+  "avg_cpu_pct": 19.84,
+  "peak_ram_used_mb": 51361.0,
+  "vlm_completed_rows_with_delay": 19,
+  "vlm_delay_ms_mean": 1976.1
+}

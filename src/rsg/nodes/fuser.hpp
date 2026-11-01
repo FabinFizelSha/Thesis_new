@@ -522,6 +522,7 @@ class SemanticSceneGraphFuser : public rclcpp::Node {
   bool show_slot_ids_ = false;
   bool show_presence_confidence_ = false;
   bool show_label_confidence_ = true;
+  bool show_confidence_line_ = true;  //!< Extra "confidence-1.0" line (presence confidence, decays with time unobserved) at the end of the object label.
   bool show_mobility_metadata_ = true;
   bool show_object_detail_ = true;
   double static_presence_half_life_sec_ = 600.0;

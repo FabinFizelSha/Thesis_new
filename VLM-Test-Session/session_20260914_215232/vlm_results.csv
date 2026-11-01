@@ -1,0 +1,1 @@
+object_id,crop_filename,frame_timestamp,run_id,model_profile,prompt_version,vlm_label,label_confidence,mobility_class,mobility_confidence,vlm_inference_ms,end_to_end_ms,success,validation_status,raw_response,manual_label,manual_is_correct,error_category,manual_notes

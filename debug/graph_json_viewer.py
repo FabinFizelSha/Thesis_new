@@ -68,9 +68,6 @@ def build(graph, show_labels, hide_layers, node_scale=1.0):
         col = ColorRGBA(r=c["r"], g=c["g"], b=c["b"], a=max(c["a"], 0.5))
         layer.colors.append(col)
         label = disp.get("label") or node.get("name") or ""
-        confidence = (node.get("semantic") or {}).get("confidence")
-        if label and confidence is not None:
-            label += f"\nconfidence {confidence:.2f}"
         if show_labels and label:
             t = marker("graph_json_labels", i, Marker.TEXT_VIEW_FACING, frame)
             t.pose.position.x, t.pose.position.y = pos["x"], pos["y"]

@@ -1,0 +1,9 @@
+[INFO] [1793552214.523292248] [rsg_topic_rate_logger]: subscribed /rsg/preprocessed/frame (rsg/msg/RsgFrame, RELIABLE/VOLATILE)
+[INFO] [1793552214.525109781] [rsg_topic_rate_logger]: subscribed /rsg/hydra/rgb/image_raw (sensor_msgs/msg/Image, RELIABLE/VOLATILE)
+[INFO] [1793552214.526287077] [rsg_topic_rate_logger]: subscribed /rsg/hydra/semantic/image_raw (sensor_msgs/msg/Image, RELIABLE/VOLATILE)
+[INFO] [1793552214.532660851] [rsg_topic_rate_logger]: subscribed /hydra/backend/dsg (hydra_msgs/msg/DsgUpdate, RELIABLE/VOLATILE)
+[INFO] [1793552214.533826582] [rsg_topic_rate_logger]: subscribed /rsg/hydra/fused_dsg (hydra_msgs/msg/DsgUpdate, RELIABLE/TRANSIENT_LOCAL)
+[INFO] [1793552214.559589843] [rsg_topic_rate_logger]: subscribed /rsg/scene_graph/markers (visualization_msgs/msg/MarkerArray, RELIABLE/TRANSIENT_LOCAL)
+[INFO] [1793552214.561026557] [rsg_topic_rate_logger]: subscribed /rsg/objects/semantic_label_result (std_msgs/msg/String, RELIABLE/VOLATILE)
+[INFO] [1793552214.562310947] [rsg_topic_rate_logger]: subscribed /rsg/phase1/object_classifier/vlm_result (rsg/msg/Phase1VlmResult, RELIABLE/VOLATILE)
+counts: {'/rsg/preprocessed/frame': 1807, '/rsg/hydra/rgb/image_raw': 1798, '/rsg/hydra/semantic/image_raw': 1798, '/hydra/backend/dsg': 241, '/rsg/hydra/fused_dsg': 0, '/rsg/scene_graph/markers': 229, '/rsg/objects/semantic_label_result': 220, '/rsg/phase1/object_classifier/vlm_result': 200}

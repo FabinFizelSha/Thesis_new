@@ -1,0 +1,1640 @@
+[INFO] [launch]: All log files can be found below /home/student/.ros/log/2026-11-01-14-06-56-421320-ias-thor-213412
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [chroma_rap_memory-1]: process started with pid [213440]
+[INFO] [qwen_vlm_server-2]: process started with pid [213441]
+[INFO] [rsg_preprocessor-3]: process started with pid [213442]
+[INFO] [static_transform_publisher-4]: process started with pid [213443]
+[INFO] [static_transform_publisher-5]: process started with pid [213444]
+[INFO] [hydra_ros_node-6]: process started with pid [213445]
+[INFO] [hydra_visualizer_node-7]: process started with pid [213446]
+[INFO] [rviz2-8]: process started with pid [213447]
+[INFO] [rviz2-9]: process started with pid [213448]
+[static_transform_publisher-4] [INFO] [1793538416.905783502] [rsg_world_to_odom_visualization_bridge]: Spinning until stopped - publishing transform
+[static_transform_publisher-4] translation: ('0.000000', '0.000000', '0.000000')
+[static_transform_publisher-4] rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+[static_transform_publisher-4] from 'world' to 'base_odom'
+[static_transform_publisher-5] [INFO] [1793538416.906715758] [rsg_sensor_to_robot_body_frame_bridge]: Spinning until stopped - publishing transform
+[static_transform_publisher-5] translation: ('0.000000', '0.000000', '0.000000')
+[static_transform_publisher-5] rotation: ('0.500000', '-0.500000', '0.500000', '0.500000')
+[static_transform_publisher-5] from 'camera_color_optical_frame' to 'camera_link'
+[qwen_vlm_server-2] RSG VLM profile=qwen3_5_4b_q4, model=Qwen3.5-VL-4B-Instruct-GGUF, endpoint=http://127.0.0.1:8000/v1/chat/completions
+[qwen_vlm_server-2] RSG VLM command: /home/student/llama.cpp/build/bin/llama-server -m /home/student/rsg_models/qwen3_5_4b/Qwen3.5-4B-Q4_K_M.gguf --mmproj /home/student/rsg_models/qwen3_5_4b/mmproj-BF16.gguf --host 0.0.0.0 --port 8000 -ngl 99 -c 4096 --reasoning off -np 1
+[qwen_vlm_server-2] [34m0.00.112.999[0m [32mI [0mcmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+[qwen_vlm_server-2] [34m0.00.269.217[0m [35mW srv  llama_server: -----------------
+[qwen_vlm_server-2] [0m[34m0.00.269.223[0m [35mW srv  llama_server: CORS is set to allow all origins ('*') and no API key is set
+[qwen_vlm_server-2] [0m[34m0.00.269.224[0m [35mW srv  llama_server: this can be a security risk (cross-origin attacks)
+[qwen_vlm_server-2] [0m[34m0.00.269.224[0m [35mW srv  llama_server: more info: https://github.com/ggml-org/llama.cpp/pull/25655
+[qwen_vlm_server-2] [0m[34m0.00.269.224[0m [35mW srv  llama_server: -----------------
+[qwen_vlm_server-2] [0m[34m0.00.270.551[0m [32mI [0msrv    load_model: loading model '/home/student/rsg_models/qwen3_5_4b/Qwen3.5-4B-Q4_K_M.gguf'
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1]                 [38;5;069m(((((((((    [38;5;203m((((([38;5;220m####
+[chroma_rap_memory-1]              [38;5;069m((((((((((((([38;5;203m((((((((([38;5;220m#########
+[chroma_rap_memory-1]            [38;5;069m((((((((((((([38;5;203m((((((((((([38;5;220m###########
+[chroma_rap_memory-1]          [38;5;069m(((((((((((((([38;5;203m(((((((((((([38;5;220m############
+[chroma_rap_memory-1]         [38;5;069m((((((((((((([38;5;203m(((((((((((((([38;5;220m#############
+[chroma_rap_memory-1]         [38;5;069m((((((((((((([38;5;203m(((((((((((((([38;5;220m#############
+[chroma_rap_memory-1]          [38;5;069m(((((((((((([38;5;203m((((((((((((([38;5;220m##############
+[chroma_rap_memory-1]          [38;5;069m(((((((((((([38;5;203m(((((((((((([38;5;220m##############
+[chroma_rap_memory-1]            [38;5;069m(((((((((([38;5;203m((((((((((([38;5;220m#############
+[chroma_rap_memory-1]              [38;5;069m(((((((([38;5;203m(((((((([38;5;220m##############
+[chroma_rap_memory-1]                 [38;5;069m((((([38;5;203m((((    [38;5;220m#########[0m
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1] Saving data to: [1m/home/student/Thesis_pipeline_split_lean/memory/rap/chroma[0m
+[chroma_rap_memory-1] Connect to Chroma at: [4;34mhttp://localhost:8001[0m
+[chroma_rap_memory-1] Getting started guide: [4;34mhttps://docs.trychroma.com/docs/overview/getting-started
+[chroma_rap_memory-1] [0m
+[chroma_rap_memory-1] ☁️ To deploy your DB - try Chroma Cloud!
+[chroma_rap_memory-1] - Sign up: [4;34mhttps://trychroma.com/signup[0m
+[chroma_rap_memory-1] - Copy your data to Cloud: [33mchroma copy --to-cloud --all[0m
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1]   [2m2026-11-01T13:06:57.892003Z[0m [32m INFO[0m  [32mGlobal tracing subscriber set[0m
+[chroma_rap_memory-1]     [2;3mat[0m rust/tracing/src/init_tracer.rs:370
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1]   [2m2026-11-01T13:06:57.920356Z[0m [32m INFO[0m  [32mFrontend server listening on address, [1;32maddr[0m[32m: 127.0.0.1:8001[0m
+[chroma_rap_memory-1]     [2;3mat[0m rust/frontend/src/server.rs:416
+[chroma_rap_memory-1] 
+[rsg_preprocessor-3] [0m[INFO] [1793538417.953991109] [rsg_preprocessor]: Timing Excel recorder enabled. Output: /home/student/Thesis_pipeline_split_lean/debug/runtime_thor_experiment/runs/_current/preprocessor_timing.xlsx[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.954337084] [rsg_preprocessor]: Timing Excel autosave uses a background thread and will not block frame publishing.[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.954944125] [rsg_preprocessor]: rsg_preprocessor started.[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.955161071] [rsg_preprocessor]: RGB topic: /d400/color/image_raw[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.955363119] [rsg_preprocessor]: Depth topic: /d400/aligned_depth_to_color/image_raw[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.955584379] [rsg_preprocessor]: CameraInfo topic: /d400/color/camera_info[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.955799659] [rsg_preprocessor]: Odom topic: /odom[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.956042410] [rsg_preprocessor]: Camera IMU support disabled in configuration.[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.956296116] [rsg_preprocessor]: Output frame topic: /rsg/preprocessed/frame[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.956563414] [rsg_preprocessor]: Synchronization: RGB + depth only; CameraInfo cached separately; sync_queue_size=50, sensor_qos_depth=50[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.956877138] [rsg_preprocessor]: Camera-pose composition: base_odom -> base_link -> camera_color_optical_frame; translation=(0.2264836849091656, -0.05114194035652147, 0.916), rpy=(-1.5641001838011457, 0.0161279560717892, -1.560815583555602), publish_camera_tf=True[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.957206751] [rsg_preprocessor]: Validation checks: resolution=True, depth_processing=True, depth_ratio_check=False, compute_depth_ratio=False, depth_ratio_every_n=5, require_odom=True, require_imu=False[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.957555207] [rsg_preprocessor]: Timing enabled: True (measure=True, write_excel=True, publish_topic=False)[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.957927451] [rsg_preprocessor]: Latency guard: enabled=False, warn=100.0 ms, drop=250.0 ms, drop_exceeded=False[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.958320732] [rsg_preprocessor]: Publish rate limiter: max=35.000 Hz (min_interval=0.029 s)[0m
+[rsg_preprocessor-3] [0m[INFO] [1793538417.958727234] [rsg_preprocessor]: Timing/debug Excel file: /home/student/Thesis_pipeline_split_lean/debug/runtime_thor_experiment/runs/_current/preprocessor_timing.xlsx[0m
+[rviz2-9] [INFO] [1793538418.205675939] [rviz2]: Stereo is NOT SUPPORTED
+[rviz2-9] [INFO] [1793538418.205776153] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[rviz2-8] [INFO] [1793538418.218035477] [rviz2]: Stereo is NOT SUPPORTED
+[rviz2-8] [INFO] [1793538418.218138830] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[rviz2-9] [INFO] [1793538418.331011013] [rviz2]: Stereo is NOT SUPPORTED
+[rviz2-8] [INFO] [1793538418.346383432] [rviz2]: Stereo is NOT SUPPORTED
+[INFO] [rsg_phase1_semantic_coordinator-10]: process started with pid [213689]
+[INFO] [rsg_scene_graph_fuser-11]: process started with pid [213754]
+[rsg_scene_graph_fuser-11] [INFO] [1793538420.522766876] [rsg_scene_graph_fuser]: Hydra semantic fuser ready: DSG='/hydra/backend/dsg', final labels='/rsg/objects/semantic_label_result', label QoS depth=4096, markers='/rsg/scene_graph/markers'
+[qwen_vlm_server-2] [34m0.03.545.269[0m [35mW load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+[qwen_vlm_server-2] [0m[34m0.03.545.274[0m [35mW load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+[qwen_vlm_server-2] [0m[34m0.03.545.275[0m [35mW load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+[qwen_vlm_server-2] 
+[qwen_vlm_server-2] [0m[34m0.03.900.763[0m [32mI [0msrv    load_model: loaded multimodal model, '/home/student/rsg_models/qwen3_5_4b/mmproj-BF16.gguf'
+[qwen_vlm_server-2] [34m0.03.931.105[0m [32mI [0msrv    load_model: initializing, n_slots = 1, n_ctx_slot = 4096, kv_unified = 'false'
+[qwen_vlm_server-2] [34m0.03.948.584[0m [32mI [0msrv  llama_server: model loaded
+[qwen_vlm_server-2] [34m0.03.948.593[0m [32mI [0msrv  llama_server: listening on http://0.0.0.0:8000
+[rsg_phase1_semantic_coordinator-10] [11/01/2026-14:07:01] [TRT] [W] Using an engine plan file across different models of devices is not supported and is likely to affect performance or even cause errors or deadlock.
+[rsg_phase1_semantic_coordinator-10] [11/01/2026-14:07:01] [TRT] [W] WARNING The logger passed into createInferRuntime differs from one already registered for an existing builder, runtime, or refitter. So the current new logger is ignored, and TensorRT will use the existing one which is returned by nvinfer1::getLogger() instead.
+[rsg_phase1_semantic_coordinator-10] [11/01/2026-14:07:01] [TRT] [W] Using an engine plan file across different models of devices is not supported and is likely to affect performance or even cause errors or deadlock.
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538422.054071389] [rsg_phase1_semantic_coordinator]: Using NanoSAM TensorRT backend: image_encoder=/home/student/rsg_models/nanosam/resnet18_image_encoder.engine, mask_decoder=/home/student/rsg_models/nanosam/mobile_sam_mask_decoder.engine, grid=4x4.[0m
+[rsg_phase1_semantic_coordinator-10] /home/student/.venvs/rsg_thor/lib/python3.12/site-packages/transformers/utils/hub.py:105: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
+[rsg_phase1_semantic_coordinator-10]   warnings.warn(
+[hydra_ros_node-6] [INFO] [1793538423.857628972] [hydra]: [hydra_pipeline.cpp:57] [Hydra] Initialized pipeline with:
+[hydra_ros_node-6] ================================ PipelineConfig ================================
+[hydra_ros_node-6] enable_lcd:                   false (default)
+[hydra_ros_node-6] timing_disabled:              false (default)
+[hydra_ros_node-6] disable_timer_output:         true (default)
+[hydra_ros_node-6] enable_pgmo_logging:          true (default)
+[hydra_ros_node-6] default_verbosity:            1 (default)
+[hydra_ros_node-6] default_num_threads:          -1 (default)
+[hydra_ros_node-6] store_visualization_details:  false (default)
+[hydra_ros_node-6] label_names:                  [{label: 0, name: unknown},
+[hydra_ros_node-6]                                {label: 1, name: unknown_slot_00001},
+[hydra_ros_node-6]                                {label: 2, name: unknown_slot_00002},
+[hydra_ros_node-6]                                {label: 3, name: unknown_slot_00003},
+[hydra_ros_node-6]                                {label: 4, name: unknown_slot_00004},
+[hydra_ros_node-6]                                {label: 5, name: unknown_slot_00005},
+[hydra_ros_node-6]                                {label: 6, name: unknown_slot_00006},
+[hydra_ros_node-6]                                {label: 7, name: unknown_slot_00007},
+[hydra_ros_node-6]                                {label: 8, name: unknown_slot_00008},
+[hydra_ros_node-6]                                {label: 9, name: unknown_slot_00009},
+[hydra_ros_node-6]                                {label: 10, name: unknown_slot_00010},
+[hydra_ros_node-6]                                {label: 11, name: unknown_slot_00011},
+[hydra_ros_node-6]                                {label: 12, name: unknown_slot_00012},
+[hydra_ros_node-6]                                {label: 13, name: unknown_slot_00013},
+[hydra_ros_node-6]                                {label: 14, name: unknown_slot_00014},
+[hydra_ros_node-6]                                {label: 15, name: unknown_slot_00015},
+[hydra_ros_node-6]                                {label: 16, name: unknown_slot_00016},
+[hydra_ros_node-6]                                {label: 17, name: unknown_slot_00017},
+[hydra_ros_node-6]                                {label: 18, name: unknown_slot_00018},
+[hydra_ros_node-6]                                {label: 19, name: unknown_slot_00019},
+[hydra_ros_node-6]                                {label: 20, name: unknown_slot_00020},
+[hydra_ros_node-6]                                {label: 21, name: unknown_slot_00021},
+[hydra_ros_node-6]                                {label: 22, name: unknown_slot_00022},
+[hydra_ros_node-6]                                {label: 23, name: unknown_slot_00023},
+[hydra_ros_node-6]                                {label: 24, name: unknown_slot_00024},
+[hydra_ros_node-6]                                {label: 25, name: unknown_slot_00025},
+[hydra_ros_node-6]                                {label: 26, name: unknown_slot_00026},
+[hydra_ros_node-6]                                {label: 27, name: unknown_slot_00027},
+[hydra_ros_node-6]                                {label: 28, name: unknown_slot_00028},
+[hydra_ros_node-6]                                {label: 29, name: unknown_slot_00029},
+[hydra_ros_node-6]                                {label: 30, name: unknown_slot_00030},
+[hydra_ros_node-6]                                {label: 31, name: unknown_slot_00031},
+[hydra_ros_node-6]                                {label: 32, name: unknown_slot_00032},
+[hydra_ros_node-6]                                {label: 33, name: unknown_slot_00033},
+[hydra_ros_node-6]                                {label: 34, name: unknown_slot_00034},
+[hydra_ros_node-6]                                {label: 35, name: unknown_slot_00035},
+[hydra_ros_node-6]                                {label: 36, name: unknown_slot_00036},
+[hydra_ros_node-6]                                {label: 37, name: unknown_slot_00037},
+[hydra_ros_node-6]                                {label: 38, name: unknown_slot_00038},
+[hydra_ros_node-6]                                {label: 39, name: unknown_slot_00039},
+[hydra_ros_node-6]                                {label: 40, name: unknown_slot_00040},
+[hydra_ros_node-6]                                {label: 41, name: unknown_slot_00041},
+[hydra_ros_node-6]                                {label: 42, name: unknown_slot_00042},
+[hydra_ros_node-6]                                {label: 43, name: unknown_slot_00043},
+[hydra_ros_node-6]                                {label: 44, name: unknown_slot_00044},
+[hydra_ros_node-6]                                {label: 45, name: unknown_slot_00045},
+[hydra_ros_node-6]                                {label: 46, name: unknown_slot_00046},
+[hydra_ros_node-6]                                {label: 47, name: unknown_slot_00047},
+[hydra_ros_node-6]                                {label: 48, name: unknown_slot_00048},
+[hydra_ros_node-6]                                {label: 49, name: unknown_slot_00049},
+[hydra_ros_node-6]                                {label: 50, name: unknown_slot_00050},
+[hydra_ros_node-6]                                {label: 51, name: unknown_slot_00051},
+[hydra_ros_node-6]                                {label: 52, name: unknown_slot_00052},
+[hydra_ros_node-6]                                {label: 53, name: unknown_slot_00053},
+[hydra_ros_node-6]                                {label: 54, name: unknown_slot_00054},
+[hydra_ros_node-6]                                {label: 55, name: unknown_slot_00055},
+[hydra_ros_node-6]                                {label: 56, name: unknown_slot_00056},
+[hydra_ros_node-6]                                {label: 57, name: unknown_slot_00057},
+[hydra_ros_node-6]                                {label: 58, name: unknown_slot_00058},
+[hydra_ros_node-6]                                {label: 59, name: unknown_slot_00059},
+[hydra_ros_node-6]                                {label: 60, name: unknown_slot_00060},
+[hydra_ros_node-6]                                {label: 61, name: unknown_slot_00061},
+[hydra_ros_node-6]                                {label: 62, name: unknown_slot_00062},
+[hydra_ros_node-6]                                {label: 63, name: unknown_slot_00063},
+[hydra_ros_node-6]                                {label: 64, name: unknown_slot_00064},
+[hydra_ros_node-6]                                {label: 65, name: unknown_slot_00065},
+[hydra_ros_node-6]                                {label: 66, name: unknown_slot_00066},
+[hydra_ros_node-6]                                {label: 67, name: unknown_slot_00067},
+[hydra_ros_node-6]                                {label: 68, name: unknown_slot_00068},
+[hydra_ros_node-6]                                {label: 69, name: unknown_slot_00069},
+[hydra_ros_node-6]                                {label: 70, name: unknown_slot_00070},
+[hydra_ros_node-6]                                {label: 71, name: unknown_slot_00071},
+[hydra_ros_node-6]                                {label: 72, name: unknown_slot_00072},
+[hydra_ros_node-6]                                {label: 73, name: unknown_slot_00073},
+[hydra_ros_node-6]                                {label: 74, name: unknown_slot_00074},
+[hydra_ros_node-6]                                {label: 75, name: unknown_slot_00075},
+[hydra_ros_node-6]                                {label: 76, name: unknown_slot_00076},
+[hydra_ros_node-6]                                {label: 77, name: unknown_slot_00077},
+[hydra_ros_node-6]                                {label: 78, name: unknown_slot_00078},
+[hydra_ros_node-6]                                {label: 79, name: unknown_slot_00079},
+[hydra_ros_node-6]                                {label: 80, name: unknown_slot_00080},
+[hydra_ros_node-6]                                {label: 81, name: unknown_slot_00081},
+[hydra_ros_node-6]                                {label: 82, name: unknown_slot_00082},
+[hydra_ros_node-6]                                {label: 83, name: unknown_slot_00083},
+[hydra_ros_node-6]                                {label: 84, name: unknown_slot_00084},
+[hydra_ros_node-6]                                {label: 85, name: unknown_slot_00085},
+[hydra_ros_node-6]                                {label: 86, name: unknown_slot_00086},
+[hydra_ros_node-6]                                {label: 87, name: unknown_slot_00087},
+[hydra_ros_node-6]                                {label: 88, name: unknown_slot_00088},
+[hydra_ros_node-6]                                {label: 89, name: unknown_slot_00089},
+[hydra_ros_node-6]                                {label: 90, name: unknown_slot_00090},
+[hydra_ros_node-6]                                {label: 91, name: unknown_slot_00091},
+[hydra_ros_node-6]                                {label: 92, name: unknown_slot_00092},
+[hydra_ros_node-6]                                {label: 93, name: unknown_slot_00093},
+[hydra_ros_node-6]                                {label: 94, name: unknown_slot_00094},
+[hydra_ros_node-6]                                {label: 95, name: unknown_slot_00095},
+[hydra_ros_node-6]                                {label: 96, name: unknown_slot_00096},
+[hydra_ros_node-6]                                {label: 97, name: unknown_slot_00097},
+[hydra_ros_node-6]                                {label: 98, name: unknown_slot_00098},
+[hydra_ros_node-6]                                {label: 99, name: unknown_slot_00099},
+[hydra_ros_node-6]                                {label: 100, name: unknown_slot_00100},
+[hydra_ros_node-6]                                {label: 101, name: unknown_slot_00101},
+[hydra_ros_node-6]                                {label: 102, name: unknown_slot_00102},
+[hydra_ros_node-6]                                {label: 103, name: unknown_slot_00103},
+[hydra_ros_node-6]                                {label: 104, name: unknown_slot_00104},
+[hydra_ros_node-6]                                {label: 105, name: unknown_slot_00105},
+[hydra_ros_node-6]                                {label: 106, name: unknown_slot_00106},
+[hydra_ros_node-6]                                {label: 107, name: unknown_slot_00107},
+[hydra_ros_node-6]                                {label: 108, name: unknown_slot_00108},
+[hydra_ros_node-6]                                {label: 109, name: unknown_slot_00109},
+[hydra_ros_node-6]                                {label: 110, name: unknown_slot_00110},
+[hydra_ros_node-6]                                {label: 111, name: unknown_slot_00111},
+[hydra_ros_node-6]                                {label: 112, name: unknown_slot_00112},
+[hydra_ros_node-6]                                {label: 113, name: unknown_slot_00113},
+[hydra_ros_node-6]                                {label: 114, name: unknown_slot_00114},
+[hydra_ros_node-6]                                {label: 115, name: unknown_slot_00115},
+[hydra_ros_node-6]                                {label: 116, name: unknown_slot_00116},
+[hydra_ros_node-6]                                {label: 117, name: unknown_slot_00117},
+[hydra_ros_node-6]                                {label: 118, name: unknown_slot_00118},
+[hydra_ros_node-6]                                {label: 119, name: unknown_slot_00119},
+[hydra_ros_node-6]                                {label: 120, name: unknown_slot_00120},
+[hydra_ros_node-6]                                {label: 121, name: unknown_slot_00121},
+[hydra_ros_node-6]                                {label: 122, name: unknown_slot_00122},
+[hydra_ros_node-6]                                {label: 123, name: unknown_slot_00123},
+[hydra_ros_node-6]                                {label: 124, name: unknown_slot_00124},
+[hydra_ros_node-6]                                {label: 125, name: unknown_slot_00125},
+[hydra_ros_node-6]                                {label: 126, name: unknown_slot_00126},
+[hydra_ros_node-6]                                {label: 127, name: unknown_slot_00127},
+[hydra_ros_node-6]                                {label: 128, name: unknown_slot_00128},
+[hydra_ros_node-6]                                {label: 129, name: unknown_slot_00129},
+[hydra_ros_node-6]                                {label: 130, name: unknown_slot_00130},
+[hydra_ros_node-6]                                {label: 131, name: unknown_slot_00131},
+[hydra_ros_node-6]                                {label: 132, name: unknown_slot_00132},
+[hydra_ros_node-6]                                {label: 133, name: unknown_slot_00133},
+[hydra_ros_node-6]                                {label: 134, name: unknown_slot_00134},
+[hydra_ros_node-6]                                {label: 135, name: unknown_slot_00135},
+[hydra_ros_node-6]                                {label: 136, name: unknown_slot_00136},
+[hydra_ros_node-6]                                {label: 137, name: unknown_slot_00137},
+[hydra_ros_node-6]                                {label: 138, name: unknown_slot_00138},
+[hydra_ros_node-6]                                {label: 139, name: unknown_slot_00139},
+[hydra_ros_node-6]                                {label: 140, name: unknown_slot_00140},
+[hydra_ros_node-6]                                {label: 141, name: unknown_slot_00141},
+[hydra_ros_node-6]                                {label: 142, name: unknown_slot_00142},
+[hydra_ros_node-6]                                {label: 143, name: unknown_slot_00143},
+[hydra_ros_node-6]                                {label: 144, name: unknown_slot_00144},
+[hydra_ros_node-6]                                {label: 145, name: unknown_slot_00145},
+[hydra_ros_node-6]                                {label: 146, name: unknown_slot_00146},
+[hydra_ros_node-6]                                {label: 147, name: unknown_slot_00147},
+[hydra_ros_node-6]                                {label: 148, name: unknown_slot_00148},
+[hydra_ros_node-6]                                {label: 149, name: unknown_slot_00149},
+[hydra_ros_node-6]                                {label: 150, name: unknown_slot_00150},
+[hydra_ros_node-6]                                {label: 151, name: unknown_slot_00151},
+[hydra_ros_node-6]                                {label: 152, name: unknown_slot_00152},
+[hydra_ros_node-6]                                {label: 153, name: unknown_slot_00153},
+[hydra_ros_node-6]                                {label: 154, name: unknown_slot_00154},
+[hydra_ros_node-6]                                {label: 155, name: unknown_slot_00155},
+[hydra_ros_node-6]                                {label: 156, name: unknown_slot_00156},
+[hydra_ros_node-6]                                {label: 157, name: unknown_slot_00157},
+[hydra_ros_node-6]                                {label: 158, name: unknown_slot_00158},
+[hydra_ros_node-6]                                {label: 159, name: unknown_slot_00159},
+[hydra_ros_node-6]                                {label: 160, name: unknown_slot_00160},
+[hydra_ros_node-6]                                {label: 161, name: unknown_slot_00161},
+[hydra_ros_node-6]                                {label: 162, name: unknown_slot_00162},
+[hydra_ros_node-6]                                {label: 163, name: unknown_slot_00163},
+[hydra_ros_node-6]                                {label: 164, name: unknown_slot_00164},
+[hydra_ros_node-6]                                {label: 165, name: unknown_slot_00165},
+[hydra_ros_node-6]                                {label: 166, name: unknown_slot_00166},
+[hydra_ros_node-6]                                {label: 167, name: unknown_slot_00167},
+[hydra_ros_node-6]                                {label: 168, name: unknown_slot_00168},
+[hydra_ros_node-6]                                {label: 169, name: unknown_slot_00169},
+[hydra_ros_node-6]                                {label: 170, name: unknown_slot_00170},
+[hydra_ros_node-6]                                {label: 171, name: unknown_slot_00171},
+[hydra_ros_node-6]                                {label: 172, name: unknown_slot_00172},
+[hydra_ros_node-6]                                {label: 173, name: unknown_slot_00173},
+[hydra_ros_node-6]                                {label: 174, name: unknown_slot_00174},
+[hydra_ros_node-6]                                {label: 175, name: unknown_slot_00175},
+[hydra_ros_node-6]                                {label: 176, name: unknown_slot_00176},
+[hydra_ros_node-6]                                {label: 177, name: unknown_slot_00177},
+[hydra_ros_node-6]                                {label: 178, name: unknown_slot_00178},
+[hydra_ros_node-6]                                {label: 179, name: unknown_slot_00179},
+[hydra_ros_node-6]                                {label: 180, name: unknown_slot_00180},
+[hydra_ros_node-6]                                {label: 181, name: unknown_slot_00181},
+[hydra_ros_node-6]                                {label: 182, name: unknown_slot_00182},
+[hydra_ros_node-6]                                {label: 183, name: unknown_slot_00183},
+[hydra_ros_node-6]                                {label: 184, name: unknown_slot_00184},
+[hydra_ros_node-6]                                {label: 185, name: unknown_slot_00185},
+[hydra_ros_node-6]                                {label: 186, name: unknown_slot_00186},
+[hydra_ros_node-6]                                {label: 187, name: unknown_slot_00187},
+[hydra_ros_node-6]                                {label: 188, name: unknown_slot_00188},
+[hydra_ros_node-6]                                {label: 189, name: unknown_slot_00189},
+[hydra_ros_node-6]                                {label: 190, name: unknown_slot_00190},
+[hydra_ros_node-6]                                {label: 191, name: unknown_slot_00191},
+[hydra_ros_node-6]                                {label: 192, name: unknown_slot_00192},
+[hydra_ros_node-6]                                {label: 193, name: unknown_slot_00193},
+[hydra_ros_node-6]                                {label: 194, name: unknown_slot_00194},
+[hydra_ros_node-6]                                {label: 195, name: unknown_slot_00195},
+[hydra_ros_node-6]                                {label: 196, name: unknown_slot_00196},
+[hydra_ros_node-6]                                {label: 197, name: unknown_slot_00197},
+[hydra_ros_node-6]                                {label: 198, name: unknown_slot_00198},
+[hydra_ros_node-6]                                {label: 199, name: unknown_slot_00199},
+[hydra_ros_node-6]                                {label: 200, name: unknown_slot_00200},
+[hydra_ros_node-6]                                {label: 201, name: unknown_slot_00201},
+[hydra_ros_node-6]                                {label: 202, name: unknown_slot_00202},
+[hydra_ros_node-6]                                {label: 203, name: unknown_slot_00203},
+[hydra_ros_node-6]                                {label: 204, name: unknown_slot_00204},
+[hydra_ros_node-6]                                {label: 205, name: unknown_slot_00205},
+[hydra_ros_node-6]                                {label: 206, name: unknown_slot_00206},
+[hydra_ros_node-6]                                {label: 207, name: unknown_slot_00207},
+[hydra_ros_node-6]                                {label: 208, name: unknown_slot_00208},
+[hydra_ros_node-6]                                {label: 209, name: unknown_slot_00209},
+[hydra_ros_node-6]                                {label: 210, name: unknown_slot_00210},
+[hydra_ros_node-6]                                {label: 211, name: unknown_slot_00211},
+[hydra_ros_node-6]                                {label: 212, name: unknown_slot_00212},
+[hydra_ros_node-6]                                {label: 213, name: unknown_slot_00213},
+[hydra_ros_node-6]                                {label: 214, name: unknown_slot_00214},
+[hydra_ros_node-6]                                {label: 215, name: unknown_slot_00215},
+[hydra_ros_node-6]                                {label: 216, name: unknown_slot_00216},
+[hydra_ros_node-6]                                {label: 217, name: unknown_slot_00217},
+[hydra_ros_node-6]                                {label: 218, name: unknown_slot_00218},
+[hydra_ros_node-6]                                {label: 219, name: unknown_slot_00219},
+[hydra_ros_node-6]                                {label: 220, name: unknown_slot_00220},
+[hydra_ros_node-6]                                {label: 221, name: unknown_slot_00221},
+[hydra_ros_node-6]                                {label: 222, name: unknown_slot_00222},
+[hydra_ros_node-6]                                {label: 223, name: unknown_slot_00223},
+[hydra_ros_node-6]                                {label: 224, name: unknown_slot_00224},
+[hydra_ros_node-6]                                {label: 225, name: unknown_slot_00225},
+[hydra_ros_node-6]                                {label: 226, name: unknown_slot_00226},
+[hydra_ros_node-6]                                {label: 227, name: unknown_slot_00227},
+[hydra_ros_node-6]                                {label: 228, name: unknown_slot_00228},
+[hydra_ros_node-6]                                {label: 229, name: unknown_slot_00229},
+[hydra_ros_node-6]                                {label: 230, name: unknown_slot_00230},
+[hydra_ros_node-6]                                {label: 231, name: unknown_slot_00231},
+[hydra_ros_node-6]                                {label: 232, name: unknown_slot_00232},
+[hydra_ros_node-6]                                {label: 233, name: unknown_slot_00233},
+[hydra_ros_node-6]                                {label: 234, name: unknown_slot_00234},
+[hydra_ros_node-6]                                {label: 235, name: unknown_slot_00235},
+[hydra_ros_node-6]                                {label: 236, name: unknown_slot_00236},
+[hydra_ros_node-6]                                {label: 237, name: unknown_slot_00237},
+[hydra_ros_node-6]                                {label: 238, name: unknown_slot_00238},
+[hydra_ros_node-6]                                {label: 239, name: unknown_slot_00239},
+[hydra_ros_node-6]                                {label: 240, name: unknown_slot_00240},
+[hydra_ros_node-6]                                {label: 241, name: unknown_slot_00241},
+[hydra_ros_node-6]                                {label: 242, name: unknown_slot_00242},
+[hydra_ros_node-6]                                {label: 243, name: unknown_slot_00243},
+[hydra_ros_node-6]                                {label: 244, name: unknown_slot_00244},
+[hydra_ros_node-6]                                {label: 245, name: unknown_slot_00245},
+[hydra_ros_node-6]                                {label: 246, name: unknown_slot_00246},
+[hydra_ros_node-6]                                {label: 247, name: unknown_slot_00247},
+[hydra_ros_node-6]                                {label: 248, name: unknown_slot_00248},
+[hydra_ros_node-6]                                {label: 249, name: unknown_slot_00249},
+[hydra_ros_node-6]                                {label: 250, name: unknown_slot_00250},
+[hydra_ros_node-6]                                {label: 251, name: unknown_slot_00251},
+[hydra_ros_node-6]                                {label: 252, name: unknown_slot_00252},
+[hydra_ros_node-6]                                {label: 253, name: unknown_slot_00253},
+[hydra_ros_node-6]                                {label: 254, name: unknown_slot_00254},
+[hydra_ros_node-6]                                {label: 255, name: unknown_slot_00255},
+[hydra_ros_node-6]                                {label: 256, name: unknown_slot_00256},
+[hydra_ros_node-6]                                {label: 257, name: unknown_slot_00257},
+[hydra_ros_node-6]                                {label: 258, name: unknown_slot_00258},
+[hydra_ros_node-6]                                {label: 259, name: unknown_slot_00259},
+[hydra_ros_node-6]                                {label: 260, name: unknown_slot_00260},
+[hydra_ros_node-6]                                {label: 261, name: unknown_slot_00261},
+[hydra_ros_node-6]                                {label: 262, name: unknown_slot_00262},
+[hydra_ros_node-6]                                {label: 263, name: unknown_slot_00263},
+[hydra_ros_node-6]                                {label: 264, name: unknown_slot_00264},
+[hydra_ros_node-6]                                {label: 265, name: unknown_slot_00265},
+[hydra_ros_node-6]                                {label: 266, name: unknown_slot_00266},
+[hydra_ros_node-6]                                {label: 267, name: unknown_slot_00267},
+[hydra_ros_node-6]                                {label: 268, name: unknown_slot_00268},
+[hydra_ros_node-6]                                {label: 269, name: unknown_slot_00269},
+[hydra_ros_node-6]                                {label: 270, name: unknown_slot_00270},
+[hydra_ros_node-6]                                {label: 271, name: unknown_slot_00271},
+[hydra_ros_node-6]                                {label: 272, name: unknown_slot_00272},
+[hydra_ros_node-6]                                {label: 273, name: unknown_slot_00273},
+[hydra_ros_node-6]                                {label: 274, name: unknown_slot_00274},
+[hydra_ros_node-6]                                {label: 275, name: unknown_slot_00275},
+[hydra_ros_node-6]                                {label: 276, name: unknown_slot_00276},
+[hydra_ros_node-6]                                {label: 277, name: unknown_slot_00277},
+[hydra_ros_node-6]                                {label: 278, name: unknown_slot_00278},
+[hydra_ros_node-6]                                {label: 279, name: unknown_slot_00279},
+[hydra_ros_node-6]                                {label: 280, name: unknown_slot_00280},
+[hydra_ros_node-6]                                {label: 281, name: unknown_slot_00281},
+[hydra_ros_node-6]                                {label: 282, name: unknown_slot_00282},
+[hydra_ros_node-6]                                {label: 283, name: unknown_slot_00283},
+[hydra_ros_node-6]                                {label: 284, name: unknown_slot_00284},
+[hydra_ros_node-6]                                {label: 285, name: unknown_slot_00285},
+[hydra_ros_node-6]                                {label: 286, name: unknown_slot_00286},
+[hydra_ros_node-6]                                {label: 287, name: unknown_slot_00287},
+[hydra_ros_node-6]                                {label: 288, name: unknown_slot_00288},
+[hydra_ros_node-6]                                {label: 289, name: unknown_slot_00289},
+[hydra_ros_node-6]                                {label: 290, name: unknown_slot_00290},
+[hydra_ros_node-6]                                {label: 291, name: unknown_slot_00291},
+[hydra_ros_node-6]                                {label: 292, name: unknown_slot_00292},
+[hydra_ros_node-6]                                {label: 293, name: unknown_slot_00293},
+[hydra_ros_node-6]                                {label: 294, name: unknown_slot_00294},
+[hydra_ros_node-6]                                {label: 295, name: unknown_slot_00295},
+[hydra_ros_node-6]                                {label: 296, name: unknown_slot_00296},
+[hydra_ros_node-6]                                {label: 297, name: unknown_slot_00297},
+[hydra_ros_node-6]                                {label: 298, name: unknown_slot_00298},
+[hydra_ros_node-6]                                {label: 299, name: unknown_slot_00299},
+[hydra_ros_node-6]                                {label: 300, name: unknown_slot_00300},
+[hydra_ros_node-6]                                {label: 301, name: unknown_slot_00301},
+[hydra_ros_node-6]                                {label: 302, name: unknown_slot_00302},
+[hydra_ros_node-6]                                {label: 303, name: unknown_slot_00303},
+[hydra_ros_node-6]                                {label: 304, name: unknown_slot_00304},
+[hydra_ros_node-6]                                {label: 305, name: unknown_slot_00305},
+[hydra_ros_node-6]                                {label: 306, name: unknown_slot_00306},
+[hydra_ros_node-6]                                {label: 307, name: unknown_slot_00307},
+[hydra_ros_node-6]                                {label: 308, name: unknown_slot_00308},
+[hydra_ros_node-6]                                {label: 309, name: unknown_slot_00309},
+[hydra_ros_node-6]                                {label: 310, name: unknown_slot_00310},
+[hydra_ros_node-6]                                {label: 311, name: unknown_slot_00311},
+[hydra_ros_node-6]                                {label: 312, name: unknown_slot_00312},
+[hydra_ros_node-6]                                {label: 313, name: unknown_slot_00313},
+[hydra_ros_node-6]                                {label: 314, name: unknown_slot_00314},
+[hydra_ros_node-6]                                {label: 315, name: unknown_slot_00315},
+[hydra_ros_node-6]                                {label: 316, name: unknown_slot_00316},
+[hydra_ros_node-6]                                {label: 317, name: unknown_slot_00317},
+[hydra_ros_node-6]                                {label: 318, name: unknown_slot_00318},
+[hydra_ros_node-6]                                {label: 319, name: unknown_slot_00319},
+[hydra_ros_node-6]                                {label: 320, name: unknown_slot_00320},
+[hydra_ros_node-6]                                {label: 321, name: unknown_slot_00321},
+[hydra_ros_node-6]                                {label: 322, name: unknown_slot_00322},
+[hydra_ros_node-6]                                {label: 323, name: unknown_slot_00323},
+[hydra_ros_node-6]                                {label: 324, name: unknown_slot_00324},
+[hydra_ros_node-6]                                {label: 325, name: unknown_slot_00325},
+[hydra_ros_node-6]                                {label: 326, name: unknown_slot_00326},
+[hydra_ros_node-6]                                {label: 327, name: unknown_slot_00327},
+[hydra_ros_node-6]                                {label: 328, name: unknown_slot_00328},
+[hydra_ros_node-6]                                {label: 329, name: unknown_slot_00329},
+[hydra_ros_node-6]                                {label: 330, name: unknown_slot_00330},
+[hydra_ros_node-6]                                {label: 331, name: unknown_slot_00331},
+[hydra_ros_node-6]                                {label: 332, name: unknown_slot_00332},
+[hydra_ros_node-6]                                {label: 333, name: unknown_slot_00333},
+[hydra_ros_node-6]                                {label: 334, name: unknown_slot_00334},
+[hydra_ros_node-6]                                {label: 335, name: unknown_slot_00335},
+[hydra_ros_node-6]                                {label: 336, name: unknown_slot_00336},
+[hydra_ros_node-6]                                {label: 337, name: unknown_slot_00337},
+[hydra_ros_node-6]                                {label: 338, name: unknown_slot_00338},
+[hydra_ros_node-6]                                {label: 339, name: unknown_slot_00339},
+[hydra_ros_node-6]                                {label: 340, name: unknown_slot_00340},
+[hydra_ros_node-6]                                {label: 341, name: unknown_slot_00341},
+[hydra_ros_node-6]                                {label: 342, name: unknown_slot_00342},
+[hydra_ros_node-6]                                {label: 343, name: unknown_slot_00343},
+[hydra_ros_node-6]                                {label: 344, name: unknown_slot_00344},
+[hydra_ros_node-6]                                {label: 345, name: unknown_slot_00345},
+[hydra_ros_node-6]                                {label: 346, name: unknown_slot_00346},
+[hydra_ros_node-6]                                {label: 347, name: unknown_slot_00347},
+[hydra_ros_node-6]                                {label: 348, name: unknown_slot_00348},
+[hydra_ros_node-6]                                {label: 349, name: unknown_slot_00349},
+[hydra_ros_node-6]                                {label: 350, name: unknown_slot_00350},
+[hydra_ros_node-6]                                {label: 351, name: unknown_slot_00351},
+[hydra_ros_node-6]                                {label: 352, name: unknown_slot_00352},
+[hydra_ros_node-6]                                {label: 353, name: unknown_slot_00353},
+[hydra_ros_node-6]                                {label: 354, name: unknown_slot_00354},
+[hydra_ros_node-6]                                {label: 355, name: unknown_slot_00355},
+[hydra_ros_node-6]                                {label: 356, name: unknown_slot_00356},
+[hydra_ros_node-6]                                {label: 357, name: unknown_slot_00357},
+[hydra_ros_node-6]                                {label: 358, name: unknown_slot_00358},
+[hydra_ros_node-6]                                {label: 359, name: unknown_slot_00359},
+[hydra_ros_node-6]                                {label: 360, name: unknown_slot_00360},
+[hydra_ros_node-6]                                {label: 361, name: unknown_slot_00361},
+[hydra_ros_node-6]                                {label: 362, name: unknown_slot_00362},
+[hydra_ros_node-6]                                {label: 363, name: unknown_slot_00363},
+[hydra_ros_node-6]                                {label: 364, name: unknown_slot_00364},
+[hydra_ros_node-6]                                {label: 365, name: unknown_slot_00365},
+[hydra_ros_node-6]                                {label: 366, name: unknown_slot_00366},
+[hydra_ros_node-6]                                {label: 367, name: unknown_slot_00367},
+[hydra_ros_node-6]                                {label: 368, name: unknown_slot_00368},
+[hydra_ros_node-6]                                {label: 369, name: unknown_slot_00369},
+[hydra_ros_node-6]                                {label: 370, name: unknown_slot_00370},
+[hydra_ros_node-6]                                {label: 371, name: unknown_slot_00371},
+[hydra_ros_node-6]                                {label: 372, name: unknown_slot_00372},
+[hydra_ros_node-6]                                {label: 373, name: unknown_slot_00373},
+[hydra_ros_node-6]                                {label: 374, name: unknown_slot_00374},
+[hydra_ros_node-6]                                {label: 375, name: unknown_slot_00375},
+[hydra_ros_node-6]                                {label: 376, name: unknown_slot_00376},
+[hydra_ros_node-6]                                {label: 377, name: unknown_slot_00377},
+[hydra_ros_node-6]                                {label: 378, name: unknown_slot_00378},
+[hydra_ros_node-6]                                {label: 379, name: unknown_slot_00379},
+[hydra_ros_node-6]                                {label: 380, name: unknown_slot_00380},
+[hydra_ros_node-6]                                {label: 381, name: unknown_slot_00381},
+[hydra_ros_node-6]                                {label: 382, name: unknown_slot_00382},
+[hydra_ros_node-6]                                {label: 383, name: unknown_slot_00383},
+[hydra_ros_node-6]                                {label: 384, name: unknown_slot_00384},
+[hydra_ros_node-6]                                {label: 385, name: unknown_slot_00385},
+[hydra_ros_node-6]                                {label: 386, name: unknown_slot_00386},
+[hydra_ros_node-6]                                {label: 387, name: unknown_slot_00387},
+[hydra_ros_node-6]                                {label: 388, name: unknown_slot_00388},
+[hydra_ros_node-6]                                {label: 389, name: unknown_slot_00389},
+[hydra_ros_node-6]                                {label: 390, name: unknown_slot_00390},
+[hydra_ros_node-6]                                {label: 391, name: unknown_slot_00391},
+[hydra_ros_node-6]                                {label: 392, name: unknown_slot_00392},
+[hydra_ros_node-6]                                {label: 393, name: unknown_slot_00393},
+[hydra_ros_node-6]                                {label: 394, name: unknown_slot_00394},
+[hydra_ros_node-6]                                {label: 395, name: unknown_slot_00395},
+[hydra_ros_node-6]                                {label: 396, name: unknown_slot_00396},
+[hydra_ros_node-6]                                {label: 397, name: unknown_slot_00397},
+[hydra_ros_node-6]                                {label: 398, name: unknown_slot_00398},
+[hydra_ros_node-6]                                {label: 399, name: unknown_slot_00399},
+[hydra_ros_node-6]                                {label: 400, name: unknown_slot_00400},
+[hydra_ros_node-6]                                {label: 401, name: unknown_slot_00401},
+[hydra_ros_node-6]                                {label: 402, name: unknown_slot_00402},
+[hydra_ros_node-6]                                {label: 403, name: unknown_slot_00403},
+[hydra_ros_node-6]                                {label: 404, name: unknown_slot_00404},
+[hydra_ros_node-6]                                {label: 405, name: unknown_slot_00405},
+[hydra_ros_node-6]                                {label: 406, name: unknown_slot_00406},
+[hydra_ros_node-6]                                {label: 407, name: unknown_slot_00407},
+[hydra_ros_node-6]                                {label: 408, name: unknown_slot_00408},
+[hydra_ros_node-6]                                {label: 409, name: unknown_slot_00409},
+[hydra_ros_node-6]                                {label: 410, name: unknown_slot_00410},
+[hydra_ros_node-6]                                {label: 411, name: unknown_slot_00411},
+[hydra_ros_node-6]                                {label: 412, name: unknown_slot_00412},
+[hydra_ros_node-6]                                {label: 413, name: unknown_slot_00413},
+[hydra_ros_node-6]                                {label: 414, name: unknown_slot_00414},
+[hydra_ros_node-6]                                {label: 415, name: unknown_slot_00415},
+[hydra_ros_node-6]                                {label: 416, name: unknown_slot_00416},
+[hydra_ros_node-6]                            
+[rsg_phase1_semantic_coordinator-10] Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+[chroma_rap_memory-1]   [2m2026-11-01T13:07:06.959625Z[0m [32m INFO[0m  [1;32mtenant_name[0m[32m: default_tenant[0m
+[chroma_rap_memory-1]     [2;3mat[0m rust/frontend/src/server.rs:757
+[chroma_rap_memory-1]     [2;3min[0m [1mHTTP request[0m [2;3mwith[0m [1mhttp.method[0m: GET, [1mhttp.uri[0m: /api/v2/tenants/default_tenant, [1mhttp.route[0m: "/api/v2/tenants/{tenant_name}", [1mhttp.version[0m: HTTP/1.1, [1mhttp.host[0m: 127.0.0.1:8001, [1mhttp.user_agent[0m: Chroma Python Client v1.5.9 (https://github.com/chroma-core/chroma), [1motel.name[0m: "GET /api/v2/tenants/{tenant_name}"
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1]   [2m2026-11-01T13:07:06.960959Z[0m [32m INFO[0m  [1;32mtenant_name[0m[32m: default_tenant, [1;32mdatabase_name[0m[32m: default_database[0m
+[chroma_rap_memory-1]     [2;3mat[0m rust/frontend/src/server.rs:1015
+[chroma_rap_memory-1]     [2;3min[0m [1mHTTP request[0m [2;3mwith[0m [1mhttp.method[0m: GET, [1mhttp.uri[0m: /api/v2/tenants/default_tenant/databases/default_database, [1mhttp.route[0m: "/api/v2/tenants/{tenant}/databases/{database}", [1mhttp.version[0m: HTTP/1.1, [1mhttp.host[0m: 127.0.0.1:8001, [1mhttp.user_agent[0m: Chroma Python Client v1.5.9 (https://github.com/chroma-core/chroma), [1motel.name[0m: "GET /api/v2/tenants/{tenant}/databases/{database}"
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1]   [2m2026-11-01T13:07:06.962256Z[0m [32m INFO[0m  [1;32mtenant_name[0m[32m: default_tenant, [1;32mdatabase_name[0m[32m: default_database[0m
+[chroma_rap_memory-1]     [2;3mat[0m rust/frontend/src/server.rs:1315
+[chroma_rap_memory-1]     [2;3min[0m [1mHTTP request[0m [2;3mwith[0m [1mhttp.method[0m: POST, [1mhttp.uri[0m: /api/v2/tenants/default_tenant/databases/default_database/collections, [1mhttp.route[0m: "/api/v2/tenants/{tenant}/databases/{database}/collections", [1mhttp.version[0m: HTTP/1.1, [1mhttp.host[0m: 127.0.0.1:8001, [1mhttp.user_agent[0m: Chroma Python Client v1.5.9 (https://github.com/chroma-core/chroma), [1motel.name[0m: "POST /api/v2/tenants/{tenant}/databases/{database}/collections"
+[chroma_rap_memory-1] 
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538426.965952092] [rsg_phase1_semantic_coordinator]: Using native VisualRAP-compatible backend.[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538426.966826810] [rsg_phase1_semantic_coordinator]: RAP memory update log disabled.[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538426.990193793] [rsg_phase1_semantic_coordinator]: Loop-closure re-anchoring enabled: watching map -> odom[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538426.995691200] [rsg_phase1_semantic_coordinator]: Phase 1 buffered CSV timing enabled. Output: /home/student/Thesis_pipeline_split_lean/debug/runtime_thor_experiment/runs/S_openloris3_20261101_140656/phase1_timing.csv[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538426.996360289] [rsg_phase1_semantic_coordinator]: Crop evolution tracking disabled.[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538426.997265471] [rsg_phase1_semantic_coordinator]: Tracking quality recording disabled.[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538426.998741231] [rsg_phase1_semantic_coordinator]: Phase 1 per-run diagnostics disabled (phase1.diagnostics.enabled=false)[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.000270648] [rsg_phase1_semantic_coordinator]: rsg_phase1_semantic_coordinator started in single-process Option-A mode.[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.000508928] [rsg_phase1_semantic_coordinator]: Input frame topic: /rsg/preprocessed/frame[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.000721003] [rsg_phase1_semantic_coordinator]: Hydra combined output topic: /rsg/phase1/hydra/input_frame[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.000938792] [rsg_phase1_semantic_coordinator]: Hydra direct separated topics enabled:[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.001160737] [rsg_phase1_semantic_coordinator]:   RGB: /rsg/hydra/rgb/image_raw[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.001393628] [rsg_phase1_semantic_coordinator]:   Depth: /rsg/hydra/depth_registered/image_rect[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.001638314] [rsg_phase1_semantic_coordinator]:   CameraInfo: /rsg/hydra/rgb/camera_info[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.001891242] [rsg_phase1_semantic_coordinator]:   Semantic labels: /rsg/hydra/semantic/image_raw[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.002152244] [rsg_phase1_semantic_coordinator]:   Instance labels: /rsg/hydra/instance/image_raw[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.002760943] [rsg_phase1_semantic_coordinator]:   Pose: /rsg/hydra/camera_pose[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.003169788] [rsg_phase1_semantic_coordinator]: RAP result topic: /rsg/objects/rap_result[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.003493902] [rsg_phase1_semantic_coordinator]: VLM result topic: /rsg/phase1/object_classifier/vlm_result[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.003829774] [rsg_phase1_semantic_coordinator]: Profile=real_orin, allow_dummy_fallback=False[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.004178027] [rsg_phase1_semantic_coordinator]: Frame FIFO size=1, frame_cache_size=600, RAP FIFO size=300, VLM FIFO size=300[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.004579909] [rsg_phase1_semantic_coordinator]: SAM backend=nanosam, RAP backend=real, RAP execution=synchronous, slot ontology=physical-instance-only, VLM enabled=True, VLM mode=qwen_http, profile=qwen3_5_4b_q4, model=Qwen3.5-VL-4B-Instruct-GGUF, endpoint=http://127.0.0.1:8000/v1/chat/completions[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.005006819] [rsg_phase1_semantic_coordinator]: Risk VLM enabled=False, mode=qwen_http, model=Qwen3.5-VL-4B-Instruct-GGUF, endpoint=http://127.0.0.1:8100/v1/chat/completions, yield_to_object_vlm=True[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.005465026] [rsg_phase1_semantic_coordinator]: SAM input scale=0.850, depth_filter_enabled=False, depth_range=[0.30, 5.00] m, crop_to_valid_roi=True[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.005937010] [rsg_phase1_semantic_coordinator]: Persistent object tracking: enabled=True, mode=hydra_slots, max_tracks=10000[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793538427.006436246] [rsg_phase1_semantic_coordinator]: Hydra slot range=[1, 10000], RAP scheduling=immediate_async_once_per_track[0m
+[hydra_ros_node-6] [INFO] [1793538433.908493790] [hydra]: [hydra_ros_pipeline.cpp:86] Starting Hydra-ROS with input configuration
+[hydra_ros_node-6] ============================ RosInputModule::Config ============================
+[hydra_ros_node-6] max_receiver_queue_size:      5
+[hydra_ros_node-6] clear_queue_on_fail:          true (default)
+[hydra_ros_node-6] inputs[left_cam] [InputModule::InputPair::Config] (default):
+[hydra_ros_node-6]    receiver [Virtual Config: ClosedSetImageReceiver::Config]:
+[hydra_ros_node-6]       input_separation_s:     0 (default)
+[hydra_ros_node-6]       ns:                     /rsg/hydra
+[hydra_ros_node-6]       queue_size:             3
+[hydra_ros_node-6]    sensor [Virtual Config: RosCamera::Config]:
+[hydra_ros_node-6]       min_range [m]:          0.3
+[hydra_ros_node-6]       max_range [m]:          5
+[hydra_ros_node-6]       ns:                     /rsg/hydra/rgb
+[hydra_ros_node-6]       warning_timeout_s [s]:  10 (default)
+[hydra_ros_node-6]       error_timeout_s [s]:    0 (default)
+[hydra_ros_node-6]       latch_info_sub:         false (default)
+[hydra_ros_node-6]       extrinsics [Virtual Config: RosExtrinsics::Config]:
+[hydra_ros_node-6]          sensor_frame:        "" (default)
+[hydra_ros_node-6]          robot_frame:         "" (default)
+[hydra_ros_node-6]          warning_timeout_s [s]: 10 (default)
+[hydra_ros_node-6]          error_timeout_s [s]: 0 (default)
+[hydra_ros_node-6]          wait_duration_s [s]: 0.1 (default)
+[hydra_ros_node-6]          verbosity:           3 (default)
+[hydra_ros_node-6] tf_lookup [TFLookup::Config]:
+[hydra_ros_node-6]    wait_duration_s:           0.5
+[hydra_ros_node-6]    buffer_size_s:             180
+[hydra_ros_node-6]    max_tries:                 20
+[hydra_ros_node-6]    verbosity:                 3 (default)
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] [WARN] [1793538433.909377333] [hydra]: [hydra_ros_pipeline.cpp:128] [Hydra] multi-session resume: disabled
+[hydra_ros_node-6] [INFO] [1793538434.323503519] [hydra]: [ros_sensors.cpp:76] Waiting for CameraInfo on /rsg/hydra/rgb/camera_info to initialize sensor model
+[hydra_ros_node-6] [WARN] [1793538444.326193975] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538454.328744483] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538464.330445740] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538474.332042973] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538484.334180735] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538494.335680580] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538504.337165814] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538514.338918252] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538524.340584979] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538534.342070337] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538544.343592721] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538554.345145668] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538564.346650383] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538574.348175137] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538584.349875653] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538594.351831802] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538604.354223689] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538614.355779769] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538624.357396471] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538634.359116650] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538644.360616157] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538654.362312666] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538664.363918642] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538674.365960016] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538684.368540029] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793538694.370237921] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[rsg_preprocessor-3] [0m[INFO] [1793538696.420721369] [rsg_preprocessor]: Odometry frame contract verified: base_odom -> base_link.[0m
+[rsg_phase1_semantic_coordinator-10] /home/student/third_party/nanosam/nanosam/utils/predictor.py:84: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+[rsg_phase1_semantic_coordinator-10]   image_torch_resized = torch.from_numpy(image_np_resized).permute(2, 0, 1)
+[rsg_phase1_semantic_coordinator-10] [11/01/2026-14:11:36] [TRT] [W] Using default stream in enqueueV3() may lead to performance issues due to additional calls to cudaStreamSynchronize() by TensorRT to ensure correct synchronization. Please use non-default stream instead.
+[rsg_phase1_semantic_coordinator-10] /home/student/third_party/nanosam/nanosam/utils/predictor.py:103: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at /pytorch/torch/csrc/utils/tensor_new.cpp:253.)
+[rsg_phase1_semantic_coordinator-10]   image_point_coords = torch.tensor([points]).float().cuda()
+[rsg_phase1_semantic_coordinator-10] [11/01/2026-14:11:36] [TRT] [W] Using default stream in enqueueV3() may lead to performance issues due to additional calls to cudaStreamSynchronize() by TensorRT to ensure correct synchronization. Please use non-default stream instead.
+[hydra_ros_node-6] [INFO] [1793538696.973125329] [hydra]: [ros_sensors.cpp:105] Looking for sensor extrinsics 'camera_link_T_camera_color_optical_frame' via TF
+[hydra_ros_node-6] [INFO] [1793538697.083090365] [hydra]: [ros_sensors.cpp:234] Initialized camera as 
+[hydra_ros_node-6] ============================ Virtual Config: Camera ============================
+[hydra_ros_node-6] min_range [m]:                0.3
+[hydra_ros_node-6] max_range [m]:                5
+[hydra_ros_node-6] width [px]:                   848
+[hydra_ros_node-6] height [px]:                  480
+[hydra_ros_node-6] cx [px]:                      433.204
+[hydra_ros_node-6] cy [px]:                      249.473
+[hydra_ros_node-6] fx [px]:                      611.451
+[hydra_ros_node-6] fy [px]:                      611.486
+[hydra_ros_node-6] extrinsics [Virtual Config: ParamSensorExtrinsics]:
+[hydra_ros_node-6]    body_R_sensor:             {w: -0.5, x: 0.5, y: -0.5, z: 0.5}
+[hydra_ros_node-6]    body_p_sensor:             [0, 0, 0] (default)
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] [INFO] [1793538697.091301035] [hydra]: [hydra_pipeline.cpp:111] 
+[hydra_ros_node-6] ********************************************************************************
+[hydra_ros_node-6] * input                                                                        *
+[hydra_ros_node-6] ********************************************************************************
+[hydra_ros_node-6] ============================ RosInputModule::Config ============================
+[hydra_ros_node-6] max_receiver_queue_size:      5
+[hydra_ros_node-6] clear_queue_on_fail:          true (default)
+[hydra_ros_node-6] inputs[left_cam] [InputModule::InputPair::Config] (default):
+[hydra_ros_node-6]    receiver [Virtual Config: ClosedSetImageReceiver::Config]:
+[hydra_ros_node-6]       input_separation_s:     0 (default)
+[hydra_ros_node-6]       ns:                     /rsg/hydra
+[hydra_ros_node-6]       queue_size:             3
+[hydra_ros_node-6]    sensor [Virtual Config: RosCamera::Config]:
+[hydra_ros_node-6]       min_range [m]:          0.3
+[hydra_ros_node-6]       max_range [m]:          5
+[hydra_ros_node-6]       ns:                     /rsg/hydra/rgb
+[hydra_ros_node-6]       warning_timeout_s [s]:  10 (default)
+[hydra_ros_node-6]       error_timeout_s [s]:    0 (default)
+[hydra_ros_node-6]       latch_info_sub:         false (default)
+[hydra_ros_node-6]       extrinsics [Virtual Config: RosExtrinsics::Config]:
+[hydra_ros_node-6]          sensor_frame:        "" (default)
+[hydra_ros_node-6]          robot_frame:         "" (default)
+[hydra_ros_node-6]          warning_timeout_s [s]: 10 (default)
+[hydra_ros_node-6]          error_timeout_s [s]: 0 (default)
+[hydra_ros_node-6]          wait_duration_s [s]: 0.1 (default)
+[hydra_ros_node-6]          verbosity:           3 (default)
+[hydra_ros_node-6] tf_lookup [TFLookup::Config]:
+[hydra_ros_node-6]    wait_duration_s:           0.5
+[hydra_ros_node-6]    buffer_size_s:             180
+[hydra_ros_node-6]    max_tries:                 20
+[hydra_ros_node-6]    verbosity:                 3 (default)
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] ********************************************************************************
+[hydra_ros_node-6] [INFO] [1793538697.135313686] [hydra]: [hydra_pipeline.cpp:107] 
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] = Modules                                                                      =
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] 
+[hydra_ros_node-6] ********************************************************************************
+[hydra_ros_node-6] * active_window                                                                *
+[hydra_ros_node-6] ********************************************************************************
+[hydra_ros_node-6] ========================= ReconstructionModule::Config =========================
+[hydra_ros_node-6] max_input_queue_size:         5
+[hydra_ros_node-6] validate_mesh_fields:         true (default)
+[hydra_ros_node-6] full_update_separation_s [s]: 0.4
+[hydra_ros_node-6] max_input_queue_size:         5
+[hydra_ros_node-6] volumetric_map [VolumetricMap]:
+[hydra_ros_node-6]    voxel_size [m]:            0.03
+[hydra_ros_node-6]    voxels_per_side:           16 (default)
+[hydra_ros_node-6]    truncation_distance [m]:   0.3 (default)
+[hydra_ros_node-6]    with_semantics:            true
+[hydra_ros_node-6]    with_tracking:             false (default)
+[hydra_ros_node-6] map_window [Uninitialized Virtual Config]
+[hydra_ros_node-6] sinks[0] [Virtual Config: ReconstructionVisualizerConfig]:
+[hydra_ros_node-6]    ns:                        ~/reconstruction (default)
+[hydra_ros_node-6]    min_weight:                0 (default)
+[hydra_ros_node-6]    max_weight:                1000
+[hydra_ros_node-6]    marker_alpha:              0.5 (default)
+[hydra_ros_node-6]    use_relative_height:       true (default)
+[hydra_ros_node-6]    slice_height [m]:          0 (default)
+[hydra_ros_node-6]    min_observation_weight:    1e-05 (default)
+[hydra_ros_node-6]    tsdf_block_scale:          0.02 (default)
+[hydra_ros_node-6]    tsdf_block_color:          [0, 255, 0, 255] (default)
+[hydra_ros_node-6]    tsdf_block_alpha:          1 (default)
+[hydra_ros_node-6]    mesh_block_scale:          0.02 (default)
+[hydra_ros_node-6]    mesh_block_alpha:          1 (default)
+[hydra_ros_node-6]    mesh_block_color:          [255, 0, 0, 255] (default)
+[hydra_ros_node-6]    point_size:                0.01
+[hydra_ros_node-6]    filter_points_by_range:    true (default)
+[hydra_ros_node-6]    colormap [RangeColormap::Config] (default):
+[hydra_ros_node-6]       palette [Uninitialized Virtual Config]
+[hydra_ros_node-6]    label_colormap [CategoricalColormap::Config] (default):
+[hydra_ros_node-6]       total_classes:          0 (default)
+[hydra_ros_node-6]       palette:                distinct150 (default)
+[hydra_ros_node-6]       default_color:          [128, 128, 128, 255] (default)
+[hydra_ros_node-6]    image_display [DisplayConfig] (default):
+[hydra_ros_node-6]       width_scale:            1 (default)
+[hydra_ros_node-6]       height_scale:           1 (default)
+[hydra_ros_node-6]    mesh_coloring [Virtual Config: UniformMeshColoring::Config]:
+[hydra_ros_node-6]       color:                  [255, 0, 0, 255]
+[hydra_ros_node-6] sinks[1] [Virtual Config: TsdfOccupancyPublisher::Config]:
+[hydra_ros_node-6]    collate:                   false (default)
+[hydra_ros_node-6]    use_relative_height:       true (default)
+[hydra_ros_node-6]    slice_height [m]:          0 (default)
+[hydra_ros_node-6]    num_slices:                1 (default)
+[hydra_ros_node-6]    min_observation_weight:    1e-06 (default)
+[hydra_ros_node-6]    min_distance:              0.3 (default)
+[hydra_ros_node-6]    add_robot_footprint:       false (default)
+[hydra_ros_node-6]    footprint_min:             [0, 0, 0]
+[hydra_ros_node-6]    footprint_max:             [0, 7.22507e+28, 2.61955e-34]
+[hydra_ros_node-6]    ns:                        ~/tsdf (default)
+[hydra_ros_node-6] tsdf [ProjectiveIntegrator]:
+[hydra_ros_node-6]    verbosity:                 1 (default)
+[hydra_ros_node-6]    extra_integration_distance [m]: 0 (default)
+[hydra_ros_node-6]    extra_integration_distance_labels: [] (default)
+[hydra_ros_node-6]    skip_extra_colors_and_labels: false (default)
+[hydra_ros_node-6]    use_weight_dropoff:        true (default)
+[hydra_ros_node-6]    weight_dropoff_epsilon [vs]: -1 (default)
+[hydra_ros_node-6]    use_constant_weight:       false (default)
+[hydra_ros_node-6]    min_measurement_weight:    0.0001 (default)
+[hydra_ros_node-6]    max_weight:                100000 (default)
+[hydra_ros_node-6]    num_threads:               14
+[hydra_ros_node-6]    interpolation_method [Virtual Config: InterpolatorAdaptive::Config]:
+[hydra_ros_node-6]       max_depth_difference_m [m]: 0.2 (default)
+[hydra_ros_node-6]    semantic_integrator [Virtual Config: MLESemanticIntegrator::Config]:
+[hydra_ros_node-6]       label_confidence:       0.75
+[hydra_ros_node-6] mesh [MeshIntegratorConfig]:
+[hydra_ros_node-6]    min_weight:                0.0001 (default)
+[hydra_ros_node-6]    integrator_threads:        14
+[hydra_ros_node-6] robot_footprint [Uninitialized Virtual Config]
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] Sink 0: 
+[hydra_ros_node-6] ======================== ReconstructionVisualizerConfig ========================
+[hydra_ros_node-6] ns:                           ~/reconstruction (default)
+[hydra_ros_node-6] min_weight:                   0 (default)
+[hydra_ros_node-6] max_weight:                   1000
+[hydra_ros_node-6] marker_alpha:                 0.5 (default)
+[hydra_ros_node-6] use_relative_height:          true (default)
+[hydra_ros_node-6] slice_height [m]:             0 (default)
+[hydra_ros_node-6] min_observation_weight:       1e-05 (default)
+[hydra_ros_node-6] tsdf_block_scale:             0.02 (default)
+[hydra_ros_node-6] tsdf_block_color:             [0, 255, 0, 255] (default)
+[hydra_ros_node-6] tsdf_block_alpha:             1 (default)
+[hydra_ros_node-6] mesh_block_scale:             0.02 (default)
+[hydra_ros_node-6] mesh_block_alpha:             1 (default)
+[hydra_ros_node-6] mesh_block_color:             [255, 0, 0, 255] (default)
+[hydra_ros_node-6] point_size:                   0.01
+[hydra_ros_node-6] filter_points_by_range:       true (default)
+[hydra_ros_node-6] colormap [RangeColormap::Config] (default):
+[hydra_ros_node-6]    palette [Uninitialized Virtual Config]
+[hydra_ros_node-6] label_colormap [CategoricalColormap::Config] (default):
+[hydra_ros_node-6]    total_classes:             0 (default)
+[hydra_ros_node-6]    palette:                   distinct150 (default)
+[hydra_ros_node-6]    default_color:             [128, 128, 128, 255] (default)
+[hydra_ros_node-6] image_display [DisplayConfig] (default):
+[hydra_ros_node-6]    width_scale:               1 (default)
+[hydra_ros_node-6]    height_scale:              1 (default)
+[hydra_ros_node-6] mesh_coloring [Virtual Config: UniformMeshColoring::Config]:
+[hydra_ros_node-6]    color:                     [255, 0, 0, 255]
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] Sink 1: 
+[hydra_ros_node-6] ======================== TsdfOccupancyPublisher::Config ========================
+[hydra_ros_node-6] collate:                      false (default)
+[hydra_ros_node-6] use_relative_height:          true (default)
+[hydra_ros_node-6] slice_height [m]:             0 (default)
+[hydra_ros_node-6] num_slices:                   1 (default)
+[hydra_ros_node-6] min_observation_weight:       1e-06 (default)
+[hydra_ros_node-6] min_distance:                 0.3 (default)
+[hydra_ros_node-6] add_robot_footprint:          false (default)
+[hydra_ros_node-6] footprint_min:                [0, 0, 0]
+[hydra_ros_node-6] footprint_max:                [0, 7.22507e+28, 2.61955e-34]
+[hydra_ros_node-6] ns:                           ~/tsdf (default)
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] Sink 2: 
+[hydra_ros_node-6] n/a
+[hydra_ros_node-6] ********************************************************************************
+[hydra_ros_node-6] 
+[hydra_ros_node-6] ********************************************************************************
+[hydra_ros_node-6] * backend                                                                      *
+[hydra_ros_node-6] ********************************************************************************
+[hydra_ros_node-6] ================================ BackendConfig =================================
+[hydra_ros_node-6] enable_node_merging:          true (default)
+[hydra_ros_node-6] enable_exhaustive_merging:    false (default)
+[hydra_ros_node-6] add_places_to_deformation_graph: true (default)
+[hydra_ros_node-6] optimize_on_lc:               true (default)
+[hydra_ros_node-6] update_functors[agents] [Virtual Config: UpdateAgentsFunctor::Config]:
+[hydra_ros_node-6] update_functors[objects] [Virtual Config: UpdateObjectsFunctor::Config]:
+[hydra_ros_node-6]    allow_connection_merging:  true (default)
+[hydra_ros_node-6]    merge_proposer [MergeProposer::Config] (default):
+[hydra_ros_node-6]       strategy [Virtual Config: SemanticNearestNode::Config]:
+[hydra_ros_node-6]          num_merges_to_consider: 1 (default)
+[hydra_ros_node-6] update_functors[surface_places] [Virtual Config: Update2dPlacesFunctor::Config]:
+[hydra_ros_node-6]    layer:                     MESH_PLACES (default)
+[hydra_ros_node-6]    allow_places_merge:        true (default)
+[hydra_ros_node-6]    merge_max_delta_z:         0.5 (default)
+[hydra_ros_node-6]    min_points:                10 (default)
+[hydra_ros_node-6]    min_size:                  2 (default)
+[hydra_ros_node-6]    connection_overlap_threshold: 0 (default)
+[hydra_ros_node-6]    connection_max_delta_z:    0.5 (default)
+[hydra_ros_node-6]    connection_ellipse_scale_factor: 1 (default)
+[hydra_ros_node-6]    enable_splitting:          false (default)
+[hydra_ros_node-6]    merge_proposer [MergeProposer::Config] (default):
+[hydra_ros_node-6]       strategy [Virtual Config: SemanticNearestNode::Config]:
+[hydra_ros_node-6]          num_merges_to_consider: 1 (default)
+[hydra_ros_node-6] update_functors[places] [Virtual Config: UpdatePlacesFunctor::Config]:
+[hydra_ros_node-6]    pos_threshold_m [m]:       0.35
+[hydra_ros_node-6]    distance_tolerance_m [m]:  0.25
+[hydra_ros_node-6]    layer:                     PLACES (default)
+[hydra_ros_node-6]    deformation_interpolator [DeformationInterpolator::Config] (default):
+[hydra_ros_node-6]       num_control_points:     4 (default)
+[hydra_ros_node-6]       control_point_tolerance_s [s]: 10 (default)
+[hydra_ros_node-6]    merge_proposer [MergeProposer::Config] (default):
+[hydra_ros_node-6]       strategy [Virtual Config: NearestNode::Config]:
+[hydra_ros_node-6]          num_merges_to_consider: 1 (default)
+[hydra_ros_node-6] update_functors[frontiers] [Virtual Config: FrontierConfig]:
+[hydra_ros_node-6]    frontier_removal_threshold: 1 (default)
+[hydra_ros_node-6]    frontier_removal_check_threshold: 4 (default)
+[hydra_ros_node-6] update_functors[rooms] [Virtual Config: UpdateRoomsFunctor::Config]:
+[hydra_ros_node-6]    places_layer:              PLACES (default)
+[hydra_ros_node-6]    room_finder [RoomFinderConfig]:
+[hydra_ros_node-6]       prefix:                 R (default)
+[hydra_ros_node-6]       min_dilation_m [m]:     0.5
+[hydra_ros_node-6]       max_dilation_m [m]:     1.2
+[hydra_ros_node-6]       min_window_size:        0.2 (default)
+[hydra_ros_node-6]       clip_dilation_window_to_max: false (default)
+[hydra_ros_node-6]       min_component_size:     10
+[hydra_ros_node-6]       min_room_size:          10 (default)
+[hydra_ros_node-6]       dilation_threshold_mode: PLATEAU
+[hydra_ros_node-6]       min_lifetime_length_m:  0.1 (default)
+[hydra_ros_node-6]       plateau_ratio:          0.25
+[hydra_ros_node-6]       max_modularity_iters:   5 (default)
+[hydra_ros_node-6]       modularity_gamma:       1 (default)
+[hydra_ros_node-6]       clustering_mode:        NEIGHBORS (default)
+[hydra_ros_node-6]       dilation_diff_threshold_m [m]: -1
+[hydra_ros_node-6]       log_filtrations:        false (default)
+[hydra_ros_node-6]       log_place_graphs:       false (default)
+[hydra_ros_node-6] update_functors[buildings] [Virtual Config: UpdateBuildingsFunctor::Config]:
+[hydra_ros_node-6]    semantic_label:            22 (default)
+[hydra_ros_node-6] update_functors[zmq_labels] [Virtual Config: ZmqRoomLabelUpdater::Config]:
+[hydra_ros_node-6]    url:                       tcp://127.0.0.1:8002 (default)
+[hydra_ros_node-6]    num_threads:               2 (default)
+[hydra_ros_node-6]    poll_time_ms:              10 (default)
+[hydra_ros_node-6] pgmo [HydraPgmoConfig]:
+[hydra_ros_node-6]    run_mode:                  FULL (default)
+[hydra_ros_node-6]    num_interp_pts:            3 (default)
+[hydra_ros_node-6]    interp_horizon:            10
+[hydra_ros_node-6]    add_initial_prior:         true (default)
+[hydra_ros_node-6]    output_prefix:             "" (default)
+[hydra_ros_node-6]    odom:                      0.01
+[hydra_ros_node-6]    loop_close:                0.05
+[hydra_ros_node-6]    prior:                     0.01
+[hydra_ros_node-6]    mesh_mesh:                 0.1
+[hydra_ros_node-6]    pose_mesh:                 0.1
+[hydra_ros_node-6]    place_mesh:                0.1
+[hydra_ros_node-6]    place_edge:                10
+[hydra_ros_node-6]    place_merge:               10
+[hydra_ros_node-6]    object_merge:              10
+[hydra_ros_node-6]    sg_loop_close:             0.1
+[hydra_ros_node-6]    optimizer [Virtual Config: KimeraRpgoOptimizer]:
+[hydra_ros_node-6]       solver:                 LM (default)
+[hydra_ros_node-6]       verbosity:              0 (default)
+[hydra_ros_node-6]       print_summary:          true (default)
+[hydra_ros_node-6]       print_iterations:       true (default)
+[hydra_ros_node-6]       use_4dof_optim:         false (default)
+[hydra_ros_node-6]       use_gnc:                true (default)
+[hydra_ros_node-6]       barc_sq:                0
+[hydra_ros_node-6]       inlier_probability:     0.9
+[hydra_ros_node-6]       mu_step:                1.6
+[hydra_ros_node-6]       max_iterations:         100
+[hydra_ros_node-6]       fix_odom:               true
+[hydra_ros_node-6]       robust_cost:            TLS
+[hydra_ros_node-6]       use_pcm:                false (default)
+[hydra_ros_node-6]       trans_threshold:        0.1
+[hydra_ros_node-6]       rot_threshold:          0.01
+[hydra_ros_node-6]       mahalanobis_threshold:  1
+[hydra_ros_node-6]       odom_check:             false
+[hydra_ros_node-6]       odom_trans_threshold:   0.5
+[hydra_ros_node-6]       odom_rot_threshold:     0.1
+[hydra_ros_node-6]       odom_mahalanobis_threshold: 5
+[hydra_ros_node-6]       max_clique_mode:        HEURISTIC
+[hydra_ros_node-6]       metric_type:            NODE
+[hydra_ros_node-6] external_loop_closures [ExternalLoopClosureReceiver::Config] (default):
+[hydra_ros_node-6]    layer:                     AGENTS (default)
+[hydra_ros_node-6]    max_time_difference [s]:   1 (default)
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] Sink 0: 
+[hydra_ros_node-6] ========================= RosBackendPublisher::Config ==========================
+[hydra_ros_node-6] publish_backend_tf:           false (default)
+[hydra_ros_node-6] tf_pub_robot_frame:           "" (default)
+[hydra_ros_node-6] tf_pub_map_frame:             "" (default)
+[hydra_ros_node-6] tf_pub_odom_frame:            "" (default)
+[hydra_ros_node-6]  [DsgSender::Config]:
+[hydra_ros_node-6]    frame_id:                  base_odom
+[hydra_ros_node-6]    publish_dsg:               backend
+[hydra_ros_node-6]    serialize_dsg_mesh:        true (default)
+[hydra_ros_node-6]    publish_mesh:              false (default)
+[hydra_ros_node-6]    min_mesh_separation_s:     0 (default)
+[hydra_ros_node-6]    min_dsg_separation_s:      0 (default)
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] Sink 1: 
+[hydra_ros_node-6] n/a
+[hydra_ros_node-6] ********************************************************************************
+[hydra_ros_node-6] 
+[hydra_ros_node-6] ********************************************************************************
+[hydra_ros_node-6] * frontend                                                                     *
+[hydra_ros_node-6] ********************************************************************************
+[hydra_ros_node-6] ============================= GraphBuilder::Config =============================
+[hydra_ros_node-6] lcd_use_bow_vectors:          true (default)
+[hydra_ros_node-6] mesh_resolution:              0.005
+[hydra_ros_node-6] d_graph_resolution:           2.5
+[hydra_ros_node-6] time_horizon:                 100
+[hydra_ros_node-6] enable_mesh_objects:          true (default)
+[hydra_ros_node-6] use_frontiers:                false (default)
+[hydra_ros_node-6] no_packet_collation:          false (default)
+[hydra_ros_node-6] verbosity:                    0 (default)
+[hydra_ros_node-6] graph_connector [GraphConnector::Config] (default):
+[hydra_ros_node-6]    layers[0] [LayerConnector::Config] (default):
+[hydra_ros_node-6]       parent_layer:           PLACES (default)
+[hydra_ros_node-6]       verbosity:              0 (default)
+[hydra_ros_node-6]       child_layers[0] [ChildLayerConfig]:
+[hydra_ros_node-6]          layer:               OBJECTS
+[hydra_ros_node-6]          include_primary:     true (default)
+[hydra_ros_node-6]          include_partitions:  true (default)
+[hydra_ros_node-6] graph_updater [GraphUpdater::Config] (default):
+[hydra_ros_node-6]    layer_updates[OBJECTS] [LayerTracker::Config]:
+[hydra_ros_node-6]       prefix:                 O
+[hydra_ros_node-6]       target_layer:           !<null> "" (default)
+[hydra_ros_node-6] objects [MeshSegmenterConfig] (default):
+[hydra_ros_node-6]    layer_id:                  OBJECTS (default)
+[hydra_ros_node-6]    bounding_box_type:         AABB (default)
+[hydra_ros_node-6]    timer_namespace:           frontend/objects (default)
+[hydra_ros_node-6]    clustering [ClusteringConfig]:
+[hydra_ros_node-6]       cluster_tolerance:      0.28
+[hydra_ros_node-6]       min_cluster_size:       14
+[hydra_ros_node-6]       max_cluster_size:       100000 (default)
+[hydra_ros_node-6]    sinks[0] [Virtual Config: ObjectVisualizerConfig]:
+[hydra_ros_node-6]       module_ns:              ~/objects (default)
+[hydra_ros_node-6]       point_scale:            0.1 (default)
+[hydra_ros_node-6]       point_alpha:            0.7 (default)
+[hydra_ros_node-6]       use_spheres:            false (default)
+[hydra_ros_node-6]       bounding_box_scale:     0.1 (default)
+[hydra_ros_node-6]       colormap [CategoricalColormap::Config] (default):
+[hydra_ros_node-6]          total_classes:       0 (default)
+[hydra_ros_node-6]          palette:             distinct150 (default)
+[hydra_ros_node-6]          default_color:       [128, 128, 128, 255] (default)
+[hydra_ros_node-6] pose_graph_tracker [Virtual Config: PoseGraphFromOdom::Config]:
+[hydra_ros_node-6]    min_pose_separation:       0.5 (default)
+[hydra_ros_node-6]    rotation_separation_weight: 0.1 (default)
+[hydra_ros_node-6]    min_time_separation_s:     0.2 (default)
+[hydra_ros_node-6] surface_places [Uninitialized Virtual Config]
+[hydra_ros_node-6] freespace_places [Virtual Config: GvdPlaceExtractor::Config]:
+[hydra_ros_node-6]    layer:                     PLACES (default)
+[hydra_ros_node-6]    min_component_size:        3 (default)
+[hydra_ros_node-6]    filter_places:             true (default)
+[hydra_ros_node-6]    filter_ground:             false (default)
+[hydra_ros_node-6]    robot_height:              0 (default)
+[hydra_ros_node-6]    edge_tolerance:            1 (default)
+[hydra_ros_node-6]    node_tolerance:            1 (default)
+[hydra_ros_node-6]    add_freespace_edges:       false (default)
+[hydra_ros_node-6]    gvd [GvdIntegratorConfig]:
+[hydra_ros_node-6]       max_distance_m:         4.5
+[hydra_ros_node-6]       min_distance_m:         0.2 (default)
+[hydra_ros_node-6]       min_diff_m:             0.1
+[hydra_ros_node-6]       min_weight:             1e-06 (default)
+[hydra_ros_node-6]       refine_voxel_pos:       false (default)
+[hydra_ros_node-6]       positive_distance_only: true (default)
+[hydra_ros_node-6]       voronoi_config [VoronoiCheckConfig]:
+[hydra_ros_node-6]          mode:                L1_THEN_ANGLE (default)
+[hydra_ros_node-6]          min_distance_m:      0.3
+[hydra_ros_node-6]          parent_l1_separation: 20
+[hydra_ros_node-6]          parent_cos_angle_separation: 0.2
+[hydra_ros_node-6]    graph [GraphExtractor::Config]:
+[hydra_ros_node-6]       compression_distance_m: 1
+[hydra_ros_node-6]       validate_graph:         false (default)
+[hydra_ros_node-6]       min_node_distance_m:    0.4
+[hydra_ros_node-6]       min_edge_distance_m:    0.3
+[hydra_ros_node-6]       merge_new_nodes:        true (default)
+[hydra_ros_node-6]       add_heuristic_edges:    false (default)
+[hydra_ros_node-6]       merge_policy:           basis_points (default)
+[hydra_ros_node-6]       node_merge_distance_m:  0.3 (default)
+[hydra_ros_node-6]       add_overlap_edges:      true (default)
+[hydra_ros_node-6]       add_freespace_edges:    true (default)
+[hydra_ros_node-6]       overlap_edges [OverlapEdgeConfig] (default):
+[hydra_ros_node-6]          num_neighbors_to_check: 4 (default)
+[hydra_ros_node-6]          min_clearance_m:     0.4 (default)
+[hydra_ros_node-6]       freespace_edges [FreespaceEdgeConfig] (default):
+[hydra_ros_node-6]          max_length_m:        2 (default)
+[hydra_ros_node-6]          num_nodes_to_check:  5 (default)
+[hydra_ros_node-6]          num_neighbors_to_find: 1 (default)
+[hydra_ros_node-6]          min_clearance_m:     0.5 (default)
+[hydra_ros_node-6]    tsdf_interpolator [Uninitialized Virtual Config]
+[hydra_ros_node-6]    sinks[0] [Virtual Config: PlacesVisualizerConfig]:
+[hydra_ros_node-6]       ns:                     ~/places (default)
+[hydra_ros_node-6]       block_color:            [127, 0, 255, 255] (default)
+[hydra_ros_node-6]       colormap [RangeColormap::Config] (default):
+[hydra_ros_node-6]          palette [Uninitialized Virtual Config]
+[hydra_ros_node-6]    sinks[1] [Virtual Config: GvdOccupancyPublisher::Config]:
+[hydra_ros_node-6]       collate:                false (default)
+[hydra_ros_node-6]       use_relative_height:    true (default)
+[hydra_ros_node-6]       slice_height [m]:       0 (default)
+[hydra_ros_node-6]       num_slices:             1 (default)
+[hydra_ros_node-6]       min_observation_weight: 1e-06 (default)
+[hydra_ros_node-6]       min_distance:           0.3 (default)
+[hydra_ros_node-6]       add_robot_footprint:    false (default)
+[hydra_ros_node-6]       footprint_min:          [6.12241e-41, 1.7562e-34, 6.12241e-41]
+[hydra_ros_node-6]       footprint_max:          [1.75624e-34, 6.12241e-41, 1.75628e-34]
+[hydra_ros_node-6]       ns:                     ~/gvd (default)
+[hydra_ros_node-6] frontier_places [Uninitialized Virtual Config]
+[hydra_ros_node-6] view_database [ViewDatabase::Config] (default):
+[hydra_ros_node-6]    view_selection_method:     fusion (default)
+[hydra_ros_node-6]    inflation_distance:        0 (default)
+[hydra_ros_node-6]    layers:                    [PLACES, MESH_PLACES] (default)
+[hydra_ros_node-6]    verbosity:                 0 (default)
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] Sink 0: 
+[hydra_ros_node-6] RosFrontendPublisher
+[hydra_ros_node-6] ********************************************************************************
+[hydra_ros_node-6] [INFO] [1793538697.137413838] [hydra]: [input_module.cpp:81] [Hydra Input] started!
+[hydra_ros_node-6] [INFO] [1793538697.137519190] [hydra]: [active_window_module.cpp:87] [Active Window] started!
+[hydra_ros_node-6] [INFO] [1793538697.137598886] [hydra]: [backend_module.cpp:136] [Hydra Backend] started!
+[hydra_ros_node-6] [INFO] [1793538697.137667062] [hydra]: [graph_builder.cpp:248] [Hydra Frontend] started!
+[hydra_ros_node-6] [INFO] [1793538697.138993357] [hydra]: Running...
+[hydra_ros_node-6] [INFO] [1793538698.774899945] [hydra]: [update_objects_functor.cpp:207] [Hydra] object merge scan: 0 proposed | 6 active examined | 0 archived candidates across 0 label(s) | 6 objects total
+[rsg_scene_graph_fuser-11] [INFO] [1793538699.523312706] [rsg_scene_graph_fuser]: object slot collapse: absorbed 1 duplicate object node(s) into their same-slot survivors
+[hydra_ros_node-6] [WARN] [1793538751.240360496] [hydra]: [input_module.cpp:141] [Hydra Input] active window queue full (max=5); dropped input @ 1560000124341717482 [ns] (1 dropped total)
+[qwen_vlm_server-2] [34m5.51.569.618[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = -1
+[qwen_vlm_server-2] [34m5.51.569.749[0m [32mI [0mslot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m5.53.429.652[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 273 new tokens
+[qwen_vlm_server-2] [0m[34m5.53.429.841[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 273 new tokens
+[qwen_vlm_server-2] [0m[34m5.53.450.767[0m [35mW find_slot: non-consecutive token position 2439 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m5.53.450.805[0m [35mW find_slot: non-consecutive token position 2439 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m5.55.057.775[0m [32mI [0mslot print_timing: id  0 | task 0 | prompt eval time =    2146.98 ms /  2696 tokens (    0.80 ms per token,  1255.72 tokens per second)
+[qwen_vlm_server-2] [34m5.55.057.780[0m [32mI [0mslot print_timing: id  0 | task 0 |        eval time =    1341.01 ms /    51 tokens (   26.29 ms per token,    38.03 tokens per second)
+[qwen_vlm_server-2] [34m5.55.057.781[0m [32mI [0mslot print_timing: id  0 | task 0 |       total time =    3487.99 ms /  2747 tokens
+[qwen_vlm_server-2] [34m5.55.057.788[0m [32mI [0mslot print_timing: id  0 | task 0 |    graphs reused =         50
+[qwen_vlm_server-2] [34m5.55.057.974[0m [32mI [0mslot      release: id  0 | task 0 | stop processing: n_tokens = 2746, truncated = 0
+[qwen_vlm_server-2] [34m5.55.089.577[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.986 (> 0.100 thold), f_keep = 0.879
+[qwen_vlm_server-2] [34m5.55.089.671[0m [32mI [0mslot launch_slot_: id  0 | task 56 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m5.55.320.662[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 24 new tokens
+[qwen_vlm_server-2] [0m[34m5.55.320.703[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 24 new tokens
+[qwen_vlm_server-2] [0m[34m5.55.326.138[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m5.55.326.179[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m5.56.776.990[0m [32mI [0mslot print_timing: id  0 | task 56 | prompt eval time =     341.19 ms /   267 tokens (    1.28 ms per token,   782.56 tokens per second)
+[qwen_vlm_server-2] [34m5.56.776.997[0m [32mI [0mslot print_timing: id  0 | task 56 |        eval time =    1346.10 ms /    51 tokens (   26.39 ms per token,    37.89 tokens per second)
+[qwen_vlm_server-2] [34m5.56.776.997[0m [32mI [0mslot print_timing: id  0 | task 56 |       total time =    1687.28 ms /   318 tokens
+[qwen_vlm_server-2] [34m5.56.776.999[0m [32mI [0mslot print_timing: id  0 | task 56 |    graphs reused =         99
+[qwen_vlm_server-2] [34m5.56.777.149[0m [32mI [0mslot      release: id  0 | task 56 | stop processing: n_tokens = 2497, truncated = 0
+[qwen_vlm_server-2] [34m5.56.822.757[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.984 (> 0.100 thold), f_keep = 0.966
+[qwen_vlm_server-2] [34m5.56.822.846[0m [32mI [0mslot launch_slot_: id  0 | task 110 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m5.57.023.467[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 30 new tokens
+[qwen_vlm_server-2] [0m[34m5.57.023.516[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 30 new tokens
+[qwen_vlm_server-2] [0m[34m5.57.031.410[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m5.57.031.445[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m5.58.572.111[0m [32mI [0mslot print_timing: id  0 | task 110 | prompt eval time =     329.77 ms /   273 tokens (    1.21 ms per token,   827.85 tokens per second)
+[qwen_vlm_server-2] [34m5.58.572.116[0m [32mI [0mslot print_timing: id  0 | task 110 |        eval time =    1419.47 ms /    48 tokens (   29.57 ms per token,    33.82 tokens per second)
+[qwen_vlm_server-2] [34m5.58.572.117[0m [32mI [0mslot print_timing: id  0 | task 110 |       total time =    1749.24 ms /   321 tokens
+[qwen_vlm_server-2] [34m5.58.572.119[0m [32mI [0mslot print_timing: id  0 | task 110 |    graphs reused =        145
+[qwen_vlm_server-2] [34m5.58.572.280[0m [32mI [0mslot      release: id  0 | task 110 | stop processing: n_tokens = 2500, truncated = 0
+[qwen_vlm_server-2] [34m5.58.598.575[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.979 (> 0.100 thold), f_keep = 0.965
+[qwen_vlm_server-2] [34m5.58.598.680[0m [32mI [0mslot launch_slot_: id  0 | task 161 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m5.58.784.278[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 42 new tokens
+[qwen_vlm_server-2] [0m[34m5.58.784.332[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 42 new tokens
+[qwen_vlm_server-2] [0m[34m5.58.794.129[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m5.58.794.180[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.00.592.225[0m [32mI [0mslot print_timing: id  0 | task 161 | prompt eval time =     327.03 ms /   285 tokens (    1.15 ms per token,   871.48 tokens per second)
+[qwen_vlm_server-2] [34m6.00.592.274[0m [32mI [0mslot print_timing: id  0 | task 161 |        eval time =    1666.48 ms /    49 tokens (   34.01 ms per token,    29.40 tokens per second)
+[qwen_vlm_server-2] [34m6.00.592.288[0m [32mI [0mslot print_timing: id  0 | task 161 |       total time =    1993.51 ms /   334 tokens
+[qwen_vlm_server-2] [34m6.00.592.302[0m [32mI [0mslot print_timing: id  0 | task 161 |    graphs reused =        192
+[qwen_vlm_server-2] [34m6.00.592.486[0m [32mI [0mslot      release: id  0 | task 161 | stop processing: n_tokens = 2513, truncated = 0
+[qwen_vlm_server-2] [34m6.00.619.217[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.986 (> 0.100 thold), f_keep = 0.960
+[qwen_vlm_server-2] [34m6.00.619.331[0m [32mI [0mslot launch_slot_: id  0 | task 213 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.00.722.269[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 24 new tokens
+[qwen_vlm_server-2] [0m[34m6.00.722.359[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 24 new tokens
+[qwen_vlm_server-2] [0m[34m6.00.809.416[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.00.809.495[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.02.296.207[0m [32mI [0mslot print_timing: id  0 | task 213 | prompt eval time =     315.53 ms /   267 tokens (    1.18 ms per token,   846.19 tokens per second)
+[qwen_vlm_server-2] [34m6.02.296.215[0m [32mI [0mslot print_timing: id  0 | task 213 |        eval time =    1361.30 ms /    50 tokens (   27.23 ms per token,    36.73 tokens per second)
+[qwen_vlm_server-2] [34m6.02.296.215[0m [32mI [0mslot print_timing: id  0 | task 213 |       total time =    1676.83 ms /   317 tokens
+[qwen_vlm_server-2] [34m6.02.296.217[0m [32mI [0mslot print_timing: id  0 | task 213 |    graphs reused =        240
+[qwen_vlm_server-2] [34m6.02.296.390[0m [32mI [0mslot      release: id  0 | task 213 | stop processing: n_tokens = 2496, truncated = 0
+[qwen_vlm_server-2] [34m6.02.340.072[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.972 (> 0.100 thold), f_keep = 0.967
+[qwen_vlm_server-2] [34m6.02.340.171[0m [32mI [0mslot launch_slot_: id  0 | task 266 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.02.560.468[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 60 new tokens
+[qwen_vlm_server-2] [0m[34m6.02.560.582[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 60 new tokens
+[qwen_vlm_server-2] [0m[34m6.02.575.688[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.02.575.735[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.04.051.734[0m [32mI [0mslot print_timing: id  0 | task 266 | prompt eval time =     370.04 ms /   303 tokens (    1.22 ms per token,   818.83 tokens per second)
+[qwen_vlm_server-2] [34m6.04.051.741[0m [32mI [0mslot print_timing: id  0 | task 266 |        eval time =    1341.49 ms /    51 tokens (   26.30 ms per token,    38.02 tokens per second)
+[qwen_vlm_server-2] [34m6.04.051.742[0m [32mI [0mslot print_timing: id  0 | task 266 |       total time =    1711.53 ms /   354 tokens
+[qwen_vlm_server-2] [34m6.04.051.744[0m [32mI [0mslot print_timing: id  0 | task 266 |    graphs reused =        289
+[qwen_vlm_server-2] [34m6.04.051.900[0m [32mI [0mslot      release: id  0 | task 266 | stop processing: n_tokens = 2533, truncated = 0
+[qwen_vlm_server-2] [34m6.04.084.986[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.986 (> 0.100 thold), f_keep = 0.953
+[qwen_vlm_server-2] [34m6.04.085.070[0m [32mI [0mslot launch_slot_: id  0 | task 320 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.04.203.697[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 24 new tokens
+[qwen_vlm_server-2] [0m[34m6.04.203.741[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 24 new tokens
+[qwen_vlm_server-2] [0m[34m6.04.291.707[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.04.291.749[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.06.264.981[0m [32mI [0mslot print_timing: id  0 | task 320 | prompt eval time =     334.42 ms /   267 tokens (    1.25 ms per token,   798.39 tokens per second)
+[qwen_vlm_server-2] [34m6.06.264.988[0m [32mI [0mslot print_timing: id  0 | task 320 |        eval time =    1845.45 ms /    53 tokens (   34.82 ms per token,    28.72 tokens per second)
+[qwen_vlm_server-2] [34m6.06.264.989[0m [32mI [0mslot print_timing: id  0 | task 320 |       total time =    2179.88 ms /   320 tokens
+[qwen_vlm_server-2] [34m6.06.264.991[0m [32mI [0mslot print_timing: id  0 | task 320 |    graphs reused =        340
+[qwen_vlm_server-2] [34m6.06.265.436[0m [32mI [0mslot      release: id  0 | task 320 | stop processing: n_tokens = 2499, truncated = 0
+[qwen_vlm_server-2] [34m6.06.291.430[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.991 (> 0.100 thold), f_keep = 0.966
+[qwen_vlm_server-2] [34m6.06.291.556[0m [32mI [0mslot launch_slot_: id  0 | task 376 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.06.500.644[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 12 new tokens
+[qwen_vlm_server-2] [0m[34m6.06.500.681[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 12 new tokens
+[qwen_vlm_server-2] [0m[34m6.06.505.874[0m [35mW find_slot: non-consecutive token position 2422 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.06.505.913[0m [35mW find_slot: non-consecutive token position 2422 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.07.939.099[0m [32mI [0mslot print_timing: id  0 | task 376 | prompt eval time =     341.22 ms /   255 tokens (    1.34 ms per token,   747.32 tokens per second)
+[qwen_vlm_server-2] [34m6.07.939.106[0m [32mI [0mslot print_timing: id  0 | task 376 |        eval time =    1306.29 ms /    49 tokens (   26.66 ms per token,    37.51 tokens per second)
+[qwen_vlm_server-2] [34m6.07.939.107[0m [32mI [0mslot print_timing: id  0 | task 376 |       total time =    1647.51 ms /   304 tokens
+[qwen_vlm_server-2] [34m6.07.939.109[0m [32mI [0mslot print_timing: id  0 | task 376 |    graphs reused =        387
+[qwen_vlm_server-2] [34m6.07.939.263[0m [32mI [0mslot      release: id  0 | task 376 | stop processing: n_tokens = 2483, truncated = 0
+[qwen_vlm_server-2] [34m6.07.966.991[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.974 (> 0.100 thold), f_keep = 0.972
+[qwen_vlm_server-2] [34m6.07.967.095[0m [32mI [0mslot launch_slot_: id  0 | task 428 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.08.211.164[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 54 new tokens
+[qwen_vlm_server-2] [0m[34m6.08.211.224[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 54 new tokens
+[qwen_vlm_server-2] [0m[34m6.08.220.093[0m [35mW find_slot: non-consecutive token position 2427 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.08.220.124[0m [35mW find_slot: non-consecutive token position 2427 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.09.920.904[0m [32mI [0mslot print_timing: id  0 | task 428 | prompt eval time =     385.24 ms /   297 tokens (    1.30 ms per token,   770.95 tokens per second)
+[qwen_vlm_server-2] [34m6.09.920.913[0m [32mI [0mslot print_timing: id  0 | task 428 |        eval time =    1568.52 ms /    52 tokens (   30.16 ms per token,    33.15 tokens per second)
+[qwen_vlm_server-2] [34m6.09.920.914[0m [32mI [0mslot print_timing: id  0 | task 428 |       total time =    1953.76 ms /   349 tokens
+[qwen_vlm_server-2] [34m6.09.920.915[0m [32mI [0mslot print_timing: id  0 | task 428 |    graphs reused =        437
+[qwen_vlm_server-2] [34m6.09.921.166[0m [32mI [0mslot      release: id  0 | task 428 | stop processing: n_tokens = 2528, truncated = 0
+[qwen_vlm_server-2] [34m6.09.974.568[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.981 (> 0.100 thold), f_keep = 0.955
+[qwen_vlm_server-2] [34m6.09.974.739[0m [32mI [0mslot launch_slot_: id  0 | task 483 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.10.232.289[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 36 new tokens
+[qwen_vlm_server-2] [0m[34m6.10.232.389[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 36 new tokens
+[qwen_vlm_server-2] [0m[34m6.10.250.008[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.10.250.087[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.12.052.214[0m [32mI [0mslot print_timing: id  0 | task 483 | prompt eval time =     473.12 ms /   279 tokens (    1.70 ms per token,   589.71 tokens per second)
+[qwen_vlm_server-2] [34m6.12.052.221[0m [32mI [0mslot print_timing: id  0 | task 483 |        eval time =    1604.32 ms /    52 tokens (   30.85 ms per token,    32.41 tokens per second)
+[qwen_vlm_server-2] [34m6.12.052.222[0m [32mI [0mslot print_timing: id  0 | task 483 |       total time =    2077.43 ms /   331 tokens
+[qwen_vlm_server-2] [34m6.12.052.224[0m [32mI [0mslot print_timing: id  0 | task 483 |    graphs reused =        487
+[qwen_vlm_server-2] [34m6.12.052.379[0m [32mI [0mslot      release: id  0 | task 483 | stop processing: n_tokens = 2510, truncated = 0
+[qwen_vlm_server-2] [34m6.12.091.730[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.976 (> 0.100 thold), f_keep = 0.961
+[qwen_vlm_server-2] [34m6.12.091.810[0m [32mI [0mslot launch_slot_: id  0 | task 538 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.12.374.122[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 49 new tokens
+[qwen_vlm_server-2] [0m[34m6.12.374.222[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 49 new tokens
+[qwen_vlm_server-2] [0m[34m6.12.397.652[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.12.397.729[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.14.106.531[0m [32mI [0mslot print_timing: id  0 | task 538 | prompt eval time =     513.40 ms /   292 tokens (    1.76 ms per token,   568.75 tokens per second)
+[qwen_vlm_server-2] [34m6.14.106.537[0m [32mI [0mslot print_timing: id  0 | task 538 |        eval time =    1501.29 ms /    49 tokens (   30.64 ms per token,    32.64 tokens per second)
+[qwen_vlm_server-2] [34m6.14.106.538[0m [32mI [0mslot print_timing: id  0 | task 538 |       total time =    2014.69 ms /   341 tokens
+[qwen_vlm_server-2] [34m6.14.106.539[0m [32mI [0mslot print_timing: id  0 | task 538 |    graphs reused =        534
+[qwen_vlm_server-2] [34m6.14.106.704[0m [32mI [0mslot      release: id  0 | task 538 | stop processing: n_tokens = 2520, truncated = 0
+[qwen_vlm_server-2] [34m6.14.130.845[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.988 (> 0.100 thold), f_keep = 0.958
+[qwen_vlm_server-2] [34m6.14.130.950[0m [32mI [0mslot launch_slot_: id  0 | task 590 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.14.325.989[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 20 new tokens
+[qwen_vlm_server-2] [0m[34m6.14.326.081[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 20 new tokens
+[qwen_vlm_server-2] [0m[34m6.14.331.874[0m [35mW find_slot: non-consecutive token position 2423 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.14.331.947[0m [35mW find_slot: non-consecutive token position 2423 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.15.680.515[0m [32mI [0mslot print_timing: id  0 | task 590 | prompt eval time =     315.33 ms /   263 tokens (    1.20 ms per token,   834.03 tokens per second)
+[qwen_vlm_server-2] [34m6.15.680.521[0m [32mI [0mslot print_timing: id  0 | task 590 |        eval time =    1234.20 ms /    50 tokens (   24.68 ms per token,    40.51 tokens per second)
+[qwen_vlm_server-2] [34m6.15.680.522[0m [32mI [0mslot print_timing: id  0 | task 590 |       total time =    1549.53 ms /   313 tokens
+[qwen_vlm_server-2] [34m6.15.680.524[0m [32mI [0mslot print_timing: id  0 | task 590 |    graphs reused =        582
+[qwen_vlm_server-2] [34m6.15.680.696[0m [32mI [0mslot      release: id  0 | task 590 | stop processing: n_tokens = 2492, truncated = 0
+[qwen_vlm_server-2] [34m6.15.720.743[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.984 (> 0.100 thold), f_keep = 0.968
+[qwen_vlm_server-2] [34m6.15.720.900[0m [32mI [0mslot launch_slot_: id  0 | task 643 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.15.848.326[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 30 new tokens
+[qwen_vlm_server-2] [0m[34m6.15.848.379[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 30 new tokens
+[qwen_vlm_server-2] [0m[34m6.15.938.149[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.15.938.190[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.17.427.683[0m [32mI [0mslot print_timing: id  0 | task 643 | prompt eval time =     339.43 ms /   273 tokens (    1.24 ms per token,   804.30 tokens per second)
+[qwen_vlm_server-2] [34m6.17.427.690[0m [32mI [0mslot print_timing: id  0 | task 643 |        eval time =    1367.32 ms /    50 tokens (   27.35 ms per token,    36.57 tokens per second)
+[qwen_vlm_server-2] [34m6.17.427.691[0m [32mI [0mslot print_timing: id  0 | task 643 |       total time =    1706.74 ms /   323 tokens
+[qwen_vlm_server-2] [34m6.17.427.692[0m [32mI [0mslot print_timing: id  0 | task 643 |    graphs reused =        630
+[qwen_vlm_server-2] [34m6.17.427.902[0m [32mI [0mslot      release: id  0 | task 643 | stop processing: n_tokens = 2502, truncated = 0
+[qwen_vlm_server-2] [34m6.17.455.954[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.965 (> 0.100 thold), f_keep = 0.964
+[qwen_vlm_server-2] [34m6.17.456.068[0m [32mI [0mslot launch_slot_: id  0 | task 696 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.17.667.423[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 78 new tokens
+[qwen_vlm_server-2] [0m[34m6.17.667.497[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 78 new tokens
+[qwen_vlm_server-2] [0m[34m6.17.679.952[0m [35mW find_slot: non-consecutive token position 2431 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.17.680.060[0m [35mW find_slot: non-consecutive token position 2431 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.19.349.186[0m [32mI [0mslot print_timing: id  0 | task 696 | prompt eval time =     363.85 ms /   321 tokens (    1.13 ms per token,   882.22 tokens per second)
+[qwen_vlm_server-2] [34m6.19.349.192[0m [32mI [0mslot print_timing: id  0 | task 696 |        eval time =    1529.23 ms /    49 tokens (   31.21 ms per token,    32.04 tokens per second)
+[qwen_vlm_server-2] [34m6.19.349.193[0m [32mI [0mslot print_timing: id  0 | task 696 |       total time =    1893.09 ms /   370 tokens
+[qwen_vlm_server-2] [34m6.19.349.194[0m [32mI [0mslot print_timing: id  0 | task 696 |    graphs reused =        677
+[qwen_vlm_server-2] [34m6.19.349.348[0m [32mI [0mslot      release: id  0 | task 696 | stop processing: n_tokens = 2549, truncated = 0
+[qwen_vlm_server-2] [34m6.19.373.394[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.984 (> 0.100 thold), f_keep = 0.947
+[qwen_vlm_server-2] [34m6.19.373.498[0m [32mI [0mslot launch_slot_: id  0 | task 748 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.19.488.718[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 28 new tokens
+[qwen_vlm_server-2] [0m[34m6.19.488.836[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 28 new tokens
+[qwen_vlm_server-2] [0m[34m6.19.578.808[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.19.578.906[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.21.094.727[0m [32mI [0mslot print_timing: id  0 | task 748 | prompt eval time =     345.40 ms /   271 tokens (    1.27 ms per token,   784.60 tokens per second)
+[qwen_vlm_server-2] [34m6.21.094.736[0m [32mI [0mslot print_timing: id  0 | task 748 |        eval time =    1375.78 ms /    51 tokens (   26.98 ms per token,    37.07 tokens per second)
+[qwen_vlm_server-2] [34m6.21.094.737[0m [32mI [0mslot print_timing: id  0 | task 748 |       total time =    1721.18 ms /   322 tokens
+[qwen_vlm_server-2] [34m6.21.094.739[0m [32mI [0mslot print_timing: id  0 | task 748 |    graphs reused =        726
+[qwen_vlm_server-2] [34m6.21.094.947[0m [32mI [0mslot      release: id  0 | task 748 | stop processing: n_tokens = 2501, truncated = 0
+[qwen_vlm_server-2] [34m6.21.136.184[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.965 (> 0.100 thold), f_keep = 0.965
+[qwen_vlm_server-2] [34m6.21.136.463[0m [32mI [0mslot launch_slot_: id  0 | task 802 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.21.279.612[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 78 new tokens
+[qwen_vlm_server-2] [0m[34m6.21.280.170[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 78 new tokens
+[qwen_vlm_server-2] [0m[34m6.21.359.532[0m [35mW find_slot: non-consecutive token position 2431 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.21.359.623[0m [35mW find_slot: non-consecutive token position 2431 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.22.841.101[0m [32mI [0mslot print_timing: id  0 | task 802 | prompt eval time =     364.15 ms /   321 tokens (    1.13 ms per token,   881.50 tokens per second)
+[qwen_vlm_server-2] [34m6.22.841.107[0m [32mI [0mslot print_timing: id  0 | task 802 |        eval time =    1340.43 ms /    50 tokens (   26.81 ms per token,    37.30 tokens per second)
+[qwen_vlm_server-2] [34m6.22.841.108[0m [32mI [0mslot print_timing: id  0 | task 802 |       total time =    1704.58 ms /   371 tokens
+[qwen_vlm_server-2] [34m6.22.841.110[0m [32mI [0mslot print_timing: id  0 | task 802 |    graphs reused =        774
+[qwen_vlm_server-2] [34m6.22.841.300[0m [32mI [0mslot      release: id  0 | task 802 | stop processing: n_tokens = 2550, truncated = 0
+[qwen_vlm_server-2] [34m6.22.879.012[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.932 (> 0.100 thold), f_keep = 0.946
+[qwen_vlm_server-2] [34m6.22.879.121[0m [32mI [0mslot launch_slot_: id  0 | task 855 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.23.104.776[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 165 new tokens
+[qwen_vlm_server-2] [0m[34m6.23.104.920[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 165 new tokens
+[qwen_vlm_server-2] [0m[34m6.23.122.821[0m [35mW find_slot: non-consecutive token position 2433 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.23.122.860[0m [35mW find_slot: non-consecutive token position 2433 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.24.538.972[0m [32mI [0mslot print_timing: id  0 | task 855 | prompt eval time =     452.20 ms /   408 tokens (    1.11 ms per token,   902.25 tokens per second)
+[qwen_vlm_server-2] [34m6.24.538.981[0m [32mI [0mslot print_timing: id  0 | task 855 |        eval time =    1207.61 ms /    49 tokens (   24.65 ms per token,    40.58 tokens per second)
+[qwen_vlm_server-2] [34m6.24.538.982[0m [32mI [0mslot print_timing: id  0 | task 855 |       total time =    1659.81 ms /   457 tokens
+[qwen_vlm_server-2] [34m6.24.538.983[0m [32mI [0mslot print_timing: id  0 | task 855 |    graphs reused =        821
+[qwen_vlm_server-2] [34m6.24.539.155[0m [32mI [0mslot      release: id  0 | task 855 | stop processing: n_tokens = 2636, truncated = 0
+[qwen_vlm_server-2] [34m6.24.568.386[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.974 (> 0.100 thold), f_keep = 0.915
+[qwen_vlm_server-2] [34m6.24.568.498[0m [32mI [0mslot launch_slot_: id  0 | task 907 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.24.696.564[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 54 new tokens
+[qwen_vlm_server-2] [0m[34m6.24.696.636[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 54 new tokens
+[qwen_vlm_server-2] [0m[34m6.24.774.749[0m [35mW find_slot: non-consecutive token position 2427 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.24.774.787[0m [35mW find_slot: non-consecutive token position 2427 after 2413 for sequence 0 with 6 new tokens
+[hydra_ros_node-6] [WARN] [1793538802.260593498] [hydra]: [input_module.cpp:141] [Hydra Input] active window queue full (max=5); dropped input @ 1560000134348373890 [ns] (31 dropped total)
+[qwen_vlm_server-2] [0m[34m6.26.645.353[0m [32mI [0mslot print_timing: id  0 | task 907 | prompt eval time =     330.97 ms /   297 tokens (    1.11 ms per token,   897.37 tokens per second)
+[qwen_vlm_server-2] [34m6.26.645.361[0m [32mI [0mslot print_timing: id  0 | task 907 |        eval time =    1745.85 ms /    51 tokens (   34.23 ms per token,    29.21 tokens per second)
+[qwen_vlm_server-2] [34m6.26.645.362[0m [32mI [0mslot print_timing: id  0 | task 907 |       total time =    2076.82 ms /   348 tokens
+[qwen_vlm_server-2] [34m6.26.645.364[0m [32mI [0mslot print_timing: id  0 | task 907 |    graphs reused =        870
+[qwen_vlm_server-2] [34m6.26.645.520[0m [32mI [0mslot      release: id  0 | task 907 | stop processing: n_tokens = 2527, truncated = 0
+[hydra_ros_node-6] [WARN] [1793538817.260562439] [hydra]: [input_module.cpp:141] [Hydra Input] active window queue full (max=5); dropped input @ 1560000137650508404 [ns] (61 dropped total)
+[qwen_vlm_server-2] [34m6.41.036.464[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.986 (> 0.100 thold), f_keep = 0.955
+[qwen_vlm_server-2] [34m6.41.036.587[0m [32mI [0mslot launch_slot_: id  0 | task 961 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.41.137.076[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 24 new tokens
+[qwen_vlm_server-2] [0m[34m6.41.137.143[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 24 new tokens
+[qwen_vlm_server-2] [0m[34m6.41.237.909[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.41.237.962[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.42.659.728[0m [32mI [0mslot print_timing: id  0 | task 961 | prompt eval time =     326.92 ms /   267 tokens (    1.22 ms per token,   816.72 tokens per second)
+[qwen_vlm_server-2] [34m6.42.659.782[0m [32mI [0mslot print_timing: id  0 | task 961 |        eval time =    1296.19 ms /    50 tokens (   25.92 ms per token,    38.57 tokens per second)
+[qwen_vlm_server-2] [34m6.42.659.796[0m [32mI [0mslot print_timing: id  0 | task 961 |       total time =    1623.11 ms /   317 tokens
+[qwen_vlm_server-2] [34m6.42.659.809[0m [32mI [0mslot print_timing: id  0 | task 961 |    graphs reused =        918
+[qwen_vlm_server-2] [34m6.42.660.007[0m [32mI [0mslot      release: id  0 | task 961 | stop processing: n_tokens = 2496, truncated = 0
+[qwen_vlm_server-2] [34m6.42.685.944[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.990 (> 0.100 thold), f_keep = 0.967
+[qwen_vlm_server-2] [34m6.42.686.084[0m [32mI [0mslot launch_slot_: id  0 | task 1014 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.42.877.208[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 14 new tokens
+[qwen_vlm_server-2] [0m[34m6.42.877.304[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 14 new tokens
+[qwen_vlm_server-2] [0m[34m6.42.883.807[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.42.883.883[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.44.425.684[0m [32mI [0mslot print_timing: id  0 | task 1014 | prompt eval time =     307.18 ms /   257 tokens (    1.20 ms per token,   836.64 tokens per second)
+[qwen_vlm_server-2] [34m6.44.427.105[0m [32mI [0mslot print_timing: id  0 | task 1014 |        eval time =    1432.36 ms /    50 tokens (   28.65 ms per token,    34.91 tokens per second)
+[qwen_vlm_server-2] [34m6.44.427.349[0m [32mI [0mslot print_timing: id  0 | task 1014 |       total time =    1739.54 ms /   307 tokens
+[qwen_vlm_server-2] [34m6.44.427.567[0m [32mI [0mslot print_timing: id  0 | task 1014 |    graphs reused =        966
+[qwen_vlm_server-2] [34m6.44.427.890[0m [32mI [0mslot      release: id  0 | task 1014 | stop processing: n_tokens = 2486, truncated = 0
+[qwen_vlm_server-2] [34m6.44.456.547[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.990 (> 0.100 thold), f_keep = 0.971
+[qwen_vlm_server-2] [34m6.44.457.112[0m [32mI [0mslot launch_slot_: id  0 | task 1067 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.44.551.274[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 14 new tokens
+[qwen_vlm_server-2] [0m[34m6.44.552.014[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 14 new tokens
+[qwen_vlm_server-2] [0m[34m6.44.647.238[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.44.648.038[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.46.063.349[0m [32mI [0mslot print_timing: id  0 | task 1067 | prompt eval time =     297.24 ms /   257 tokens (    1.16 ms per token,   864.62 tokens per second)
+[qwen_vlm_server-2] [34m6.46.063.356[0m [32mI [0mslot print_timing: id  0 | task 1067 |        eval time =    1308.48 ms /    51 tokens (   25.66 ms per token,    38.98 tokens per second)
+[qwen_vlm_server-2] [34m6.46.063.357[0m [32mI [0mslot print_timing: id  0 | task 1067 |       total time =    1605.72 ms /   308 tokens
+[qwen_vlm_server-2] [34m6.46.063.358[0m [32mI [0mslot print_timing: id  0 | task 1067 |    graphs reused =       1015
+[qwen_vlm_server-2] [34m6.46.063.569[0m [32mI [0mslot      release: id  0 | task 1067 | stop processing: n_tokens = 2487, truncated = 0
+[qwen_vlm_server-2] [34m6.49.357.854[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.963 (> 0.100 thold), f_keep = 0.970
+[qwen_vlm_server-2] [34m6.49.357.963[0m [32mI [0mslot launch_slot_: id  0 | task 1121 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.49.569.310[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 84 new tokens
+[qwen_vlm_server-2] [0m[34m6.49.569.402[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 84 new tokens
+[qwen_vlm_server-2] [0m[34m6.49.583.713[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.49.583.757[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.50.976.582[0m [32mI [0mslot print_timing: id  0 | task 1121 | prompt eval time =     365.54 ms /   327 tokens (    1.12 ms per token,   894.56 tokens per second)
+[qwen_vlm_server-2] [34m6.50.976.589[0m [32mI [0mslot print_timing: id  0 | task 1121 |        eval time =    1253.03 ms /    50 tokens (   25.06 ms per token,    39.90 tokens per second)
+[qwen_vlm_server-2] [34m6.50.976.589[0m [32mI [0mslot print_timing: id  0 | task 1121 |       total time =    1618.57 ms /   377 tokens
+[qwen_vlm_server-2] [34m6.50.976.591[0m [32mI [0mslot print_timing: id  0 | task 1121 |    graphs reused =       1063
+[qwen_vlm_server-2] [34m6.50.976.805[0m [32mI [0mslot      release: id  0 | task 1121 | stop processing: n_tokens = 2556, truncated = 0
+[qwen_vlm_server-2] [34m6.51.024.394[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.971 (> 0.100 thold), f_keep = 0.944
+[qwen_vlm_server-2] [34m6.51.024.573[0m [32mI [0mslot launch_slot_: id  0 | task 1174 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.51.145.321[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 63 new tokens
+[qwen_vlm_server-2] [0m[34m6.51.145.395[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 63 new tokens
+[qwen_vlm_server-2] [0m[34m6.51.216.751[0m [35mW find_slot: non-consecutive token position 2427 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.51.217.128[0m [35mW find_slot: non-consecutive token position 2427 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.52.769.851[0m [32mI [0mslot print_timing: id  0 | task 1174 | prompt eval time =     317.16 ms /   306 tokens (    1.04 ms per token,   964.82 tokens per second)
+[qwen_vlm_server-2] [34m6.52.769.857[0m [32mI [0mslot print_timing: id  0 | task 1174 |        eval time =    1427.74 ms /    54 tokens (   26.44 ms per token,    37.82 tokens per second)
+[qwen_vlm_server-2] [34m6.52.769.857[0m [32mI [0mslot print_timing: id  0 | task 1174 |       total time =    1744.90 ms /   360 tokens
+[qwen_vlm_server-2] [34m6.52.769.859[0m [32mI [0mslot print_timing: id  0 | task 1174 |    graphs reused =       1115
+[qwen_vlm_server-2] [34m6.52.771.584[0m [32mI [0mslot      release: id  0 | task 1174 | stop processing: n_tokens = 2539, truncated = 0
+[qwen_vlm_server-2] [34m6.52.798.056[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.981 (> 0.100 thold), f_keep = 0.950
+[qwen_vlm_server-2] [34m6.52.798.156[0m [32mI [0mslot launch_slot_: id  0 | task 1231 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.52.922.519[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 36 new tokens
+[qwen_vlm_server-2] [0m[34m6.52.922.575[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 36 new tokens
+[qwen_vlm_server-2] [0m[34m6.52.996.727[0m [35mW find_slot: non-consecutive token position 2427 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.52.996.770[0m [35mW find_slot: non-consecutive token position 2427 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.54.305.265[0m [32mI [0mslot print_timing: id  0 | task 1231 | prompt eval time =     313.18 ms /   279 tokens (    1.12 ms per token,   890.86 tokens per second)
+[qwen_vlm_server-2] [34m6.54.305.272[0m [32mI [0mslot print_timing: id  0 | task 1231 |        eval time =    1193.89 ms /    48 tokens (   24.87 ms per token,    40.20 tokens per second)
+[qwen_vlm_server-2] [34m6.54.305.273[0m [32mI [0mslot print_timing: id  0 | task 1231 |       total time =    1507.07 ms /   327 tokens
+[qwen_vlm_server-2] [34m6.54.305.274[0m [32mI [0mslot print_timing: id  0 | task 1231 |    graphs reused =       1161
+[qwen_vlm_server-2] [34m6.54.305.429[0m [32mI [0mslot      release: id  0 | task 1231 | stop processing: n_tokens = 2506, truncated = 0
+[qwen_vlm_server-2] [34m6.54.340.018[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.986 (> 0.100 thold), f_keep = 0.963
+[qwen_vlm_server-2] [34m6.54.340.182[0m [32mI [0mslot launch_slot_: id  0 | task 1282 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.54.451.624[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 24 new tokens
+[qwen_vlm_server-2] [0m[34m6.54.451.669[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 24 new tokens
+[qwen_vlm_server-2] [0m[34m6.54.542.132[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.54.542.182[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.55.925.814[0m [32mI [0mslot print_timing: id  0 | task 1282 | prompt eval time =     329.44 ms /   267 tokens (    1.23 ms per token,   810.46 tokens per second)
+[qwen_vlm_server-2] [34m6.55.925.822[0m [32mI [0mslot print_timing: id  0 | task 1282 |        eval time =    1256.14 ms /    46 tokens (   27.31 ms per token,    36.62 tokens per second)
+[qwen_vlm_server-2] [34m6.55.925.823[0m [32mI [0mslot print_timing: id  0 | task 1282 |       total time =    1585.59 ms /   313 tokens
+[qwen_vlm_server-2] [34m6.55.925.824[0m [32mI [0mslot print_timing: id  0 | task 1282 |    graphs reused =       1205
+[qwen_vlm_server-2] [34m6.55.926.049[0m [32mI [0mslot      release: id  0 | task 1282 | stop processing: n_tokens = 2492, truncated = 0
+[qwen_vlm_server-2] [34m6.55.985.873[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.953 (> 0.100 thold), f_keep = 0.968
+[qwen_vlm_server-2] [34m6.55.985.974[0m [32mI [0mslot launch_slot_: id  0 | task 1331 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.56.187.986[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 110 new tokens
+[qwen_vlm_server-2] [0m[34m6.56.188.105[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 110 new tokens
+[qwen_vlm_server-2] [0m[34m6.56.203.065[0m [35mW find_slot: non-consecutive token position 2429 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.56.203.108[0m [35mW find_slot: non-consecutive token position 2429 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.57.741.921[0m [32mI [0mslot print_timing: id  0 | task 1331 | prompt eval time =     386.18 ms /   353 tokens (    1.09 ms per token,   914.08 tokens per second)
+[qwen_vlm_server-2] [34m6.57.741.928[0m [32mI [0mslot print_timing: id  0 | task 1331 |        eval time =    1369.73 ms /    51 tokens (   26.86 ms per token,    37.23 tokens per second)
+[qwen_vlm_server-2] [34m6.57.741.929[0m [32mI [0mslot print_timing: id  0 | task 1331 |       total time =    1755.91 ms /   404 tokens
+[qwen_vlm_server-2] [34m6.57.741.930[0m [32mI [0mslot print_timing: id  0 | task 1331 |    graphs reused =       1253
+[qwen_vlm_server-2] [34m6.57.742.082[0m [32mI [0mslot      release: id  0 | task 1331 | stop processing: n_tokens = 2583, truncated = 0
+[qwen_vlm_server-2] [34m6.57.791.450[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.984 (> 0.100 thold), f_keep = 0.934
+[qwen_vlm_server-2] [34m6.57.791.605[0m [32mI [0mslot launch_slot_: id  0 | task 1385 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m6.57.922.100[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 28 new tokens
+[qwen_vlm_server-2] [0m[34m6.57.922.185[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 28 new tokens
+[qwen_vlm_server-2] [0m[34m6.58.001.871[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.58.001.971[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m6.59.739.868[0m [32mI [0mslot print_timing: id  0 | task 1385 | prompt eval time =     327.17 ms /   271 tokens (    1.21 ms per token,   828.33 tokens per second)
+[qwen_vlm_server-2] [34m6.59.739.875[0m [32mI [0mslot print_timing: id  0 | task 1385 |        eval time =    1621.06 ms /    51 tokens (   31.79 ms per token,    31.46 tokens per second)
+[qwen_vlm_server-2] [34m6.59.739.875[0m [32mI [0mslot print_timing: id  0 | task 1385 |       total time =    1948.22 ms /   322 tokens
+[qwen_vlm_server-2] [34m6.59.739.877[0m [32mI [0mslot print_timing: id  0 | task 1385 |    graphs reused =       1302
+[qwen_vlm_server-2] [34m6.59.740.048[0m [32mI [0mslot      release: id  0 | task 1385 | stop processing: n_tokens = 2501, truncated = 0
+[qwen_vlm_server-2] [34m6.59.811.652[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.944 (> 0.100 thold), f_keep = 0.965
+[qwen_vlm_server-2] [34m6.59.811.724[0m [32mI [0mslot launch_slot_: id  0 | task 1439 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.00.060.909[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 132 new tokens
+[qwen_vlm_server-2] [0m[34m7.00.061.010[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 132 new tokens
+[qwen_vlm_server-2] [0m[34m7.00.080.060[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.00.080.100[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.01.886.746[0m [32mI [0mslot print_timing: id  0 | task 1439 | prompt eval time =     617.54 ms /   375 tokens (    1.65 ms per token,   607.25 tokens per second)
+[qwen_vlm_server-2] [34m7.01.886.752[0m [32mI [0mslot print_timing: id  0 | task 1439 |        eval time =    1457.45 ms /    52 tokens (   28.03 ms per token,    35.68 tokens per second)
+[qwen_vlm_server-2] [34m7.01.886.753[0m [32mI [0mslot print_timing: id  0 | task 1439 |       total time =    2074.99 ms /   427 tokens
+[qwen_vlm_server-2] [34m7.01.886.754[0m [32mI [0mslot print_timing: id  0 | task 1439 |    graphs reused =       1351
+[qwen_vlm_server-2] [34m7.01.886.916[0m [32mI [0mslot      release: id  0 | task 1439 | stop processing: n_tokens = 2606, truncated = 0
+[qwen_vlm_server-2] [34m7.01.918.807[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.972 (> 0.100 thold), f_keep = 0.926
+[qwen_vlm_server-2] [34m7.01.918.996[0m [32mI [0mslot launch_slot_: id  0 | task 1494 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.02.052.072[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 60 new tokens
+[qwen_vlm_server-2] [0m[34m7.02.052.138[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 60 new tokens
+[qwen_vlm_server-2] [0m[34m7.02.131.836[0m [35mW find_slot: non-consecutive token position 2428 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.02.131.885[0m [35mW find_slot: non-consecutive token position 2428 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.03.503.675[0m [32mI [0mslot print_timing: id  0 | task 1494 | prompt eval time =     333.42 ms /   303 tokens (    1.10 ms per token,   908.77 tokens per second)
+[qwen_vlm_server-2] [34m7.03.503.681[0m [32mI [0mslot print_timing: id  0 | task 1494 |        eval time =    1251.22 ms /    52 tokens (   24.06 ms per token,    41.56 tokens per second)
+[qwen_vlm_server-2] [34m7.03.503.681[0m [32mI [0mslot print_timing: id  0 | task 1494 |       total time =    1584.64 ms /   355 tokens
+[qwen_vlm_server-2] [34m7.03.503.683[0m [32mI [0mslot print_timing: id  0 | task 1494 |    graphs reused =       1401
+[qwen_vlm_server-2] [34m7.03.503.857[0m [32mI [0mslot      release: id  0 | task 1494 | stop processing: n_tokens = 2534, truncated = 0
+[qwen_vlm_server-2] [34m7.03.531.076[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.989 (> 0.100 thold), f_keep = 0.952
+[qwen_vlm_server-2] [34m7.03.531.182[0m [32mI [0mslot launch_slot_: id  0 | task 1549 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.03.845.280[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 18 new tokens
+[qwen_vlm_server-2] [0m[34m7.03.845.320[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 18 new tokens
+[qwen_vlm_server-2] [0m[34m7.03.855.975[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.03.856.011[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.05.551.666[0m [32mI [0mslot print_timing: id  0 | task 1549 | prompt eval time =     523.53 ms /   261 tokens (    2.01 ms per token,   498.54 tokens per second)
+[qwen_vlm_server-2] [34m7.05.551.674[0m [32mI [0mslot print_timing: id  0 | task 1549 |        eval time =    1496.92 ms /    54 tokens (   27.72 ms per token,    36.07 tokens per second)
+[qwen_vlm_server-2] [34m7.05.551.675[0m [32mI [0mslot print_timing: id  0 | task 1549 |       total time =    2020.45 ms /   315 tokens
+[qwen_vlm_server-2] [34m7.05.551.677[0m [32mI [0mslot print_timing: id  0 | task 1549 |    graphs reused =       1453
+[qwen_vlm_server-2] [34m7.05.551.835[0m [32mI [0mslot      release: id  0 | task 1549 | stop processing: n_tokens = 2494, truncated = 0
+[qwen_vlm_server-2] [34m7.05.594.012[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.978 (> 0.100 thold), f_keep = 0.968
+[qwen_vlm_server-2] [34m7.05.594.166[0m [32mI [0mslot launch_slot_: id  0 | task 1606 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.05.800.256[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 44 new tokens
+[qwen_vlm_server-2] [0m[34m7.05.800.328[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 44 new tokens
+[qwen_vlm_server-2] [0m[34m7.05.810.421[0m [35mW find_slot: non-consecutive token position 2429 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.05.811.041[0m [35mW find_slot: non-consecutive token position 2429 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.07.153.304[0m [32mI [0mslot print_timing: id  0 | task 1606 | prompt eval time =     350.09 ms /   287 tokens (    1.22 ms per token,   819.78 tokens per second)
+[qwen_vlm_server-2] [34m7.07.153.315[0m [32mI [0mslot print_timing: id  0 | task 1606 |        eval time =    1208.98 ms /    48 tokens (   25.19 ms per token,    39.70 tokens per second)
+[qwen_vlm_server-2] [34m7.07.153.316[0m [32mI [0mslot print_timing: id  0 | task 1606 |       total time =    1559.07 ms /   335 tokens
+[qwen_vlm_server-2] [34m7.07.153.317[0m [32mI [0mslot print_timing: id  0 | task 1606 |    graphs reused =       1499
+[qwen_vlm_server-2] [34m7.07.153.561[0m [32mI [0mslot      release: id  0 | task 1606 | stop processing: n_tokens = 2514, truncated = 0
+[qwen_vlm_server-2] [34m7.07.185.460[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.989 (> 0.100 thold), f_keep = 0.960
+[qwen_vlm_server-2] [34m7.07.185.577[0m [32mI [0mslot launch_slot_: id  0 | task 1657 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.07.377.659[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 16 new tokens
+[qwen_vlm_server-2] [0m[34m7.07.377.700[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 16 new tokens
+[qwen_vlm_server-2] [0m[34m7.07.384.691[0m [35mW find_slot: non-consecutive token position 2422 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.07.384.736[0m [35mW find_slot: non-consecutive token position 2422 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.08.812.087[0m [32mI [0mslot print_timing: id  0 | task 1657 | prompt eval time =     318.19 ms /   259 tokens (    1.23 ms per token,   813.97 tokens per second)
+[qwen_vlm_server-2] [34m7.08.812.093[0m [32mI [0mslot print_timing: id  0 | task 1657 |        eval time =    1308.29 ms /    50 tokens (   26.17 ms per token,    38.22 tokens per second)
+[qwen_vlm_server-2] [34m7.08.812.094[0m [32mI [0mslot print_timing: id  0 | task 1657 |       total time =    1626.48 ms /   309 tokens
+[qwen_vlm_server-2] [34m7.08.812.096[0m [32mI [0mslot print_timing: id  0 | task 1657 |    graphs reused =       1547
+[qwen_vlm_server-2] [34m7.08.812.244[0m [32mI [0mslot      release: id  0 | task 1657 | stop processing: n_tokens = 2488, truncated = 0
+[qwen_vlm_server-2] [34m7.08.842.195[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.961 (> 0.100 thold), f_keep = 0.970
+[qwen_vlm_server-2] [34m7.08.842.341[0m [32mI [0mslot launch_slot_: id  0 | task 1710 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.09.052.896[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 88 new tokens
+[qwen_vlm_server-2] [0m[34m7.09.053.021[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 88 new tokens
+[qwen_vlm_server-2] [0m[34m7.09.066.336[0m [35mW find_slot: non-consecutive token position 2429 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.09.066.415[0m [35mW find_slot: non-consecutive token position 2429 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.11.144.037[0m [32mI [0mslot print_timing: id  0 | task 1710 | prompt eval time =     372.64 ms /   331 tokens (    1.13 ms per token,   888.25 tokens per second)
+[qwen_vlm_server-2] [34m7.11.144.044[0m [32mI [0mslot print_timing: id  0 | task 1710 |        eval time =    1929.01 ms /    54 tokens (   35.72 ms per token,    27.99 tokens per second)
+[qwen_vlm_server-2] [34m7.11.144.045[0m [32mI [0mslot print_timing: id  0 | task 1710 |       total time =    2301.65 ms /   385 tokens
+[qwen_vlm_server-2] [34m7.11.144.047[0m [32mI [0mslot print_timing: id  0 | task 1710 |    graphs reused =       1598
+[qwen_vlm_server-2] [34m7.11.144.205[0m [32mI [0mslot      release: id  0 | task 1710 | stop processing: n_tokens = 2564, truncated = 0
+[qwen_vlm_server-2] [34m7.11.176.732[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.987 (> 0.100 thold), f_keep = 0.941
+[qwen_vlm_server-2] [34m7.11.176.860[0m [32mI [0mslot launch_slot_: id  0 | task 1767 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.11.372.892[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 21 new tokens
+[qwen_vlm_server-2] [0m[34m7.11.372.934[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 21 new tokens
+[qwen_vlm_server-2] [0m[34m7.11.379.515[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.11.379.556[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.12.934.536[0m [32mI [0mslot print_timing: id  0 | task 1767 | prompt eval time =     320.21 ms /   264 tokens (    1.21 ms per token,   824.46 tokens per second)
+[qwen_vlm_server-2] [34m7.12.934.544[0m [32mI [0mslot print_timing: id  0 | task 1767 |        eval time =    1437.43 ms /    52 tokens (   27.64 ms per token,    36.18 tokens per second)
+[qwen_vlm_server-2] [34m7.12.934.545[0m [32mI [0mslot print_timing: id  0 | task 1767 |       total time =    1757.64 ms /   316 tokens
+[qwen_vlm_server-2] [34m7.12.934.546[0m [32mI [0mslot print_timing: id  0 | task 1767 |    graphs reused =       1648
+[qwen_vlm_server-2] [34m7.12.934.713[0m [32mI [0mslot      release: id  0 | task 1767 | stop processing: n_tokens = 2495, truncated = 0
+[qwen_vlm_server-2] [34m7.12.964.360[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.981 (> 0.100 thold), f_keep = 0.967
+[qwen_vlm_server-2] [34m7.12.964.460[0m [32mI [0mslot launch_slot_: id  0 | task 1822 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.13.155.663[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 36 new tokens
+[qwen_vlm_server-2] [0m[34m7.13.155.733[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 36 new tokens
+[qwen_vlm_server-2] [0m[34m7.13.288.117[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.13.288.164[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.14.753.120[0m [32mI [0mslot print_timing: id  0 | task 1822 | prompt eval time =     499.75 ms /   279 tokens (    1.79 ms per token,   558.27 tokens per second)
+[qwen_vlm_server-2] [34m7.14.753.127[0m [32mI [0mslot print_timing: id  0 | task 1822 |        eval time =    1288.87 ms /    50 tokens (   25.78 ms per token,    38.79 tokens per second)
+[qwen_vlm_server-2] [34m7.14.753.128[0m [32mI [0mslot print_timing: id  0 | task 1822 |       total time =    1788.63 ms /   329 tokens
+[qwen_vlm_server-2] [34m7.14.753.129[0m [32mI [0mslot print_timing: id  0 | task 1822 |    graphs reused =       1696
+[qwen_vlm_server-2] [34m7.14.753.280[0m [32mI [0mslot      release: id  0 | task 1822 | stop processing: n_tokens = 2508, truncated = 0
+[qwen_vlm_server-2] [34m7.14.783.578[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.972 (> 0.100 thold), f_keep = 0.962
+[qwen_vlm_server-2] [34m7.14.783.696[0m [32mI [0mslot launch_slot_: id  0 | task 1875 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.14.904.923[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 60 new tokens
+[qwen_vlm_server-2] [0m[34m7.14.904.991[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 60 new tokens
+[qwen_vlm_server-2] [0m[34m7.14.978.619[0m [35mW find_slot: non-consecutive token position 2433 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.14.978.659[0m [35mW find_slot: non-consecutive token position 2433 after 2413 for sequence 0 with 6 new tokens
+[hydra_ros_node-6] [WARN] [1793538853.040711471] [hydra]: [input_module.cpp:141] [Hydra Input] active window queue full (max=5); dropped input @ 1560000144788698912 [ns] (91 dropped total)
+[qwen_vlm_server-2] [0m[34m7.16.369.423[0m [32mI [0mslot print_timing: id  0 | task 1875 | prompt eval time =     324.24 ms /   303 tokens (    1.07 ms per token,   934.49 tokens per second)
+[qwen_vlm_server-2] [34m7.16.369.618[0m [32mI [0mslot print_timing: id  0 | task 1875 |        eval time =    1261.45 ms /    49 tokens (   25.74 ms per token,    38.84 tokens per second)
+[qwen_vlm_server-2] [34m7.16.369.631[0m [32mI [0mslot print_timing: id  0 | task 1875 |       total time =    1585.69 ms /   352 tokens
+[qwen_vlm_server-2] [34m7.16.369.644[0m [32mI [0mslot print_timing: id  0 | task 1875 |    graphs reused =       1743
+[qwen_vlm_server-2] [34m7.16.369.827[0m [32mI [0mslot      release: id  0 | task 1875 | stop processing: n_tokens = 2531, truncated = 0
+[qwen_vlm_server-2] [34m7.16.396.981[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.976 (> 0.100 thold), f_keep = 0.953
+[qwen_vlm_server-2] [34m7.16.397.130[0m [32mI [0mslot launch_slot_: id  0 | task 1927 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.16.517.276[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 49 new tokens
+[qwen_vlm_server-2] [0m[34m7.16.517.394[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 49 new tokens
+[qwen_vlm_server-2] [0m[34m7.16.599.697[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.16.599.747[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.18.173.042[0m [32mI [0mslot print_timing: id  0 | task 1927 | prompt eval time =     386.82 ms /   292 tokens (    1.32 ms per token,   754.88 tokens per second)
+[qwen_vlm_server-2] [34m7.18.173.050[0m [32mI [0mslot print_timing: id  0 | task 1927 |        eval time =    1389.05 ms /    51 tokens (   27.24 ms per token,    36.72 tokens per second)
+[qwen_vlm_server-2] [34m7.18.173.050[0m [32mI [0mslot print_timing: id  0 | task 1927 |       total time =    1775.86 ms /   343 tokens
+[qwen_vlm_server-2] [34m7.18.173.052[0m [32mI [0mslot print_timing: id  0 | task 1927 |    graphs reused =       1792
+[qwen_vlm_server-2] [34m7.18.173.205[0m [32mI [0mslot      release: id  0 | task 1927 | stop processing: n_tokens = 2522, truncated = 0
+[qwen_vlm_server-2] [34m7.18.197.926[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.984 (> 0.100 thold), f_keep = 0.957
+[qwen_vlm_server-2] [34m7.18.198.032[0m [32mI [0mslot launch_slot_: id  0 | task 1981 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.18.306.949[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 28 new tokens
+[qwen_vlm_server-2] [0m[34m7.18.307.024[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 28 new tokens
+[qwen_vlm_server-2] [0m[34m7.18.394.226[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.18.394.315[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.19.910.666[0m [32mI [0mslot print_timing: id  0 | task 1981 | prompt eval time =     314.48 ms /   271 tokens (    1.16 ms per token,   861.73 tokens per second)
+[qwen_vlm_server-2] [34m7.19.910.672[0m [32mI [0mslot print_timing: id  0 | task 1981 |        eval time =    1398.11 ms /    51 tokens (   27.41 ms per token,    36.48 tokens per second)
+[qwen_vlm_server-2] [34m7.19.910.672[0m [32mI [0mslot print_timing: id  0 | task 1981 |       total time =    1712.59 ms /   322 tokens
+[qwen_vlm_server-2] [34m7.19.910.674[0m [32mI [0mslot print_timing: id  0 | task 1981 |    graphs reused =       1841
+[qwen_vlm_server-2] [34m7.19.910.836[0m [32mI [0mslot      release: id  0 | task 1981 | stop processing: n_tokens = 2501, truncated = 0
+[qwen_vlm_server-2] [34m7.20.117.968[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.985 (> 0.100 thold), f_keep = 0.965
+[qwen_vlm_server-2] [34m7.20.118.059[0m [32mI [0mslot launch_slot_: id  0 | task 2035 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.20.243.193[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 27 new tokens
+[qwen_vlm_server-2] [0m[34m7.20.243.239[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 27 new tokens
+[qwen_vlm_server-2] [0m[34m7.20.333.825[0m [35mW find_slot: non-consecutive token position 2427 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.20.333.869[0m [35mW find_slot: non-consecutive token position 2427 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.21.843.296[0m [32mI [0mslot print_timing: id  0 | task 2035 | prompt eval time =     344.15 ms /   270 tokens (    1.27 ms per token,   784.53 tokens per second)
+[qwen_vlm_server-2] [34m7.21.843.303[0m [32mI [0mslot print_timing: id  0 | task 2035 |        eval time =    1381.06 ms /    52 tokens (   26.56 ms per token,    37.65 tokens per second)
+[qwen_vlm_server-2] [34m7.21.843.304[0m [32mI [0mslot print_timing: id  0 | task 2035 |       total time =    1725.21 ms /   322 tokens
+[qwen_vlm_server-2] [34m7.21.843.306[0m [32mI [0mslot print_timing: id  0 | task 2035 |    graphs reused =       1891
+[qwen_vlm_server-2] [34m7.21.843.462[0m [32mI [0mslot      release: id  0 | task 2035 | stop processing: n_tokens = 2501, truncated = 0
+[qwen_vlm_server-2] [34m7.26.772.759[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.981 (> 0.100 thold), f_keep = 0.965
+[qwen_vlm_server-2] [34m7.26.772.867[0m [32mI [0mslot launch_slot_: id  0 | task 2090 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.26.979.281[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 36 new tokens
+[qwen_vlm_server-2] [0m[34m7.26.979.335[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 36 new tokens
+[qwen_vlm_server-2] [0m[34m7.27.106.117[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.27.106.154[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[hydra_ros_node-6] [INFO] [1793538864.635342444] [hydra]: [update_objects_functor.cpp:207] [Hydra] object merge scan: 0 proposed | 42 active examined | 0 archived candidates across 0 label(s) | 42 objects total
+[qwen_vlm_server-2] [0m[34m7.29.219.172[0m [32mI [0mslot print_timing: id  0 | task 2090 | prompt eval time =     542.66 ms /   279 tokens (    1.95 ms per token,   514.13 tokens per second)
+[qwen_vlm_server-2] [34m7.29.219.177[0m [32mI [0mslot print_timing: id  0 | task 2090 |        eval time =    1903.62 ms /    55 tokens (   34.61 ms per token,    28.89 tokens per second)
+[qwen_vlm_server-2] [34m7.29.219.178[0m [32mI [0mslot print_timing: id  0 | task 2090 |       total time =    2446.28 ms /   334 tokens
+[qwen_vlm_server-2] [34m7.29.219.180[0m [32mI [0mslot print_timing: id  0 | task 2090 |    graphs reused =       1944
+[qwen_vlm_server-2] [34m7.29.219.332[0m [32mI [0mslot      release: id  0 | task 2090 | stop processing: n_tokens = 2513, truncated = 0
+[qwen_vlm_server-2] [34m7.29.436.279[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.978 (> 0.100 thold), f_keep = 0.960
+[qwen_vlm_server-2] [34m7.29.436.392[0m [32mI [0mslot launch_slot_: id  0 | task 2148 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.29.631.315[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 45 new tokens
+[qwen_vlm_server-2] [0m[34m7.29.631.767[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 45 new tokens
+[qwen_vlm_server-2] [0m[34m7.29.642.236[0m [35mW find_slot: non-consecutive token position 2427 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.29.642.274[0m [35mW find_slot: non-consecutive token position 2427 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.31.036.999[0m [32mI [0mslot print_timing: id  0 | task 2148 | prompt eval time =     327.68 ms /   288 tokens (    1.14 ms per token,   878.91 tokens per second)
+[qwen_vlm_server-2] [34m7.31.037.011[0m [32mI [0mslot print_timing: id  0 | task 2148 |        eval time =    1272.88 ms /    50 tokens (   25.46 ms per token,    39.28 tokens per second)
+[qwen_vlm_server-2] [34m7.31.037.011[0m [32mI [0mslot print_timing: id  0 | task 2148 |       total time =    1600.56 ms /   338 tokens
+[qwen_vlm_server-2] [34m7.31.037.013[0m [32mI [0mslot print_timing: id  0 | task 2148 |    graphs reused =       1992
+[qwen_vlm_server-2] [34m7.31.037.239[0m [32mI [0mslot      release: id  0 | task 2148 | stop processing: n_tokens = 2517, truncated = 0
+[qwen_vlm_server-2] [34m7.37.269.876[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.953 (> 0.100 thold), f_keep = 0.959
+[qwen_vlm_server-2] [34m7.37.269.997[0m [32mI [0mslot launch_slot_: id  0 | task 2201 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.37.423.188[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 110 new tokens
+[qwen_vlm_server-2] [0m[34m7.37.423.280[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 110 new tokens
+[qwen_vlm_server-2] [0m[34m7.37.494.097[0m [35mW find_slot: non-consecutive token position 2429 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.37.494.186[0m [35mW find_slot: non-consecutive token position 2429 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.39.492.311[0m [32mI [0mslot print_timing: id  0 | task 2201 | prompt eval time =     390.97 ms /   353 tokens (    1.11 ms per token,   902.87 tokens per second)
+[qwen_vlm_server-2] [34m7.39.492.319[0m [32mI [0mslot print_timing: id  0 | task 2201 |        eval time =    1831.30 ms /    50 tokens (   36.63 ms per token,    27.30 tokens per second)
+[qwen_vlm_server-2] [34m7.39.492.321[0m [32mI [0mslot print_timing: id  0 | task 2201 |       total time =    2222.28 ms /   403 tokens
+[qwen_vlm_server-2] [34m7.39.492.322[0m [32mI [0mslot print_timing: id  0 | task 2201 |    graphs reused =       2039
+[qwen_vlm_server-2] [34m7.39.492.491[0m [32mI [0mslot      release: id  0 | task 2201 | stop processing: n_tokens = 2582, truncated = 0
+[qwen_vlm_server-2] [34m7.39.519.608[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.972 (> 0.100 thold), f_keep = 0.935
+[qwen_vlm_server-2] [34m7.39.519.716[0m [32mI [0mslot launch_slot_: id  0 | task 2254 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.39.666.832[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 60 new tokens
+[qwen_vlm_server-2] [0m[34m7.39.666.907[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 60 new tokens
+[qwen_vlm_server-2] [0m[34m7.39.743.983[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.39.744.024[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.41.528.427[0m [32mI [0mslot print_timing: id  0 | task 2254 | prompt eval time =     359.51 ms /   303 tokens (    1.19 ms per token,   842.82 tokens per second)
+[qwen_vlm_server-2] [34m7.41.528.438[0m [32mI [0mslot print_timing: id  0 | task 2254 |        eval time =    1649.16 ms /    52 tokens (   31.71 ms per token,    31.53 tokens per second)
+[qwen_vlm_server-2] [34m7.41.528.439[0m [32mI [0mslot print_timing: id  0 | task 2254 |       total time =    2008.67 ms /   355 tokens
+[qwen_vlm_server-2] [34m7.41.528.441[0m [32mI [0mslot print_timing: id  0 | task 2254 |    graphs reused =       2089
+[qwen_vlm_server-2] [34m7.41.528.602[0m [32mI [0mslot      release: id  0 | task 2254 | stop processing: n_tokens = 2534, truncated = 0
+[qwen_vlm_server-2] [34m7.41.560.830[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.967 (> 0.100 thold), f_keep = 0.952
+[qwen_vlm_server-2] [34m7.41.560.929[0m [32mI [0mslot launch_slot_: id  0 | task 2309 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.41.772.324[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 72 new tokens
+[qwen_vlm_server-2] [0m[34m7.41.772.449[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 72 new tokens
+[qwen_vlm_server-2] [0m[34m7.41.781.987[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.41.782.110[0m [35mW find_slot: non-consecutive token position 2430 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.43.276.356[0m [32mI [0mslot print_timing: id  0 | task 2309 | prompt eval time =     363.22 ms /   315 tokens (    1.15 ms per token,   867.24 tokens per second)
+[qwen_vlm_server-2] [34m7.43.276.366[0m [32mI [0mslot print_timing: id  0 | task 2309 |        eval time =    1352.17 ms /    50 tokens (   27.04 ms per token,    36.98 tokens per second)
+[qwen_vlm_server-2] [34m7.43.276.366[0m [32mI [0mslot print_timing: id  0 | task 2309 |       total time =    1715.39 ms /   365 tokens
+[qwen_vlm_server-2] [34m7.43.276.369[0m [32mI [0mslot print_timing: id  0 | task 2309 |    graphs reused =       2137
+[qwen_vlm_server-2] [34m7.43.276.557[0m [32mI [0mslot      release: id  0 | task 2309 | stop processing: n_tokens = 2544, truncated = 0
+[qwen_vlm_server-2] [34m7.50.394.905[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.968 (> 0.100 thold), f_keep = 0.949
+[qwen_vlm_server-2] [34m7.50.395.016[0m [32mI [0mslot launch_slot_: id  0 | task 2362 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.50.610.324[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 70 new tokens
+[qwen_vlm_server-2] [0m[34m7.50.612.233[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 70 new tokens
+[qwen_vlm_server-2] [0m[34m7.50.627.654[0m [35mW find_slot: non-consecutive token position 2428 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.50.627.768[0m [35mW find_slot: non-consecutive token position 2428 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.52.112.447[0m [32mI [0mslot print_timing: id  0 | task 2362 | prompt eval time =     381.66 ms /   313 tokens (    1.22 ms per token,   820.10 tokens per second)
+[qwen_vlm_server-2] [34m7.52.112.455[0m [32mI [0mslot print_timing: id  0 | task 2362 |        eval time =    1335.74 ms /    50 tokens (   26.71 ms per token,    37.43 tokens per second)
+[qwen_vlm_server-2] [34m7.52.112.456[0m [32mI [0mslot print_timing: id  0 | task 2362 |       total time =    1717.40 ms /   363 tokens
+[qwen_vlm_server-2] [34m7.52.112.457[0m [32mI [0mslot print_timing: id  0 | task 2362 |    graphs reused =       2185
+[qwen_vlm_server-2] [34m7.52.112.626[0m [32mI [0mslot      release: id  0 | task 2362 | stop processing: n_tokens = 2542, truncated = 0
+[qwen_vlm_server-2] [34m7.53.649.287[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.976 (> 0.100 thold), f_keep = 0.949
+[qwen_vlm_server-2] [34m7.53.649.419[0m [32mI [0mslot launch_slot_: id  0 | task 2415 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.53.783.200[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 50 new tokens
+[qwen_vlm_server-2] [0m[34m7.53.783.328[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 50 new tokens
+[qwen_vlm_server-2] [0m[34m7.53.860.588[0m [35mW find_slot: non-consecutive token position 2428 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.53.860.797[0m [35mW find_slot: non-consecutive token position 2428 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.55.380.261[0m [32mI [0mslot print_timing: id  0 | task 2415 | prompt eval time =     349.45 ms /   293 tokens (    1.19 ms per token,   838.46 tokens per second)
+[qwen_vlm_server-2] [34m7.55.380.315[0m [32mI [0mslot print_timing: id  0 | task 2415 |        eval time =    1381.36 ms /    51 tokens (   27.09 ms per token,    36.92 tokens per second)
+[qwen_vlm_server-2] [34m7.55.380.327[0m [32mI [0mslot print_timing: id  0 | task 2415 |       total time =    1730.81 ms /   344 tokens
+[qwen_vlm_server-2] [34m7.55.380.341[0m [32mI [0mslot print_timing: id  0 | task 2415 |    graphs reused =       2234
+[qwen_vlm_server-2] [34m7.55.380.528[0m [32mI [0mslot      release: id  0 | task 2415 | stop processing: n_tokens = 2523, truncated = 0
+[qwen_vlm_server-2] [34m7.55.415.472[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.989 (> 0.100 thold), f_keep = 0.956
+[qwen_vlm_server-2] [34m7.55.415.620[0m [32mI [0mslot launch_slot_: id  0 | task 2469 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.55.521.058[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 18 new tokens
+[qwen_vlm_server-2] [0m[34m7.55.521.126[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 18 new tokens
+[qwen_vlm_server-2] [0m[34m7.55.613.488[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.55.613.529[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.56.925.484[0m [32mI [0mslot print_timing: id  0 | task 2469 | prompt eval time =     319.12 ms /   261 tokens (    1.22 ms per token,   817.88 tokens per second)
+[qwen_vlm_server-2] [34m7.56.925.493[0m [32mI [0mslot print_timing: id  0 | task 2469 |        eval time =    1190.72 ms /    48 tokens (   24.81 ms per token,    40.31 tokens per second)
+[qwen_vlm_server-2] [34m7.56.925.494[0m [32mI [0mslot print_timing: id  0 | task 2469 |       total time =    1509.84 ms /   309 tokens
+[qwen_vlm_server-2] [34m7.56.925.496[0m [32mI [0mslot print_timing: id  0 | task 2469 |    graphs reused =       2280
+[qwen_vlm_server-2] [34m7.56.925.643[0m [32mI [0mslot      release: id  0 | task 2469 | stop processing: n_tokens = 2488, truncated = 0
+[qwen_vlm_server-2] [34m7.56.952.258[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.979 (> 0.100 thold), f_keep = 0.970
+[qwen_vlm_server-2] [34m7.56.952.712[0m [32mI [0mslot launch_slot_: id  0 | task 2520 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.57.056.188[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 42 new tokens
+[qwen_vlm_server-2] [0m[34m7.57.056.759[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 42 new tokens
+[qwen_vlm_server-2] [0m[34m7.57.125.487[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.57.126.049[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.58.359.639[0m [32mI [0mslot print_timing: id  0 | task 2520 | prompt eval time =     282.79 ms /   285 tokens (    0.99 ms per token,  1007.81 tokens per second)
+[qwen_vlm_server-2] [34m7.58.359.646[0m [32mI [0mslot print_timing: id  0 | task 2520 |        eval time =    1124.07 ms /    52 tokens (   21.62 ms per token,    46.26 tokens per second)
+[qwen_vlm_server-2] [34m7.58.359.646[0m [32mI [0mslot print_timing: id  0 | task 2520 |       total time =    1406.86 ms /   337 tokens
+[qwen_vlm_server-2] [34m7.58.359.648[0m [32mI [0mslot print_timing: id  0 | task 2520 |    graphs reused =       2330
+[qwen_vlm_server-2] [34m7.58.359.798[0m [32mI [0mslot      release: id  0 | task 2520 | stop processing: n_tokens = 2516, truncated = 0
+[qwen_vlm_server-2] [34m7.58.387.228[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.984 (> 0.100 thold), f_keep = 0.959
+[qwen_vlm_server-2] [34m7.58.387.330[0m [32mI [0mslot launch_slot_: id  0 | task 2575 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.58.481.350[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 30 new tokens
+[qwen_vlm_server-2] [0m[34m7.58.481.404[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 30 new tokens
+[qwen_vlm_server-2] [0m[34m7.58.558.203[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.58.558.242[0m [35mW find_slot: non-consecutive token position 2424 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.59.709.525[0m [32mI [0mslot print_timing: id  0 | task 2575 | prompt eval time =     269.06 ms /   273 tokens (    0.99 ms per token,  1014.64 tokens per second)
+[qwen_vlm_server-2] [34m7.59.709.530[0m [32mI [0mslot print_timing: id  0 | task 2575 |        eval time =    1053.11 ms /    51 tokens (   20.65 ms per token,    48.43 tokens per second)
+[qwen_vlm_server-2] [34m7.59.709.531[0m [32mI [0mslot print_timing: id  0 | task 2575 |       total time =    1322.17 ms /   324 tokens
+[qwen_vlm_server-2] [34m7.59.709.532[0m [32mI [0mslot print_timing: id  0 | task 2575 |    graphs reused =       2379
+[qwen_vlm_server-2] [34m7.59.709.678[0m [32mI [0mslot      release: id  0 | task 2575 | stop processing: n_tokens = 2503, truncated = 0
+[qwen_vlm_server-2] [34m7.59.736.200[0m [32mI [0mslot get_availabl: id  0 | task -1 | selected slot by LCP similarity, sim_best = 0.976 (> 0.100 thold), f_keep = 0.964
+[qwen_vlm_server-2] [34m7.59.736.308[0m [32mI [0mslot launch_slot_: id  0 | task 2629 | processing task, is_child = 0
+[qwen_vlm_server-2] [34m7.59.841.868[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 49 new tokens
+[qwen_vlm_server-2] [0m[34m7.59.841.927[0m [35mW find_slot: non-consecutive token position 2413 after 2412 for sequence 0 with 49 new tokens
+[qwen_vlm_server-2] [0m[34m7.59.911.208[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m7.59.911.246[0m [35mW find_slot: non-consecutive token position 2425 after 2413 for sequence 0 with 6 new tokens
+[qwen_vlm_server-2] [0m[34m8.01.177.405[0m [32mI [0mslot print_timing: id  0 | task 2629 | prompt eval time =     288.26 ms /   292 tokens (    0.99 ms per token,  1012.98 tokens per second)
+[qwen_vlm_server-2] [34m8.01.177.411[0m [32mI [0mslot print_timing: id  0 | task 2629 |        eval time =    1152.82 ms /    55 tokens (   20.96 ms per token,    47.71 tokens per second)
+[qwen_vlm_server-2] [34m8.01.177.412[0m [32mI [0mslot print_timing: id  0 | task 2629 |       total time =    1441.08 ms /   347 tokens
+[qwen_vlm_server-2] [34m8.01.177.414[0m [32mI [0mslot print_timing: id  0 | task 2629 |    graphs reused =       2432
+[qwen_vlm_server-2] [34m8.01.177.563[0m [32mI [0mslot      release: id  0 | task 2629 | stop processing: n_tokens = 2526, truncated = 0
+[hydra_ros_node-6] [WARN] [1793539074.074874891] [tf2_buffer]: Detected jump back in time. Clearing TF buffer.
+[rviz2-9] [WARN] [1793539074.099904877] [rviz2]: Detected jump back in time. Resetting RViz.
+[rviz2-9] [WARN] [1793539074.099996536] [tf2_buffer]: Detected jump back in time. Clearing TF buffer.
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[qwen_vlm_server-2] [34m11.01.252.261[0m [32mI [0msrv    operator(): operator(): cleaning up before exit...
+[chroma_rap_memory-1]   [2m2026-11-01T13:17:58.491854Z[0m [32m INFO[0m  [32mReceived SIGINT, shutting down service[0m
+[chroma_rap_memory-1]     [2;3mat[0m rust/frontend/src/server.rs:106
+[chroma_rap_memory-1] 
+[rviz2-8] [INFO] [1793539078.491788128] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[rsg_scene_graph_fuser-11] [INFO] [1793539078.491801720] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[hydra_ros_node-6] [INFO] [1793539078.491810933] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[static_transform_publisher-4] [INFO] [1793539078.491801674] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[hydra_visualizer_node-7] [INFO] [1793539078.491796711] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[rviz2-9] [INFO] [1793539078.491820304] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[static_transform_publisher-5] [INFO] [1793539078.492282464] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[rsg_preprocessor-3] [0m[INFO] [1793539078.492752975] [rsg_preprocessor]: Shutdown requested by user.[0m
+[rsg_preprocessor-3] Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
+[hydra_ros_node-6] [INFO] [1793539078.492538021] [hydra]: Exiting!
+[chroma_rap_memory-1] 
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793539078.542528234] [rsg_phase1_semantic_coordinator]: Saved Phase 1 timing CSV with 1042 rows: /home/student/Thesis_pipeline_split_lean/debug/runtime_thor_experiment/runs/S_openloris3_20261101_140656/phase1_timing.csv[0m
+[rsg_phase1_semantic_coordinator-10] Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
+[hydra_visualizer_node-7] [WARNING] Unloading external library: "hydra_ros"
+[INFO] [static_transform_publisher-5]: process has finished cleanly [pid 213444]
+[INFO] [static_transform_publisher-4]: process has finished cleanly [pid 213443]
+[INFO] [rsg_scene_graph_fuser-11]: process has finished cleanly [pid 213754]
+[INFO] [chroma_rap_memory-1]: process has finished cleanly [pid 213440]
+[INFO] [hydra_visualizer_node-7]: process has finished cleanly [pid 213446]
+[INFO] [launch]: process[hydra_visualizer_node-7] was required: shutting down launched system
+[rsg_preprocessor-3] [0m[INFO] [1793539078.755178105] [rsg_preprocessor]: Wrote preprocessing timing Excel report: /home/student/Thesis_pipeline_split_lean/debug/runtime_thor_experiment/runs/_current/preprocessor_timing.xlsx[0m
+[rsg_preprocessor-3] Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
+[INFO] [rviz2-9]: process has finished cleanly [pid 213448]
+[INFO] [qwen_vlm_server-2]: process has finished cleanly [pid 213441]
+[INFO] [rviz2-8]: process has finished cleanly [pid 213447]
+[INFO] [rsg_preprocessor-3]: process has finished cleanly [pid 213442]
+[INFO] [rsg_phase1_semantic_coordinator-10]: process has finished cleanly [pid 213689]
+[hydra_ros_node-6] [INFO] [1793539168.176948219] [hydra]: [active_window_module.cpp:121] [Hydra] saved volumetric map to "/home/student/Thesis_pipeline_split_lean/memory/hydra/openloris/active_window/map"
+[hydra_ros_node-6] [INFO] [1793539169.405635330] [hydra]: [pgmo_glog_sink.cpp:49] [kimera_pgmo_interface.cpp:627] KimeraPgmo: Saved trajectories to file.
+[hydra_ros_node-6] [INFO] [1793539170.671611109] [hydra]: [hydra_pipeline.cpp:171] [Hydra] saving timing information to "/home/student/Thesis_pipeline_split_lean/memory/hydra/openloris/"
+[hydra_ros_node-6] [INFO] [1793539170.684635298] [hydra]: [hydra_pipeline.cpp:175] [Hydra] saved timing information
+[INFO] [hydra_ros_node-6]: process has finished cleanly [pid 213445]
+[INFO] [launch]: process[hydra_ros_node-6] was required: shutting down launched system

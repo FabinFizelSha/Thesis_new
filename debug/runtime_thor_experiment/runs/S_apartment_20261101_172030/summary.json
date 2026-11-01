@@ -1,0 +1,31 @@
+{
+  "run_id": "S_apartment",
+  "profile": "uhumans2",
+  "files_nonempty": {
+    "phase1_timing.csv": true,
+    "preprocessor_timing.xlsx": true,
+    "resource_usage.csv": true,
+    "topic_rates.csv": true,
+    "vlm_server.log": true,
+    "launch.log": true,
+    "hydra_timing_stats.csv": false
+  },
+  "frame_count": 622,
+  "avg_fps": 2.3989,
+  "recorded_span_sec": 259.29,
+  "avg_frame_latency_ms": 158.59,
+  "median_frame_latency_ms": 170.19,
+  "max_frame_latency_ms": 731.74,
+  "avg_classifier_delay_ms": 150.97,
+  "avg_sam_inference_ms": 111.04,
+  "vlm_call_count": 103,
+  "vlm_success_count": 103,
+  "vlm_failed_count": 0,
+  "frame_drop_count": 0,
+  "avg_gpu_pct": 51.85,
+  "peak_gpu_pct": 97.0,
+  "avg_cpu_pct": 16.54,
+  "peak_ram_used_mb": 24802.0,
+  "vlm_completed_rows_with_delay": 103,
+  "vlm_delay_ms_mean": 1628.3
+}

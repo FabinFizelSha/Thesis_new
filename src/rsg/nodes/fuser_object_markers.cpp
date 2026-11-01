@@ -59,6 +59,18 @@ namespace rsg {
         label += "\n" + line.str();
       }
     }
+    if (show_confidence_line_ && slot_id > 0U) {
+      // Presence confidence: the decaying observation-recency score that also
+      // drives the object's alpha (see objectDisplayColor).
+      const ResolvedPresence presence_state = resolvePresenceForSlot(slot_id, presence, mobility_class);
+      if (presence_state.observation.slot_id > 0U) {
+        std::ostringstream line;
+        line.setf(std::ios::fixed);
+        line.precision(1);
+        line << "confidence-" << presence_state.confidence;
+        label += "\n" + line.str();
+      }
+    }
     return label;
   }
 

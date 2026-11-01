@@ -1,0 +1,31 @@
+{
+  "run_id": "S_office",
+  "profile": "uhumans2",
+  "files_nonempty": {
+    "phase1_timing.csv": false,
+    "preprocessor_timing.xlsx": false,
+    "resource_usage.csv": true,
+    "topic_rates.csv": true,
+    "vlm_server.log": true,
+    "launch.log": true,
+    "hydra_timing_stats.csv": false
+  },
+  "frame_count": null,
+  "avg_fps": null,
+  "recorded_span_sec": null,
+  "avg_frame_latency_ms": null,
+  "median_frame_latency_ms": null,
+  "max_frame_latency_ms": null,
+  "avg_classifier_delay_ms": null,
+  "avg_sam_inference_ms": null,
+  "vlm_call_count": null,
+  "vlm_success_count": null,
+  "vlm_failed_count": null,
+  "frame_drop_count": null,
+  "avg_gpu_pct": 55.51,
+  "peak_gpu_pct": 98.0,
+  "avg_cpu_pct": 25.05,
+  "peak_ram_used_mb": 21073.0,
+  "vlm_completed_rows_with_delay": 0,
+  "vlm_delay_ms_mean": null
+}

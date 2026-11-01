@@ -1,0 +1,658 @@
+[INFO] [launch]: All log files can be found below /home/student/.ros/log/2026-11-01-13-47-03-134101-ias-thor-188246
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [chroma_rap_memory-1]: process started with pid [188293]
+[INFO] [qwen_vlm_server-2]: process started with pid [188294]
+[INFO] [rsg_preprocessor-3]: process started with pid [188295]
+[INFO] [static_transform_publisher-4]: process started with pid [188296]
+[INFO] [static_transform_publisher-5]: process started with pid [188297]
+[INFO] [hydra_ros_node-6]: process started with pid [188298]
+[INFO] [hydra_visualizer_node-7]: process started with pid [188299]
+[INFO] [rviz2-8]: process started with pid [188300]
+[INFO] [rviz2-9]: process started with pid [188301]
+[static_transform_publisher-4] [INFO] [1793537223.567271690] [rsg_world_to_odom_visualization_bridge]: Spinning until stopped - publishing transform
+[static_transform_publisher-4] translation: ('0.000000', '0.000000', '0.000000')
+[static_transform_publisher-4] rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+[static_transform_publisher-4] from 'world' to 'base_odom'
+[static_transform_publisher-5] [INFO] [1793537223.568079451] [rsg_sensor_to_robot_body_frame_bridge]: Spinning until stopped - publishing transform
+[static_transform_publisher-5] translation: ('0.000000', '0.000000', '0.000000')
+[static_transform_publisher-5] rotation: ('0.500000', '-0.500000', '0.500000', '0.500000')
+[static_transform_publisher-5] from 'camera_color_optical_frame' to 'camera_link'
+[qwen_vlm_server-2] RSG VLM profile=qwen3_5_4b_q4, model=Qwen3.5-VL-4B-Instruct-GGUF, endpoint=http://127.0.0.1:8000/v1/chat/completions
+[qwen_vlm_server-2] RSG VLM command: /home/student/llama.cpp/build/bin/llama-server -m /home/student/rsg_models/qwen3_5_4b/Qwen3.5-4B-Q4_K_M.gguf --mmproj /home/student/rsg_models/qwen3_5_4b/mmproj-BF16.gguf --host 0.0.0.0 --port 8000 -ngl 99 -c 4096 --reasoning off -np 1
+[qwen_vlm_server-2] [34m0.00.033.664[0m [32mI [0mcmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+[qwen_vlm_server-2] [34m0.00.245.168[0m [35mW srv  llama_server: -----------------
+[qwen_vlm_server-2] [0m[34m0.00.245.172[0m [35mW srv  llama_server: CORS is set to allow all origins ('*') and no API key is set
+[qwen_vlm_server-2] [0m[34m0.00.245.172[0m [35mW srv  llama_server: this can be a security risk (cross-origin attacks)
+[qwen_vlm_server-2] [0m[34m0.00.245.172[0m [35mW srv  llama_server: more info: https://github.com/ggml-org/llama.cpp/pull/25655
+[qwen_vlm_server-2] [0m[34m0.00.245.172[0m [35mW srv  llama_server: -----------------
+[qwen_vlm_server-2] [0m[34m0.00.246.495[0m [32mI [0msrv    load_model: loading model '/home/student/rsg_models/qwen3_5_4b/Qwen3.5-4B-Q4_K_M.gguf'
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1]                 [38;5;069m(((((((((    [38;5;203m((((([38;5;220m####
+[chroma_rap_memory-1]              [38;5;069m((((((((((((([38;5;203m((((((((([38;5;220m#########
+[chroma_rap_memory-1]            [38;5;069m((((((((((((([38;5;203m((((((((((([38;5;220m###########
+[chroma_rap_memory-1]          [38;5;069m(((((((((((((([38;5;203m(((((((((((([38;5;220m############
+[chroma_rap_memory-1]         [38;5;069m((((((((((((([38;5;203m(((((((((((((([38;5;220m#############
+[chroma_rap_memory-1]         [38;5;069m((((((((((((([38;5;203m(((((((((((((([38;5;220m#############
+[chroma_rap_memory-1]          [38;5;069m(((((((((((([38;5;203m((((((((((((([38;5;220m##############
+[chroma_rap_memory-1]          [38;5;069m(((((((((((([38;5;203m(((((((((((([38;5;220m##############
+[chroma_rap_memory-1]            [38;5;069m(((((((((([38;5;203m((((((((((([38;5;220m#############
+[chroma_rap_memory-1]              [38;5;069m(((((((([38;5;203m(((((((([38;5;220m##############
+[chroma_rap_memory-1]                 [38;5;069m((((([38;5;203m((((    [38;5;220m#########[0m
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1] Saving data to: [1m/home/student/Thesis_pipeline_split_lean/memory/rap/chroma[0m
+[chroma_rap_memory-1] Connect to Chroma at: [4;34mhttp://localhost:8001[0m
+[chroma_rap_memory-1] Getting started guide: [4;34mhttps://docs.trychroma.com/docs/overview/getting-started
+[chroma_rap_memory-1] [0m
+[chroma_rap_memory-1] ☁️ To deploy your DB - try Chroma Cloud!
+[chroma_rap_memory-1] - Sign up: [4;34mhttps://trychroma.com/signup[0m
+[chroma_rap_memory-1] - Copy your data to Cloud: [33mchroma copy --to-cloud --all[0m
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1]   [2m2026-11-01T12:47:04.326648Z[0m [32m INFO[0m  [32mGlobal tracing subscriber set[0m
+[chroma_rap_memory-1]     [2;3mat[0m rust/tracing/src/init_tracer.rs:370
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1]   [2m2026-11-01T12:47:04.336429Z[0m [32m INFO[0m  [32mFrontend server listening on address, [1;32maddr[0m[32m: 127.0.0.1:8001[0m
+[chroma_rap_memory-1]     [2;3mat[0m rust/frontend/src/server.rs:416
+[chroma_rap_memory-1] 
+[rviz2-8] [INFO] [1793537224.716136024] [rviz2]: Stereo is NOT SUPPORTED
+[rviz2-8] [INFO] [1793537224.716235626] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[rviz2-9] [INFO] [1793537224.722964764] [rviz2]: Stereo is NOT SUPPORTED
+[rviz2-9] [INFO] [1793537224.723057569] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[rviz2-8] [INFO] [1793537224.766163375] [rviz2]: Stereo is NOT SUPPORTED
+[rsg_preprocessor-3] [0m[INFO] [1793537224.767126729] [rsg_preprocessor]: Timing Excel recorder enabled. Output: /home/student/Thesis_pipeline_split_lean/debug/runtime_thor_experiment/runs/_current/preprocessor_timing.xlsx[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.767500590] [rsg_preprocessor]: Timing Excel autosave uses a background thread and will not block frame publishing.[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.767874563] [rsg_preprocessor]: rsg_preprocessor started.[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.768086063] [rsg_preprocessor]: RGB topic: /d400/color/image_raw[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.768285424] [rsg_preprocessor]: Depth topic: /d400/aligned_depth_to_color/image_raw[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.768492351] [rsg_preprocessor]: CameraInfo topic: /d400/color/camera_info[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.768707046] [rsg_preprocessor]: Odom topic: /odom[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.768948861] [rsg_preprocessor]: Camera IMU support disabled in configuration.[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.769198713] [rsg_preprocessor]: Output frame topic: /rsg/preprocessed/frame[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.769462056] [rsg_preprocessor]: Synchronization: RGB + depth only; CameraInfo cached separately; sync_queue_size=50, sensor_qos_depth=50[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.769772732] [rsg_preprocessor]: Camera-pose composition: base_odom -> base_link -> camera_color_optical_frame; translation=(0.2264836849091656, -0.05114194035652147, 0.916), rpy=(-1.5641001838011457, 0.0161279560717892, -1.560815583555602), publish_camera_tf=True[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.770104539] [rsg_preprocessor]: Validation checks: resolution=True, depth_processing=True, depth_ratio_check=False, compute_depth_ratio=False, depth_ratio_every_n=5, require_odom=True, require_imu=False[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.770451048] [rsg_preprocessor]: Timing enabled: True (measure=True, write_excel=True, publish_topic=False)[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.770820706] [rsg_preprocessor]: Latency guard: enabled=False, warn=100.0 ms, drop=250.0 ms, drop_exceeded=False[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.771367549] [rsg_preprocessor]: Publish rate limiter: max=35.000 Hz (min_interval=0.029 s)[0m
+[rsg_preprocessor-3] [0m[INFO] [1793537224.771793226] [rsg_preprocessor]: Timing/debug Excel file: /home/student/Thesis_pipeline_split_lean/debug/runtime_thor_experiment/runs/_current/preprocessor_timing.xlsx[0m
+[rviz2-9] [INFO] [1793537224.798133861] [rviz2]: Stereo is NOT SUPPORTED
+[INFO] [rsg_phase1_semantic_coordinator-10]: process started with pid [188547]
+[qwen_vlm_server-2] [34m0.02.114.813[0m [35mW load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+[qwen_vlm_server-2] [0m[34m0.02.114.817[0m [35mW load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+[qwen_vlm_server-2] [0m[34m0.02.114.817[0m [35mW load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+[qwen_vlm_server-2] 
+[qwen_vlm_server-2] [0m[34m0.02.230.426[0m [32mI [0msrv    load_model: loaded multimodal model, '/home/student/rsg_models/qwen3_5_4b/mmproj-BF16.gguf'
+[qwen_vlm_server-2] [34m0.02.261.995[0m [32mI [0msrv    load_model: initializing, n_slots = 1, n_ctx_slot = 4096, kv_unified = 'false'
+[qwen_vlm_server-2] [34m0.02.278.779[0m [32mI [0msrv  llama_server: model loaded
+[qwen_vlm_server-2] [34m0.02.278.789[0m [32mI [0msrv  llama_server: listening on http://0.0.0.0:8000
+[INFO] [rsg_scene_graph_fuser-11]: process started with pid [188601]
+[rsg_scene_graph_fuser-11] [INFO] [1793537226.577625604] [rsg_scene_graph_fuser]: Hydra semantic fuser ready: DSG='/hydra/backend/dsg', final labels='/rsg/objects/semantic_label_result', label QoS depth=4096, markers='/rsg/scene_graph/markers'
+[rsg_phase1_semantic_coordinator-10] [11/01/2026-13:47:07] [TRT] [W] Using an engine plan file across different models of devices is not supported and is likely to affect performance or even cause errors or deadlock.
+[rsg_phase1_semantic_coordinator-10] [11/01/2026-13:47:07] [TRT] [W] WARNING The logger passed into createInferRuntime differs from one already registered for an existing builder, runtime, or refitter. So the current new logger is ignored, and TensorRT will use the existing one which is returned by nvinfer1::getLogger() instead.
+[rsg_phase1_semantic_coordinator-10] [11/01/2026-13:47:07] [TRT] [W] Using an engine plan file across different models of devices is not supported and is likely to affect performance or even cause errors or deadlock.
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537227.779088888] [rsg_phase1_semantic_coordinator]: Using NanoSAM TensorRT backend: image_encoder=/home/student/rsg_models/nanosam/resnet18_image_encoder.engine, mask_decoder=/home/student/rsg_models/nanosam/mobile_sam_mask_decoder.engine, grid=4x4.[0m
+[rsg_phase1_semantic_coordinator-10] /home/student/.venvs/rsg_thor/lib/python3.12/site-packages/transformers/utils/hub.py:105: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
+[rsg_phase1_semantic_coordinator-10]   warnings.warn(
+[hydra_ros_node-6] [INFO] [1793537230.506627332] [hydra]: [hydra_pipeline.cpp:57] [Hydra] Initialized pipeline with:
+[hydra_ros_node-6] ================================ PipelineConfig ================================
+[hydra_ros_node-6] enable_lcd:                   false (default)
+[hydra_ros_node-6] timing_disabled:              false (default)
+[hydra_ros_node-6] disable_timer_output:         true (default)
+[hydra_ros_node-6] enable_pgmo_logging:          true (default)
+[hydra_ros_node-6] default_verbosity:            1 (default)
+[hydra_ros_node-6] default_num_threads:          -1 (default)
+[hydra_ros_node-6] store_visualization_details:  false (default)
+[hydra_ros_node-6] label_names:                  [{label: 0, name: unknown},
+[hydra_ros_node-6]                                {label: 1, name: unknown_slot_00001},
+[hydra_ros_node-6]                                {label: 2, name: unknown_slot_00002},
+[hydra_ros_node-6]                                {label: 3, name: unknown_slot_00003},
+[hydra_ros_node-6]                                {label: 4, name: unknown_slot_00004},
+[hydra_ros_node-6]                                {label: 5, name: unknown_slot_00005},
+[hydra_ros_node-6]                                {label: 6, name: unknown_slot_00006},
+[hydra_ros_node-6]                                {label: 7, name: unknown_slot_00007},
+[hydra_ros_node-6]                                {label: 8, name: unknown_slot_00008},
+[hydra_ros_node-6]                                {label: 9, name: unknown_slot_00009},
+[hydra_ros_node-6]                                {label: 10, name: unknown_slot_00010},
+[hydra_ros_node-6]                                {label: 11, name: unknown_slot_00011},
+[hydra_ros_node-6]                                {label: 12, name: unknown_slot_00012},
+[hydra_ros_node-6]                                {label: 13, name: unknown_slot_00013},
+[hydra_ros_node-6]                                {label: 14, name: unknown_slot_00014},
+[hydra_ros_node-6]                                {label: 15, name: unknown_slot_00015},
+[hydra_ros_node-6]                                {label: 16, name: unknown_slot_00016},
+[hydra_ros_node-6]                                {label: 17, name: unknown_slot_00017},
+[hydra_ros_node-6]                                {label: 18, name: unknown_slot_00018},
+[hydra_ros_node-6]                                {label: 19, name: unknown_slot_00019},
+[hydra_ros_node-6]                                {label: 20, name: unknown_slot_00020},
+[hydra_ros_node-6]                                {label: 21, name: unknown_slot_00021},
+[hydra_ros_node-6]                                {label: 22, name: unknown_slot_00022},
+[hydra_ros_node-6]                                {label: 23, name: unknown_slot_00023},
+[hydra_ros_node-6]                                {label: 24, name: unknown_slot_00024},
+[hydra_ros_node-6]                                {label: 25, name: unknown_slot_00025},
+[hydra_ros_node-6]                                {label: 26, name: unknown_slot_00026},
+[hydra_ros_node-6]                                {label: 27, name: unknown_slot_00027},
+[hydra_ros_node-6]                                {label: 28, name: unknown_slot_00028},
+[hydra_ros_node-6]                                {label: 29, name: unknown_slot_00029},
+[hydra_ros_node-6]                                {label: 30, name: unknown_slot_00030},
+[hydra_ros_node-6]                                {label: 31, name: unknown_slot_00031},
+[hydra_ros_node-6]                                {label: 32, name: unknown_slot_00032},
+[hydra_ros_node-6]                                {label: 33, name: unknown_slot_00033},
+[hydra_ros_node-6]                                {label: 34, name: unknown_slot_00034},
+[hydra_ros_node-6]                                {label: 35, name: unknown_slot_00035},
+[hydra_ros_node-6]                                {label: 36, name: unknown_slot_00036},
+[hydra_ros_node-6]                                {label: 37, name: unknown_slot_00037},
+[hydra_ros_node-6]                                {label: 38, name: unknown_slot_00038},
+[hydra_ros_node-6]                                {label: 39, name: unknown_slot_00039},
+[hydra_ros_node-6]                                {label: 40, name: unknown_slot_00040},
+[hydra_ros_node-6]                                {label: 41, name: unknown_slot_00041},
+[hydra_ros_node-6]                                {label: 42, name: unknown_slot_00042},
+[hydra_ros_node-6]                                {label: 43, name: unknown_slot_00043},
+[hydra_ros_node-6]                                {label: 44, name: unknown_slot_00044},
+[hydra_ros_node-6]                                {label: 45, name: unknown_slot_00045},
+[hydra_ros_node-6]                                {label: 46, name: unknown_slot_00046},
+[hydra_ros_node-6]                                {label: 47, name: unknown_slot_00047},
+[hydra_ros_node-6]                                {label: 48, name: unknown_slot_00048},
+[hydra_ros_node-6]                                {label: 49, name: unknown_slot_00049},
+[hydra_ros_node-6]                                {label: 50, name: unknown_slot_00050},
+[hydra_ros_node-6]                                {label: 51, name: unknown_slot_00051},
+[hydra_ros_node-6]                                {label: 52, name: unknown_slot_00052},
+[hydra_ros_node-6]                                {label: 53, name: unknown_slot_00053},
+[hydra_ros_node-6]                                {label: 54, name: unknown_slot_00054},
+[hydra_ros_node-6]                                {label: 55, name: unknown_slot_00055},
+[hydra_ros_node-6]                                {label: 56, name: unknown_slot_00056},
+[hydra_ros_node-6]                                {label: 57, name: unknown_slot_00057},
+[hydra_ros_node-6]                                {label: 58, name: unknown_slot_00058},
+[hydra_ros_node-6]                                {label: 59, name: unknown_slot_00059},
+[hydra_ros_node-6]                                {label: 60, name: unknown_slot_00060},
+[hydra_ros_node-6]                                {label: 61, name: unknown_slot_00061},
+[hydra_ros_node-6]                                {label: 62, name: unknown_slot_00062},
+[hydra_ros_node-6]                                {label: 63, name: unknown_slot_00063},
+[hydra_ros_node-6]                                {label: 64, name: unknown_slot_00064},
+[hydra_ros_node-6]                                {label: 65, name: unknown_slot_00065},
+[hydra_ros_node-6]                                {label: 66, name: unknown_slot_00066},
+[hydra_ros_node-6]                                {label: 67, name: unknown_slot_00067},
+[hydra_ros_node-6]                                {label: 68, name: unknown_slot_00068},
+[hydra_ros_node-6]                                {label: 69, name: unknown_slot_00069},
+[hydra_ros_node-6]                                {label: 70, name: unknown_slot_00070},
+[hydra_ros_node-6]                                {label: 71, name: unknown_slot_00071},
+[hydra_ros_node-6]                                {label: 72, name: unknown_slot_00072},
+[hydra_ros_node-6]                                {label: 73, name: unknown_slot_00073},
+[hydra_ros_node-6]                                {label: 74, name: unknown_slot_00074},
+[hydra_ros_node-6]                                {label: 75, name: unknown_slot_00075},
+[hydra_ros_node-6]                                {label: 76, name: unknown_slot_00076},
+[hydra_ros_node-6]                                {label: 77, name: unknown_slot_00077},
+[hydra_ros_node-6]                                {label: 78, name: unknown_slot_00078},
+[hydra_ros_node-6]                                {label: 79, name: unknown_slot_00079},
+[hydra_ros_node-6]                                {label: 80, name: unknown_slot_00080},
+[hydra_ros_node-6]                                {label: 81, name: unknown_slot_00081},
+[hydra_ros_node-6]                                {label: 82, name: unknown_slot_00082},
+[hydra_ros_node-6]                                {label: 83, name: unknown_slot_00083},
+[hydra_ros_node-6]                                {label: 84, name: unknown_slot_00084},
+[hydra_ros_node-6]                                {label: 85, name: unknown_slot_00085},
+[hydra_ros_node-6]                                {label: 86, name: unknown_slot_00086},
+[hydra_ros_node-6]                                {label: 87, name: unknown_slot_00087},
+[hydra_ros_node-6]                                {label: 88, name: unknown_slot_00088},
+[hydra_ros_node-6]                                {label: 89, name: unknown_slot_00089},
+[hydra_ros_node-6]                                {label: 90, name: unknown_slot_00090},
+[hydra_ros_node-6]                                {label: 91, name: unknown_slot_00091},
+[hydra_ros_node-6]                                {label: 92, name: unknown_slot_00092},
+[hydra_ros_node-6]                                {label: 93, name: unknown_slot_00093},
+[hydra_ros_node-6]                                {label: 94, name: unknown_slot_00094},
+[hydra_ros_node-6]                                {label: 95, name: unknown_slot_00095},
+[hydra_ros_node-6]                                {label: 96, name: unknown_slot_00096},
+[hydra_ros_node-6]                                {label: 97, name: unknown_slot_00097},
+[hydra_ros_node-6]                                {label: 98, name: unknown_slot_00098},
+[hydra_ros_node-6]                                {label: 99, name: unknown_slot_00099},
+[hydra_ros_node-6]                                {label: 100, name: unknown_slot_00100},
+[hydra_ros_node-6]                                {label: 101, name: unknown_slot_00101},
+[hydra_ros_node-6]                                {label: 102, name: unknown_slot_00102},
+[hydra_ros_node-6]                                {label: 103, name: unknown_slot_00103},
+[hydra_ros_node-6]                                {label: 104, name: unknown_slot_00104},
+[hydra_ros_node-6]                                {label: 105, name: unknown_slot_00105},
+[hydra_ros_node-6]                                {label: 106, name: unknown_slot_00106},
+[hydra_ros_node-6]                                {label: 107, name: unknown_slot_00107},
+[hydra_ros_node-6]                                {label: 108, name: unknown_slot_00108},
+[hydra_ros_node-6]                                {label: 109, name: unknown_slot_00109},
+[hydra_ros_node-6]                                {label: 110, name: unknown_slot_00110},
+[hydra_ros_node-6]                                {label: 111, name: unknown_slot_00111},
+[hydra_ros_node-6]                                {label: 112, name: unknown_slot_00112},
+[hydra_ros_node-6]                                {label: 113, name: unknown_slot_00113},
+[hydra_ros_node-6]                                {label: 114, name: unknown_slot_00114},
+[hydra_ros_node-6]                                {label: 115, name: unknown_slot_00115},
+[hydra_ros_node-6]                                {label: 116, name: unknown_slot_00116},
+[hydra_ros_node-6]                                {label: 117, name: unknown_slot_00117},
+[hydra_ros_node-6]                                {label: 118, name: unknown_slot_00118},
+[hydra_ros_node-6]                                {label: 119, name: unknown_slot_00119},
+[hydra_ros_node-6]                                {label: 120, name: unknown_slot_00120},
+[hydra_ros_node-6]                                {label: 121, name: unknown_slot_00121},
+[hydra_ros_node-6]                                {label: 122, name: unknown_slot_00122},
+[hydra_ros_node-6]                                {label: 123, name: unknown_slot_00123},
+[hydra_ros_node-6]                                {label: 124, name: unknown_slot_00124},
+[hydra_ros_node-6]                                {label: 125, name: unknown_slot_00125},
+[hydra_ros_node-6]                                {label: 126, name: unknown_slot_00126},
+[hydra_ros_node-6]                                {label: 127, name: unknown_slot_00127},
+[hydra_ros_node-6]                                {label: 128, name: unknown_slot_00128},
+[hydra_ros_node-6]                                {label: 129, name: unknown_slot_00129},
+[hydra_ros_node-6]                                {label: 130, name: unknown_slot_00130},
+[hydra_ros_node-6]                                {label: 131, name: unknown_slot_00131},
+[hydra_ros_node-6]                                {label: 132, name: unknown_slot_00132},
+[hydra_ros_node-6]                                {label: 133, name: unknown_slot_00133},
+[hydra_ros_node-6]                                {label: 134, name: unknown_slot_00134},
+[hydra_ros_node-6]                                {label: 135, name: unknown_slot_00135},
+[hydra_ros_node-6]                                {label: 136, name: unknown_slot_00136},
+[hydra_ros_node-6]                                {label: 137, name: unknown_slot_00137},
+[hydra_ros_node-6]                                {label: 138, name: unknown_slot_00138},
+[hydra_ros_node-6]                                {label: 139, name: unknown_slot_00139},
+[hydra_ros_node-6]                                {label: 140, name: unknown_slot_00140},
+[hydra_ros_node-6]                                {label: 141, name: unknown_slot_00141},
+[hydra_ros_node-6]                                {label: 142, name: unknown_slot_00142},
+[hydra_ros_node-6]                                {label: 143, name: unknown_slot_00143},
+[hydra_ros_node-6]                                {label: 144, name: unknown_slot_00144},
+[hydra_ros_node-6]                                {label: 145, name: unknown_slot_00145},
+[hydra_ros_node-6]                                {label: 146, name: unknown_slot_00146},
+[hydra_ros_node-6]                                {label: 147, name: unknown_slot_00147},
+[hydra_ros_node-6]                                {label: 148, name: unknown_slot_00148},
+[hydra_ros_node-6]                                {label: 149, name: unknown_slot_00149},
+[hydra_ros_node-6]                                {label: 150, name: unknown_slot_00150},
+[hydra_ros_node-6]                                {label: 151, name: unknown_slot_00151},
+[hydra_ros_node-6]                                {label: 152, name: unknown_slot_00152},
+[hydra_ros_node-6]                                {label: 153, name: unknown_slot_00153},
+[hydra_ros_node-6]                                {label: 154, name: unknown_slot_00154},
+[hydra_ros_node-6]                                {label: 155, name: unknown_slot_00155},
+[hydra_ros_node-6]                                {label: 156, name: unknown_slot_00156},
+[hydra_ros_node-6]                                {label: 157, name: unknown_slot_00157},
+[hydra_ros_node-6]                                {label: 158, name: unknown_slot_00158},
+[hydra_ros_node-6]                                {label: 159, name: unknown_slot_00159},
+[hydra_ros_node-6]                                {label: 160, name: unknown_slot_00160},
+[hydra_ros_node-6]                                {label: 161, name: unknown_slot_00161},
+[hydra_ros_node-6]                                {label: 162, name: unknown_slot_00162},
+[hydra_ros_node-6]                                {label: 163, name: unknown_slot_00163},
+[hydra_ros_node-6]                                {label: 164, name: unknown_slot_00164},
+[hydra_ros_node-6]                                {label: 165, name: unknown_slot_00165},
+[hydra_ros_node-6]                                {label: 166, name: unknown_slot_00166},
+[hydra_ros_node-6]                                {label: 167, name: unknown_slot_00167},
+[hydra_ros_node-6]                                {label: 168, name: unknown_slot_00168},
+[hydra_ros_node-6]                                {label: 169, name: unknown_slot_00169},
+[hydra_ros_node-6]                                {label: 170, name: unknown_slot_00170},
+[hydra_ros_node-6]                                {label: 171, name: unknown_slot_00171},
+[hydra_ros_node-6]                                {label: 172, name: unknown_slot_00172},
+[hydra_ros_node-6]                                {label: 173, name: unknown_slot_00173},
+[hydra_ros_node-6]                                {label: 174, name: unknown_slot_00174},
+[hydra_ros_node-6]                                {label: 175, name: unknown_slot_00175},
+[hydra_ros_node-6]                                {label: 176, name: unknown_slot_00176},
+[hydra_ros_node-6]                                {label: 177, name: unknown_slot_00177},
+[hydra_ros_node-6]                                {label: 178, name: unknown_slot_00178},
+[hydra_ros_node-6]                                {label: 179, name: unknown_slot_00179},
+[hydra_ros_node-6]                                {label: 180, name: unknown_slot_00180},
+[hydra_ros_node-6]                                {label: 181, name: unknown_slot_00181},
+[hydra_ros_node-6]                                {label: 182, name: unknown_slot_00182},
+[hydra_ros_node-6]                                {label: 183, name: unknown_slot_00183},
+[hydra_ros_node-6]                                {label: 184, name: unknown_slot_00184},
+[hydra_ros_node-6]                                {label: 185, name: unknown_slot_00185},
+[hydra_ros_node-6]                                {label: 186, name: unknown_slot_00186},
+[hydra_ros_node-6]                                {label: 187, name: unknown_slot_00187},
+[hydra_ros_node-6]                                {label: 188, name: unknown_slot_00188},
+[hydra_ros_node-6]                                {label: 189, name: unknown_slot_00189},
+[hydra_ros_node-6]                                {label: 190, name: unknown_slot_00190},
+[hydra_ros_node-6]                                {label: 191, name: unknown_slot_00191},
+[hydra_ros_node-6]                                {label: 192, name: unknown_slot_00192},
+[hydra_ros_node-6]                                {label: 193, name: unknown_slot_00193},
+[hydra_ros_node-6]                                {label: 194, name: unknown_slot_00194},
+[hydra_ros_node-6]                                {label: 195, name: unknown_slot_00195},
+[hydra_ros_node-6]                                {label: 196, name: unknown_slot_00196},
+[hydra_ros_node-6]                                {label: 197, name: unknown_slot_00197},
+[hydra_ros_node-6]                                {label: 198, name: unknown_slot_00198},
+[hydra_ros_node-6]                                {label: 199, name: unknown_slot_00199},
+[hydra_ros_node-6]                                {label: 200, name: unknown_slot_00200},
+[hydra_ros_node-6]                                {label: 201, name: unknown_slot_00201},
+[hydra_ros_node-6]                                {label: 202, name: unknown_slot_00202},
+[hydra_ros_node-6]                                {label: 203, name: unknown_slot_00203},
+[hydra_ros_node-6]                                {label: 204, name: unknown_slot_00204},
+[hydra_ros_node-6]                                {label: 205, name: unknown_slot_00205},
+[hydra_ros_node-6]                                {label: 206, name: unknown_slot_00206},
+[hydra_ros_node-6]                                {label: 207, name: unknown_slot_00207},
+[hydra_ros_node-6]                                {label: 208, name: unknown_slot_00208},
+[hydra_ros_node-6]                                {label: 209, name: unknown_slot_00209},
+[hydra_ros_node-6]                                {label: 210, name: unknown_slot_00210},
+[hydra_ros_node-6]                                {label: 211, name: unknown_slot_00211},
+[hydra_ros_node-6]                                {label: 212, name: unknown_slot_00212},
+[hydra_ros_node-6]                                {label: 213, name: unknown_slot_00213},
+[hydra_ros_node-6]                                {label: 214, name: unknown_slot_00214},
+[hydra_ros_node-6]                                {label: 215, name: unknown_slot_00215},
+[hydra_ros_node-6]                                {label: 216, name: unknown_slot_00216},
+[hydra_ros_node-6]                                {label: 217, name: unknown_slot_00217},
+[hydra_ros_node-6]                                {label: 218, name: unknown_slot_00218},
+[hydra_ros_node-6]                                {label: 219, name: unknown_slot_00219},
+[hydra_ros_node-6]                                {label: 220, name: unknown_slot_00220},
+[hydra_ros_node-6]                                {label: 221, name: unknown_slot_00221},
+[hydra_ros_node-6]                                {label: 222, name: unknown_slot_00222},
+[hydra_ros_node-6]                                {label: 223, name: unknown_slot_00223},
+[hydra_ros_node-6]                                {label: 224, name: unknown_slot_00224},
+[hydra_ros_node-6]                                {label: 225, name: unknown_slot_00225},
+[hydra_ros_node-6]                                {label: 226, name: unknown_slot_00226},
+[hydra_ros_node-6]                                {label: 227, name: unknown_slot_00227},
+[hydra_ros_node-6]                                {label: 228, name: unknown_slot_00228},
+[hydra_ros_node-6]                                {label: 229, name: unknown_slot_00229},
+[hydra_ros_node-6]                                {label: 230, name: unknown_slot_00230},
+[hydra_ros_node-6]                                {label: 231, name: unknown_slot_00231},
+[hydra_ros_node-6]                                {label: 232, name: unknown_slot_00232},
+[hydra_ros_node-6]                                {label: 233, name: unknown_slot_00233},
+[hydra_ros_node-6]                                {label: 234, name: unknown_slot_00234},
+[hydra_ros_node-6]                                {label: 235, name: unknown_slot_00235},
+[hydra_ros_node-6]                                {label: 236, name: unknown_slot_00236},
+[hydra_ros_node-6]                                {label: 237, name: unknown_slot_00237},
+[hydra_ros_node-6]                                {label: 238, name: unknown_slot_00238},
+[hydra_ros_node-6]                                {label: 239, name: unknown_slot_00239},
+[hydra_ros_node-6]                                {label: 240, name: unknown_slot_00240},
+[hydra_ros_node-6]                                {label: 241, name: unknown_slot_00241},
+[hydra_ros_node-6]                                {label: 242, name: unknown_slot_00242},
+[hydra_ros_node-6]                                {label: 243, name: unknown_slot_00243},
+[hydra_ros_node-6]                                {label: 244, name: unknown_slot_00244},
+[hydra_ros_node-6]                                {label: 245, name: unknown_slot_00245},
+[hydra_ros_node-6]                                {label: 246, name: unknown_slot_00246},
+[hydra_ros_node-6]                                {label: 247, name: unknown_slot_00247},
+[hydra_ros_node-6]                                {label: 248, name: unknown_slot_00248},
+[hydra_ros_node-6]                                {label: 249, name: unknown_slot_00249},
+[hydra_ros_node-6]                                {label: 250, name: unknown_slot_00250},
+[hydra_ros_node-6]                                {label: 251, name: unknown_slot_00251},
+[hydra_ros_node-6]                                {label: 252, name: unknown_slot_00252},
+[hydra_ros_node-6]                                {label: 253, name: unknown_slot_00253},
+[hydra_ros_node-6]                                {label: 254, name: unknown_slot_00254},
+[hydra_ros_node-6]                                {label: 255, name: unknown_slot_00255},
+[hydra_ros_node-6]                                {label: 256, name: unknown_slot_00256},
+[hydra_ros_node-6]                                {label: 257, name: unknown_slot_00257},
+[hydra_ros_node-6]                                {label: 258, name: unknown_slot_00258},
+[hydra_ros_node-6]                                {label: 259, name: unknown_slot_00259},
+[hydra_ros_node-6]                                {label: 260, name: unknown_slot_00260},
+[hydra_ros_node-6]                                {label: 261, name: unknown_slot_00261},
+[hydra_ros_node-6]                                {label: 262, name: unknown_slot_00262},
+[hydra_ros_node-6]                                {label: 263, name: unknown_slot_00263},
+[hydra_ros_node-6]                                {label: 264, name: unknown_slot_00264},
+[hydra_ros_node-6]                                {label: 265, name: unknown_slot_00265},
+[hydra_ros_node-6]                                {label: 266, name: unknown_slot_00266},
+[hydra_ros_node-6]                                {label: 267, name: unknown_slot_00267},
+[hydra_ros_node-6]                                {label: 268, name: unknown_slot_00268},
+[hydra_ros_node-6]                                {label: 269, name: unknown_slot_00269},
+[hydra_ros_node-6]                                {label: 270, name: unknown_slot_00270},
+[hydra_ros_node-6]                                {label: 271, name: unknown_slot_00271},
+[hydra_ros_node-6]                                {label: 272, name: unknown_slot_00272},
+[hydra_ros_node-6]                                {label: 273, name: unknown_slot_00273},
+[hydra_ros_node-6]                                {label: 274, name: unknown_slot_00274},
+[hydra_ros_node-6]                                {label: 275, name: unknown_slot_00275},
+[hydra_ros_node-6]                                {label: 276, name: unknown_slot_00276},
+[hydra_ros_node-6]                                {label: 277, name: unknown_slot_00277},
+[hydra_ros_node-6]                                {label: 278, name: unknown_slot_00278},
+[hydra_ros_node-6]                                {label: 279, name: unknown_slot_00279},
+[hydra_ros_node-6]                                {label: 280, name: unknown_slot_00280},
+[hydra_ros_node-6]                                {label: 281, name: unknown_slot_00281},
+[hydra_ros_node-6]                                {label: 282, name: unknown_slot_00282},
+[hydra_ros_node-6]                                {label: 283, name: unknown_slot_00283},
+[hydra_ros_node-6]                                {label: 284, name: unknown_slot_00284},
+[hydra_ros_node-6]                                {label: 285, name: unknown_slot_00285},
+[hydra_ros_node-6]                                {label: 286, name: unknown_slot_00286},
+[hydra_ros_node-6]                                {label: 287, name: unknown_slot_00287},
+[hydra_ros_node-6]                                {label: 288, name: unknown_slot_00288},
+[hydra_ros_node-6]                                {label: 289, name: unknown_slot_00289},
+[hydra_ros_node-6]                                {label: 290, name: unknown_slot_00290},
+[hydra_ros_node-6]                                {label: 291, name: unknown_slot_00291},
+[hydra_ros_node-6]                                {label: 292, name: unknown_slot_00292},
+[hydra_ros_node-6]                                {label: 293, name: unknown_slot_00293},
+[hydra_ros_node-6]                                {label: 294, name: unknown_slot_00294},
+[hydra_ros_node-6]                                {label: 295, name: unknown_slot_00295},
+[hydra_ros_node-6]                                {label: 296, name: unknown_slot_00296},
+[hydra_ros_node-6]                                {label: 297, name: unknown_slot_00297},
+[hydra_ros_node-6]                                {label: 298, name: unknown_slot_00298},
+[hydra_ros_node-6]                                {label: 299, name: unknown_slot_00299},
+[hydra_ros_node-6]                                {label: 300, name: unknown_slot_00300},
+[hydra_ros_node-6]                                {label: 301, name: unknown_slot_00301},
+[hydra_ros_node-6]                                {label: 302, name: unknown_slot_00302},
+[hydra_ros_node-6]                                {label: 303, name: unknown_slot_00303},
+[hydra_ros_node-6]                                {label: 304, name: unknown_slot_00304},
+[hydra_ros_node-6]                                {label: 305, name: unknown_slot_00305},
+[hydra_ros_node-6]                                {label: 306, name: unknown_slot_00306},
+[hydra_ros_node-6]                                {label: 307, name: unknown_slot_00307},
+[hydra_ros_node-6]                                {label: 308, name: unknown_slot_00308},
+[hydra_ros_node-6]                                {label: 309, name: unknown_slot_00309},
+[hydra_ros_node-6]                                {label: 310, name: unknown_slot_00310},
+[hydra_ros_node-6]                                {label: 311, name: unknown_slot_00311},
+[hydra_ros_node-6]                                {label: 312, name: unknown_slot_00312},
+[hydra_ros_node-6]                                {label: 313, name: unknown_slot_00313},
+[hydra_ros_node-6]                                {label: 314, name: unknown_slot_00314},
+[hydra_ros_node-6]                                {label: 315, name: unknown_slot_00315},
+[hydra_ros_node-6]                                {label: 316, name: unknown_slot_00316},
+[hydra_ros_node-6]                                {label: 317, name: unknown_slot_00317},
+[hydra_ros_node-6]                                {label: 318, name: unknown_slot_00318},
+[hydra_ros_node-6]                                {label: 319, name: unknown_slot_00319},
+[hydra_ros_node-6]                                {label: 320, name: unknown_slot_00320},
+[hydra_ros_node-6]                                {label: 321, name: unknown_slot_00321},
+[hydra_ros_node-6]                                {label: 322, name: unknown_slot_00322},
+[hydra_ros_node-6]                                {label: 323, name: unknown_slot_00323},
+[hydra_ros_node-6]                                {label: 324, name: unknown_slot_00324},
+[hydra_ros_node-6]                                {label: 325, name: unknown_slot_00325},
+[hydra_ros_node-6]                                {label: 326, name: unknown_slot_00326},
+[hydra_ros_node-6]                                {label: 327, name: unknown_slot_00327},
+[hydra_ros_node-6]                                {label: 328, name: unknown_slot_00328},
+[hydra_ros_node-6]                                {label: 329, name: unknown_slot_00329},
+[hydra_ros_node-6]                                {label: 330, name: unknown_slot_00330},
+[hydra_ros_node-6]                                {label: 331, name: unknown_slot_00331},
+[hydra_ros_node-6]                                {label: 332, name: unknown_slot_00332},
+[hydra_ros_node-6]                                {label: 333, name: unknown_slot_00333},
+[hydra_ros_node-6]                                {label: 334, name: unknown_slot_00334},
+[hydra_ros_node-6]                                {label: 335, name: unknown_slot_00335},
+[hydra_ros_node-6]                                {label: 336, name: unknown_slot_00336},
+[hydra_ros_node-6]                                {label: 337, name: unknown_slot_00337},
+[hydra_ros_node-6]                                {label: 338, name: unknown_slot_00338},
+[hydra_ros_node-6]                                {label: 339, name: unknown_slot_00339},
+[hydra_ros_node-6]                                {label: 340, name: unknown_slot_00340},
+[hydra_ros_node-6]                                {label: 341, name: unknown_slot_00341},
+[hydra_ros_node-6]                                {label: 342, name: unknown_slot_00342},
+[hydra_ros_node-6]                                {label: 343, name: unknown_slot_00343},
+[hydra_ros_node-6]                                {label: 344, name: unknown_slot_00344},
+[hydra_ros_node-6]                                {label: 345, name: unknown_slot_00345},
+[hydra_ros_node-6]                                {label: 346, name: unknown_slot_00346},
+[hydra_ros_node-6]                                {label: 347, name: unknown_slot_00347},
+[hydra_ros_node-6]                                {label: 348, name: unknown_slot_00348},
+[hydra_ros_node-6]                                {label: 349, name: unknown_slot_00349},
+[hydra_ros_node-6]                                {label: 350, name: unknown_slot_00350},
+[hydra_ros_node-6]                                {label: 351, name: unknown_slot_00351},
+[hydra_ros_node-6]                                {label: 352, name: unknown_slot_00352},
+[hydra_ros_node-6]                                {label: 353, name: unknown_slot_00353},
+[hydra_ros_node-6]                                {label: 354, name: unknown_slot_00354},
+[hydra_ros_node-6]                                {label: 355, name: unknown_slot_00355},
+[hydra_ros_node-6]                                {label: 356, name: unknown_slot_00356},
+[hydra_ros_node-6]                                {label: 357, name: unknown_slot_00357},
+[hydra_ros_node-6]                                {label: 358, name: unknown_slot_00358},
+[hydra_ros_node-6]                                {label: 359, name: unknown_slot_00359},
+[hydra_ros_node-6]                                {label: 360, name: unknown_slot_00360},
+[hydra_ros_node-6]                                {label: 361, name: unknown_slot_00361},
+[hydra_ros_node-6]                                {label: 362, name: unknown_slot_00362},
+[hydra_ros_node-6]                                {label: 363, name: unknown_slot_00363},
+[hydra_ros_node-6]                                {label: 364, name: unknown_slot_00364},
+[hydra_ros_node-6]                                {label: 365, name: unknown_slot_00365},
+[hydra_ros_node-6]                                {label: 366, name: unknown_slot_00366},
+[hydra_ros_node-6]                                {label: 367, name: unknown_slot_00367},
+[hydra_ros_node-6]                                {label: 368, name: unknown_slot_00368},
+[hydra_ros_node-6]                                {label: 369, name: unknown_slot_00369},
+[hydra_ros_node-6]                                {label: 370, name: unknown_slot_00370},
+[hydra_ros_node-6]                                {label: 371, name: unknown_slot_00371},
+[hydra_ros_node-6]                                {label: 372, name: unknown_slot_00372},
+[hydra_ros_node-6]                                {label: 373, name: unknown_slot_00373},
+[hydra_ros_node-6]                                {label: 374, name: unknown_slot_00374},
+[hydra_ros_node-6]                                {label: 375, name: unknown_slot_00375},
+[hydra_ros_node-6]                                {label: 376, name: unknown_slot_00376},
+[hydra_ros_node-6]                                {label: 377, name: unknown_slot_00377},
+[hydra_ros_node-6]                                {label: 378, name: unknown_slot_00378},
+[hydra_ros_node-6]                                {label: 379, name: unknown_slot_00379},
+[hydra_ros_node-6]                                {label: 380, name: unknown_slot_00380},
+[hydra_ros_node-6]                                {label: 381, name: unknown_slot_00381},
+[hydra_ros_node-6]                                {label: 382, name: unknown_slot_00382},
+[hydra_ros_node-6]                                {label: 383, name: unknown_slot_00383},
+[hydra_ros_node-6]                                {label: 384, name: unknown_slot_00384},
+[hydra_ros_node-6]                                {label: 385, name: unknown_slot_00385},
+[hydra_ros_node-6]                                {label: 386, name: unknown_slot_00386},
+[hydra_ros_node-6]                                {label: 387, name: unknown_slot_00387},
+[hydra_ros_node-6]                                {label: 388, name: unknown_slot_00388},
+[hydra_ros_node-6]                                {label: 389, name: unknown_slot_00389},
+[hydra_ros_node-6]                                {label: 390, name: unknown_slot_00390},
+[hydra_ros_node-6]                                {label: 391, name: unknown_slot_00391},
+[hydra_ros_node-6]                                {label: 392, name: unknown_slot_00392},
+[hydra_ros_node-6]                                {label: 393, name: unknown_slot_00393},
+[hydra_ros_node-6]                                {label: 394, name: unknown_slot_00394},
+[hydra_ros_node-6]                                {label: 395, name: unknown_slot_00395},
+[hydra_ros_node-6]                                {label: 396, name: unknown_slot_00396},
+[hydra_ros_node-6]                                {label: 397, name: unknown_slot_00397},
+[hydra_ros_node-6]                                {label: 398, name: unknown_slot_00398},
+[hydra_ros_node-6]                                {label: 399, name: unknown_slot_00399},
+[hydra_ros_node-6]                                {label: 400, name: unknown_slot_00400},
+[hydra_ros_node-6]                                {label: 401, name: unknown_slot_00401},
+[hydra_ros_node-6]                                {label: 402, name: unknown_slot_00402},
+[hydra_ros_node-6]                                {label: 403, name: unknown_slot_00403},
+[hydra_ros_node-6]                                {label: 404, name: unknown_slot_00404},
+[hydra_ros_node-6]                                {label: 405, name: unknown_slot_00405},
+[hydra_ros_node-6]                                {label: 406, name: unknown_slot_00406},
+[hydra_ros_node-6]                                {label: 407, name: unknown_slot_00407},
+[hydra_ros_node-6]                                {label: 408, name: unknown_slot_00408},
+[hydra_ros_node-6]                                {label: 409, name: unknown_slot_00409},
+[hydra_ros_node-6]                                {label: 410, name: unknown_slot_00410},
+[hydra_ros_node-6]                                {label: 411, name: unknown_slot_00411},
+[hydra_ros_node-6]                                {label: 412, name: unknown_slot_00412},
+[hydra_ros_node-6]                                {label: 413, name: unknown_slot_00413},
+[hydra_ros_node-6]                                {label: 414, name: unknown_slot_00414},
+[hydra_ros_node-6]                                {label: 415, name: unknown_slot_00415},
+[hydra_ros_node-6]                                {label: 416, name: unknown_slot_00416},
+[hydra_ros_node-6]                            
+[rsg_phase1_semantic_coordinator-10] Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+[chroma_rap_memory-1]   [2m2026-11-01T12:47:11.856814Z[0m [32m INFO[0m  [1;32mtenant_name[0m[32m: default_tenant[0m
+[chroma_rap_memory-1]     [2;3mat[0m rust/frontend/src/server.rs:757
+[chroma_rap_memory-1]     [2;3min[0m [1mHTTP request[0m [2;3mwith[0m [1mhttp.method[0m: GET, [1mhttp.uri[0m: /api/v2/tenants/default_tenant, [1mhttp.route[0m: "/api/v2/tenants/{tenant_name}", [1mhttp.version[0m: HTTP/1.1, [1mhttp.host[0m: 127.0.0.1:8001, [1mhttp.user_agent[0m: Chroma Python Client v1.5.9 (https://github.com/chroma-core/chroma), [1motel.name[0m: "GET /api/v2/tenants/{tenant_name}"
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1]   [2m2026-11-01T12:47:11.857870Z[0m [32m INFO[0m  [1;32mtenant_name[0m[32m: default_tenant, [1;32mdatabase_name[0m[32m: default_database[0m
+[chroma_rap_memory-1]     [2;3mat[0m rust/frontend/src/server.rs:1015
+[chroma_rap_memory-1]     [2;3min[0m [1mHTTP request[0m [2;3mwith[0m [1mhttp.method[0m: GET, [1mhttp.uri[0m: /api/v2/tenants/default_tenant/databases/default_database, [1mhttp.route[0m: "/api/v2/tenants/{tenant}/databases/{database}", [1mhttp.version[0m: HTTP/1.1, [1mhttp.host[0m: 127.0.0.1:8001, [1mhttp.user_agent[0m: Chroma Python Client v1.5.9 (https://github.com/chroma-core/chroma), [1motel.name[0m: "GET /api/v2/tenants/{tenant}/databases/{database}"
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1]   [2m2026-11-01T12:47:11.859226Z[0m [32m INFO[0m  [1;32mtenant_name[0m[32m: default_tenant, [1;32mdatabase_name[0m[32m: default_database[0m
+[chroma_rap_memory-1]     [2;3mat[0m rust/frontend/src/server.rs:1315
+[chroma_rap_memory-1]     [2;3min[0m [1mHTTP request[0m [2;3mwith[0m [1mhttp.method[0m: POST, [1mhttp.uri[0m: /api/v2/tenants/default_tenant/databases/default_database/collections, [1mhttp.route[0m: "/api/v2/tenants/{tenant}/databases/{database}/collections", [1mhttp.version[0m: HTTP/1.1, [1mhttp.host[0m: 127.0.0.1:8001, [1mhttp.user_agent[0m: Chroma Python Client v1.5.9 (https://github.com/chroma-core/chroma), [1motel.name[0m: "POST /api/v2/tenants/{tenant}/databases/{database}/collections"
+[chroma_rap_memory-1] 
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.861472968] [rsg_phase1_semantic_coordinator]: Using native VisualRAP-compatible backend.[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.862048673] [rsg_phase1_semantic_coordinator]: RAP memory update log disabled.[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.882535771] [rsg_phase1_semantic_coordinator]: Loop-closure re-anchoring enabled: watching map -> odom[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.886343711] [rsg_phase1_semantic_coordinator]: Phase 1 buffered CSV timing enabled. Output: /home/student/Thesis_pipeline_split_lean/debug/runtime_thor_experiment/runs/S_openloris2_20261101_134058/phase1_timing.csv[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.886873805] [rsg_phase1_semantic_coordinator]: Crop evolution tracking disabled.[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.887425935] [rsg_phase1_semantic_coordinator]: Tracking quality recording disabled.[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.888830058] [rsg_phase1_semantic_coordinator]: Phase 1 per-run diagnostics disabled (phase1.diagnostics.enabled=false)[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.890131272] [rsg_phase1_semantic_coordinator]: rsg_phase1_semantic_coordinator started in single-process Option-A mode.[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.890361745] [rsg_phase1_semantic_coordinator]: Input frame topic: /rsg/preprocessed/frame[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.890575430] [rsg_phase1_semantic_coordinator]: Hydra combined output topic: /rsg/phase1/hydra/input_frame[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.890798060] [rsg_phase1_semantic_coordinator]: Hydra direct separated topics enabled:[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.891038681] [rsg_phase1_semantic_coordinator]:   RGB: /rsg/hydra/rgb/image_raw[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.891285051] [rsg_phase1_semantic_coordinator]:   Depth: /rsg/hydra/depth_registered/image_rect[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.891537274] [rsg_phase1_semantic_coordinator]:   CameraInfo: /rsg/hydra/rgb/camera_info[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.891798403] [rsg_phase1_semantic_coordinator]:   Semantic labels: /rsg/hydra/semantic/image_raw[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.892069238] [rsg_phase1_semantic_coordinator]:   Instance labels: /rsg/hydra/instance/image_raw[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.892350506] [rsg_phase1_semantic_coordinator]:   Pose: /rsg/hydra/camera_pose[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.892650571] [rsg_phase1_semantic_coordinator]: RAP result topic: /rsg/objects/rap_result[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.892960192] [rsg_phase1_semantic_coordinator]: VLM result topic: /rsg/phase1/object_classifier/vlm_result[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.893294174] [rsg_phase1_semantic_coordinator]: Profile=real_orin, allow_dummy_fallback=False[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.893646758] [rsg_phase1_semantic_coordinator]: Frame FIFO size=1, frame_cache_size=600, RAP FIFO size=300, VLM FIFO size=300[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.894050610] [rsg_phase1_semantic_coordinator]: SAM backend=nanosam, RAP backend=real, RAP execution=synchronous, slot ontology=physical-instance-only, VLM enabled=True, VLM mode=qwen_http, profile=qwen3_5_4b_q4, model=Qwen3.5-VL-4B-Instruct-GGUF, endpoint=http://127.0.0.1:8000/v1/chat/completions[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.894483148] [rsg_phase1_semantic_coordinator]: Risk VLM enabled=False, mode=qwen_http, model=Qwen3.5-VL-4B-Instruct-GGUF, endpoint=http://127.0.0.1:8100/v1/chat/completions, yield_to_object_vlm=True[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.894989916] [rsg_phase1_semantic_coordinator]: SAM input scale=0.850, depth_filter_enabled=False, depth_range=[0.30, 5.00] m, crop_to_valid_roi=True[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.895474982] [rsg_phase1_semantic_coordinator]: Persistent object tracking: enabled=True, mode=hydra_slots, max_tracks=10000[0m
+[rsg_phase1_semantic_coordinator-10] [0m[INFO] [1793537231.895998104] [rsg_phase1_semantic_coordinator]: Hydra slot range=[1, 10000], RAP scheduling=immediate_async_once_per_track[0m
+[hydra_ros_node-6] [INFO] [1793537240.188493124] [hydra]: [hydra_ros_pipeline.cpp:86] Starting Hydra-ROS with input configuration
+[hydra_ros_node-6] ============================ RosInputModule::Config ============================
+[hydra_ros_node-6] max_receiver_queue_size:      5
+[hydra_ros_node-6] clear_queue_on_fail:          true (default)
+[hydra_ros_node-6] inputs[left_cam] [InputModule::InputPair::Config] (default):
+[hydra_ros_node-6]    receiver [Virtual Config: ClosedSetImageReceiver::Config]:
+[hydra_ros_node-6]       input_separation_s:     0 (default)
+[hydra_ros_node-6]       ns:                     /rsg/hydra
+[hydra_ros_node-6]       queue_size:             3
+[hydra_ros_node-6]    sensor [Virtual Config: RosCamera::Config]:
+[hydra_ros_node-6]       min_range [m]:          0.3
+[hydra_ros_node-6]       max_range [m]:          5
+[hydra_ros_node-6]       ns:                     /rsg/hydra/rgb
+[hydra_ros_node-6]       warning_timeout_s [s]:  10 (default)
+[hydra_ros_node-6]       error_timeout_s [s]:    0 (default)
+[hydra_ros_node-6]       latch_info_sub:         false (default)
+[hydra_ros_node-6]       extrinsics [Virtual Config: RosExtrinsics::Config]:
+[hydra_ros_node-6]          sensor_frame:        "" (default)
+[hydra_ros_node-6]          robot_frame:         "" (default)
+[hydra_ros_node-6]          warning_timeout_s [s]: 10 (default)
+[hydra_ros_node-6]          error_timeout_s [s]: 0 (default)
+[hydra_ros_node-6]          wait_duration_s [s]: 0.1 (default)
+[hydra_ros_node-6]          verbosity:           3 (default)
+[hydra_ros_node-6] tf_lookup [TFLookup::Config]:
+[hydra_ros_node-6]    wait_duration_s:           0.5
+[hydra_ros_node-6]    buffer_size_s:             180
+[hydra_ros_node-6]    max_tries:                 20
+[hydra_ros_node-6]    verbosity:                 3 (default)
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] [WARN] [1793537240.188826616] [hydra]: [hydra_ros_pipeline.cpp:128] [Hydra] multi-session resume: disabled
+[hydra_ros_node-6] [INFO] [1793537240.593019089] [hydra]: [ros_sensors.cpp:76] Waiting for CameraInfo on /rsg/hydra/rgb/camera_info to initialize sensor model
+[hydra_ros_node-6] [WARN] [1793537250.595188573] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793537260.596571561] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793537270.597959404] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793537280.599371790] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[rsg_preprocessor-3] [0m[INFO] [1793537284.264819366] [rsg_preprocessor]: Odometry frame contract verified: base_odom -> base_link.[0m
+[hydra_ros_node-6] [WARN] [1793537290.600827654] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793537300.602261780] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793537310.603666263] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [WARN] [1793537320.605333407] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[qwen_vlm_server-2] [34m1.41.018.807[0m [32mI [0msrv    operator(): operator(): cleaning up before exit...
+[hydra_ros_node-6] [INFO] [1793537324.747522673] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[rviz2-9] [INFO] [1793537324.747549378] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[chroma_rap_memory-1]   [2m2026-11-01T12:48:44.747633Z[0m [32m INFO[0m  [32mReceived SIGINT, shutting down service[0m
+[chroma_rap_memory-1]     [2;3mat[0m rust/frontend/src/server.rs:106
+[chroma_rap_memory-1] 
+[chroma_rap_memory-1] 
+[hydra_visualizer_node-7] [INFO] [1793537324.747605073] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[rviz2-8] [INFO] [1793537324.747685853] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[rsg_scene_graph_fuser-11] [INFO] [1793537324.747761224] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[static_transform_publisher-5] [INFO] [1793537324.747922173] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[rsg_preprocessor-3] [0m[INFO] [1793537324.748037397] [rsg_preprocessor]: Shutdown requested by user.[0m
+[rsg_preprocessor-3] Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
+[static_transform_publisher-4] [INFO] [1793537324.748134853] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[hydra_ros_node-6] [WARN] [1793537324.749898557] [hydra]: [ros_sensors.cpp:89] Waiting for CameraInfo on topic '/rsg/hydra/rgb/camera_info'
+[hydra_ros_node-6] [0;31mF20261101 13:48:44.750084 188298 log_to_glog.cpp:84] Invalid config 'InputModule::Config':
+[hydra_ros_node-6] ============================= InputModule::Config ==============================
+[hydra_ros_node-6] Fatal: Check [3/3] failed: Virtual config 'sensor' is not set and not marked opt
+[hydra_ros_node-6]        ional.
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] [m[FATAL] [1793537324.750382317] [hydra]: [log_to_glog.cpp:84] Invalid config 'InputModule::Config':
+[hydra_ros_node-6] ============================= InputModule::Config ==============================
+[hydra_ros_node-6] Fatal: Check [3/3] failed: Virtual config 'sensor' is not set and not marked opt
+[hydra_ros_node-6]        ional.
+[hydra_ros_node-6] ================================================================================
+[hydra_ros_node-6] *** Check failure stack trace: ***
+[hydra_ros_node-6]     @     0xffff8855dd00  google::LogMessage::Fail()
+[hydra_ros_node-6]     @     0xffff88564670  google::LogMessage::SendToLog()
+[hydra_ros_node-6]     @     0xffff8855d7a8  google::LogMessage::Flush()
+[hydra_ros_node-6]     @     0xffff8856a1f0  google::LogMessageFatal::~LogMessageFatal()
+[hydra_ros_node-6]     @     0xffff886f0890  config::internal::GlogLogger::logImpl()
+[hydra_ros_node-6]     @     0xffff88e1b3e0  config::checkValid<>()
+[hydra_ros_node-6]     @     0xffff88e13b14  hydra::InputModule::InputModule()
+[hydra_ros_node-6]     @     0xffff8959a2e4  hydra::RosInputModule::RosInputModule()
+[hydra_ros_node-6]     @     0xffff893c9c6c  hydra::HydraRosPipeline::init()
+[hydra_ros_node-6]     @     0xaaaaab49b898  main
+[hydra_ros_node-6]     @     0xffff87a484c4  (unknown)
+[hydra_visualizer_node-7] [WARNING] Unloading external library: "hydra_ros"
+[hydra_ros_node-6]     @     0xffff87a48598  __libc_start_main
+[hydra_ros_node-6]     @     0xaaaaab49bcf0  _start
+[hydra_ros_node-6]     @              (nil)  (unknown)
+[INFO] [static_transform_publisher-5]: process has finished cleanly [pid 188297]
+[INFO] [static_transform_publisher-4]: process has finished cleanly [pid 188296]
+[INFO] [rsg_scene_graph_fuser-11]: process has finished cleanly [pid 188601]
+[INFO] [hydra_visualizer_node-7]: process has finished cleanly [pid 188299]
+[INFO] [launch]: process[hydra_visualizer_node-7] was required: shutting down launched system
+[rsg_preprocessor-3] [0m[INFO] [1793537324.922643133] [rsg_preprocessor]: Wrote preprocessing timing Excel report: /home/student/Thesis_pipeline_split_lean/debug/runtime_thor_experiment/runs/_current/preprocessor_timing.xlsx[0m
+[rsg_preprocessor-3] Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
+[INFO] [chroma_rap_memory-1]: process has finished cleanly [pid 188293]
+[INFO] [rviz2-9]: process has finished cleanly [pid 188301]
+[INFO] [rviz2-8]: process has finished cleanly [pid 188300]
+[INFO] [qwen_vlm_server-2]: process has finished cleanly [pid 188294]
+[INFO] [rsg_preprocessor-3]: process has finished cleanly [pid 188295]
+[INFO] [rsg_phase1_semantic_coordinator-10]: process has finished cleanly [pid 188547]
+[ERROR] [hydra_ros_node-6]: process has died [pid 188298, exit code -6, cmd '/home/student/Thesis_pipeline_split_lean/install/hydra_ros/lib/hydra_ros/hydra_ros_node --config-utilities-file /home/student/Thesis_pipeline_split_lean/src/rsg/config/hydra/rsg_phase1_input_openloris.yaml --config-utilities-file /home/student/Thesis_pipeline_split_lean/install/hydra/share/hydra/config/datasets/openloris.yaml --config-utilities-file /home/student/Thesis_pipeline_split_lean/install/rsg/share/rsg/config/hydra/rsg_slot_only_frozen_label_space.yaml --config-utilities-file /home/student/Thesis_pipeline_split_lean/install/hydra_ros/share/hydra_ros/config/sinks/mesh_segmenter_sinks.yaml@frontend/objects --config-utilities-file /home/student/Thesis_pipeline_split_lean/install/hydra_ros/share/hydra_ros/config/sinks/gvd_places_sinks.yaml@frontend/freespace_places --config-utilities-file /home/student/Thesis_pipeline_split_lean/install/hydra_ros/share/hydra_ros/config/sinks/active_window_sinks.yaml@active_window --config-utilities-yaml {enable_lcd: false} --config-utilities-file /home/student/Thesis_pipeline_split_lean/install/hydra/share/hydra/config/lcd/default.yaml --config-utilities-yaml {exit_after_clock: false, log_path: /home/student/Thesis_pipeline_split_lean/memory/hydra/openloris} --config-utilities-yaml {load_state_path: none} --config-utilities-yaml {resume_reset_trajectory: true} --config-utilities-yaml {backend: {enable_node_merging: true}} --config-utilities-yaml {print_missing: false, glog_level: 0, glog_verbosity: 0} --config-utilities-yaml {robot_id: 0, odom_frame: base_odom, robot_frame: camera_link, map_frame: base_odom} --config-utilities-yaml {enable_zmq: false, backend: {zmq_sink: {url: tcp://127.0.0.1:8001, send_mesh: false}}} --config-utilities-yaml {show_run_settings: false, config_verbosity: 0} --ros-args -r __node:=hydra --params-file /tmp/launch_params_kddy_27r'].
+[INFO] [launch]: process[hydra_ros_node-6] was required: shutting down launched system
