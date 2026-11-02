@@ -890,164 +890,6 @@
       \verb 10.1109/TASE.2013.2237904
       \endverb
     \endentry
-    \entry{armeni2019threedscenegraph}{inproceedings}{}
-      \name{author}{7}{}{%
-        {{hash=60c30c11033d50a7830227e21d7de619}{%
-           family={Armeni},
-           familyi={A\bibinitperiod},
-           given={Iro},
-           giveni={I\bibinitperiod}}}%
-        {{hash=9e3c3454501b151b39c1719675d1a775}{%
-           family={He},
-           familyi={H\bibinitperiod},
-           given={Zhi-Yang},
-           giveni={Z\bibinithyphendelim Y\bibinitperiod}}}%
-        {{hash=d9806662b24ca486664faa2ddb093991}{%
-           family={Gwak},
-           familyi={G\bibinitperiod},
-           given={JunYoung},
-           giveni={J\bibinitperiod}}}%
-        {{hash=5c4d5bffbf12972d7fa07562ce912187}{%
-           family={Zamir},
-           familyi={Z\bibinitperiod},
-           given={Amir\bibnamedelima R.},
-           giveni={A\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
-        {{hash=bedef3752e42cc8501a95a23af0db2f8}{%
-           family={Fischer},
-           familyi={F\bibinitperiod},
-           given={Martin},
-           giveni={M\bibinitperiod}}}%
-        {{hash=c75a5377b6dc5213831576e88ffe553c}{%
-           family={Malik},
-           familyi={M\bibinitperiod},
-           given={Jitendra},
-           giveni={J\bibinitperiod}}}%
-        {{hash=e29c20003a517abaaac28852301c03c2}{%
-           family={Savarese},
-           familyi={S\bibinitperiod},
-           given={Silvio},
-           giveni={S\bibinitperiod}}}%
-      }
-      \strng{namehash}{de3c515bc48296129d43d2159e554292}
-      \strng{fullhash}{e576700b771a7af1542547e6875e8de5}
-      \strng{bibnamehash}{e576700b771a7af1542547e6875e8de5}
-      \strng{authorbibnamehash}{e576700b771a7af1542547e6875e8de5}
-      \strng{authornamehash}{de3c515bc48296129d43d2159e554292}
-      \strng{authorfullhash}{e576700b771a7af1542547e6875e8de5}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{booktitle}{Proceedings of the IEEE/CVF International Conference on Computer Vision}
-      \field{title}{3D Scene Graph: A Structure for Unified Semantics, 3D Space, and Camera}
-      \field{year}{2019}
-      \field{pages}{5664\bibrangedash 5673}
-      \range{pages}{10}
-    \endentry
-    \entry{wu2021scenegraphfusion}{inproceedings}{}
-      \name{author}{5}{}{%
-        {{hash=34a56aa54c3702d3d9348e07e833f9da}{%
-           family={Wu},
-           familyi={W\bibinitperiod},
-           given={Shun-Cheng},
-           giveni={S\bibinithyphendelim C\bibinitperiod}}}%
-        {{hash=136914b01c417ab8f177ac1a322bdfa6}{%
-           family={Wald},
-           familyi={W\bibinitperiod},
-           given={Johanna},
-           giveni={J\bibinitperiod}}}%
-        {{hash=b7be7bb00eaa87f428d0b9d1fe8c2553}{%
-           family={Tateno},
-           familyi={T\bibinitperiod},
-           given={Keisuke},
-           giveni={K\bibinitperiod}}}%
-        {{hash=c107bbd317cd780c2aa7006dbe61d83f}{%
-           family={Navab},
-           familyi={N\bibinitperiod},
-           given={Nassir},
-           giveni={N\bibinitperiod}}}%
-        {{hash=e71e31ec8fee14d9e0a2df6e9a85f2c4}{%
-           family={Tombari},
-           familyi={T\bibinitperiod},
-           given={Federico},
-           giveni={F\bibinitperiod}}}%
-      }
-      \strng{namehash}{41744135bb08888cbe877046d44e5982}
-      \strng{fullhash}{31291ab042e33f171b66767297390d22}
-      \strng{bibnamehash}{31291ab042e33f171b66767297390d22}
-      \strng{authorbibnamehash}{31291ab042e33f171b66767297390d22}
-      \strng{authornamehash}{41744135bb08888cbe877046d44e5982}
-      \strng{authorfullhash}{31291ab042e33f171b66767297390d22}
-      \field{extraname}{1}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{booktitle}{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition}
-      \field{title}{SceneGraphFusion: Incremental 3D Scene Graph Prediction from RGB-D Sequences}
-      \field{year}{2021}
-      \field{pages}{7515\bibrangedash 7525}
-      \range{pages}{11}
-    \endentry
-    \entry{deng2024opengraph}{article}{}
-      \name{author}{7}{}{%
-        {{hash=ec2f54bc7bfc9e5bba1d6a475f134fa1}{%
-           family={Deng},
-           familyi={D\bibinitperiod},
-           given={Yinan},
-           giveni={Y\bibinitperiod}}}%
-        {{hash=e73eb8e8f3ca0ffcf80957cead900014}{%
-           family={Wang},
-           familyi={W\bibinitperiod},
-           given={Jiahui},
-           giveni={J\bibinitperiod}}}%
-        {{hash=6de6f6b33859f102400f2bfe31733554}{%
-           family={Zhao},
-           familyi={Z\bibinitperiod},
-           given={Jingyu},
-           giveni={J\bibinitperiod}}}%
-        {{hash=c9e95f3d8f6e59e53d1638983fe50162}{%
-           family={Tian},
-           familyi={T\bibinitperiod},
-           given={Xinyu},
-           giveni={X\bibinitperiod}}}%
-        {{hash=6ea68a22ff5e0cd1fe65c51e2fe661f3}{%
-           family={Chen},
-           familyi={C\bibinitperiod},
-           given={Guangyan},
-           giveni={G\bibinitperiod}}}%
-        {{hash=446e84a6f09f26fc6cf5730853e551ba}{%
-           family={Yang},
-           familyi={Y\bibinitperiod},
-           given={Yi},
-           giveni={Y\bibinitperiod}}}%
-        {{hash=f0585a02c4bfb50387778d23989b7934}{%
-           family={Yue},
-           familyi={Y\bibinitperiod},
-           given={Yufeng},
-           giveni={Y\bibinitperiod}}}%
-      }
-      \strng{namehash}{e68f18542e8e3cf23d060a87d3ee46ad}
-      \strng{fullhash}{4a996f7772591f58353ee2858a5ceb38}
-      \strng{bibnamehash}{4a996f7772591f58353ee2858a5ceb38}
-      \strng{authorbibnamehash}{4a996f7772591f58353ee2858a5ceb38}
-      \strng{authornamehash}{e68f18542e8e3cf23d060a87d3ee46ad}
-      \strng{authorfullhash}{4a996f7772591f58353ee2858a5ceb38}
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{journaltitle}{IEEE Robotics and Automation Letters}
-      \field{number}{10}
-      \field{title}{OpenGraph: Open-Vocabulary Hierarchical 3D Graph Representation in Large-Scale Outdoor Environments}
-      \field{volume}{9}
-      \field{year}{2024}
-      \field{pages}{8402\bibrangedash 8409}
-      \range{pages}{8}
-      \verb{doi}
-      \verb 10.1109/LRA.2024.3439122
-      \endverb
-    \endentry
     \entry{johnson2015scenegraphs}{inproceedings}{}
       \name{author}{7}{}{%
         {{hash=90edc587e1d523d4e173b1fe6e733445}{%
@@ -1092,8 +934,8 @@
       \strng{authorbibnamehash}{840d34aa6f771751170f4e82b0f6f543}
       \strng{authornamehash}{703afbca586b4470d0f3fab18063c292}
       \strng{authorfullhash}{840d34aa6f771751170f4e82b0f6f543}
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition}
@@ -1174,8 +1016,8 @@
       \strng{authorbibnamehash}{721ec71a855c8818875c91cf21d15e1f}
       \strng{authornamehash}{6e123636292d5acb3e59a2dea095df77}
       \strng{authorfullhash}{d88292d711d29fae7152180f34a925ad}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{International Journal of Computer Vision}
@@ -1186,6 +1028,164 @@
       \range{pages}{42}
       \verb{doi}
       \verb 10.1007/s11263-016-0981-7
+      \endverb
+    \endentry
+    \entry{armeni2019threedscenegraph}{inproceedings}{}
+      \name{author}{7}{}{%
+        {{hash=60c30c11033d50a7830227e21d7de619}{%
+           family={Armeni},
+           familyi={A\bibinitperiod},
+           given={Iro},
+           giveni={I\bibinitperiod}}}%
+        {{hash=9e3c3454501b151b39c1719675d1a775}{%
+           family={He},
+           familyi={H\bibinitperiod},
+           given={Zhi-Yang},
+           giveni={Z\bibinithyphendelim Y\bibinitperiod}}}%
+        {{hash=d9806662b24ca486664faa2ddb093991}{%
+           family={Gwak},
+           familyi={G\bibinitperiod},
+           given={JunYoung},
+           giveni={J\bibinitperiod}}}%
+        {{hash=5c4d5bffbf12972d7fa07562ce912187}{%
+           family={Zamir},
+           familyi={Z\bibinitperiod},
+           given={Amir\bibnamedelima R.},
+           giveni={A\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
+        {{hash=bedef3752e42cc8501a95a23af0db2f8}{%
+           family={Fischer},
+           familyi={F\bibinitperiod},
+           given={Martin},
+           giveni={M\bibinitperiod}}}%
+        {{hash=c75a5377b6dc5213831576e88ffe553c}{%
+           family={Malik},
+           familyi={M\bibinitperiod},
+           given={Jitendra},
+           giveni={J\bibinitperiod}}}%
+        {{hash=e29c20003a517abaaac28852301c03c2}{%
+           family={Savarese},
+           familyi={S\bibinitperiod},
+           given={Silvio},
+           giveni={S\bibinitperiod}}}%
+      }
+      \strng{namehash}{de3c515bc48296129d43d2159e554292}
+      \strng{fullhash}{e576700b771a7af1542547e6875e8de5}
+      \strng{bibnamehash}{e576700b771a7af1542547e6875e8de5}
+      \strng{authorbibnamehash}{e576700b771a7af1542547e6875e8de5}
+      \strng{authornamehash}{de3c515bc48296129d43d2159e554292}
+      \strng{authorfullhash}{e576700b771a7af1542547e6875e8de5}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the IEEE/CVF International Conference on Computer Vision}
+      \field{title}{3D Scene Graph: A Structure for Unified Semantics, 3D Space, and Camera}
+      \field{year}{2019}
+      \field{pages}{5664\bibrangedash 5673}
+      \range{pages}{10}
+    \endentry
+    \entry{wu2021scenegraphfusion}{inproceedings}{}
+      \name{author}{5}{}{%
+        {{hash=34a56aa54c3702d3d9348e07e833f9da}{%
+           family={Wu},
+           familyi={W\bibinitperiod},
+           given={Shun-Cheng},
+           giveni={S\bibinithyphendelim C\bibinitperiod}}}%
+        {{hash=136914b01c417ab8f177ac1a322bdfa6}{%
+           family={Wald},
+           familyi={W\bibinitperiod},
+           given={Johanna},
+           giveni={J\bibinitperiod}}}%
+        {{hash=b7be7bb00eaa87f428d0b9d1fe8c2553}{%
+           family={Tateno},
+           familyi={T\bibinitperiod},
+           given={Keisuke},
+           giveni={K\bibinitperiod}}}%
+        {{hash=c107bbd317cd780c2aa7006dbe61d83f}{%
+           family={Navab},
+           familyi={N\bibinitperiod},
+           given={Nassir},
+           giveni={N\bibinitperiod}}}%
+        {{hash=e71e31ec8fee14d9e0a2df6e9a85f2c4}{%
+           family={Tombari},
+           familyi={T\bibinitperiod},
+           given={Federico},
+           giveni={F\bibinitperiod}}}%
+      }
+      \strng{namehash}{41744135bb08888cbe877046d44e5982}
+      \strng{fullhash}{31291ab042e33f171b66767297390d22}
+      \strng{bibnamehash}{31291ab042e33f171b66767297390d22}
+      \strng{authorbibnamehash}{31291ab042e33f171b66767297390d22}
+      \strng{authornamehash}{41744135bb08888cbe877046d44e5982}
+      \strng{authorfullhash}{31291ab042e33f171b66767297390d22}
+      \field{extraname}{1}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition}
+      \field{title}{SceneGraphFusion: Incremental 3D Scene Graph Prediction from RGB-D Sequences}
+      \field{year}{2021}
+      \field{pages}{7515\bibrangedash 7525}
+      \range{pages}{11}
+    \endentry
+    \entry{deng2024opengraph}{article}{}
+      \name{author}{7}{}{%
+        {{hash=ec2f54bc7bfc9e5bba1d6a475f134fa1}{%
+           family={Deng},
+           familyi={D\bibinitperiod},
+           given={Yinan},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=e73eb8e8f3ca0ffcf80957cead900014}{%
+           family={Wang},
+           familyi={W\bibinitperiod},
+           given={Jiahui},
+           giveni={J\bibinitperiod}}}%
+        {{hash=6de6f6b33859f102400f2bfe31733554}{%
+           family={Zhao},
+           familyi={Z\bibinitperiod},
+           given={Jingyu},
+           giveni={J\bibinitperiod}}}%
+        {{hash=c9e95f3d8f6e59e53d1638983fe50162}{%
+           family={Tian},
+           familyi={T\bibinitperiod},
+           given={Xinyu},
+           giveni={X\bibinitperiod}}}%
+        {{hash=6ea68a22ff5e0cd1fe65c51e2fe661f3}{%
+           family={Chen},
+           familyi={C\bibinitperiod},
+           given={Guangyan},
+           giveni={G\bibinitperiod}}}%
+        {{hash=446e84a6f09f26fc6cf5730853e551ba}{%
+           family={Yang},
+           familyi={Y\bibinitperiod},
+           given={Yi},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=f0585a02c4bfb50387778d23989b7934}{%
+           family={Yue},
+           familyi={Y\bibinitperiod},
+           given={Yufeng},
+           giveni={Y\bibinitperiod}}}%
+      }
+      \strng{namehash}{e68f18542e8e3cf23d060a87d3ee46ad}
+      \strng{fullhash}{4a996f7772591f58353ee2858a5ceb38}
+      \strng{bibnamehash}{4a996f7772591f58353ee2858a5ceb38}
+      \strng{authorbibnamehash}{4a996f7772591f58353ee2858a5ceb38}
+      \strng{authornamehash}{e68f18542e8e3cf23d060a87d3ee46ad}
+      \strng{authorfullhash}{4a996f7772591f58353ee2858a5ceb38}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{IEEE Robotics and Automation Letters}
+      \field{number}{10}
+      \field{title}{OpenGraph: Open-Vocabulary Hierarchical 3D Graph Representation in Large-Scale Outdoor Environments}
+      \field{volume}{9}
+      \field{year}{2024}
+      \field{pages}{8402\bibrangedash 8409}
+      \range{pages}{8}
+      \verb{doi}
+      \verb 10.1109/LRA.2024.3439122
       \endverb
     \endentry
     \entry{wang2021hrnet}{article}{}
@@ -1258,8 +1258,8 @@
       \strng{authornamehash}{39a99ef1be8bdddae38686a0699d5b28}
       \strng{authorfullhash}{c16d99da6005e6bbe11665b39f0ce755}
       \field{extraname}{1}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{IEEE Transactions on Pattern Analysis and Machine Intelligence}
@@ -1312,8 +1312,8 @@
       \strng{authorbibnamehash}{5949cce8587aaa584073114554b8cb7d}
       \strng{authornamehash}{85a01c7844076348ef51e88248410965}
       \strng{authorfullhash}{5949cce8587aaa584073114554b8cb7d}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition}

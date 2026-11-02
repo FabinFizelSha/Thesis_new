@@ -1,15 +1,15 @@
 [0] Config.pm:307> INFO - This is Biber 2.19
 [0] Config.pm:310> INFO - Logfile is 'Thesis_report_Fabin.blg'
-[49] biber:340> INFO - === Sun Nov  1, 2026, 11:43:49
-[60] Biber.pm:419> INFO - Reading 'Thesis_report_Fabin.bcf'
+[55] biber:340> INFO - === Mon Nov  2, 2026, 23:13:01
+[65] Biber.pm:419> INFO - Reading 'Thesis_report_Fabin.bcf'
 [117] Biber.pm:979> INFO - Found 61 citekeys in bib section 0
 [125] Biber.pm:4419> INFO - Processing section 0
-[131] Biber.pm:4610> INFO - Looking for bibtex file 'bibliography.bib' for section 0
+[132] Biber.pm:4610> INFO - Looking for bibtex file 'bibliography.bib' for section 0
 [134] bibtex.pm:1713> INFO - LaTeX decoding ...
 [173] bibtex.pm:1519> INFO - Found BibTeX data source 'bibliography.bib'
-[542] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
-[542] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
-[543] Biber.pm:4239> INFO - Sorting list 'none/global//global/global' of type 'entry' with template 'none' and locale 'en-US'
-[543] Biber.pm:4245> INFO - No sort tailoring available for locale 'en-US'
-[568] bbl.pm:660> INFO - Writing 'Thesis_report_Fabin.bbl' with encoding 'UTF-8'
+[543] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[544] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[544] Biber.pm:4239> INFO - Sorting list 'none/global//global/global' of type 'entry' with template 'none' and locale 'en-US'
+[544] Biber.pm:4245> INFO - No sort tailoring available for locale 'en-US'
+[569] bbl.pm:660> INFO - Writing 'Thesis_report_Fabin.bbl' with encoding 'UTF-8'
 [588] bbl.pm:763> INFO - Output to Thesis_report_Fabin.bbl

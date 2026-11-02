@@ -470,37 +470,17 @@ P3      63    88    68    4.8   2.9   4.1
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 % ===========================================================================
 % Section 5.4 -- Visual Results across Environments
 % (insert in chapters/Results.tex between Sections 5.3 and 5.5)
 % ===========================================================================
-% Chart data: final graph counts per environment (from res_<env>_stats.txt)
-% Enable the bar chart only if the stats files cover at least two environments.
-% \pgfplotstableread{
-% env        mainobj  unclassified  contacts  rooms
-% office     ?        ?             ?         ?
-% apartment  ?        ?             ?         ?
-% openloris  ?        ?             ?         ?
-% }\visTable
 
 \section{Visual Results across Environments}
 \label{sec:results_visual}
 
-{\small The preceding sections evaluated the components of the pipeline individually. This section shows the scene graphs that the complete pipeline produces in its final configuration and examines qualitatively what they contain and where they are wrong. The office and apartment sequences of uHumans2~\cite{rosinol2021kimera} and the office1-1 sequence of OpenLORIS-Scene~\cite{shi2020openloris} were each replayed once at a rate of 0.1, which corresponds to a camera input of about 1.6\,Hz for uHumans2 and about 3\,Hz for OpenLORIS, on a \textbf{[TODO: platform; Jetson AGX Thor, to be confirmed from the stats files]}. All runs used the final configuration of Sections~\ref{sec:results_segmentation} to~\ref{sec:results_vlm}: NanoSAM with a $3 \times 3$ prompt grid, the final association configuration, and Qwen3.5-4B with prompt P3 for labelling, with retrieval and the risk VLM disabled. For OpenLORIS, the camera pose is obtained from the wheel odometry recorded with the dataset and the calibrated base-to-camera transform (Section~\ref{subsec:impl_datasets}). The images were taken in RViz at the end of each run, after all pending labelling requests had been processed; Hydra~\cite{hughes2022hydra} provides the spatial layers, and the Fuser (Section~\ref{subsec:method_graph_fusion}) the labels, relations and presence confidences shown on them.\par}
+{\small This section shows the scene graphs produced by the complete pipeline in its final configuration (Sections~\ref{sec:results_segmentation} to~\ref{sec:results_vlm}, retrieval and risk VLM disabled). One run each was performed on the Jetson AGX Thor on the apartment sequence of uHumans2~\cite{rosinol2021kimera} and on the office1-1 sequence of OpenLORIS-Scene~\cite{shi2020openloris}, the latter with wheel odometry (Section~\ref{subsec:impl_datasets}). Figures~\ref{fig:results_visual} to~\ref{fig:results_visual_apartment} were taken in RViz during the runs.\par}
 
-{\small Since not all of this information can be read from the images, the content of the visualisation is summarised here. The graph is drawn in three layers that keep the horizontal position of every node and differ only in height. The lowest layer contains the \emph{object nodes} at their reconstructed position. Each object is a small sphere, or a cube if its mobility class is dynamic, coloured by its label; objects that have not yet received a label are grey and carry the text \texttt{object\_unknown}. The opacity of an object follows its presence confidence (Equation~\ref{eq:presence_decay}), so that objects not seen for some time fade but are never removed, and a translucent grey halo marks objects observed within the last few seconds. The text beside each object gives the label with its confidence, the mobility class with its confidence and, where available, the visual-state description (Section~\ref{subsec:method_vlm_contract}). The middle layer, 10\,m above the objects, contains the \emph{place nodes} of Hydra~\cite{hughes2022hydra}, which represent the free space through which the robot can move; each place takes the colour of the room it belongs to, or grey if it belongs to none. The top layer, 20\,m above the objects, contains the \emph{room nodes}, larger spheres with one distinct colour per room and the labels Room1, Room2 and so on. The edges between these nodes are listed in Table~\ref{tab:results_visual_edges}.\par}
+{\small The graph is drawn in three layers: objects at their reconstructed height, places 10\,m and rooms 20\,m above them. Objects are coloured by label (grey: unlabelled), drawn as cubes if dynamic, fade with their presence confidence (Equation~\ref{eq:presence_decay}) and carry a grey halo while recently observed; their text gives identifier, label, mobility class, visual-state description (Section~\ref{subsec:method_vlm_contract}) and presence confidence. Places take the colour of their room. The edges are listed in Table~\ref{tab:results_visual_edges}.\par}
 
 \begin{table}[!htb]
 	\centering
@@ -522,128 +502,103 @@ P3      63    88    68    4.8   2.9   4.1
 	\end{tabular}
 \end{table}
 
-
-% Full-page figure with all eight panels. To insert a real image, replace each
-% \fbox{...} with:
-%   \includegraphics[width=\linewidth,height=0.15\textheight,keepaspectratio]{example_images/res_<env>_<view>.png}
-% The height cap keeps all four rows on one page (checked with the thesis geometry).
+% Figure with the five OpenLORIS images on one page (checked with the thesis
+% geometry, scrbook A4).
 \begin{figure}[p]
 	\centering
-	\begin{subfigure}[t]{0.49\linewidth}
+	\captionsetup[subfigure]{font=footnotesize,skip=1pt}
+	\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.4pt}
+	\begin{subfigure}[t]{0.70\linewidth}
 		\centering
-		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
-		\caption{Office: fused scene graph.}
-		\label{fig:results_visual_office_overview}
-	\end{subfigure}
-	\hfill
-	\begin{subfigure}[t]{0.49\linewidth}
-		\centering
-		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
-		\caption{Office: Hydra layers.}
-		\label{fig:results_visual_office_layers}
+		\fbox{\includegraphics[width=\dimexpr\linewidth-2\fboxrule\relax]{example_images/Open_loris1.png}}
+		\caption{Camera view.}
+		\label{fig:results_visual_openloris_camera}
 	\end{subfigure}
 
-	\vspace{1mm}
-	\begin{subfigure}[t]{0.49\linewidth}
+	\vspace{0mm}
+	\begin{subfigure}[t]{0.70\linewidth}
 		\centering
-		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
-		\caption{Office: detail.}
-		\label{fig:results_visual_office_closeup}
-	\end{subfigure}
-	\hfill
-	\begin{subfigure}[t]{0.49\linewidth}
-		\centering
-		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
-		\caption{Office: camera view.}
-		\label{fig:results_visual_office_camera}
+		\fbox{\includegraphics[width=\dimexpr\linewidth-2\fboxrule\relax]{example_images/Open_loris1_front_view.png}}
+		\caption{Front view with object text.}
+		\label{fig:results_visual_openloris_front_labels}
 	\end{subfigure}
 
-	\vspace{1mm}
-	\begin{subfigure}[t]{0.49\linewidth}
+	\vspace{0mm}
+	\begin{subfigure}[t]{0.70\linewidth}
 		\centering
-		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
-		\caption{Apartment: fused scene graph.}
-		\label{fig:results_visual_apartment_overview}
-	\end{subfigure}
-	\hfill
-	\begin{subfigure}[t]{0.49\linewidth}
-		\centering
-		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
-		\caption{Apartment: detail.}
-		\label{fig:results_visual_apartment_closeup}
+		\fbox{\includegraphics[width=\dimexpr\linewidth-2\fboxrule\relax]{example_images/Open_loris1_top_view.png}}
+		\caption{Top view with object text.}
+		\label{fig:results_visual_openloris_oblique_labels}
 	\end{subfigure}
 
-	\vspace{1mm}
-	\begin{subfigure}[t]{0.49\linewidth}
+	\vspace{0mm}
+	\begin{subfigure}[t]{0.43\linewidth}
 		\centering
-		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
-		\caption{OpenLORIS office1-1: fused scene graph.}
-		\label{fig:results_visual_openloris_overview}
+		\fbox{\includegraphics[width=\dimexpr\linewidth-2\fboxrule\relax]{example_images/Open_loris1_front_view_wotext.png}}
+		\caption{Front view.}
+		\label{fig:results_visual_openloris_front}
 	\end{subfigure}
 	\hfill
-	\begin{subfigure}[t]{0.49\linewidth}
+	\begin{subfigure}[t]{0.43\linewidth}
 		\centering
-		\fbox{\parbox[c][0.15\textheight][c]{0.95\linewidth}{\centering\scriptsize [image placeholder]}}
-		\caption{OpenLORIS office1-1: detail.}
-		\label{fig:results_visual_openloris_closeup}
+		\fbox{\includegraphics[width=\dimexpr\linewidth-2\fboxrule\relax]{example_images/Open_loris1_top_view_wotext.png}}
+		\caption{Top view.}
+		\label{fig:results_visual_openloris_oblique}
 	\end{subfigure}
-	\caption{Scene graphs of the uHumans2 office (a--d) and apartment (e, f) sequences and of the OpenLORIS-Scene office1-1 sequence (g, h) at the end of each run, displayed in RViz. From bottom to top: objects, places (+10\,m) and rooms (+20\,m). Objects are coloured by label (grey: unlabelled), their opacity follows the presence confidence, and a grey halo marks currently observed objects. Black lines: hierarchy and Hydra edges; amber double arrows: contact relations; blue dotted lines: identity relations. \textbf{[TODO: adapt to what the panels actually show.]}}
+	\caption{Part of the OpenLORIS-Scene office1-1 scene: camera image (a) and object layer of the scene graph with (b, c) and without (d, e) object text.}
 	\label{fig:results_visual}
 \end{figure}
 
-% ---------------------------------------------------------------------------
-% PARAGRAPH: office. Write only after inspecting res_office_*.png and
-% res_office_stats.txt. Structure: (1) what the graph shows, with the counts
-% from the stats file (main objects, unclassified objects, contact and identity
-% relations, rooms, places); (2) what works and why; (3) what fails and why.
-% Each failure in one clause plus reference, only if it is visible:
-%   merged surfaces          -> mask fusion, Section~\ref{sec:results_tracking}
-%   wall in several segments -> one main object, Section~\ref{subsec:method_graph_fusion}
-%   faded spheres            -> presence decay, Equation~\ref{eq:presence_decay}
-%   object_unknown labels    -> confidence gate (Section~\ref{sec:results_vlm})
-%                               or labelling backlog (Section~\ref{sec:results_runtime})
-% ---------------------------------------------------------------------------
-{\small \textbf{[TODO: office paragraph; requires res\_office\_overview/layers/closeup/camera.png and res\_office\_stats.txt.]}\par}
-
-% ---------------------------------------------------------------------------
-% PARAGRAPH: uHumans2 apartment. Same structure as the office paragraph;
-% requires res_apartment_overview/closeup.png and res_apartment_stats.txt.
-% ---------------------------------------------------------------------------
-{\small \textbf{[TODO: apartment paragraph; requires res\_apartment\_overview/closeup.png and res\_apartment\_stats.txt.]}\par}
-
-
-% ---------------------------------------------------------------------------
-% PARAGRAPH: OpenLORIS. Same structure; requires res_openloris_overview/closeup.png
-% and res_openloris_stats.txt.
-% ---------------------------------------------------------------------------
-{\small \textbf{[TODO: OpenLORIS paragraph; requires res\_openloris\_overview/closeup.png and res\_openloris\_stats.txt.]}\par}
-
-% ---------------------------------------------------------------------------
-% PARAGRAPH: comparison. Simulation (office, apartment) vs. real sensor
-% (OpenLORIS): depth noise, reflections, label quality, number of objects,
-% using the counts from the three stats files. With three stats files, the
-% optional bar chart (\visTable at the top) can be enabled.
-% ---------------------------------------------------------------------------
-{\small \textbf{[TODO: comparison paragraph; requires the three stats files.]}\par}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+% Full page with two figures: Hydra layers of OpenLORIS and the apartment with a person.
+% It always follows the OpenLORIS figure, since figures keep their order.
+\begin{figure}[p]
+	\centering
+	\captionsetup[subfigure]{font=footnotesize,skip=1pt}
+	\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.4pt}
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\fbox{\includegraphics[width=\dimexpr\linewidth-2\fboxrule\relax]{example_images/openloris_full1.png}}
+		\caption{Reconstructed mesh and trajectory.}
+		\label{fig:results_visual_openloris_mesh}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\fbox{\includegraphics[width=\dimexpr\linewidth-2\fboxrule\relax]{example_images/openloris_full2.png}}
+		\caption{Object layer with edges to the place layer.}
+		\label{fig:results_visual_openloris_layers}
+	\end{subfigure}
+ 
+	\vspace{1mm}
+	\begin{subfigure}[t]{0.68\linewidth}
+		\centering
+		\fbox{\includegraphics[width=\dimexpr\linewidth-2\fboxrule\relax,trim=26 0 8 0,clip]{example_images/openloris_full3.png}}
+		\caption{Rooms, places and objects.}
+		\label{fig:results_visual_openloris_hierarchy}
+	\end{subfigure}
+ 
+	\vspace{1mm}
+	\caption{Hydra layers of OpenLORIS-Scene office1-1 at the end of the sequence: mesh with the robot trajectory (a), object layer with edges to the places (b) and hierarchy of rooms, places and objects (c).}
+	\label{fig:results_visual_layers}
+ 
+	\vspace{3mm}
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\fbox{\includegraphics[width=\dimexpr\linewidth-2\fboxrule\relax]{example_images/dynamic_image.png}}
+		\caption{Camera view.}
+		\label{fig:results_visual_apartment_camera}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.49\linewidth}
+		\centering
+		\fbox{\includegraphics[width=\dimexpr\linewidth-2\fboxrule\relax]{example_images/Dynamic_graph.png}}
+		\caption{Person (dynamic object).}
+		\label{fig:results_visual_apartment_detail}
+	\end{subfigure}
+	\caption{uHumans2 apartment with a person (dynamic object): camera image (a) and detail of the object layer (b).}
+	\label{fig:results_visual_apartment}
+\end{figure}
+\FloatBarrier
 
 
 
