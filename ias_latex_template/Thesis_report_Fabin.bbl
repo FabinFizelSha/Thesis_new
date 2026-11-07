@@ -41,7 +41,7 @@
       \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{title}{{Online Risk-Annotated Scene Graohs for Autonomous Systems}}
+      \field{title}{{Online Risk-Annotated Scene Graphs for Autonomous Systems}}
       \field{type}{{Master's thesis}}
       \field{year}{2026}
     \endentry
@@ -151,7 +151,7 @@
       \verb 10.1109/ACCESS.2022.3229233
       \endverb
     \endentry
-    \entry{iso12100}{standard}{}
+    \entry{iso12100}{misc}{}
       \name{author}{1}{}{%
         {{hash=7058e4bd76f877c52b621c942b30613c}{%
            family={{International Organization for Standardization}},
@@ -691,7 +691,7 @@
       \verb 10.1109/TDSC.2004.2
       \endverb
     \endentry
-    \entry{iso10218_1_2025}{standard}{}
+    \entry{iso10218_1_2025}{misc}{}
       \name{author}{1}{}{%
         {{hash=7058e4bd76f877c52b621c942b30613c}{%
            family={{International Organization for Standardization}},
@@ -724,7 +724,7 @@
       \verb https://www.iso.org/standard/73933.html
       \endverb
     \endentry
-    \entry{iso10218_2_2025}{standard}{}
+    \entry{iso10218_2_2025}{misc}{}
       \name{author}{1}{}{%
         {{hash=7058e4bd76f877c52b621c942b30613c}{%
            family={{International Organization for Standardization}},
@@ -757,7 +757,7 @@
       \verb https://www.iso.org/standard/73934.html
       \endverb
     \endentry
-    \entry{iso15066}{standard}{}
+    \entry{iso15066}{misc}{}
       \name{author}{1}{}{%
         {{hash=7058e4bd76f877c52b621c942b30613c}{%
            family={{International Organization for Standardization}},

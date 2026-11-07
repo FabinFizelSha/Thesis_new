@@ -34,7 +34,7 @@
 \contentsline {figure}{\numberline {5.8}{\ignorespaces uHumans2 apartment with a person (dynamic object): camera image (a) and detail of the object layer (b).}}{67}{figure.caption.37}%
 \contentsline {figure}{\numberline {5.9}{\ignorespaces \small \add@extra@listi {sml}Runtime at saturated input: (a) throughput (Thor: mean $\pm $ std of three runs), (b) Phase~1 latency (Orin indicative).}}{68}{figure.caption.38}%
 \contentsline {figure}{\numberline {5.10}{\ignorespaces \small \add@extra@listi {sml}Mean Phase~1 frame time by stage group (``Other'': message construction, crop scoring and minor stages; Orin indicative).}}{69}{figure.caption.39}%
-\contentsline {figure}{\numberline {5.11}{\ignorespaces \small \add@extra@listi {sml}Object-labelling VLM (Qwen3.5-4B, Q4\_K\_M, prompt P3). (a) Time per call on Orin without segmentation load and on Thor within the running pipeline. (b) Split of a Thor call into prompt processing and token generation, taken from the server log.}}{69}{figure.caption.40}%
+\contentsline {figure}{\numberline {5.11}{\ignorespaces \small \add@extra@listi {sml}Object-labelling VLM (Qwen3.5-4B, Q4\_K\_M, prompt P3). (a) Time per call on Orin at a low input rate (rate 0.1) and on Thor within the running pipeline. (b) Split of a Thor call into prompt processing and token generation, taken from the server log.}}{69}{figure.caption.40}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

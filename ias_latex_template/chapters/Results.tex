@@ -735,7 +735,7 @@ P3      63    88    68    4.8   2.9   4.1
         ]
         \addplot[fill=rsgblue!70, draw=rsgblue!90!black] coordinates {(Mean,3.11) (Median,2.94)};
         \addplot[fill=rsgorange!70, draw=rsgorange!90!black] coordinates {(Mean,1.36) (Median,1.25)};
-        \legend{AGX Orin (isolated harness), AGX Thor (full pipeline)}
+        \legend{AGX Orin (rate 0.1), AGX Thor (full pipeline)}
       \end{axis}
     \end{tikzpicture}
     \caption{\small Per-call latency}
@@ -761,7 +761,7 @@ P3      63    88    68    4.8   2.9   4.1
     \end{tikzpicture}
     \caption{\small Split of a Thor call}
   \end{subfigure}
-  \caption{\small Object-labelling VLM (Qwen3.5-4B, Q4\_K\_M, prompt P3). (a) Time per call on Orin without segmentation load and on Thor within the running pipeline. (b) Split of a Thor call into prompt processing and token generation, taken from the server log.}
+  \caption{\small Object-labelling VLM (Qwen3.5-4B, Q4\_K\_M, prompt P3). (a) Time per call on Orin at a low input rate (rate 0.1) and on Thor within the running pipeline. (b) Split of a Thor call into prompt processing and token generation, taken from the server log.}
   \label{fig:results_runtime_vlm}
 \end{figure}
 
