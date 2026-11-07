@@ -15,26 +15,26 @@
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {3.1}{\ignorespaces Overview of the proposed framework, showing the synchronous per-frame path (solid) and the asynchronous per-track path (dashed).}}{30}{figure.caption.18}%
 \contentsline {figure}{\numberline {3.2}{\ignorespaces Preprocessing of the input streams into a prepared RGB-D-pose frame.}}{33}{figure.caption.20}%
-\contentsline {figure}{\numberline {3.3}{\ignorespaces Association of one observation with the existing tracks. The three-dimensional overlap selects the tier of the acceptance rule (Equation~\ref {eq:association_score}).}}{38}{figure.caption.21}%
-\contentsline {figure}{\numberline {3.4}{\ignorespaces Grouping and relations in the fused graph}}{44}{figure.caption.22}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Association of one observation with the existing tracks. The three-dimensional overlap selects the tier of the acceptance rule (Equation~\ref {eq:association_score}).}}{37}{figure.caption.21}%
+\contentsline {figure}{\numberline {3.4}{\ignorespaces Grouping and relations in the fused graph}}{42}{figure.caption.22}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {4.1}{\ignorespaces Class overview of the implemented framework, showing the main ROS~2 nodes, internal processing stages, supporting classes, and configurable backends.}}{52}{figure.caption.25}%
-\contentsline {figure}{\numberline {4.2}{\ignorespaces Sequence of one frame through the preprocessor.}}{53}{figure.caption.26}%
-\contentsline {figure}{\numberline {4.3}{\ignorespaces Sequence of the Phase~1 coordinator.}}{56}{figure.caption.27}%
-\contentsline {figure}{\numberline {4.4}{\ignorespaces Sequence of the modified Hydra pipeline with session persistence.}}{57}{figure.caption.28}%
-\contentsline {figure}{\numberline {4.5}{\ignorespaces Sequence of the scene graph fuser.}}{58}{figure.caption.29}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Class overview of the implemented framework, showing the main ROS~2 nodes, internal processing stages, supporting classes, and configurable backends.}}{50}{figure.caption.25}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Sequence of one frame through the preprocessor.}}{51}{figure.caption.26}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Sequence of the Phase~1 coordinator.}}{54}{figure.caption.27}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Sequence of the modified Hydra pipeline with session persistence.}}{55}{figure.caption.28}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Sequence of the scene graph fuser.}}{56}{figure.caption.29}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {5.1}{\ignorespaces Example benchmark frame. Each colour is one ground-truth object; hatched regions are below 3500 pixels and ignored.}}{60}{figure.caption.30}%
-\contentsline {figure}{\numberline {5.2}{\ignorespaces NanoSAM against SAM ViT-B on the benchmark: (a) PQ, (b) median latency (log scale), (c) RQ, (d) SQ.}}{61}{figure.caption.31}%
-\contentsline {figure}{\numberline {5.3}{\ignorespaces Parameter study of NanoSAM (input scale 0.85, at most 8 masks): (a) grid density at threshold 0.80 and NMS IoU 0.10, (b) mask threshold with a $4\times 4$ grid, (c) NMS IoU with a $4\times 4$ grid and threshold 0.80. Overlap is the share of pixels covered by more than one mask.}}{62}{figure.caption.32}%
-\contentsline {figure}{\numberline {5.4}{\ignorespaces Tracking results: (a) fragmentation over the tightening runs R1 to R6 of the second experiment; (b) new tracks, revisit associations and labelling calls over five sessions.}}{64}{figure.caption.33}%
-\contentsline {figure}{\numberline {5.5}{\ignorespaces Comparison of the three prompts on models of two generations, Qwen3 (blue) and Qwen3.5 (orange and green), on the office sequence ($N \approx 50$ crops per run): (a) strict accuracy, (b) median inference latency.}}{66}{figure.caption.34}%
-\contentsline {figure}{\numberline {5.6}{\ignorespaces Part of the OpenLORIS-Scene office1-1 scene: camera image (a) and object layer of the scene graph with (b, c) and without (d, e) object text.}}{68}{figure.caption.36}%
-\contentsline {figure}{\numberline {5.7}{\ignorespaces Hydra layers of OpenLORIS-Scene office1-1 at the end of the sequence: mesh with the robot trajectory (a), object layer with edges to the places (b) and hierarchy of rooms, places and objects (c).}}{69}{figure.caption.37}%
-\contentsline {figure}{\numberline {5.8}{\ignorespaces uHumans2 apartment with a person (dynamic object): camera image (a) and detail of the object layer (b).}}{69}{figure.caption.37}%
-\contentsline {figure}{\numberline {5.9}{\ignorespaces \small \add@extra@listi {sml}Runtime at saturated input: (a) throughput (Thor: mean $\pm $ std of three runs), (b) Phase~1 latency (Orin indicative).}}{70}{figure.caption.38}%
-\contentsline {figure}{\numberline {5.10}{\ignorespaces \small \add@extra@listi {sml}Mean Phase~1 frame time by stage group (``Other'': message construction, crop scoring and minor stages; Orin indicative).}}{71}{figure.caption.39}%
-\contentsline {figure}{\numberline {5.11}{\ignorespaces \small \add@extra@listi {sml}Object-labelling VLM (Qwen3.5-4B, Q4\_K\_M, prompt P3). (a) Time per call on Orin without segmentation load and on Thor within the running pipeline. (b) Split of a Thor call into prompt processing and token generation, taken from the server log.}}{71}{figure.caption.40}%
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Example benchmark frame. Each colour is one ground-truth object; hatched regions are below 3500 pixels and ignored.}}{58}{figure.caption.30}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces NanoSAM against SAM ViT-B on the benchmark: (a) PQ, (b) median latency (log scale), (c) RQ, (d) SQ.}}{59}{figure.caption.31}%
+\contentsline {figure}{\numberline {5.3}{\ignorespaces Parameter study of NanoSAM (input scale 0.85, at most 8 masks): (a) grid density at threshold 0.80 and NMS IoU 0.10, (b) mask threshold with a $4\times 4$ grid, (c) NMS IoU with a $4\times 4$ grid and threshold 0.80. Overlap is the share of pixels covered by more than one mask.}}{60}{figure.caption.32}%
+\contentsline {figure}{\numberline {5.4}{\ignorespaces Tracking results: (a) fragmentation over the tightening runs R1 to R6 of the second experiment; (b) new tracks, revisit associations and labelling calls over five sessions.}}{62}{figure.caption.33}%
+\contentsline {figure}{\numberline {5.5}{\ignorespaces Comparison of the three prompts on models of two generations, Qwen3 (blue) and Qwen3.5 (orange and green), on the office sequence ($N \approx 50$ crops per run): (a) strict accuracy, (b) median inference latency.}}{64}{figure.caption.34}%
+\contentsline {figure}{\numberline {5.6}{\ignorespaces Part of the OpenLORIS-Scene office1-1 scene: camera image (a) and object layer of the scene graph with (b, c) and without (d, e) object text.}}{66}{figure.caption.36}%
+\contentsline {figure}{\numberline {5.7}{\ignorespaces Hydra layers of OpenLORIS-Scene office1-1 at the end of the sequence: mesh with the robot trajectory (a), object layer with edges to the places (b) and hierarchy of rooms, places and objects (c).}}{67}{figure.caption.37}%
+\contentsline {figure}{\numberline {5.8}{\ignorespaces uHumans2 apartment with a person (dynamic object): camera image (a) and detail of the object layer (b).}}{67}{figure.caption.37}%
+\contentsline {figure}{\numberline {5.9}{\ignorespaces \small \add@extra@listi {sml}Runtime at saturated input: (a) throughput (Thor: mean $\pm $ std of three runs), (b) Phase~1 latency (Orin indicative).}}{68}{figure.caption.38}%
+\contentsline {figure}{\numberline {5.10}{\ignorespaces \small \add@extra@listi {sml}Mean Phase~1 frame time by stage group (``Other'': message construction, crop scoring and minor stages; Orin indicative).}}{69}{figure.caption.39}%
+\contentsline {figure}{\numberline {5.11}{\ignorespaces \small \add@extra@listi {sml}Object-labelling VLM (Qwen3.5-4B, Q4\_K\_M, prompt P3). (a) Time per call on Orin without segmentation load and on Thor within the running pipeline. (b) Split of a Thor call into prompt processing and token generation, taken from the server log.}}{69}{figure.caption.40}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

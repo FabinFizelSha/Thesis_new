@@ -50,44 +50,43 @@
 \contentsline {section}{\numberline {3.3}Object Segmentation and Persistent Tracking}{34}{section.3.3}%
 \contentsline {subsection}{\numberline {3.3.1}Object Proposals and 3D Observations}{35}{subsection.3.3.1}%
 \contentsline {subsection}{\numberline {3.3.2}Evidence-Based Association}{36}{subsection.3.3.2}%
-\contentsline {subsection}{\numberline {3.3.3}Evidence-Based Association}{37}{subsection.3.3.3}%
-\contentsline {subsection}{\numberline {3.3.4}Track Representation and Local Segments}{40}{subsection.3.3.4}%
-\contentsline {subsection}{\numberline {3.3.5}Transfer of Object Observations to Hydra}{41}{subsection.3.3.5}%
-\contentsline {section}{\numberline {3.4}Semantic Labelling and Risk-Relevant Object Information}{41}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}Selection and Presentation of the Object View}{41}{subsection.3.4.1}%
-\contentsline {subsection}{\numberline {3.4.2}Structured Output and Risk-Relevant Object Information}{42}{subsection.3.4.2}%
-\contentsline {section}{\numberline {3.5}Scene Graph Fusion and Uncertainty Modelling}{43}{section.3.5}%
-\contentsline {subsection}{\numberline {3.5.1}Scene Graph Fusion}{43}{subsection.3.5.1}%
-\contentsline {subsection}{\numberline {3.5.2}Uncertainty and Persistence Modelling}{44}{subsection.3.5.2}%
-\contentsline {subsection}{\numberline {3.5.3}Treatment of Static and Dynamic Objects}{45}{subsection.3.5.3}%
-\contentsline {section}{\numberline {3.6}Loop Closure and Multi-Session Consistency}{47}{section.3.6}%
-\contentsline {subsection}{\numberline {3.6.1}Consistency under Loop Closure}{47}{subsection.3.6.1}%
-\contentsline {subsection}{\numberline {3.6.2}Persistence across Sessions}{48}{subsection.3.6.2}%
-\contentsline {chapter}{\numberline {4}Implementation}{49}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Data Collection and Substitute Datasets}{49}{section.4.1}%
-\contentsline {subsection}{\numberline {4.1.1}Planned Data-Collection Campaign}{49}{subsection.4.1.1}%
-\contentsline {subsection}{\numberline {4.1.2}Limitations Encountered}{50}{subsection.4.1.2}%
-\contentsline {subsection}{\numberline {4.1.3}Substitute Datasets}{50}{subsection.4.1.3}%
-\contentsline {section}{\numberline {4.2}Software Implementation}{51}{section.4.2}%
-\contentsline {subsection}{\numberline {4.2.1}Package Structure and Deployment}{51}{subsection.4.2.1}%
-\contentsline {subsection}{\numberline {4.2.2}Preprocessor}{53}{subsection.4.2.2}%
-\contentsline {subsection}{\numberline {4.2.3}Phase~1 Coordinator}{54}{subsection.4.2.3}%
-\contentsline {subsection}{\numberline {4.2.4}Hydra Integration and Session Persistence}{55}{subsection.4.2.4}%
-\contentsline {subsection}{\numberline {4.2.5}Scene Graph Fuser}{57}{subsection.4.2.5}%
-\contentsline {subsection}{\numberline {4.2.6}Portability and Extensibility}{59}{subsection.4.2.6}%
-\contentsline {chapter}{\numberline {5}Results}{60}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Segmentation Backend and Configuration}{60}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Object Tracking and Crop Selection}{63}{section.5.2}%
-\contentsline {section}{\numberline {5.3}VLM Model and Prompt Comparison}{65}{section.5.3}%
-\contentsline {section}{\numberline {5.4}Visual Results across Environments}{67}{section.5.4}%
-\contentsline {section}{\numberline {5.5}Runtime Performance}{70}{section.5.5}%
-\contentsline {chapter}{\numberline {6}Conclusion and Future Work}{73}{chapter.6}%
-\contentsline {section}{\numberline {6.1}Conclusion}{73}{section.6.1}%
-\contentsline {section}{\numberline {6.2}Limitations and Future Work}{75}{section.6.2}%
-\contentsline {chapter}{\nonumberline Bibliography}{77}{chapter*.41}%
-\contentsline {chapter}{\numberline {A}Prompts of the VLM Comparison}{83}{appendix.A}%
-\contentsline {section}{\numberline {A.1}Zero-Shot Prompt (P1)}{83}{section.A.1}%
-\contentsline {section}{\numberline {A.2}Example-Driven Prompt (P2)}{83}{section.A.2}%
-\contentsline {section}{\numberline {A.3}Structural-Priority Prompt (P3)}{85}{section.A.3}%
-\contentsline {section}{\numberline {A.4}Deployed Prompt with Visual-State Description}{87}{section.A.4}%
+\contentsline {subsection}{\numberline {3.3.3}Track Representation and Local Segments}{38}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}Transfer of Object Observations to Hydra}{39}{subsection.3.3.4}%
+\contentsline {section}{\numberline {3.4}Semantic Labelling and Risk-Relevant Object Information}{39}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}Selection and Presentation of the Object View}{39}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}Structured Output and Risk-Relevant Object Information}{40}{subsection.3.4.2}%
+\contentsline {section}{\numberline {3.5}Scene Graph Fusion and Uncertainty Modelling}{41}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}Scene Graph Fusion}{41}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}Uncertainty and Persistence Modelling}{42}{subsection.3.5.2}%
+\contentsline {subsection}{\numberline {3.5.3}Treatment of Static and Dynamic Objects}{43}{subsection.3.5.3}%
+\contentsline {section}{\numberline {3.6}Loop Closure and Multi-Session Consistency}{45}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}Consistency under Loop Closure}{45}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}Persistence across Sessions}{46}{subsection.3.6.2}%
+\contentsline {chapter}{\numberline {4}Implementation}{47}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Data Collection and Substitute Datasets}{47}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Planned Data-Collection Campaign}{47}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Limitations Encountered}{48}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}Substitute Datasets}{48}{subsection.4.1.3}%
+\contentsline {section}{\numberline {4.2}Software Implementation}{49}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Package Structure and Deployment}{49}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}Preprocessor}{51}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Phase~1 Coordinator}{52}{subsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.2.4}Hydra Integration and Session Persistence}{53}{subsection.4.2.4}%
+\contentsline {subsection}{\numberline {4.2.5}Scene Graph Fuser}{55}{subsection.4.2.5}%
+\contentsline {subsection}{\numberline {4.2.6}Portability and Extensibility}{57}{subsection.4.2.6}%
+\contentsline {chapter}{\numberline {5}Results}{58}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Segmentation Backend and Configuration}{58}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Object Tracking and Crop Selection}{61}{section.5.2}%
+\contentsline {section}{\numberline {5.3}VLM Model and Prompt Comparison}{63}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Visual Results across Environments}{65}{section.5.4}%
+\contentsline {section}{\numberline {5.5}Runtime Performance}{68}{section.5.5}%
+\contentsline {chapter}{\numberline {6}Conclusion and Future Work}{71}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Conclusion}{71}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Limitations and Future Work}{73}{section.6.2}%
+\contentsline {chapter}{\nonumberline Bibliography}{75}{chapter*.41}%
+\contentsline {chapter}{\numberline {A}Prompts of the VLM Comparison}{81}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Zero-Shot Prompt (P1)}{81}{section.A.1}%
+\contentsline {section}{\numberline {A.2}Example-Driven Prompt (P2)}{81}{section.A.2}%
+\contentsline {section}{\numberline {A.3}Structural-Priority Prompt (P3)}{83}{section.A.3}%
+\contentsline {section}{\numberline {A.4}Deployed Prompt with Visual-State Description}{85}{section.A.4}%
 \providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

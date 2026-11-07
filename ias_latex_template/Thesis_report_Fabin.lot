@@ -5,11 +5,11 @@
 \contentsline {table}{\numberline {2.2}{\ignorespaces Release history of the open-weight Qwen vision-language models.}}{27}{table.caption.16}%
 \addvspace {10\p@ }
 \contentsline {table}{\numberline {3.1}{\ignorespaces Information exchanged between the components of the framework.}}{31}{table.caption.19}%
-\contentsline {table}{\numberline {3.2}{\ignorespaces Differences in the treatment of static and dynamic objects.}}{46}{table.caption.23}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces Differences in the treatment of static and dynamic objects.}}{44}{table.caption.23}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {4.1}{\ignorespaces Limitations encountered during the Go1 data-collection campaign.}}{50}{table.caption.24}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces Limitations encountered during the Go1 data-collection campaign.}}{48}{table.caption.24}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {5.1}{\ignorespaces Edges in the visualisation. $^{*}$Completed by the Fuser where missing, if no wall lies between the nodes (Section~\ref {subsec:method_graph_fusion}).}}{70}{table.caption.35}%
+\contentsline {table}{\numberline {5.1}{\ignorespaces Edges in the visualisation. $^{*}$Completed by the Fuser where missing, if no wall lies between the nodes (Section~\ref {subsec:method_graph_fusion}).}}{68}{table.caption.35}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
