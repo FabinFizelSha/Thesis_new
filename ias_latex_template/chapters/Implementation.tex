@@ -1,7 +1,7 @@
 \chapter{Implementation}
 \label{chap:implementation}
 
-{\small This chapter describes how the methodology of Chapter~\ref{chap:methodology} was realised. Section~\ref{sec:impl_hardware} describes the data basis, from the planned data-collection campaign to the substitute datasets, Section~\ref{sec:impl_software} describes the software implementation, and Section~\ref{sec:impl_optimisation} the measures taken to achieve near-real-time operation on embedded hardware.\par}
+{\small This chapter describes how the methodology of Chapter~\ref{chap:methodology} was realised. Section~\ref{sec:impl_hardware} describes the data basis, from the planned data-collection campaign to the substitute datasets, and Section~\ref{sec:impl_software} describes the software implementation.\par}
 
 \section{Data Collection and Substitute Datasets}
 \label{sec:impl_hardware}
@@ -49,7 +49,7 @@
 
 {\small The office sequences of the OpenLORIS-Scene dataset~\cite{shi2020openloris} serve as the real-world data and are the closest substitute for the planned recordings. They were captured with a RealSense D400-series camera, the sensor family of the D455, and provide depth aligned to the colour image, real wheel odometry and a calibrated base-to-camera transform. Since they were recorded on a wheeled robot with complete sensor streams, they avoid the recording and vibration problems of Section~\ref{subsec:impl_go1_limitations}, so that the method can be evaluated on real sensor data without the results being dominated by these hardware-specific effects.\par}
 
-{\small The simulated office and apartment scenes of the uHumans2 dataset~\cite{rosinol2021kimera}, both with ground-truth odometry and metric depth, complement the real-world data. The office scene was used for development, optimisation and repeatable experiments, while the apartment scene, which contains a human, tests the portability of the framework to a second environment and its handling of a dynamic object. Switching between the datasets requires only configuration (Section~\ref{subsec:impl_portability}). As a consequence of the substitution, effects of legged locomotion, such as gait-induced camera motion and depth noise on reflective floors, are not covered by the evaluation, and the uHumans2 experiments rely on ground-truth odometry (Chapter~\ref{chap:evaluation}).\par}
+{\small The simulated office and apartment scenes of the uHumans2 dataset~\cite{rosinol2021kimera}, both with ground-truth odometry and metric depth, complement the real-world data. The office scene was used for development, optimisation and repeatable experiments, while the apartment scene, which contains a human, tests the portability of the framework to a second environment and its handling of a dynamic object. Switching between the datasets requires only configuration (Section~\ref{subsec:impl_portability}). As a consequence of the substitution, effects of legged locomotion, such as gait-induced camera motion and depth noise on reflective floors, are not covered by the evaluation, and the uHumans2 experiments rely on ground-truth odometry (Chapter~\ref{chap:results}).\par}
 
 
 
