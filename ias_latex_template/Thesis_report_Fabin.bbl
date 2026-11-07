@@ -1395,8 +1395,8 @@
       \strng{authornamehash}{ae3509cef74d700bc72e166cef519778}
       \strng{authorfullhash}{35aa6f56cd021270d387680af0c2260a}
       \field{extraname}{1}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{eprintclass}{cs.CV}
@@ -1420,8 +1420,8 @@
       \strng{authorbibnamehash}{f275f2a55ee4abdf8875dce6987e2f5f}
       \strng{authornamehash}{f275f2a55ee4abdf8875dce6987e2f5f}
       \strng{authorfullhash}{f275f2a55ee4abdf8875dce6987e2f5f}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{title}{FastAPI Documentation}
@@ -1436,43 +1436,6 @@
       \verb{url}
       \verb https://fastapi.tiangolo.com/
       \endverb
-    \endentry
-    \entry{hagberg2008networkx}{inproceedings}{}
-      \name{author}{3}{}{%
-        {{hash=94707ad079516150870c2f9a2932df46}{%
-           family={Hagberg},
-           familyi={H\bibinitperiod},
-           given={Aric\bibnamedelima A.},
-           giveni={A\bibinitperiod\bibinitdelim A\bibinitperiod}}}%
-        {{hash=12f80aa3aca50b90f024775e52dde170}{%
-           family={Schult},
-           familyi={S\bibinitperiod},
-           given={Daniel\bibnamedelima A.},
-           giveni={D\bibinitperiod\bibinitdelim A\bibinitperiod}}}%
-        {{hash=58fb3a96810da0d56606677a3ce7e677}{%
-           family={Swart},
-           familyi={S\bibinitperiod},
-           given={Pieter\bibnamedelima J.},
-           giveni={P\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
-      }
-      \list{location}{1}{%
-        {Pasadena, CA, USA}%
-      }
-      \strng{namehash}{4e53a9c7f8f76fc36bfb13bfc9694edc}
-      \strng{fullhash}{3a1b2e51fcffd45628935c7b6334f944}
-      \strng{bibnamehash}{3a1b2e51fcffd45628935c7b6334f944}
-      \strng{authorbibnamehash}{3a1b2e51fcffd45628935c7b6334f944}
-      \strng{authornamehash}{4e53a9c7f8f76fc36bfb13bfc9694edc}
-      \strng{authorfullhash}{3a1b2e51fcffd45628935c7b6334f944}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{booktitle}{Proceedings of the 7th Python in Science Conference}
-      \field{title}{Exploring Network Structure, Dynamics, and Function Using NetworkX}
-      \field{year}{2008}
-      \field{pages}{11\bibrangedash 15}
-      \range{pages}{5}
     \endentry
     \entry{nanosam2023}{online}{}
       \name{author}{1}{}{%
@@ -1602,8 +1565,8 @@
       \strng{authorbibnamehash}{0a3f6c4478b68f8b8711972b238e4acf}
       \strng{authornamehash}{d96316bc7578db680aba71d4226354c8}
       \strng{authorfullhash}{b8c06eaeb698f61fc96ff3e5570552ec}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{International Conference on Learning Representations}
@@ -1650,8 +1613,8 @@
       \strng{authornamehash}{6edb98fe38401d2fe4a026f5ce6e8451}
       \strng{authorfullhash}{720293b27fe84a23031231f283c72cd1}
       \field{extraname}{1}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition}
@@ -1833,8 +1796,8 @@
       \strng{authornamehash}{6edb98fe38401d2fe4a026f5ce6e8451}
       \strng{authorfullhash}{42c4b52dc3a62cebabbc11c73e1afb53}
       \field{extraname}{2}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition}
@@ -1895,8 +1858,8 @@
       \strng{authorbibnamehash}{efa664e154982dfbb2d86b95a77d1448}
       \strng{authornamehash}{3b7e00bc88d7aca4d4d5ddb8c252e36c}
       \strng{authorfullhash}{efa664e154982dfbb2d86b95a77d1448}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{European Conference on Computer Vision}
@@ -1919,8 +1882,8 @@
       \strng{authorbibnamehash}{2e7489c001c33b64b64d65458065bd5c}
       \strng{authornamehash}{2e7489c001c33b64b64d65458065bd5c}
       \strng{authorfullhash}{2e7489c001c33b64b64d65458065bd5c}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{The Annals of Mathematical Statistics}

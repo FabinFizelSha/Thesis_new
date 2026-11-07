@@ -4,16 +4,13 @@
 \captionsetup{font=small, labelfont=small}
 
 
-
-
-
 \section{Autonomous Systems and Safety}
 
 {\small
 
-Autonomous systems (AS) can be understood as systems that are capable of making decisions independently from direct human control \cite{osborne2022decisionmaking}. In robotic systems, this autonomy is typically achieved through a combination of sensing, perception, planning, decision-making, and actuation. However, this autonomy also makes safety assurance more complex, because the system behaviour is no longer determined only by predefined commands, but also by runtime perception, environmental conditions, and decision-making processes.
+Autonomous systems (AS) can be understood as systems that are capable of making decisions independently from direct human control \cite{osborne2022decisionmaking}. In robotic systems, this autonomy is typically achieved through a combination of sensing, perception, planning, decision-making, and actuation. However, autonomy also makes safety assurance more complex, because system behaviour is no longer determined only by predefined commands, but also by runtime perception, environmental conditions, and decision-making processes.
 
-Safety is a fundamental requirement in AS because robots interact with humans, physical objects, infrastructure, and the surrounding environment. In dependability theory, safety is commonly defined as the absence of catastrophic consequences for users and the environment \cite{avizienis2004dependability}. In the context of autonomous robotic systems, safety therefore refers not only to whether the robot performs its intended task, but also to whether it performs the task without creating unacceptable risk. From a risk assessment perspective, safety is closely related to the identification of hazards, the estimation of risk, and the implementation of suitable risk reduction measures \cite{iso12100}. Robot-specific safety standards further define requirements and protective measures for industrial and collaborative robotic systems \cite{iso10218_1_2025,iso10218_2_2025,iso15066}. However, safety in AS is strongly dependent on operational context. Therefore, safety in autonomous robotic systems must be understood as a property that depends on both the technical system and the changing environment in which it operates.
+Safety is a fundamental requirement in AS because robots interact with humans, physical objects, infrastructure, and the surrounding environment. In dependability theory, safety is commonly defined as the absence of catastrophic consequences for users and the environment \cite{avizienis2004dependability}. For autonomous robotic systems, safety therefore concerns not only whether the robot performs its intended task, but whether it does so without creating unacceptable risk. This is formalised through risk assessment and risk reduction \cite{iso12100}, complemented by robot-specific standards that define requirements and protective measures for industrial and collaborative robotic systems \cite{iso10218_1_2025,iso10218_2_2025,iso15066}, as discussed in Section~\ref{sec:conventional_ra}. Since the conditions under which a robot operates can change continuously, safety in AS must be understood as a property of both the technical system and its operating environment.
 
 }
 
@@ -21,43 +18,38 @@ Safety is a fundamental requirement in AS because robots interact with humans, p
 
 {\small
 
-Industry 5.0 is shifting industrial development toward a more human-centric, sustainable, and resilient model, while continuing to support productivity and worker well-being \cite{europeancommission2021industry5}. Within this perspective, Human-Robot Collaboration (HRC) becomes an important requirement for using robotic technologies to support and empower workers rather than simply replacing human labour \cite{europeancommission2021industry5}. Collaborative robotic systems can assist humans in repetitive, strenuous, or hazardous tasks, thereby improving workplace flexibility, ergonomics, and the distribution of work between humans and machines.
+Industry 5.0 is shifting industrial development toward a more human-centric, sustainable, and resilient model, while continuing to support productivity and worker well-being \cite{europeancommission2021industry5}. Within this perspective, Human-Robot Collaboration (HRC) becomes an important means of using robotic technologies to support and empower workers rather than simply replacing human labour \cite{europeancommission2021industry5}. Collaborative robotic systems can assist humans in repetitive, strenuous, or hazardous tasks, thereby improving workplace flexibility, ergonomics, and the distribution of work between humans and machines.
 
-However, industrial HRC must address three closely related aspects: ensuring human safety, maintaining trust in automation, and preserving productivity \cite{kumar2021hrc}. Among these, human safety remains a primary concern because close physical interaction increases the possibility of unintended human-robot collisions or unexpected robot motion. At the same time, safety measures must be balanced with productivity requirements, since overly restrictive measures such as excessive speed reductions or frequent safety stops can reduce system efficiency \cite{kumar2021hrc}. The relationship between safety, trust in automation, and productivity is illustrated in Figure~\ref{fig:hrc_challenges}. This trade-off shows that HRC requires systematic risk assessment methods that can identify hazardous situations and define suitable risk reduction measures.
+However, industrial HRC must address three closely related aspects: ensuring human safety, maintaining trust in automation, and preserving productivity \cite{kumar2021hrc}, as illustrated in Figure~\ref{fig:hrc_challenges}. Human safety remains the primary concern, because close physical interaction increases the possibility of unintended collisions or unexpected robot motion. At the same time, overly restrictive measures such as excessive speed reductions or frequent safety stops reduce system efficiency \cite{kumar2021hrc}. Safety measures in HRC must therefore be balanced against productivity requirements.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.7\textwidth]{example_images/HRC_safety_productivity.png}
-    \caption{Main challenges in HRC\cite{kumar2021hrc}.}
+    \caption{Main challenges in HRC \cite{kumar2021hrc}.}
     \label{fig:hrc_challenges}
 \end{figure}
 
 }
 
-\subsection{Conventional Risk Assessment and Risk Reduction}
+\subsection{Conventional Risk Assessment and Safety Measures in HRC}
+\label{sec:conventional_ra}
 
 {\small
 
-Conventional risk assessment in robotic systems is generally performed before deployment and is based on the intended use, foreseeable misuse, system limits, operating environment, and known hazards of the system. According to ISO 12100, the risk assessment process includes hazard identification, risk estimation, and risk evaluation, followed by the selection of suitable risk reduction measures \cite{iso12100}. Risk reduction is usually implemented through a combination of inherently safe design, technical protective measures, and information for use. In HRC, this can include limiting robot speed and force, defining safe separation distances, using protective stops, and applying physical or electronic safeguards around the robot workspace. However, conventional risk assessment is mainly based on assumptions made during design and deployment, such as expected human behaviour, known object configurations, defined workspaces, and predefined task conditions. As a result, it is effective for identifying known and reasonably foreseeable hazards, but it becomes limited when the operating context changes significantly during runtime.
+Conventional risk assessment in robotic systems is performed before deployment and is based on the intended use, foreseeable misuse, system limits, and known hazards of the system. According to ISO 12100, this process comprises hazard identification, risk estimation, and risk evaluation, followed by the selection of risk reduction measures through inherently safe design, technical protective measures, and information for use \cite{iso12100}. In industrial HRC, these measures are commonly realised either through collaborative robots designed to operate within a shared workspace, or through physical and electronic safeguards such as light curtains, pressure-sensitive floors, 2-D scanning LiDAR, and 3-D safety vision systems \cite{kumar2021hrc}.
 
-}
-
-\subsection{Existing Safety Measures in HRC}
-
-{\small
-
-In industrial HRC, risk reduction strategies are commonly implemented through two main approaches: the use of collaborative robots and the use of physical or electronic safeguarding measures \cite{kumar2021hrc}. Collaborative robots, also referred to as cobots, are designed to operate in direct cooperation with humans within a defined shared workspace. The safeguarding-based approach focuses on monitoring the robot workspace so that robot motion can be adapted or stopped before hazardous human-robot collisions occur. Examples include light curtains, pressure-sensitive floors, 2-D scanning LiDAR, and 3-D safety vision systems. These mechanisms are important for reducing the risk of human injury, but they often rely on predefined safety zones, fixed distance thresholds, or conservative stopping rules \cite{kumar2021hrc}.
-
-\begin{wrapfigure}{r}{0.50\textwidth}
+\begin{wrapfigure}{r}{0.475\textwidth}
     \vspace{-10pt}
     \centering
-    \includegraphics[width=0.48\textwidth]{example_images/hrc_safety_zones_generated.png}
+    \includegraphics[width=0.456\textwidth]{example_images/hrc_safety_zones_generated.png}
     \caption{Illustrative representation of safety zones in a collaborative robot workspace.}
     \label{fig:hrc_safety_zones}
     \vspace{-10pt}
 \end{wrapfigure}
 
-A common method used for workspace monitoring is Speed and Separation Monitoring (SSM). In SSM, the distance between the human and the robot is monitored continuously, and the robot speed is reduced or stopped when the separation distance becomes too small. In a static SSM approach, the monitored zones are usually predefined before operation \cite{kumar2021hrc}. This approach is simple and practical, but it can be conservative because the safety zones are not always adapted to the actual robot motion, human motion, task state, or sensor uncertainty. Dynamic SSM addresses this limitation by adapting the protective separation distance or the robot speed according to the current operating situation, considering factors such as robot velocity, human motion, stopping time, and uncertainty in the sensed position of obstacles or operators. Marvel discusses SSM performance in terms of both safety and productivity, representing collision potential through separation metrics and sensor uncertainty \cite{marvel2013ssm}. Therefore, existing safety measures show the importance of moving from fixed protective assumptions toward context-aware risk assessment mechanisms.
+A widely used workspace monitoring method is Speed and Separation Monitoring (SSM), in which the human-robot distance is monitored continuously and the robot speed is reduced or stopped when the separation becomes too small (Figure~\ref{fig:hrc_safety_zones}). In static SSM, the monitored zones are predefined before operation, which is practical but often conservative, as the zones are not adapted to the actual robot motion, human motion, or sensor uncertainty \cite{kumar2021hrc}. Dynamic SSM addresses this by adapting the protective separation distance to the current situation, considering robot velocity, stopping time, and uncertainty in the sensed positions of operators \cite{marvel2013ssm}.
+
+Both conventional risk assessment and existing safeguarding measures thus rely on assumptions fixed at design time, such as expected human behaviour, known object configurations, and predefined safety zones. They are effective for known and reasonably foreseeable hazards, but become limited when the operating context changes during runtime.
 
 }
 
@@ -65,13 +57,11 @@ A common method used for workspace monitoring is Speed and Separation Monitoring
 
 {\small
 
-The previous subsections show that conventional risk assessment and many existing HRC safety measures are based on pre-deployment assumptions, such as intended use, expected human behaviour, predefined workspaces, and fixed safety zones. These assumptions are necessary for systematic risk assessment, but they become less reliable when autonomous robots operate in changing environments. The integration of artificial intelligence into robotic perception, planning, or control further increases this limitation. While AI-based components improve flexibility and autonomy, they also make robot behaviour harder to predict completely during design-time safety analysis. Safety assurance of AI-based systems is complicated by dataset dependence, black-box behaviour, explainability, and lifecycle assurance \cite{silvaneto2022aisafetyassurance}.
+The integration of artificial intelligence into robotic perception, planning, and control further amplifies these limitations. While AI-based components improve flexibility and autonomy, they also make robot behaviour harder to predict completely during design-time safety analysis. Safety assurance of AI-based systems is further complicated by dataset dependence, black-box behaviour, limited explainability, and lifecycle assurance challenges \cite{silvaneto2022aisafetyassurance}.
 
-As a result, conventional risk assessment should be understood as a necessary baseline rather than a complete solution for adaptive autonomous robotic systems. Dynamic and context-aware risk assessment is therefore required to incorporate runtime information such as robot state, human presence, object locations, spatial relationships, perception uncertainty, and environmental changes. Automated and continuous risk assessment has been proposed for software-defined robotic systems \cite{grimmeisen2023continuousrisk}. At the same time, AI can also support dynamic risk assessment when its outputs are structured, bounded, and interpretable. In this thesis, this motivates the use of a spatial risk-annotated scene graph, which can represent objects, spatial relations, uncertainty, and risk-related context in a machine-readable form to support dynamic risk assessment in autonomous robotic systems.
+Conventional risk assessment should therefore be understood as a necessary baseline rather than a complete solution for adaptive autonomous robotic systems. What is additionally required is dynamic and context-aware risk assessment that incorporates runtime information such as robot state, human presence, object locations, spatial relationships, perception uncertainty, and environmental changes. Automated and continuous risk assessment has been proposed for software-defined robotic systems \cite{grimmeisen2023continuousrisk}. At the same time, AI can itself support dynamic risk assessment when its outputs are structured, bounded, and interpretable. In this thesis, this motivates the use of a spatial risk-annotated scene graph, which represents objects, spatial relations, uncertainty, and risk-related context in a machine-readable form to support dynamic risk assessment in autonomous robotic systems.
 
 }
-
-
 
 
 
@@ -91,20 +81,19 @@ As a result, conventional risk assessment should be understood as a necessary ba
 
 A scene graph is a structured representation of a visual scene in which objects are represented as nodes and relationships between objects are represented as edges \cite{johnson2015scenegraphs}. Instead of describing an image or environment only as a collection of detected objects, a scene graph also captures how these objects are related to each other. For example, a scene may contain nodes such as \textit{person}, \textit{chair}, and \textit{table}, while edges may describe relations such as \textit{sitting on}, \textit{next to}, or \textit{under}. Johnson et al. demonstrated the usefulness of scene graphs for image retrieval by representing image content through objects, attributes, and relationships rather than relying only on low-level image features or isolated object labels \cite{johnson2015scenegraphs}.
 
+
+The main advantage of a scene graph is that it provides a machine-readable representation of both entities and context. Object detections alone can indicate which objects are present, but they do not fully describe the structure of the scene. In contrast, a scene graph can represent object attributes, spatial arrangements, and semantic relationships in a compact graph format \cite{johnson2015scenegraphs}. This makes it useful for tasks that require reasoning about the environment, because downstream modules can query not only whether an object exists, but also how it is positioned or related to other objects.
+
 \begin{wrapfigure}{r}{0.50\textwidth}
     \vspace{-10pt}
     \centering
     \includegraphics[width=0.48\textwidth]{example_images/scene-graph-example.png}
-    \caption{Scene graph example. Reproduced from \cite{johnson2015scenegraphs}.}
+    \caption{Example of a scene graph, in which objects are represented as nodes, their attributes as node properties, and pairwise relationships as directed edges \cite{johnson2015scenegraphs}.}
     \label{fig:scene_graph_example}
     \vspace{-10pt}
 \end{wrapfigure}
 
-The main advantage of a scene graph is that it provides a machine-readable representation of both entities and context. Object detections alone can indicate which objects are present, but they do not fully describe the structure of the scene. In contrast, a scene graph can represent object attributes, spatial arrangements, and semantic relationships in a compact graph format \cite{johnson2015scenegraphs}. This makes it useful for tasks that require reasoning about the environment, because downstream modules can query not only whether an object exists, but also how it is positioned or related to other objects.
-
-Scene graphs have been used in several computer vision and language-vision tasks, including image retrieval, visual relationship understanding, visual question answering, and image captioning. Datasets such as Visual Genome support this direction by providing dense annotations of objects, attributes, relationships, region descriptions, scene graphs, and question-answer pairs \cite{krishna2017visualgenome}. Beyond 2D images, scene graphs have also been extended to 3D environments, where objects, rooms, cameras, and their relationships can be represented in a unified spatial structure \cite{armeni2019threedscenegraph}. This makes scene graphs relevant not only for image-level understanding, but also for robotic and spatial perception tasks.
-
-Scene graphs also bridge raw sensor data and higher-level reasoning, which is particularly useful in robotic systems where perception must inform planning, navigation, or risk assessment.
+Scene graphs have been used in several computer vision and language-vision tasks, including image retrieval, visual relationship understanding, visual question answering, and image captioning. Datasets such as Visual Genome support this direction by providing dense annotations of objects, attributes, relationships, region descriptions, scene graphs, and question-answer pairs \cite{krishna2017visualgenome}. Beyond 2D images, scene graphs have also been extended to 3D environments, where objects, rooms, cameras, and their relationships can be represented in a unified spatial structure \cite{armeni2019threedscenegraph}. This makes scene graphs relevant not only for image-level understanding, but also for robotic and spatial perception tasks.Scene graphs also bridge raw sensor data and higher-level reasoning, which is particularly useful in robotic systems where perception must inform planning, navigation, or risk assessment.
 
 In the context of this thesis, scene graphs are relevant because dynamic risk assessment requires more than object detection. Risk may depend on object identity, spatial proximity, support relations, containment, occlusion, human presence, and the current configuration of the environment. A graph-based representation allows such information to be stored in a structured form. When extended with spatial information, uncertainty estimates, and risk annotations, the scene graph becomes a suitable basis for representing the current operational context of an autonomous robotic system.
 
@@ -189,7 +178,8 @@ where $w_{\max}$ is the maximum allowed weight \cite{wu2021scenegraphfusion}. Th
 
 The temporal fusion strategy is relevant to this thesis as an example of how repeated observations can be combined to improve the stability of a scene graph over time. Instead of storing only a single deterministic label for each object or relationship, SceneGraphFusion preserves a probability distribution over possible classes or predicates. This allows the representation to retain information about semantic uncertainty and to reduce the effect of isolated inconsistent predictions. Such an approach is useful to study because dynamic risk assessment may depend not only on the selected object or relation label, but also on how confident the system is in that prediction.
 
-For this thesis, SceneGraphFusion is an important reference for incremental scene graph generation, as it shows how RGB-D observations can be fused over time and how retaining probability distributions over classes and predicates stabilises predictions while preserving semantic uncertainty, which matters for risk assessment. However, its focus remains object-relation prediction in reconstructed indoor scenes, whereas the present thesis targets spatial grounding, long-term object persistence, loop-closure-aware consistency, uncertainty representation, and dynamic risk assessment in robotic environments.
+For this thesis, SceneGraphFusion serves as an important reference for incremental scene graph generation, as it demonstrates how RGB-D observations can be fused over time while preserving semantic uncertainty. However, its focus remains on object-relation prediction in reconstructed indoor scenes. In contrast, the present thesis targets spatial grounding, long-term object persistence, loop-closure-aware consistency, uncertainty representation, and dynamic risk assessment in robotic environments.
+
 }
 
 
@@ -406,80 +396,42 @@ Hydra is organized as a highly parallelized architecture with low-level, mid-lev
 
 
 
-
 \section{Risk-Annotated Scene Graph Framework Baseline}
 \label{sec:baseline_framework}
 
-{\small
-
-The framework developed in this thesis extends the risk-annotated scene graph framework presented by Schiel~\cite{previous_rsg_thesis}, which is referred to as the baseline in the following. This section outlines its processing pipeline and external interface, explains how the scene graph is constructed and annotated with risk-relevant information, and identifies the limitations that motivate the present work. The focus lies on the conceptual design of the framework rather than on its implementation. The underlying segmentation, retrieval, and vision-language techniques are introduced separately in Sections~\ref{sec:nanosam} and~\ref{sec:visual_retrieval_vlm}.
-
-}
+{\small The framework developed in this thesis extends the risk-annotated scene graph framework of Schiel~\cite{previous_rsg_thesis}, which is referred to as the baseline in the following. This section outlines its conceptual design and the limitations that motivate the present work. The underlying segmentation, retrieval and vision-language techniques are introduced in Sections~\ref{sec:nanosam} and~\ref{sec:visual_retrieval_vlm}.\par}
 
 \subsection{Information Flow in the Baseline Framework}
 \label{subsec:baseline_information_flow}
 
-{\small
+{\small The information flow of the baseline is shown in Figure~\ref{fig:existing_rsg_framework}. Each RGB-D sample is handled as one task in the processing pipeline. The colour image is first segmented with the Segment Anything Model (SAM)~\cite{kirillov2023segmentanything}, which yields class-agnostic object candidates; for each candidate, an image crop, a bounding box, a binary mask and a segmentation quality score are stored. Since these candidates carry no semantic meaning, the Retrieval-Augmented Perception (RAP) module returns label candidates for each crop from a visual knowledge base of previously stored observations (Section~\ref{subsec:visual_retrieval}). In parallel, the existing scene graph is reduced to a cutout that contains only the nodes and edges likely to be visible in the current view, determined from the camera pose and the depth image. The colour image, the cutout and the RAP label candidates are passed to a vision-language model (VLM), which returns an updated graph for the current view (Section~\ref{subsec:vlm}). This output is then grounded in 3D and merged into the complete scene graph (Section~\ref{subsec:baseline_graph_construction}).\par}
 
-The baseline framework follows a modular, worker-based processing pipeline in which RGB-D data is received, processed, interpreted, and integrated into a risk-annotated scene graph. The input to the system is an RGB-D observation of the environment, consisting of a colour image and its corresponding depth image, which is either provided through a dataset or submitted through the FastAPI-based interface described in Section~\ref{subsec:baseline_fastapi}. This design separates data input and client communication from the perception and scene graph generation modules. The resulting information flow is illustrated in Figure~\ref{fig:existing_rsg_framework}.
+{\small The baseline is exposed as a REST service built with FastAPI~\cite{fastapi_docs}, through which RGB-D samples are submitted when they are not read from a dataset. The scene graph is returned to the client as a dictionary in which nodes and edges are stored separately.\label{subsec:baseline_fastapi}\par}
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{example_images/existing_work_overview_enhanced.png}
-    \caption{Information flow of the existing risk-annotated scene graph framework. Adapted from \cite{previous_rsg_thesis}.}
+    \includegraphics[width=0.85\textwidth]{example_images/existing_work_overview_enhanced.png}
+    \caption{Information flow of the existing risk-annotated scene graph framework. Adapted from~\cite{previous_rsg_thesis}.}
     \label{fig:existing_rsg_framework}
 \end{figure}
-
-Each received sample is handled as a task in the processing pipeline. The colour image is first segmented with the Segment Anything Model (SAM) \cite{kirillov2023segmentanything} to obtain class-agnostic object candidates. For every retained candidate, the framework stores an image crop, a bounding box, a binary mask, and a segmentation quality score. These candidates carry no semantic meaning, so their identities must be determined in the subsequent stages. The depth image, camera parameters, and pose information are used for the later spatial processing, including coordinate conversion, visibility checking, and the spatial grounding of graph elements.
-
-The object crops are then passed to the Retrieval-Augmented Perception (RAP) module, which returns label candidates from a visual knowledge base of previously stored observations (Section~\ref{subsec:visual_retrieval}). In parallel, the existing scene graph is reduced to a cutout that contains only the nodes and edges likely to be visible in the current camera view, determined from the current pose and depth image. The RGB image, the scene-graph cutout, and the RAP label candidates are subsequently passed to a vision-language model (VLM), which returns an updated graph for the current view (Section~\ref{subsec:vlm}). Finally, this output is grounded in 3D and merged into the complete scene graph, as described in Section~\ref{subsec:baseline_graph_construction}.
-
-}
-
-\subsection{FastAPI}
-\label{subsec:baseline_fastapi}
-
-{\small
-
-FastAPI is a Python web framework for building application programming interfaces (APIs), through which external clients communicate with a software system via network-accessible endpoints, typically using HTTP requests \cite{fastapi_docs}. The expected format of incoming requests can be defined explicitly, which suits complex inputs such as RGB-D images, timestamps, and pose information, and asynchronous operation allows several requests to be handled concurrently \cite{fastapi_docs}. In the baseline framework, FastAPI exposes the scene graph generation pipeline as an external service and keeps client applications separated from the internal perception, segmentation, VLM, and scene graph modules. For this external communication, the internal graph is converted into a dictionary-based representation in which node and edge information are stored separately.
-
-This interface is well suited to dataset-based testing and to request-response communication with external clients \cite{fastapi_docs}. Robotic software, however, relies on continuous high-frequency sensor streams, synchronised multi-modal data, distributed nodes, and predictable timing behaviour, for which a REST-based interface is less natural. FastAPI is therefore not ideal as the primary communication mechanism for deployment on a robotic platform, which motivates the port of the framework to ROS~2 \cite{macenski2022ros2}.
-
-}
 
 \subsection{Scene Graph Construction and Risk Annotation}
 \label{subsec:baseline_graph_construction}
 
-{\small
+{\small The baseline represents the scene graph as a directed graph in which entities in the environment are modelled as nodes and the relationships between them as edges~\cite{previous_rsg_thesis}. Each node stores, among other attributes, an object label, a semantic description of its visual identity, a semantic pose describing its current physical state (for example, open or closed), a 3D position, risk metadata and an appearance score. Edges store the source and target nodes, a relationship label, the distance between the connected entities and an appearance score.\par}
 
-The baseline framework represents the scene graph as a directed graph, where entities in the environment are modelled as nodes and relationships between entities are modelled as edges \cite{previous_rsg_thesis}. The implementation uses NetworkX, a Python library for network analysis and graph manipulation, which supports incremental graph operations such as adding, updating, and removing nodes and edges \cite{hagberg2008networkx}.
-
-Each node stores semantic, spatial, and risk-related information. Important node attributes include a persistent identifier, object label, semantic description, semantic pose, 3D position, risk metadata, appearance score, confidence score, and layer type. The semantic description describes the visual identity of the entity, while the semantic pose describes its current physical state, such as standing, lying, open, closed, or moving. Edges store relationships between nodes, including the source node, target node, relationship label, distance between the connected entities, and an appearance score.
-
-After each VLM inference step, the returned graph is converted from image-space information into 3D coordinates using the depth image and camera pose. The converted output is then compared with the scene-graph cutout that was originally sent to the VLM, and the two are combined following an update-or-insert strategy. For each node in the VLM output, the framework checks whether a node with the same identifier already exists in the complete scene graph. If it exists, its attributes are updated using the latest VLM output and its appearance score is increased. Otherwise, it is inserted as a new node with an initial appearance score. This allows newly detected objects or humans to be added while persistent entities are reinforced over time.
-
-Nodes that were present in the VLM input cutout but are missing from the VLM output are interpreted as not being detected in the current update. Instead of being removed immediately, their appearance score is decreased, and a node is removed only when its appearance score falls below a predefined threshold. This prevents isolated missed detections from immediately deleting objects from the graph.
-
-The same principle is applied to edges. If an edge returned by the VLM already exists between the corresponding source and target nodes, its relationship label and distance are updated and its appearance score is increased; otherwise, a new edge is added with an initial appearance score. The edge distance is calculated from the 3D positions of the connected nodes, so that spatial relationships are stored together with semantic relationship labels. Edges that were present in the input cutout but are missing from the VLM output are weakened by decreasing their appearance score and are removed once it falls below the threshold. Temporal consistency is therefore handled through appearance-based persistence: repeatedly observed nodes and edges become more stable, while missing or transient entities are gradually removed.
-
-}
-
+{\small After each VLM inference step, the returned graph is converted from image space into 3D coordinates using the depth image and the camera pose, and is then combined with the complete scene graph following an update-or-insert strategy. If a node with the same identifier already exists, its attributes are updated with the latest VLM output and its appearance score is increased; otherwise, the node is inserted with an initial appearance score. Nodes that were present in the cutout sent to the VLM but are missing from its output are not removed immediately. Instead, their appearance score is decreased, and a node is removed only once its score falls below a predefined threshold, so that isolated missed detections do not delete objects from the graph. Edges are handled in the same way; their distance is computed from the 3D positions of the connected nodes. Temporal consistency therefore rests on appearance-based persistence: repeatedly observed nodes and edges become more stable, while missing or transient entities are gradually removed.\par}
 
 \subsection{Limitations of the Baseline Framework}
 \label{subsec:baseline_limitations}
 
-{\small
+{\small When considered for deployment on a mobile robot, the baseline has limitations in three areas: its integration into the robotic system and the spatial extent it can represent, the reliability of the stored information, and its computational cost.\par}
 
-When considered for deployment on a mobile robot, the baseline framework has limitations in three areas: its integration into the robotic system and the spatial extent it can represent, the reliability of the information stored in the scene graph, and its computational cost.
+{\small The request-response service described in Section~\ref{subsec:baseline_fastapi} does not suit the continuous, synchronised sensor streams of a robot, which motivates the port of the framework to ROS~2~\cite{macenski2022ros2}. The spatial extent is likewise restricted: the scene graph is updated only from the current frame, camera pose and visible graph elements, with no mechanism for keeping it spatially consistent across rooms, corridors or revisited locations. As the framework also lacks loop closure, revisiting an area after accumulated pose drift may cause objects to be inserted again as new observations, or updates to rely on spatial information that is no longer globally consistent. Anchoring the scene graph in a SLAM-based spatial map with loop closure, such as the one provided by Hydra~\cite{hughes2022hydra}, is therefore necessary to extend the framework beyond local frame-by-frame scene understanding.\par}
 
-The first limitation arises from the service-oriented interface of the framework, which is not aligned with robot-native communication patterns (Section~\ref{subsec:baseline_fastapi}) and therefore makes deployment on real robotic platforms less straightforward. The spatial extent of the representation is likewise restricted, as the scene graph is updated based only on the current frame, camera pose, and visible graph elements. This is suitable for local scene understanding, but it provides no mechanism for keeping the graph spatially consistent across multiple rooms, corridors, or revisited locations. Since the framework also lacks loop closure, an area revisited after accumulated pose drift may lead to revisited objects being inserted as new observations, or to updates based on spatial information that is no longer globally consistent. Anchoring the scene graph in a SLAM-based spatial map with loop closure, such as the one provided by Hydra \cite{hughes2022hydra}, is therefore necessary to extend the framework beyond local frame-by-frame scene understanding.
+{\small The stored information is, moreover, only partially reliable. Uncertainty is expressed solely through confidence values and appearance scores, which distinguish repeatedly observed entities from briefly observed ones but provide neither a probability distribution over object classes or relationship labels nor a probabilistic estimate of object existence or spatial position, although such information is required for downstream risk assessment (Section~\ref{subsec:tracking_relevance}). The relationships stored on the edges are similarly limited. They are inferred by the VLM from a single two-dimensional view, and several of them, such as \textit{in front of} or \textit{behind}, are defined relative to the observer rather than to the scene. An object that is behind another object from one viewpoint may appear beside or in front of it from another, so the same pair of objects can receive contradictory labels as the robot moves, and each update overwrites the previously stored label. Such egocentric relations do not describe a stable property of the three-dimensional scene. In addition, the scene graph inherits the VLM failure modes described in Section~\ref{subsec:vlm}, which the parsing and graph-combination steps mitigate only in part.\par}
 
-Beyond these integration aspects, the information stored in the scene graph is only partially reliable. Uncertainty is expressed solely through confidence values and appearance scores. Appearance-based persistence distinguishes repeatedly observed entities from briefly observed ones, but it maintains neither a probability distribution over object classes or relationship labels nor a probabilistic estimate of object existence or spatial position, although such information is required for downstream risk assessment (Section~\ref{subsec:tracking_relevance}). The relationships stored on the edges are similarly limited. They are inferred by the VLM from a single two-dimensional view, and several of them, such as \textit{in front of} or \textit{behind}, are defined relative to the observer rather than to the scene. An object that is behind another object from one viewpoint may appear beside or in front of it from another, so the same pair of objects can receive contradictory labels as the robot moves, and each update overwrites the previously stored label. Such egocentric relations do not describe a stable property of the three-dimensional scene. Moreover, the scene graph depends directly on the VLM output and therefore inherits the failure modes described in Section~\ref{subsec:vlm}. Since the parsing and graph-combination steps mitigate only some of these effects, the VLM output must be bounded, checked, and converted into a consistent graph representation before it can serve as reliable input for risk assessment.
-
-Finally, the runtime performance of the framework is constrained by its per-frame inference load. Segmenting every frame with SAM in automatic mode and invoking the VLM on every frame limits the achievable update rate of the scene graph on embedded hardware, for the reasons given in Sections~\ref{subsec:sam_architecture} and~\ref{subsec:vlm}. Together, these limitations motivate the extensions proposed in this thesis: porting the framework to ROS~2, anchoring the scene graph in a SLAM-based spatial map with loop closure, introducing a probabilistic object representation, deriving object relationships from the three-dimensional geometry of the scene, constraining and validating the VLM output, and reducing the per-frame inference load to enable near-real-time operation.
-
-}
-
+{\small Finally, segmenting every frame with SAM in automatic mode and invoking the VLM on every frame limit the achievable update rate of the scene graph on embedded hardware (Sections~\ref{subsec:sam_architecture} and~\ref{subsec:vlm}). Together, these limitations motivate the extensions set out in Section~1.3.\par}
 
 
 

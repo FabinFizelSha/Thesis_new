@@ -693,10 +693,10 @@ P3      63    88    68    4.8   2.9   4.1
         xbar stacked, bar width=12pt,
         symbolic y coords={AGX Thor,AGX Orin}, ytick=data,
         enlarge y limits=0.45,
-        xmin=0, xmax=820,
+        xmin=0, xmax=850,
         xlabel={Mean Phase 1 frame time [ms]},
         tick label style={font=\scriptsize, /pgf/number format/1000 sep={}}, label style={font=\scriptsize}, legend cell align=left,
-        legend style={font=\scriptsize, at={(0.5,-0.42)}, anchor=north, legend columns=5, draw=none,
+        legend style={font=\scriptsize, at={(0.5,1.03)}, anchor=south, legend columns=5, draw=none,
                       /tikz/every even column/.append style={column sep=6pt}},
         legend image code/.code={\draw[#1] (0cm,-0.1cm) rectangle (0.2cm,0.12cm);},
       ]
@@ -706,8 +706,8 @@ P3      63    88    68    4.8   2.9   4.1
       \addplot[fill=gray!60,      draw=gray!90!black]      coordinates {(36.1,AGX Orin)  (44.9,AGX Thor)};
       \addplot[fill=black!12,     draw=black!50]           coordinates {(53.5,AGX Orin)  (17.1,AGX Thor)};
       \legend{Segmentation (NanoSAM), Geometry, Association, Queueing, Other}
-      \node[anchor=west, font=\scriptsize] at (axis cs:728.5,AGX Orin) {729\,ms};
-      \node[anchor=west, font=\scriptsize] at (axis cs:279.2,AGX Thor) {279\,ms};
+      \node[anchor=west, font=\scriptsize, fill=white, inner sep=1pt, xshift=2pt] at (axis cs:728.5,AGX Orin) {729\,ms};
+      \node[anchor=west, font=\scriptsize, fill=white, inner sep=1pt, xshift=2pt] at (axis cs:279.2,AGX Thor) {279\,ms};
     \end{axis}
   \end{tikzpicture}
   \caption{\small Mean Phase~1 frame time by stage group (``Other'': message construction, crop scoring and minor stages; Orin indicative).}
