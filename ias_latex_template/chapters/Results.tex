@@ -766,3 +766,15 @@ P3      63    88    68    4.8   2.9   4.1
 \end{figure}
 
 {\small The pipeline is GPU-bound on Thor. During processing, the GPU was busy about 90\,\% of the time on average, whereas the CPU load stayed at about 40\,\%. Memory use remained at about 24\,GiB, a fraction of the 122\,GiB available. The board drew about 81\,W on average and at most 109\,W, which corresponds to about 17\,J per processed frame, and the GPU temperature did not exceed 63\,$^{\circ}$C. Downstream of Phase~1, the update rates were measured on the published topics, so they are output rates rather than internal computation times. Hydra~\cite{hughes2022hydra} (Section~\ref{subsec:impl_hydra}) published a new scene graph at about 1.4\,Hz, and a processed frame typically appeared in the next graph within about 0.4\,s (median). The Fuser updated its output at only about 0.3\,Hz instead of the configured 1\,Hz. The risk layer thus receives a refreshed scene graph at about 1.4\,Hz, but a fused, risk-annotated view only about every 3 to 4\,s. Overall, the Jetson AGX Thor processes about 4.8 frames per second, roughly twice the rate of the Orin, and geometry and object tracking keep pace with this rate, so that each processed frame reaches Hydra within about 0.3\,s on average. Semantic labelling, in contrast, lags considerably on a first visit and catches up only once objects are revisited, which defines the principal runtime limitation discussed in Chapter~\ref{chap:limitations}.\par}
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.22)  2 NOV 2026 23:13
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.22)  7 NOV 2026 09:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -2119,7 +2119,7 @@ chapter 6.
 [75
 
 
-] [76]) [77]
+] [76] [77]) [78]
 chapter without number
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/qpl/m/sc/10.95'.
@@ -2128,7 +2128,7 @@ Package microtype Info: Character `029' is missing
 Package biblatex Warning: No driver for 'standard'.
 (biblatex)                Using fallback driver on input line 67.
 
-[78
+[79
 
 
 
@@ -2152,26 +2152,26 @@ Package biblatex Warning: No driver for 'standard'.
 Package biblatex Warning: No driver for 'standard'.
 (biblatex)                Using fallback driver on input line 67.
 
-[79]
+[80]
 Overfull \hbox (23.86905pt too wide) in paragraph at lines 68--68
 []\T1/qpl/m/n/10.95 (-20) A. Kir-illov, E. Mintun, N. Ravi, \T1/qpl/m/it/10.95 
 (-20) et al.\T1/qpl/m/n/10.95 (-20) , ^^P  Seg-ment any-thing,^^Q \T1/qpl/m/it/
 10.95 (-20) arXiv preprint arXiv:2304.02643\T1/qpl/m/n/10.95 (-20) ,
  []
 
-[80] [81]
+[81] [82]
 Overfull \hbox (29.82353pt too wide) in paragraph at lines 68--68
 []\T1/qpl/m/n/10.95 (-20) S. Bai, K. Chen, X. Liu, \T1/qpl/m/it/10.95 (-20) et 
 al.\T1/qpl/m/n/10.95 (-20) , ^^P  Qwen2.5-vl tech-ni-cal re-port,^^Q \T1/qpl/m/
 it/10.95 (-20) arXiv preprint arXiv:2502.13923\T1/qpl/m/n/10.95 (-20) ,
  []
 
-[82] (./chapters/Appendix_VLM_Prompts.tex [83]
+[83] (./chapters/Appendix_VLM_Prompts.tex [84]
 chapter A.
-[84
+[85
 
 
-] [85] [86] [87] [88] [89] [90]) [91] [92
+] [86] [87] [88] [89] [90] [91]) [92] [93
 
 
 ] (./Thesis_report_Fabin.aux)
@@ -2198,10 +2198,10 @@ Package logreq Info: Writing requests to 'Thesis_report_Fabin.run.xml'.
 ### simple group (level 1) entered at line 332 ({)
 ### bottom level 
 Here is how much of TeX's memory you used:
- 52945 strings out of 474222
- 1172409 string characters out of 5748733
- 2593373 words of memory out of 5000000
- 73481 multiletter control sequences out of 15000+600000
+ 52932 strings out of 474222
+ 1172238 string characters out of 5748733
+ 2593367 words of memory out of 5000000
+ 73467 multiletter control sequences out of 15000+600000
  698611 words of font info for 358 fonts, out of 8000000 for 9000
  1143 hyphenation exceptions out of 8191
  108i,21n,107p,10914b,3283s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -2222,10 +2222,10 @@ rw/helvetic/uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/
 uhvro8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/palatino/uplb8a.pfb>
 </usr/share/texlive/texmf-dist/fonts/type1/urw/palatino/uplr8a.pfb></usr/share/
 texlive/texmf-dist/fonts/type1/urw/palatino/uplri8a.pfb>
-Output written on Thesis_report_Fabin.pdf (101 pages, 12174992 bytes).
+Output written on Thesis_report_Fabin.pdf (102 pages, 12178051 bytes).
 PDF statistics:
- 2206 PDF objects out of 2487 (max. 8388607)
- 1967 compressed objects within 20 object streams
- 568 named destinations out of 1000 (max. 500000)
+ 2211 PDF objects out of 2487 (max. 8388607)
+ 1971 compressed objects within 20 object streams
+ 569 named destinations out of 1000 (max. 500000)
  66984 words of extra memory for PDF output out of 74296 (max. 10000000)
 

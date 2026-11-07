@@ -36,8 +36,8 @@
 
     \item {\small \textbf{A spatial scene graph with open-vocabulary object identification.} The framework extends Hydra~\cite{hughes2022hydra} with flexible object identification beyond fixed semantic classes. The resulting 3D scene graph combines spatial, semantic, and mobility information while maintaining a consistent representation of the environment over time.\par}
 
-    \item {\small \textbf{A persistent object representation with uncertainty information.} Objects are represented together with confidence information for their semantic identity, mobility, and continued presence in the environment. This allows the scene graph to express both what is currently believed about an object and the uncertainty associated with that information.\par}
-
+    \item {\small \textbf{A persistent object representation with uncertainty information.} Each object is stored together with confidence values for its semantic identity, mobility, and continued presence in the environment. As a result, the scene graph captures both the current estimate of each object's state and the uncertainty associated with that estimate.\par}
+    
     \item {\small \textbf{A design for near-real-time operation on embedded robotic hardware.} The framework is designed to maintain spatial scene understanding while incorporating computationally demanding semantic information. This allows the scene representation to remain suitable for applications in which environmental information must be updated continuously during robot operation.\par}
 
     \item {\small \textbf{An experimental evaluation on simulated and real-world data.} The extended framework is evaluated using the simulated uHumans2 dataset~\cite{rosinol2021kimera} and the real-world OpenLORIS-Scene dataset~\cite{shi2020openloris}. The evaluation examines object tracking and labelling, spatial scene graph consistency, and runtime behaviour to identify both the capabilities and limitations of the proposed approach.\par}
