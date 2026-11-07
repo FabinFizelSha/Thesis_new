@@ -478,10 +478,9 @@ P3      63    88    68    4.8   2.9   4.1
 \section{Visual Results across Environments}
 \label{sec:results_visual}
 
-{\small This section shows the scene graphs produced by the complete pipeline in its final configuration (Sections~\ref{sec:results_segmentation} to~\ref{sec:results_vlm}, retrieval and risk VLM disabled). One run each was performed on the Jetson AGX Thor on the apartment sequence of uHumans2~\cite{rosinol2021kimera} and on the office1-1 sequence of OpenLORIS-Scene~\cite{shi2020openloris}, the latter with wheel odometry (Section~\ref{subsec:impl_datasets}). Figures~\ref{fig:results_visual} to~\ref{fig:results_visual_apartment} were taken in RViz during the runs.\par}
+{\small This section shows the scene graphs produced by the complete pipeline in its final configuration (Sections~\ref{sec:results_segmentation} to~\ref{sec:results_vlm}, retrieval and risk VLM disabled). One run each was performed on the Jetson AGX Thor on the apartment sequence of uHumans2~\cite{rosinol2021kimera} and on the office1-1 sequence of OpenLORIS-Scene~\cite{shi2020openloris}, the latter with wheel odometry (Section~\ref{subsec:impl_datasets}). The two sequences complement the office scene used in the preceding sections: the apartment is a second simulated environment and contains a person, so that it shows the treatment of a dynamic object, whereas OpenLORIS-Scene provides real sensor data with measured depth and odometry. Session persistence was disabled, so that each run started from an empty map. Figures~\ref{fig:results_visual} to~\ref{fig:results_visual_apartment} were taken in RViz during the runs.\par}
 
-{\small The graph is drawn in three layers: objects at their reconstructed height, places 10\,m and rooms 20\,m above them. Objects are coloured by label (grey: unlabelled), drawn as cubes if dynamic, fade with their presence confidence (Equation~\ref{eq:presence_decay}) and carry a grey halo while recently observed; their text gives identifier, label, mobility class, visual-state description (Section~\ref{subsec:method_vlm_contract}) and presence confidence. Places take the colour of their room. The edges are listed in Table~\ref{tab:results_visual_edges}.\par}
-
+{\small The graph is drawn in three layers: objects at their reconstructed height, places 10\,m and rooms 20\,m above them. This vertical offset serves only the visualisation and does not change the graph itself. Objects are coloured by label (grey: unlabelled), drawn as cubes if dynamic, fade with their presence confidence (Equation~\ref{eq:presence_decay}) and carry a grey halo while recently observed. Their text gives identifier, label, mobility class, visual-state description (Section~\ref{subsec:method_vlm_contract}) and presence confidence, so that all object information passed to downstream risk assessment can be read directly from the figures. Places take the colour of their room, which makes the room segmentation visible in the place layer. The edges are listed in Table~\ref{tab:results_visual_edges}.\par}
 \begin{table}[!htb]
 	\centering
 	\small
@@ -735,7 +734,7 @@ P3      63    88    68    4.8   2.9   4.1
         ]
         \addplot[fill=rsgblue!70, draw=rsgblue!90!black] coordinates {(Mean,3.11) (Median,2.94)};
         \addplot[fill=rsgorange!70, draw=rsgorange!90!black] coordinates {(Mean,1.36) (Median,1.25)};
-        \legend{AGX Orin (rate 0.1), AGX Thor (full pipeline)}
+        \legend{AGX Orin, AGX Thor}
       \end{axis}
     \end{tikzpicture}
     \caption{\small Per-call latency}

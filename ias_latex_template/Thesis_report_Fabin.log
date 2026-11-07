@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.22)  7 NOV 2026 13:04
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.22)  7 NOV 2026 14:48
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1982,7 +1982,7 @@ e there-fore uses the pro-file \T1/cmtt/m/n/10 qwen3_5_4b_q4
 <example_images/Open_loris1.png, id=1176, 851.18pt x 481.8pt>
 File: example_images/Open_loris1.png Graphic file (type png)
 <use example_images/Open_loris1.png>
-Package pdftex.def Info: example_images/Open_loris1.png  used on input line 513
+Package pdftex.def Info: example_images/Open_loris1.png  used on input line 512
 .
 (pdftex.def)             Requested size: 291.97762pt x 165.27281pt.
 <example_images/Open_loris1_front_view.png, id=1177, 1448.41125pt x 637.38126pt
@@ -1990,61 +1990,61 @@ Package pdftex.def Info: example_images/Open_loris1.png  used on input line 513
 File: example_images/Open_loris1_front_view.png Graphic file (type png)
 <use example_images/Open_loris1_front_view.png>
 Package pdftex.def Info: example_images/Open_loris1_front_view.png  used on inp
-ut line 521.
+ut line 520.
 (pdftex.def)             Requested size: 291.97762pt x 128.48546pt.
 <example_images/Open_loris1_top_view.png, id=1178, 1445.4pt x 637.38126pt>
 File: example_images/Open_loris1_top_view.png Graphic file (type png)
 <use example_images/Open_loris1_top_view.png>
 Package pdftex.def Info: example_images/Open_loris1_top_view.png  used on input
- line 529.
+ line 528.
 (pdftex.def)             Requested size: 291.97762pt x 128.74805pt.
 <example_images/Open_loris1_front_view_wotext.png, id=1179, 1445.4pt x 651.4337
 5pt>
 File: example_images/Open_loris1_front_view_wotext.png Graphic file (type png)
 <use example_images/Open_loris1_front_view_wotext.png>
 Package pdftex.def Info: example_images/Open_loris1_front_view_wotext.png  used
- on input line 537.
+ on input line 536.
 (pdftex.def)             Requested size: 179.04683pt x 80.69345pt.
 <example_images/Open_loris1_top_view_wotext.png, id=1180, 1422.31375pt x 628.34
 75pt>
 File: example_images/Open_loris1_top_view_wotext.png Graphic file (type png)
 <use example_images/Open_loris1_top_view_wotext.png>
 Package pdftex.def Info: example_images/Open_loris1_top_view_wotext.png  used o
-n input line 544.
+n input line 543.
 (pdftex.def)             Requested size: 179.04683pt x 79.09933pt.
 <example_images/openloris_full1.png, id=1181, 681.54625pt x 421.575pt>
 File: example_images/openloris_full1.png Graphic file (type png)
 <use example_images/openloris_full1.png>
 Package pdftex.def Info: example_images/openloris_full1.png  used on input line
- 560.
+ 559.
 (pdftex.def)             Requested size: 204.14752pt x 126.27405pt.
 <example_images/openloris_full2.png, id=1182, 764.8575pt x 488.82625pt>
 File: example_images/openloris_full2.png Graphic file (type png)
 <use example_images/openloris_full2.png>
 Package pdftex.def Info: example_images/openloris_full2.png  used on input line
- 567.
+ 566.
 (pdftex.def)             Requested size: 204.14752pt x 130.47069pt.
 <example_images/openloris_full3.png, id=1183, 793.96625pt x 519.9425pt>
 File: example_images/openloris_full3.png Graphic file (type png)
 <use example_images/openloris_full3.png>
 Package pdftex.def Info: example_images/openloris_full3.png  used on input line
- 575.
+ 574.
 (pdftex.def)             Requested size: 283.61072pt x 194.07352pt.
 <example_images/dynamic_image.png, id=1185, 542.025pt x 361.35pt>
 File: example_images/dynamic_image.png Graphic file (type png)
 <use example_images/dynamic_image.png>
 Package pdftex.def Info: example_images/dynamic_image.png  used on input line 5
-87.
+86.
 (pdftex.def)             Requested size: 204.14752pt x 136.09589pt.
 <example_images/Dynamic_graph.png, id=1186, 1445.4pt x 963.6pt>
 File: example_images/Dynamic_graph.png Graphic file (type png)
 <use example_images/Dynamic_graph.png>
 Package pdftex.def Info: example_images/Dynamic_graph.png  used on input line 5
-94.
+93.
 (pdftex.def)             Requested size: 204.14752pt x 136.09404pt.
 
 
-LaTeX Warning: Float too large for page by 4.11633pt on input line 600.
+LaTeX Warning: Float too large for page by 4.11633pt on input line 599.
 
 [65] [66 <./example_images/Open_loris1.png (PNG copy)> <./example_images/Open_l
 oris1_front_view.png> <./example_images/Open_loris1_top_view.png> <./example_im
@@ -2052,36 +2052,36 @@ ages/Open_loris1_front_view_wotext.png> <./example_images/Open_loris1_top_view_
 wotext.png>] [67 <./example_images/openloris_full1.png> <./example_images/openl
 oris_full2.png> <./example_images/dynamic_image.png (PNG copy)> <./example_imag
 es/Dynamic_graph.png> <./example_images/openloris_full3.png>]
-Package pgfplots info on input line 648: Using 'lua backend=false' for axis: x 
+Package pgfplots info on input line 647: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 
-Underfull \hbox (badness 1412) in paragraph at lines 656--656
+Underfull \hbox (badness 1412) in paragraph at lines 655--655
 [][]|\T1/qpl/m/n/10 (+20) Through-put, fi-nal con-fig-u-ra-
  []
 
-Package pgfplots info on input line 672: Using 'lua backend=false' for axis: x 
+Package pgfplots info on input line 671: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 
-Overfull \hbox (18.15256pt too wide) in paragraph at lines 686--686
+Overfull \hbox (18.15256pt too wide) in paragraph at lines 685--685
 []\T1/qpl/m/n/10 (-20) Figure []5.10[] de-com-poses the mean frame time into fi
 ve stage groups. Seg-men-ta-tion with NanoSAM [[]30[]]
  []
 
 [68]
-Package pgfplots info on input line 702: Using 'lua backend=false' for axis: st
+Package pgfplots info on input line 701: Using 'lua backend=false' for axis: st
 acked plots unsupported (yet).
-Package pgfplots info on input line 702: Using 'lua backend=false' for axis: x 
+Package pgfplots info on input line 701: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
-Package pgfplots info on input line 735: Using 'lua backend=false' for axis: x 
+Package pgfplots info on input line 734: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
-Package pgfplots info on input line 756: Using 'lua backend=false' for axis: st
+Package pgfplots info on input line 755: Using 'lua backend=false' for axis: st
 acked plots unsupported (yet).
-Package pgfplots info on input line 756: Using 'lua backend=false' for axis: x 
+Package pgfplots info on input line 755: Using 'lua backend=false' for axis: x 
 coord trafo unsupported.
 
 
 Package pgfplots Warning: Axis range for axis y is approximately empty; enlargi
-ng it (it is [0.0:0.0]) on input line 760.
+ng it (it is [0.0:0.0]) on input line 759.
 
  [warning /pgfplots/warning/approx empty range enlarged]
 [69]) (./chapters/Conclusion.tex [70]
@@ -2089,12 +2089,12 @@ chapter 6.
 [71
 
 
-] [72] [73]) [74]
+] [72] [73] [74]) [75]
 chapter without number
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/qpl/m/sc/10.95'.
 (microtype)             Ignoring protrusion settings for this character.
-[75
+[76
 
 
 
@@ -2106,26 +2106,26 @@ Overfull \hbox (1.18694pt too wide) in paragraph at lines 68--68
 ) , ser. Lec-
  []
 
-[76]
+[77]
 Overfull \hbox (23.86905pt too wide) in paragraph at lines 68--68
 []\T1/qpl/m/n/10.95 (-20) A. Kir-illov, E. Mintun, N. Ravi, \T1/qpl/m/it/10.95 
 (-20) et al.\T1/qpl/m/n/10.95 (-20) , ^^P  Seg-ment any-thing,^^Q \T1/qpl/m/it/
 10.95 (-20) arXiv preprint arXiv:2304.02643\T1/qpl/m/n/10.95 (-20) ,
  []
 
-[77] [78]
+[78] [79]
 Overfull \hbox (29.82353pt too wide) in paragraph at lines 68--68
 []\T1/qpl/m/n/10.95 (-20) S. Bai, K. Chen, X. Liu, \T1/qpl/m/it/10.95 (-20) et 
 al.\T1/qpl/m/n/10.95 (-20) , ^^P  Qwen2.5-vl tech-ni-cal re-port,^^Q \T1/qpl/m/
 it/10.95 (-20) arXiv preprint arXiv:2502.13923\T1/qpl/m/n/10.95 (-20) ,
  []
 
-[79] (./chapters/Appendix_VLM_Prompts.tex [80]
+[80] (./chapters/Appendix_VLM_Prompts.tex [81]
 chapter A.
-[81
+[82
 
 
-] [82] [83] [84] [85] [86] [87]) [88] [89
+] [83] [84] [85] [86] [87] [88]) [89] [90
 
 
 ] (./Thesis_report_Fabin.aux)
@@ -2145,8 +2145,8 @@ Package logreq Info: Writing requests to 'Thesis_report_Fabin.run.xml'.
 ### simple group (level 1) entered at line 322 ({)
 ### bottom level 
 Here is how much of TeX's memory you used:
- 52916 strings out of 474222
- 1171924 string characters out of 5748733
+ 52917 strings out of 474222
+ 1171931 string characters out of 5748733
  2593703 words of memory out of 5000000
  73459 multiletter control sequences out of 15000+600000
  698757 words of font info for 359 fonts, out of 8000000 for 9000
@@ -2169,10 +2169,10 @@ rw/helvetic/uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/
 uhvro8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/palatino/uplb8a.pfb>
 </usr/share/texlive/texmf-dist/fonts/type1/urw/palatino/uplr8a.pfb></usr/share/
 texlive/texmf-dist/fonts/type1/urw/palatino/uplri8a.pfb>
-Output written on Thesis_report_Fabin.pdf (98 pages, 12162330 bytes).
+Output written on Thesis_report_Fabin.pdf (99 pages, 12164634 bytes).
 PDF statistics:
- 2179 PDF objects out of 2487 (max. 8388607)
- 1943 compressed objects within 20 object streams
- 559 named destinations out of 1000 (max. 500000)
+ 2186 PDF objects out of 2487 (max. 8388607)
+ 1949 compressed objects within 20 object streams
+ 560 named destinations out of 1000 (max. 500000)
  66960 words of extra memory for PDF output out of 74296 (max. 10000000)
 

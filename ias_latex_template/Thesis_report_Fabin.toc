@@ -83,10 +83,10 @@
 \contentsline {chapter}{\numberline {6}Conclusion and Future Work}{71}{chapter.6}%
 \contentsline {section}{\numberline {6.1}Conclusion}{71}{section.6.1}%
 \contentsline {section}{\numberline {6.2}Limitations and Future Work}{73}{section.6.2}%
-\contentsline {chapter}{\nonumberline Bibliography}{75}{chapter*.41}%
-\contentsline {chapter}{\numberline {A}Prompts of the VLM Comparison}{81}{appendix.A}%
-\contentsline {section}{\numberline {A.1}Zero-Shot Prompt (P1)}{81}{section.A.1}%
-\contentsline {section}{\numberline {A.2}Example-Driven Prompt (P2)}{81}{section.A.2}%
-\contentsline {section}{\numberline {A.3}Structural-Priority Prompt (P3)}{83}{section.A.3}%
-\contentsline {section}{\numberline {A.4}Deployed Prompt with Visual-State Description}{85}{section.A.4}%
+\contentsline {chapter}{\nonumberline Bibliography}{76}{chapter*.41}%
+\contentsline {chapter}{\numberline {A}Prompts of the VLM Comparison}{82}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Zero-Shot Prompt (P1)}{82}{section.A.1}%
+\contentsline {section}{\numberline {A.2}Example-Driven Prompt (P2)}{82}{section.A.2}%
+\contentsline {section}{\numberline {A.3}Structural-Priority Prompt (P3)}{84}{section.A.3}%
+\contentsline {section}{\numberline {A.4}Deployed Prompt with Visual-State Description}{86}{section.A.4}%
 \providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 
